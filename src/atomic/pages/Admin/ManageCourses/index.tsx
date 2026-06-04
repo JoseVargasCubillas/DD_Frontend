@@ -19,7 +19,7 @@ export default function ManageCourses() {
             </thead>
             <tbody className="divide-y divide-dark-600">
               {data?.data.map((course) => (
-                <tr key={course._id} className="text-gray-300 hover:bg-dark-700 transition-colors">
+                <tr key={course.id ?? course._id} className="text-gray-300 hover:bg-dark-700 transition-colors">
                   <td className="px-4 py-3 text-white font-medium">{course.title}</td>
                   <td className="px-4 py-3">{course.category}</td>
                   <td className="px-4 py-3">${course.price}</td>

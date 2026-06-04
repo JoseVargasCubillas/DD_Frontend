@@ -13,7 +13,7 @@ export default function Events() {
         <div className="flex justify-center py-16"><Spinner size="lg" /></div>
       ) : (
         <div className="flex flex-col gap-4">
-          {data?.data.map((event) => <EventCard key={event._id} event={event} />)}
+          {data?.data.map((event) => <EventCard key={event.id ?? event._id} event={event} />)}
         </div>
       )}
     </div>

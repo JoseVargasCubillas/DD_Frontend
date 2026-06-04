@@ -7,7 +7,8 @@ export type EventStatus = 'upcoming' | 'ongoing' | 'finished' | 'canceled';
 export type CourseLevel = 'beginner' | 'intermediate' | 'advanced';
 
 export interface User {
-  _id: string;
+  id?: string;
+  _id?: string;
   name: string;
   email: string;
   role: Role;
@@ -23,7 +24,8 @@ export interface User {
 }
 
 export interface Course {
-  _id: string;
+  id?: string;
+  _id?: string;
   title: string;
   slug: string;
   description: string;
@@ -49,7 +51,8 @@ export interface Course {
 }
 
 export interface Lesson {
-  _id: string;
+  id?: string;
+  _id?: string;
   title: string;
   slug: string;
   course: string;
@@ -64,7 +67,8 @@ export interface Lesson {
 }
 
 export interface Event {
-  _id: string;
+  id?: string;
+  _id?: string;
   title: string;
   slug: string;
   description: string;
@@ -87,7 +91,8 @@ export interface Event {
 }
 
 export interface BlogPost {
-  _id: string;
+  id?: string;
+  _id?: string;
   title: string;
   slug: string;
   content: string;
@@ -106,7 +111,8 @@ export interface BlogPost {
 }
 
 export interface Subscription {
-  _id: string;
+  id?: string;
+  _id?: string;
   user: string;
   plan: Plan;
   status: SubscriptionStatus;
@@ -123,7 +129,8 @@ export interface OrderItem {
 }
 
 export interface Order {
-  _id: string;
+  id?: string;
+  _id?: string;
   items: OrderItem[];
   total: number;
   currency: string;
@@ -144,7 +151,7 @@ export interface PaginatedResponse<T> {
 }
 
 export interface AuthResult {
-  user: Pick<User, '_id' | 'name' | 'email' | 'role'>;
+  user: Pick<User, 'id' | 'name' | 'email' | 'role'>;
   accessToken: string;
   refreshToken: string;
 }

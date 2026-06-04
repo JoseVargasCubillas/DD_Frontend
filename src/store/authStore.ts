@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { User, AuthResult } from '@types/index';
 
 interface AuthState {
-  user: Pick<User, '_id' | 'name' | 'email' | 'role'> | null;
+  user: Pick<User, 'id' | 'name' | 'email' | 'role'> | null;
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
