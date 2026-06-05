@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { OrderItem } from '@types/index';
+import type { OrderItem } from '@t/index';
 
 interface CartItem extends OrderItem {
   id: string;

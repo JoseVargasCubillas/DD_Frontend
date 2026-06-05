@@ -1,5 +1,5 @@
 import { client } from './client';
-import type { Subscription, ApiResponse } from '@types/index';
+import type { Subscription, ApiResponse } from '@t/index';
 
 export const getActiveSubscription = (): Promise<Subscription | null> =>
   client.get<ApiResponse<Subscription | null>>('/subscriptions/active').then((r) => r.data);

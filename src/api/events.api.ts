@@ -1,5 +1,5 @@
 import { client } from './client';
-import type { Event, PaginatedResponse, ApiResponse } from '@types/index';
+import type { Event, PaginatedResponse, ApiResponse } from '@t/index';
 
 export const getEvents = (params?: Record<string, unknown>): Promise<PaginatedResponse<Event>> =>
   client.get<PaginatedResponse<Event>>('/events', params);

@@ -1,0 +1,1921 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Sistema de Motion · diegodiaz.mx · v2.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f5f2ec;
+  --paper-2:#ede8df;
+  --paper-3:#e3ddd0;
+  --ink:#0a0a0a;
+  --ink-2:#1a1a1a;
+  --line:rgba(10,10,10,0.12);
+  --line-strong:rgba(10,10,10,0.32);
+  --accent:#6b4f2a;
+  --accent-2:#8a6a3d;
+  --muted:#6b6258;
+  --font-display:'Libre Baskerville', Baskerville, Georgia, serif;
+  --font-body:'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --noise:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.4 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+
+  /* MOTION TOKENS */
+  --ease-out:cubic-bezier(.2,.8,.2,1);
+  --ease-curtain:cubic-bezier(.7,0,.3,1);
+  --ease-soft:cubic-bezier(.32,.72,.32,1);
+  --d-instant:120ms;
+  --d-fast:200ms;
+  --d-base:400ms;
+  --d-slow:800ms;
+  --d-narrative:1600ms;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+html{ scroll-behavior:smooth; }
+html,body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-weight:400;
+  font-size:16px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:geometricPrecision;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background-image:var(--noise);
+  opacity:0.4;
+  mix-blend-mode:multiply;
+  pointer-events:none;
+  z-index:0;
+}
+body > *{ position:relative; z-index:1; }
+a{ color:inherit; text-decoration:none; }
+button{ font:inherit; cursor:pointer; border:0; background:transparent; color:inherit; }
+
+.container{ max-width:1312px; margin:0 auto; padding:0 64px; }
+.fr{ font-family:var(--font-display); }
+.in{ font-family:var(--font-body); }
+.it{ font-style:italic; }
+.mono{ font-family:var(--font-body); font-weight:500; letter-spacing:0.14em; text-transform:uppercase; }
+.muted{ color:var(--muted); }
+.eyebrow{
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:0.20em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+
+/* ========================================== */
+/* NAV                                          */
+/* ========================================== */
+nav.site-nav{
+  position:sticky;
+  top:0;
+  z-index:50;
+  background:rgba(245,242,236,0.85);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--line);
+  transition:padding var(--d-base) var(--ease-out), backdrop-filter var(--d-base);
+}
+nav.site-nav.compact{
+  background:rgba(245,242,236,0.92);
+}
+.nav-inner{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:32px;
+  padding:18px 64px;
+  max-width:1440px;
+  margin:0 auto;
+  transition:padding var(--d-base) var(--ease-out);
+}
+nav.site-nav.compact .nav-inner{ padding:10px 64px; }
+.nav-brand{
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:18px;
+  transition:font-size var(--d-base) var(--ease-out);
+}
+nav.site-nav.compact .nav-brand{ font-size:15px; }
+.nav-items{
+  display:flex;
+  gap:32px;
+  justify-content:center;
+  font-size:13px;
+}
+.nav-cta{
+  background:var(--ink);
+  color:var(--paper);
+  padding:10px 20px;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+}
+
+/* ========================================== */
+/* HERO                                         */
+/* ========================================== */
+.hero{
+  padding:120px 0 80px;
+}
+.hero-eyebrow{
+  display:flex;
+  justify-content:space-between;
+  padding-bottom:24px;
+  border-bottom:1px solid var(--line);
+  margin-bottom:64px;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:0.20em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.hero-eyebrow strong{ color:var(--ink); font-weight:500; }
+
+.hero-title{
+  font-family:var(--font-display);
+  font-weight:400;
+  font-size:104px;
+  line-height:1;
+  letter-spacing:-0.022em;
+  margin-bottom:48px;
+}
+.hero-title .it{ font-style:italic; }
+
+/* Word mask reveal (Hero entry) */
+.word-mask{
+  display:inline-block;
+  overflow:hidden;
+  vertical-align:top;
+  padding:0 0.05em;
+  margin:0 -0.05em;
+}
+.word-mask > span{
+  display:inline-block;
+  transform:translateY(110%);
+  transition:transform var(--d-slow) var(--ease-out);
+}
+.reveal.play .word-mask > span{ transform:translateY(0); }
+.reveal .word-mask:nth-child(1) > span{ transition-delay:0ms; }
+.reveal .word-mask:nth-child(2) > span{ transition-delay:60ms; }
+.reveal .word-mask:nth-child(3) > span{ transition-delay:120ms; }
+.reveal .word-mask:nth-child(4) > span{ transition-delay:180ms; }
+.reveal .word-mask:nth-child(5) > span{ transition-delay:240ms; }
+.reveal .word-mask:nth-child(6) > span{ transition-delay:300ms; }
+.reveal .word-mask:nth-child(7) > span{ transition-delay:360ms; }
+.reveal .word-mask:nth-child(8) > span{ transition-delay:420ms; }
+.reveal .word-mask:nth-child(9) > span{ transition-delay:480ms; }
+.reveal .word-mask:nth-child(10) > span{ transition-delay:540ms; }
+.reveal .word-mask.italic-late > span{ transition-delay:720ms !important; }
+
+.hero-lede{
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:22px;
+  line-height:1.5;
+  max-width:760px;
+  opacity:0;
+  transform:translateY(16px);
+  transition:opacity var(--d-slow) var(--ease-out) 600ms,
+             transform var(--d-slow) var(--ease-out) 600ms;
+}
+.reveal.play .hero-lede{ opacity:1; transform:translateY(0); }
+
+/* ========================================== */
+/* SECTION HEADERS                              */
+/* ========================================== */
+.section-header{
+  display:grid;
+  grid-template-columns:80px 1fr auto;
+  gap:32px;
+  align-items:flex-start;
+  padding-bottom:32px;
+  margin-bottom:64px;
+  border-bottom:1px solid var(--line);
+}
+.section-header .marker{
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:0.12em;
+  padding-top:6px;
+}
+.section-header h2{
+  font-family:var(--font-display);
+  font-weight:400;
+  font-size:56px;
+  line-height:1;
+  letter-spacing:-0.02em;
+}
+.section-header h2 .it{ font-style:italic; }
+.section-header .sub{
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:18px;
+  line-height:1.45;
+  margin-top:18px;
+  color:#2a2a2a;
+  max-width:640px;
+}
+.section-header .tag{
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0.20em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:right;
+  padding-top:12px;
+  line-height:1.6;
+}
+
+/* Section header reveal stagger */
+.section-header .marker,
+.section-header h2,
+.section-header .sub,
+.section-header .tag{
+  opacity:0;
+  transform:translateY(20px);
+  transition:opacity var(--d-base) var(--ease-out),
+             transform var(--d-base) var(--ease-out);
+}
+.section-header.in .marker{ opacity:1; transform:none; transition-delay:0ms; }
+.section-header.in h2{ opacity:1; transform:none; transition-delay:80ms; }
+.section-header.in .sub{ opacity:1; transform:none; transition-delay:160ms; }
+.section-header.in .tag{ opacity:1; transform:none; transition-delay:80ms; }
+
+/* ========================================== */
+/* PRINCIPLES                                   */
+/* ========================================== */
+.principles{ padding:80px 0 120px; }
+.principle{
+  display:grid;
+  grid-template-columns:80px 1fr 240px;
+  gap:32px;
+  padding:36px 0;
+  border-top:1px solid var(--line);
+  opacity:0;
+  transform:translateY(24px);
+  transition:opacity var(--d-base) var(--ease-out),
+             transform var(--d-base) var(--ease-out);
+}
+.principles.in .principle{ opacity:1; transform:none; }
+.principles.in .principle:nth-child(1){ transition-delay:0ms; }
+.principles.in .principle:nth-child(2){ transition-delay:80ms; }
+.principles.in .principle:nth-child(3){ transition-delay:160ms; }
+.principles.in .principle:nth-child(4){ transition-delay:240ms; }
+.principles.in .principle:nth-child(5){ transition-delay:320ms; }
+.principle:last-child{ border-bottom:1px solid var(--line); }
+.principle .n{
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:0.12em;
+  padding-top:4px;
+  color:var(--muted);
+}
+.principle h3{
+  font-family:var(--font-display);
+  font-weight:400;
+  font-size:32px;
+  line-height:1.05;
+  letter-spacing:-0.018em;
+  margin-bottom:12px;
+}
+.principle h3 .it{ font-style:italic; }
+.principle p{
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:16px;
+  line-height:1.5;
+  color:#2a2a2a;
+  max-width:560px;
+}
+.principle .meta{
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0.20em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:right;
+  padding-top:6px;
+  line-height:1.7;
+}
+
+/* ========================================== */
+/* TOKEN TABLE                                  */
+/* ========================================== */
+.tokens{ padding:0 0 120px; }
+.token-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+}
+.token-table thead th{
+  text-align:left;
+  font-weight:500;
+  padding:14px 18px;
+  border-top:1px solid var(--ink);
+  border-bottom:1px solid var(--ink);
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  font-size:10px;
+  background:var(--paper-2);
+}
+.token-table tbody td{
+  padding:14px 18px;
+  border-bottom:1px dashed var(--line);
+  font-family:var(--font-body);
+}
+.token-table tbody td.name{ font-weight:500; }
+.token-table tbody td.val{ font-family:var(--font-body); color:var(--muted); }
+.token-table tbody td.fr{ font-family:var(--font-display); font-style:italic; }
+.curve-preview{
+  display:inline-block;
+  width:60px; height:32px;
+  vertical-align:middle;
+  margin-right:8px;
+  background:var(--paper-2);
+  position:relative;
+}
+.curve-preview svg{ width:100%; height:100%; display:block; }
+
+/* ========================================== */
+/* DEMOS GRID                                   */
+/* ========================================== */
+.demos{ padding:0 0 160px; }
+.demo-card{
+  border-top:1px solid var(--line);
+  padding:80px 0;
+  display:grid;
+  grid-template-columns:80px 1fr;
+  gap:32px;
+}
+.demo-card:last-child{ border-bottom:1px solid var(--line); }
+.demo-num{
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:0.12em;
+  color:var(--muted);
+  padding-top:8px;
+}
+.demo-body{ display:flex; flex-direction:column; gap:32px; }
+.demo-header{
+  display:grid;
+  grid-template-columns:1fr 280px;
+  gap:48px;
+  align-items:flex-end;
+}
+.demo-title{
+  font-family:var(--font-display);
+  font-weight:400;
+  font-size:44px;
+  line-height:1.05;
+  letter-spacing:-0.018em;
+}
+.demo-title .it{ font-style:italic; }
+.demo-info{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0.20em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:right;
+}
+.demo-info b{ color:var(--ink); font-weight:500; }
+.demo-desc{
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:18px;
+  line-height:1.55;
+  max-width:760px;
+  color:#2a2a2a;
+}
+
+.demo-stage{
+  background:var(--paper-2);
+  border:1px solid var(--line);
+  padding:48px;
+  min-height:280px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  overflow:hidden;
+}
+.demo-stage.dark{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.demo-stage.dark::before{
+  content:"";
+  position:absolute; inset:0;
+  background-image:var(--noise);
+  opacity:0.25;
+  mix-blend-mode:screen;
+  pointer-events:none;
+}
+.demo-replay{
+  position:absolute;
+  top:16px;
+  right:16px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  background:var(--ink);
+  color:var(--paper);
+  padding:8px 14px;
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  z-index:5;
+  transition:transform var(--d-fast) var(--ease-out);
+}
+.demo-stage.dark .demo-replay{ background:var(--paper); color:var(--ink); }
+.demo-replay:hover{ transform:translateY(-2px); }
+.demo-replay svg{ width:11px; height:11px; }
+
+.demo-code{
+  background:var(--ink);
+  color:var(--paper);
+  padding:24px 28px;
+  font-family:'JetBrains Mono','SF Mono','Menlo',monospace;
+  font-size:11px;
+  line-height:1.7;
+  overflow-x:auto;
+  position:relative;
+}
+.demo-code-label{
+  position:absolute;
+  top:14px; right:18px;
+  font-size:9px;
+  font-weight:500;
+  letter-spacing:0.20em;
+  color:rgba(245,242,236,0.45);
+  text-transform:uppercase;
+}
+.demo-code .c{ color:rgba(245,242,236,0.4); }
+.demo-code .k{ color:#a8c5a8; }
+.demo-code .v{ color:#dbb9a0; }
+.demo-code .s{ color:#cad8e8; }
+
+/* ========================================== */
+/* DEMO 01 — HERO MASKED REVEAL                 */
+/* ========================================== */
+.stage-01{ flex-direction:column; align-items:flex-start; padding:48px 56px; }
+.stage-01 .display{
+  font-family:var(--font-display);
+  font-weight:400;
+  font-size:72px;
+  line-height:1;
+  letter-spacing:-0.02em;
+  margin-bottom:24px;
+}
+.stage-01 .lede{
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:17px;
+  line-height:1.5;
+  color:#2a2a2a;
+  max-width:580px;
+  opacity:0;
+  transform:translateY(16px);
+  transition:opacity var(--d-slow) var(--ease-out) 600ms,
+             transform var(--d-slow) var(--ease-out) 600ms;
+}
+.stage-01.play .lede{ opacity:1; transform:none; }
+
+/* ========================================== */
+/* DEMO 02 — SECTION HEADER STAGGER             */
+/* ========================================== */
+.stage-02{ padding:48px 56px; }
+.stage-02-grid{
+  display:grid;
+  grid-template-columns:60px 1fr auto;
+  gap:24px;
+  width:100%;
+}
+.stage-02-grid > *{
+  opacity:0;
+  transform:translateY(20px);
+  transition:opacity var(--d-base) var(--ease-out),
+             transform var(--d-base) var(--ease-out);
+}
+.stage-02.play .marker{ opacity:1; transform:none; transition-delay:0ms; }
+.stage-02.play h3{ opacity:1; transform:none; transition-delay:100ms; }
+.stage-02.play .sub{ opacity:1; transform:none; transition-delay:200ms; }
+.stage-02.play .tag{ opacity:1; transform:none; transition-delay:100ms; }
+.stage-02 .marker{
+  font-size:11px; font-weight:500;
+  letter-spacing:0.14em;
+  padding-top:6px;
+}
+.stage-02 h3{
+  font-family:var(--font-display);
+  font-weight:400;
+  font-size:44px;
+  line-height:1;
+  letter-spacing:-0.018em;
+}
+.stage-02 h3 .it{ font-style:italic; }
+.stage-02 .sub{
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:15px;
+  line-height:1.45;
+  margin-top:14px;
+  color:#2a2a2a;
+}
+.stage-02 .tag{
+  font-size:9px; font-weight:500;
+  letter-spacing:0.20em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:right;
+  padding-top:10px;
+}
+
+/* ========================================== */
+/* DEMO 03 — SCROLL REVEAL STAGGER              */
+/* ========================================== */
+.stage-03{ padding:48px 56px; }
+.stage-03-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:1px;
+  background:var(--line);
+  border:1px solid var(--line);
+  width:100%;
+}
+.stage-03-card{
+  background:var(--paper-2);
+  padding:24px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  min-height:180px;
+  opacity:0;
+  transform:translateY(20px);
+  transition:opacity var(--d-base) var(--ease-out),
+             transform var(--d-base) var(--ease-out);
+}
+.stage-03.play .stage-03-card:nth-child(1){ opacity:1; transform:none; transition-delay:0ms; }
+.stage-03.play .stage-03-card:nth-child(2){ opacity:1; transform:none; transition-delay:100ms; }
+.stage-03.play .stage-03-card:nth-child(3){ opacity:1; transform:none; transition-delay:200ms; }
+.stage-03-card .n{
+  font-size:10px; font-weight:500;
+  letter-spacing:0.16em;
+  color:var(--muted);
+}
+.stage-03-card h4{
+  font-family:var(--font-display);
+  font-weight:400;
+  font-size:22px;
+  line-height:1.1;
+  letter-spacing:-0.012em;
+}
+.stage-03-card h4 .it{ font-style:italic; }
+.stage-03-card p{
+  font-size:12px;
+  line-height:1.5;
+  color:#2a2a2a;
+}
+
+/* ========================================== */
+/* DEMO 04 — BUTTON FILL HOVER                  */
+/* ========================================== */
+.stage-04{ padding:0; }
+.btn-fill-group{
+  display:flex;
+  gap:18px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.btn-fill{
+  position:relative;
+  overflow:hidden;
+  display:inline-flex;
+  align-items:center;
+  gap:18px;
+  padding:18px 28px;
+  font-size:12px;
+  font-weight:500;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  border:1px solid var(--ink);
+  color:var(--ink);
+  background:transparent;
+}
+.btn-fill::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:var(--ink);
+  transform:translateY(101%);
+  transition:transform 400ms cubic-bezier(.7,0,.3,1);
+  z-index:0;
+}
+.btn-fill > *{ position:relative; z-index:1; transition:color 400ms var(--ease-out); }
+.btn-fill:hover::before{ transform:translateY(0); }
+.btn-fill:hover > *{ color:var(--paper); }
+
+.btn-fill.inverse{ background:var(--ink); color:var(--paper); }
+.btn-fill.inverse::before{ background:var(--paper); transform:translateY(101%); }
+.btn-fill.inverse:hover > *{ color:var(--ink); }
+
+.btn-fill .arrow{
+  display:inline-block;
+  transition:transform 400ms var(--ease-out);
+}
+.btn-fill:hover .arrow{ transform:translateX(6px); }
+
+/* ========================================== */
+/* DEMO 05 — CARD LIFT                          */
+/* ========================================== */
+.stage-05{ padding:48px 56px; }
+.stage-05-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:24px;
+  width:100%;
+}
+.card-lift{
+  background:var(--paper);
+  border:1px solid var(--line);
+  padding:28px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  cursor:pointer;
+  transition:transform 400ms var(--ease-out),
+             border-color 400ms var(--ease-out);
+}
+.card-lift:hover{
+  transform:translateY(-6px);
+  border-color:var(--accent);
+}
+.card-lift .meta{
+  display:flex;
+  justify-content:space-between;
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  transition:color 400ms;
+}
+.card-lift:hover .meta{ color:var(--accent); }
+.card-lift h4{
+  font-family:var(--font-display);
+  font-weight:400;
+  font-size:24px;
+  line-height:1.1;
+  letter-spacing:-0.012em;
+}
+.card-lift h4 .it{ font-style:italic; }
+.card-lift p{ font-size:13px; line-height:1.5; color:#2a2a2a; }
+.card-lift .read{
+  margin-top:auto;
+  padding-top:14px;
+  border-top:1px solid var(--line);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+}
+.card-lift .read .arrow{
+  display:inline-block;
+  transition:transform 400ms var(--ease-out);
+}
+.card-lift:hover .read .arrow{ transform:translateX(6px); }
+
+/* ========================================== */
+/* DEMO 06 — STICKY NAV COMPACT                 */
+/* ========================================== */
+.stage-06{
+  padding:0;
+  flex-direction:column;
+  align-items:stretch;
+  min-height:380px;
+}
+.stage-06-nav{
+  background:rgba(245,242,236,0.85);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--line);
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:24px;
+  padding:18px 32px;
+  position:sticky;
+  top:0;
+  z-index:5;
+  transition:padding var(--d-base) var(--ease-out);
+}
+.stage-06-nav .b{
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:16px;
+  transition:font-size var(--d-base) var(--ease-out);
+}
+.stage-06-nav .items{
+  display:flex; gap:24px;
+  font-size:12px;
+  justify-content:center;
+}
+.stage-06-nav .cta{
+  background:var(--ink); color:var(--paper);
+  padding:8px 14px;
+  font-size:10px; font-weight:500;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+}
+.stage-06-nav.compact{ padding:8px 32px; background:rgba(245,242,236,0.95); }
+.stage-06-nav.compact .b{ font-size:13px; }
+.stage-06-scroll{
+  height:240px;
+  overflow-y:scroll;
+  background:var(--paper);
+  padding:32px 32px 0;
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:15px;
+  line-height:1.6;
+  color:#2a2a2a;
+}
+.stage-06-scroll p{ margin-bottom:14px; max-width:560px; }
+.stage-06-hint{
+  position:absolute;
+  bottom:16px; left:50%;
+  transform:translateX(-50%);
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--muted);
+  background:rgba(245,242,236,0.95);
+  padding:6px 14px;
+  pointer-events:none;
+  z-index:6;
+}
+
+/* ========================================== */
+/* DEMO 07 — COUNTER ANIMATION                  */
+/* ========================================== */
+.stage-07{ padding:32px 56px; }
+.stage-07-stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  border-top:1px solid var(--line-strong);
+  border-bottom:1px solid var(--line-strong);
+  width:100%;
+}
+.counter-stat{
+  padding:36px 24px;
+  border-right:1px solid var(--line);
+  text-align:left;
+}
+.counter-stat:last-child{ border-right:0; }
+.counter-stat .num{
+  font-family:var(--font-display);
+  font-weight:400;
+  font-size:72px;
+  line-height:0.95;
+  letter-spacing:-0.025em;
+  font-variant-numeric:tabular-nums;
+}
+.counter-stat .num .un{
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:32px;
+}
+.counter-stat .lbl{
+  margin-top:12px;
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0.20em;
+  text-transform:uppercase;
+  color:var(--muted);
+  line-height:1.5;
+}
+
+/* ========================================== */
+/* DEMO 08 — PAPER CURTAIN                      */
+/* ========================================== */
+.stage-08{ padding:0; min-height:320px; }
+.curtain-stage{
+  position:relative;
+  width:100%;
+  height:320px;
+  overflow:hidden;
+  background:var(--paper);
+}
+.curtain-content{
+  position:absolute; inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:8px;
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:28px;
+  letter-spacing:-0.015em;
+}
+.curtain-content .sm{
+  font-style:normal;
+  font-family:var(--font-body);
+  font-size:10px;
+  letter-spacing:0.20em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.paper-curtain{
+  position:absolute; inset:0;
+  background:var(--ink);
+  transform:scaleY(0);
+  transform-origin:top;
+  pointer-events:none;
+  z-index:5;
+}
+.paper-curtain::before{
+  content:"";
+  position:absolute; inset:0;
+  background-image:var(--noise);
+  opacity:0.25;
+  mix-blend-mode:screen;
+}
+.paper-curtain.in{ animation:curtainIn 700ms cubic-bezier(.7,0,.3,1) forwards; }
+.paper-curtain.out{ animation:curtainOut 700ms cubic-bezier(.7,0,.3,1) forwards; }
+@keyframes curtainIn{
+  0%{ transform:scaleY(0); transform-origin:top; }
+  100%{ transform:scaleY(1); transform-origin:top; }
+}
+@keyframes curtainOut{
+  0%{ transform:scaleY(1); transform-origin:bottom; }
+  100%{ transform:scaleY(0); transform-origin:bottom; }
+}
+.paper-curtain .label{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--paper);
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:34px;
+  letter-spacing:-0.015em;
+  opacity:0;
+  transition:opacity 200ms;
+}
+.paper-curtain.in .label{ opacity:1; transition-delay:200ms; }
+
+/* ========================================== */
+/* DEMO 09 — UNDERLINE GROW                     */
+/* ========================================== */
+.stage-09{ padding:48px 56px; flex-direction:column; gap:24px; align-items:flex-start; }
+.link-grow{
+  position:relative;
+  display:inline-block;
+  font-family:var(--font-display);
+  font-size:34px;
+  line-height:1.2;
+  padding-bottom:4px;
+  cursor:pointer;
+}
+.link-grow .it{ font-style:italic; }
+.link-grow::after{
+  content:"";
+  position:absolute;
+  left:0; bottom:0;
+  width:100%; height:1px;
+  background:currentColor;
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform 500ms var(--ease-out);
+}
+.link-grow:hover::after{ transform:scaleX(1); }
+
+.kinetic-italic{
+  display:inline-block;
+  transition:transform 500ms var(--ease-out), color 500ms;
+}
+.link-grow:hover .kinetic-italic{ color:var(--accent); }
+
+/* Marquee eyebrow ticker (bonus) */
+.marquee{
+  width:100%;
+  overflow:hidden;
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  padding:14px 0;
+  white-space:nowrap;
+}
+.marquee-track{
+  display:inline-block;
+  animation:marquee 28s linear infinite;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:0.20em;
+  text-transform:uppercase;
+}
+.marquee-track span{ margin:0 32px; color:var(--muted); }
+.marquee-track strong{ color:var(--ink); font-weight:500; }
+@keyframes marquee{
+  0%{ transform:translateX(0); }
+  100%{ transform:translateX(-50%); }
+}
+
+/* ========================================== */
+/* DEMO 10 — FORM FOCUS                         */
+/* ========================================== */
+.stage-10{ padding:48px 56px; }
+.form-demo{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:32px;
+  width:100%;
+}
+.field{ display:flex; flex-direction:column; gap:8px; }
+.field label{
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0.20em;
+  text-transform:uppercase;
+  color:var(--muted);
+  transition:color 300ms;
+}
+.field-line{
+  position:relative;
+  padding:8px 0;
+}
+.field-line input{
+  width:100%;
+  border:0;
+  outline:0;
+  background:transparent;
+  font-family:var(--font-display);
+  font-size:22px;
+  padding:8px 0 12px;
+  color:var(--ink);
+}
+.field-line input::placeholder{
+  font-family:var(--font-display);
+  font-style:italic;
+  color:rgba(10,10,10,0.35);
+  transition:transform 300ms var(--ease-out), opacity 300ms;
+}
+.field-line::after{
+  content:"";
+  position:absolute;
+  left:0; right:0; bottom:0;
+  height:1px;
+  background:var(--line-strong);
+}
+.field-line::before{
+  content:"";
+  position:absolute;
+  left:0; right:0; bottom:0;
+  height:1px;
+  background:var(--ink);
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform 500ms var(--ease-out);
+  z-index:1;
+}
+.field-line:focus-within::before{ transform:scaleX(1); }
+.field-line:focus-within input::placeholder{ transform:translateX(8px); opacity:0.4; }
+.field:focus-within label{ color:var(--ink); }
+
+/* ========================================== */
+/* REDUCED MOTION                               */
+/* ========================================== */
+.reduced{
+  background:var(--paper-2);
+  padding:48px;
+  border:1px solid var(--line);
+  margin-top:64px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:48px;
+  align-items:center;
+}
+.reduced h3{
+  font-family:var(--font-display);
+  font-weight:400;
+  font-size:36px;
+  line-height:1.05;
+  letter-spacing:-0.018em;
+  margin-bottom:14px;
+}
+.reduced h3 .it{ font-style:italic; }
+.reduced p{
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:16px;
+  line-height:1.5;
+  color:#2a2a2a;
+}
+.reduced code{
+  background:var(--ink);
+  color:var(--paper);
+  padding:16px 20px;
+  font-family:'JetBrains Mono','SF Mono','Menlo',monospace;
+  font-size:11px;
+  line-height:1.7;
+  white-space:pre;
+  overflow-x:auto;
+}
+
+/* ========================================== */
+/* REFERENCES                                   */
+/* ========================================== */
+.refs{ padding:80px 0 120px; }
+.refs-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:32px;
+}
+.ref{
+  border:1px solid var(--line);
+  padding:32px;
+  background:var(--paper-2);
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.ref .ek{
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.ref h4{
+  font-family:var(--font-display);
+  font-weight:400;
+  font-size:22px;
+  line-height:1.15;
+  letter-spacing:-0.012em;
+}
+.ref h4 .it{ font-style:italic; }
+.ref p{
+  font-size:13px;
+  line-height:1.55;
+  color:#2a2a2a;
+}
+.ref .nt{
+  margin-top:auto;
+  padding-top:18px;
+  border-top:1px solid var(--line);
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+
+/* ========================================== */
+/* FOOTER                                       */
+/* ========================================== */
+footer.foot{
+  background:var(--ink);
+  color:var(--paper);
+  padding:80px 0 48px;
+  position:relative;
+}
+footer.foot::before{
+  content:"";
+  position:absolute; inset:0;
+  background-image:var(--noise);
+  opacity:0.25;
+  mix-blend-mode:screen;
+  pointer-events:none;
+}
+footer.foot > *{ position:relative; }
+.foot-mega{
+  font-family:var(--font-display);
+  font-style:italic;
+  font-size:160px;
+  line-height:0.92;
+  letter-spacing:-0.035em;
+  padding-bottom:48px;
+  border-bottom:1px solid rgba(245,242,236,0.2);
+  margin-bottom:32px;
+}
+.foot-meta{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:32px;
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:rgba(245,242,236,0.5);
+}
+.foot-meta strong{
+  display:block;
+  color:var(--paper);
+  margin-bottom:6px;
+}
+.foot-meta span{
+  display:block;
+  font-weight:400;
+  letter-spacing:0.04em;
+  text-transform:none;
+  line-height:1.6;
+}
+
+/* RESPECT prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    transition-delay:0ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-brand">Sistema de <span class="it">motion.</span></a>
+    <div class="nav-items">
+      <a href="#principios">Principios</a>
+      <a href="#tokens">Tokens</a>
+      <a href="#demos">Demos</a>
+      <a href="#reduced">A11y</a>
+      <a href="#refs">Referencias</a>
+    </div>
+    <a href="#demos" class="nav-cta">Ver demos →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow">
+      <span><strong>diegodiaz.mx</strong></span>
+      <span>Anexo · sistema de motion</span>
+      <span>v2.1 · 2026</span>
+    </div>
+    <div class="reveal" id="hero-reveal">
+      <h1 class="hero-title">
+        <span class="word-mask"><span>Movimiento</span></span>
+        <span class="word-mask"><span>como</span></span>
+        <span class="word-mask"><span>puntuación,</span></span><br>
+        <span class="word-mask"><span>no</span></span>
+        <span class="word-mask"><span>como</span></span>
+        <span class="word-mask italic-late"><span><em class="it">espectáculo.</em></span></span>
+      </h1>
+      <p class="hero-lede">
+        Diez animaciones que le dan vida al sitio sin romper su tono editorial. Cada una con un propósito narrativo: revelar, enfocar, confirmar. Si no aporta, no se anima.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- PRINCIPLES -->
+<section class="principles" id="principios">
+  <div class="container">
+    <div class="section-header">
+      <div class="marker">— 01</div>
+      <div>
+        <h2>Cinco <span class="it">principios.</span></h2>
+        <div class="sub">El motion del sitio se rige por cinco reglas. Si una animación rompe alguna, no se implementa.</div>
+      </div>
+      <div class="tag">Principios<br>rectores</div>
+    </div>
+    <div class="principles-list">
+      <div class="principle">
+        <div class="n">— 01</div>
+        <div><h3>Puntuación, no <span class="it">espectáculo.</span></h3><p>Cada animación cumple un rol narrativo: revelar lo que entra, enfocar lo importante, confirmar la acción. Si no aporta lectura, se elimina.</p></div>
+        <div class="meta">Filosofía<br>rectora</div>
+      </div>
+      <div class="principle">
+        <div class="n">— 02</div>
+        <div><h3>Curvas <span class="it">humanas.</span></h3><p>Default cubic-bezier(.2,.8,.2,1) — aceleración rápida, desaceleración suave. Imita el gesto humano de soltar un objeto sobre una mesa.</p></div>
+        <div class="meta">Easing<br>system</div>
+      </div>
+      <div class="principle">
+        <div class="n">— 03</div>
+        <div><h3>Tiempos <span class="it">contenidos.</span></h3><p>200ms para feedback inmediato (hover), 400-800ms para reveals, 1.2-1.6s para counters narrativos. Nunca más de 2 segundos. Las prisas se notan; la lentitud también.</p></div>
+        <div class="meta">Duraciones<br>en bandas</div>
+      </div>
+      <div class="principle">
+        <div class="n">— 04</div>
+        <div><h3>El italic llega <span class="it">después.</span></h3><p>La palabra en cursiva del titular entra con un beat adicional respecto al resto. Mismo gesto que en lectura humana: el énfasis ocurre milisegundos después del enunciado.</p></div>
+        <div class="meta">Detalle<br>tipográfico</div>
+      </div>
+      <div class="principle">
+        <div class="n">— 05</div>
+        <div><h3>Honra el <span class="it">silencio.</span></h3><p>Toda animación respeta @media (prefers-reduced-motion: reduce). Quien necesita silencio visual lo recibe sin perder funcionalidad.</p></div>
+        <div class="meta">Accesibilidad<br>obligatoria</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOKEN TABLE -->
+<section class="tokens" id="tokens">
+  <div class="container">
+    <div class="section-header">
+      <div class="marker">— 02</div>
+      <div>
+        <h2>Tokens de <span class="it">motion.</span></h2>
+        <div class="sub">Duraciones, easings y delays definidos como variables CSS. Mismo nombre en código y en Figma.</div>
+      </div>
+      <div class="tag">Reference<br>card</div>
+    </div>
+    <table class="token-table">
+      <thead><tr><th>Token</th><th>Valor</th><th>Curva</th><th>Uso</th></tr></thead>
+      <tbody>
+        <tr><td class="name">--d-instant</td><td class="val">120ms</td><td class="val">linear</td><td class="fr">Cambios de color en focus inmediato</td></tr>
+        <tr><td class="name">--d-fast</td><td class="val">200ms</td><td class="val">ease-out</td><td class="fr">Hover de botones, toggles</td></tr>
+        <tr><td class="name">--d-base</td><td class="val">400ms</td><td class="val">ease-out</td><td class="fr">Reveals cortos, fades, transforms</td></tr>
+        <tr><td class="name">--d-slow</td><td class="val">800ms</td><td class="val">ease-out</td><td class="fr">Hero entry, masked reveal por palabra</td></tr>
+        <tr><td class="name">--d-narrative</td><td class="val">1600ms</td><td class="val">ease-out</td><td class="fr">Counter animation, narrativas largas</td></tr>
+        <tr><td class="name">--ease-out</td><td class="val">cubic-bezier(.2,.8,.2,1)</td><td><span class="curve-preview"><svg viewBox="0 0 60 32"><path d="M0,32 C12,32 12,0 60,0" stroke="#0a0a0a" stroke-width="1.5" fill="none"/></svg></span>Default · humano</td><td class="fr">Default para todo lo no específico</td></tr>
+        <tr><td class="name">--ease-curtain</td><td class="val">cubic-bezier(.7,0,.3,1)</td><td><span class="curve-preview"><svg viewBox="0 0 60 32"><path d="M0,32 C42,32 18,0 60,0" stroke="#0a0a0a" stroke-width="1.5" fill="none"/></svg></span>Cortina · simétrico</td><td class="fr">Page transitions, button fills</td></tr>
+        <tr><td class="name">--ease-soft</td><td class="val">cubic-bezier(.32,.72,.32,1)</td><td><span class="curve-preview"><svg viewBox="0 0 60 32"><path d="M0,32 C19,32 19,0 60,0" stroke="#0a0a0a" stroke-width="1.5" fill="none"/></svg></span>Suave · sutil</td><td class="fr">Parallax, micro-interacciones</td></tr>
+        <tr><td class="name">--stagger-base</td><td class="val">80ms</td><td class="val">—</td><td class="fr">Delay entre elementos en cadena</td></tr>
+        <tr><td class="name">--stagger-narrative</td><td class="val">100-200ms</td><td class="val">—</td><td class="fr">Delay para reveals secuenciales (section header)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- DEMOS -->
+<section class="demos" id="demos">
+  <div class="container">
+    <div class="section-header">
+      <div class="marker">— 03</div>
+      <div>
+        <h2>Diez <span class="it">demostraciones.</span></h2>
+        <div class="sub">Cada bloque tiene un escenario en vivo, un código mínimo replicable y los tokens que usa. Cliquea "replay" para reiniciar la animación cuando aplique.</div>
+      </div>
+      <div class="tag">Demos<br>en vivo</div>
+    </div>
+
+    <!-- DEMO 01 -->
+    <div class="demo-card">
+      <div class="demo-num">— 01</div>
+      <div class="demo-body">
+        <div class="demo-header">
+          <div>
+            <div class="eyebrow">Hero entry · masked word reveal</div>
+            <h3 class="demo-title" style="margin-top:12px;">Cortina por <span class="it">palabra.</span></h3>
+          </div>
+          <div class="demo-info">
+            <span><b>Duración</b> 800ms</span>
+            <span><b>Curva</b> ease-out</span>
+            <span><b>Stagger</b> 60ms</span>
+          </div>
+        </div>
+        <div class="demo-desc">
+          Cada palabra entra desde abajo bajo una máscara invisible, en cadena. La cursiva (italic-late) lleva un delay adicional de 240ms — el énfasis siempre llega después.
+        </div>
+        <div class="demo-stage stage-01 reveal" data-stage="01">
+          <button class="demo-replay" data-target="01"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6h6M2 6V2M2 6l4-4M14 10h-6M14 10v4M14 10l-4 4"/></svg>Replay</button>
+          <div class="display">
+            <span class="word-mask"><span>Estrategia</span></span>
+            <span class="word-mask"><span>fiscal</span></span>
+            <span class="word-mask"><span>para</span></span>
+            <span class="word-mask"><span>los</span></span>
+            <span class="word-mask"><span>que</span></span>
+            <span class="word-mask"><span>piensan</span></span>
+            <span class="word-mask italic-late"><span><em class="it">a diez años.</em></span></span>
+          </div>
+          <p class="lede">Diecinueve años explicando por qué la decisión difícil se toma temprano, antes de que aparezca el problema.</p>
+        </div>
+        <pre class="demo-code"><span class="demo-code-label">CSS</span><span class="k">.word-mask</span> { <span class="k">overflow</span>: <span class="v">hidden</span>; <span class="k">display</span>: <span class="v">inline-block</span>; }
+<span class="k">.word-mask</span> > span { <span class="k">transform</span>: <span class="v">translateY</span>(<span class="s">110%</span>); }
+<span class="k">.reveal.play</span> .word-mask > span {
+  <span class="k">transform</span>: <span class="v">translateY</span>(<span class="s">0</span>);
+  <span class="k">transition</span>: <span class="v">transform var</span>(--d-slow) <span class="v">var</span>(--ease-out);
+}
+<span class="c">/* stagger via nth-child delays · italic-late = +240ms */</span></pre>
+      </div>
+    </div>
+
+    <!-- DEMO 02 -->
+    <div class="demo-card">
+      <div class="demo-num">— 02</div>
+      <div class="demo-body">
+        <div class="demo-header">
+          <div>
+            <div class="eyebrow">Section header · stagger reveal</div>
+            <h3 class="demo-title" style="margin-top:12px;">Encabezado en <span class="it">tres tiempos.</span></h3>
+          </div>
+          <div class="demo-info">
+            <span><b>Duración</b> 400ms</span>
+            <span><b>Curva</b> ease-out</span>
+            <span><b>Stagger</b> 100ms</span>
+          </div>
+        </div>
+        <div class="demo-desc">
+          El section header tripartito entra escalonado: primero el marker (— 03), luego el título, luego el subtítulo. Tres elementos, tres delays.
+        </div>
+        <div class="demo-stage stage-02" data-stage="02">
+          <button class="demo-replay" data-target="02"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6h6M2 6V2M2 6l4-4M14 10h-6M14 10v4M14 10l-4 4"/></svg>Replay</button>
+          <div class="stage-02-grid">
+            <div class="marker">— 04</div>
+            <div>
+              <h3>Cinco territorios donde la <span class="it">estrategia opera.</span></h3>
+              <div class="sub">No somos un despacho de impuestos. Trabajamos cinco frentes simultáneos.</div>
+            </div>
+            <div class="tag">Sección<br>editorial</div>
+          </div>
+        </div>
+        <pre class="demo-code"><span class="demo-code-label">CSS</span><span class="k">.section-header</span> > * { <span class="k">opacity</span>: <span class="s">0</span>; <span class="k">transform</span>: <span class="v">translateY</span>(<span class="s">20px</span>); }
+<span class="k">.section-header.in .marker</span>  { <span class="k">transition-delay</span>: <span class="s">0ms</span>; }
+<span class="k">.section-header.in h2</span>      { <span class="k">transition-delay</span>: <span class="s">100ms</span>; }
+<span class="k">.section-header.in .sub</span>    { <span class="k">transition-delay</span>: <span class="s">200ms</span>; }
+<span class="c">/* IntersectionObserver agrega .in cuando entra al viewport */</span></pre>
+      </div>
+    </div>
+
+    <!-- DEMO 03 -->
+    <div class="demo-card">
+      <div class="demo-num">— 03</div>
+      <div class="demo-body">
+        <div class="demo-header">
+          <div>
+            <div class="eyebrow">Scroll reveal · stagger horizontal</div>
+            <h3 class="demo-title" style="margin-top:12px;">Tarjetas en <span class="it">cadena.</span></h3>
+          </div>
+          <div class="demo-info">
+            <span><b>Duración</b> 400ms</span>
+            <span><b>Curva</b> ease-out</span>
+            <span><b>Stagger</b> 100ms</span>
+          </div>
+        </div>
+        <div class="demo-desc">
+          Cuando una grilla de tarjetas entra al viewport, aparecen una tras otra con delay creciente. Funciona en grids de 3 a 5 columnas.
+        </div>
+        <div class="demo-stage stage-03" data-stage="03">
+          <button class="demo-replay" data-target="03"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6h6M2 6V2M2 6l4-4M14 10h-6M14 10v4M14 10l-4 4"/></svg>Replay</button>
+          <div class="stage-03-grid">
+            <div class="stage-03-card"><div class="n">— 01</div><h4>Patrimonial<span class="it">.</span></h4><p>Estructura jurídica a 10–20 años. Fideicomisos.</p></div>
+            <div class="stage-03-card"><div class="n">— 02</div><h4>Sucesión<span class="it">.</span></h4><p>Protocolos de transición intergeneracional.</p></div>
+            <div class="stage-03-card"><div class="n">— 03</div><h4>Internacional<span class="it">.</span></h4><p>Activos cruzando fronteras anticipando jurisdicciones.</p></div>
+          </div>
+        </div>
+        <pre class="demo-code"><span class="demo-code-label">CSS + JS</span><span class="k">.card</span> { <span class="k">opacity</span>: <span class="s">0</span>; <span class="k">transform</span>: <span class="v">translateY</span>(<span class="s">20px</span>); }
+<span class="k">.grid.in .card</span>:nth-child(1) { <span class="k">transition-delay</span>: <span class="s">0ms</span>; }
+<span class="k">.grid.in .card</span>:nth-child(2) { <span class="k">transition-delay</span>: <span class="s">100ms</span>; }
+<span class="k">.grid.in .card</span>:nth-child(3) { <span class="k">transition-delay</span>: <span class="s">200ms</span>; }
+
+<span class="c">// JS — disparar al entrar al viewport</span>
+<span class="v">new</span> IntersectionObserver(<span class="k">es</span> => es.forEach(e => e.isIntersecting && e.target.classList.add(<span class="s">'in'</span>)), {<span class="k">threshold</span>: <span class="s">0.2</span>}).observe(grid);</pre>
+      </div>
+    </div>
+
+    <!-- DEMO 04 -->
+    <div class="demo-card">
+      <div class="demo-num">— 04</div>
+      <div class="demo-body">
+        <div class="demo-header">
+          <div>
+            <div class="eyebrow">Hover · button fill curtain</div>
+            <h3 class="demo-title" style="margin-top:12px;">Botón se <span class="it">llena.</span></h3>
+          </div>
+          <div class="demo-info">
+            <span><b>Duración</b> 400ms</span>
+            <span><b>Curva</b> ease-curtain</span>
+            <span><b>GPU</b> transform only</span>
+          </div>
+        </div>
+        <div class="demo-desc">
+          Una capa interna sube desde abajo y rellena el botón al hover. La flecha se desplaza 6px a la derecha. Texto cambia color en cadencia.
+        </div>
+        <div class="demo-stage stage-04">
+          <div class="btn-fill-group">
+            <a class="btn-fill" href="#"><span>Reservar lugar</span><span class="arrow">→</span></a>
+            <a class="btn-fill inverse" href="#"><span>Ver programa</span><span class="arrow">→</span></a>
+            <a class="btn-fill" href="#"><span>Hablemos</span><span class="arrow">→</span></a>
+          </div>
+        </div>
+        <pre class="demo-code"><span class="demo-code-label">CSS</span><span class="k">.btn-fill</span> { <span class="k">position</span>: <span class="v">relative</span>; <span class="k">overflow</span>: <span class="v">hidden</span>; }
+<span class="k">.btn-fill::before</span> {
+  <span class="k">content</span>: <span class="s">""</span>; <span class="k">position</span>: <span class="v">absolute</span>; <span class="k">inset</span>: <span class="s">0</span>;
+  <span class="k">background</span>: <span class="v">var</span>(--ink);
+  <span class="k">transform</span>: <span class="v">translateY</span>(<span class="s">101%</span>);
+  <span class="k">transition</span>: <span class="v">transform var</span>(--d-base) <span class="v">var</span>(--ease-curtain);
+}
+<span class="k">.btn-fill:hover::before</span> { <span class="k">transform</span>: <span class="v">translateY</span>(<span class="s">0</span>); }
+<span class="k">.btn-fill:hover .arrow</span> { <span class="k">transform</span>: <span class="v">translateX</span>(<span class="s">6px</span>); }</pre>
+      </div>
+    </div>
+
+    <!-- DEMO 05 -->
+    <div class="demo-card">
+      <div class="demo-num">— 05</div>
+      <div class="demo-body">
+        <div class="demo-header">
+          <div>
+            <div class="eyebrow">Hover · card lift</div>
+            <h3 class="demo-title" style="margin-top:12px;">Tarjeta <span class="it">respira.</span></h3>
+          </div>
+          <div class="demo-info">
+            <span><b>Duración</b> 400ms</span>
+            <span><b>Curva</b> ease-out</span>
+            <span><b>Cambios</b> 3 props</span>
+          </div>
+        </div>
+        <div class="demo-desc">
+          Al hover, la tarjeta sube 6px, el borde cambia a clay, la flecha en el footer se desplaza, y el meta uppercase también muta de muted a clay. Cambios coordinados, no aleatorios.
+        </div>
+        <div class="demo-stage stage-05">
+          <div class="stage-05-grid">
+            <div class="card-lift">
+              <div class="meta"><span>— Ensayo</span><span>14 · mayo</span></div>
+              <h4>Reforma 2026: la sucesión <span class="it">que viene.</span></h4>
+              <p>Análisis sereno de la propuesta de reforma al ISR sobre herencias.</p>
+              <div class="read"><span>Leer ensayo</span><span class="arrow">→</span></div>
+            </div>
+            <div class="card-lift">
+              <div class="meta"><span>— Caso</span><span>28 · abril</span></div>
+              <h4>Trinacional: una <span class="it">reestructura</span> en tres jurisdicciones.</h4>
+              <p>Cómo se ordenó el patrimonio de un empresario con operación en MX, ES y FL.</p>
+              <div class="read"><span>Leer caso</span><span class="arrow">→</span></div>
+            </div>
+          </div>
+        </div>
+        <pre class="demo-code"><span class="demo-code-label">CSS</span><span class="k">.card-lift</span> {
+  <span class="k">transition</span>:
+    <span class="v">transform var</span>(--d-base) <span class="v">var</span>(--ease-out),
+    <span class="v">border-color var</span>(--d-base) <span class="v">var</span>(--ease-out);
+}
+<span class="k">.card-lift:hover</span> {
+  <span class="k">transform</span>: <span class="v">translateY</span>(<span class="s">-6px</span>);
+  <span class="k">border-color</span>: <span class="v">var</span>(--accent);
+}
+<span class="k">.card-lift:hover .arrow</span>  { <span class="k">transform</span>: <span class="v">translateX</span>(<span class="s">6px</span>); }
+<span class="k">.card-lift:hover .meta</span>   { <span class="k">color</span>: <span class="v">var</span>(--accent); }</pre>
+      </div>
+    </div>
+
+    <!-- DEMO 06 -->
+    <div class="demo-card">
+      <div class="demo-num">— 06</div>
+      <div class="demo-body">
+        <div class="demo-header">
+          <div>
+            <div class="eyebrow">Sticky nav · compact on scroll</div>
+            <h3 class="demo-title" style="margin-top:12px;">Nav <span class="it">se condensa.</span></h3>
+          </div>
+          <div class="demo-info">
+            <span><b>Duración</b> 400ms</span>
+            <span><b>Curva</b> ease-out</span>
+            <span><b>Trigger</b> scroll &gt; 80px</span>
+          </div>
+        </div>
+        <div class="demo-desc">
+          Al hacer scroll dentro del bloque, el nav reduce su padding vertical (de 18px a 8px) y la marca tipográfica se reduce sutilmente (18px → 13px). El fondo se opaca un poco más.
+        </div>
+        <div class="demo-stage stage-06" data-stage="06">
+          <div class="stage-06-nav" id="stage06nav">
+            <div class="b">Diego <span class="it">Díaz.</span></div>
+            <div class="items"><a>Diego</a><a>Academia</a><a>Eventos</a><a>Blog</a></div>
+            <a class="cta">Conferencia →</a>
+          </div>
+          <div class="stage-06-scroll" id="stage06scroll">
+            <p>"Las decisiones fiscales difíciles se toman <span class="it">temprano,</span> no a media noche. La estructura más elegante es la que nadie tuvo que defender de urgencia."</p>
+            <p>Haz scroll dentro de este bloque para ver cómo se condensa la barra superior.</p>
+            <p>El cambio de padding y tamaño tipográfico es sutil — entre 18px y 8px en padding, entre 18px y 13px en la marca. Suficiente para registrar que la página se desplazó sin gritar.</p>
+            <p>Es importante que el cambio ocurra en una sola transición coordinada, no en saltos. Por eso ambos elementos comparten <code>cubic-bezier(.2,.8,.2,1)</code> de 400ms.</p>
+            <p>Cuando regresas arriba del bloque, el nav vuelve a su estado expandido con la misma curva. La simetría temporal es parte de la sensación de "todo en su lugar".</p>
+          </div>
+          <div class="stage-06-hint">↑ Haz scroll dentro</div>
+        </div>
+        <pre class="demo-code"><span class="demo-code-label">JS + CSS</span><span class="c">// JS</span>
+scrollEl.addEventListener(<span class="s">'scroll'</span>, () => {
+  nav.classList.toggle(<span class="s">'compact'</span>, scrollEl.scrollTop &gt; <span class="s">80</span>);
+});
+
+<span class="c">/* CSS */</span>
+<span class="k">.nav</span>           { <span class="k">padding</span>: <span class="s">18px 32px</span>; <span class="k">transition</span>: <span class="s">padding 400ms var</span>(--ease-out); }
+<span class="k">.nav.compact</span>   { <span class="k">padding</span>: <span class="s">8px 32px</span>; }
+<span class="k">.nav .brand</span>     { <span class="k">font-size</span>: <span class="s">18px</span>; <span class="k">transition</span>: <span class="s">font-size 400ms var</span>(--ease-out); }
+<span class="k">.nav.compact .brand</span> { <span class="k">font-size</span>: <span class="s">13px</span>; }</pre>
+      </div>
+    </div>
+
+    <!-- DEMO 07 -->
+    <div class="demo-card">
+      <div class="demo-num">— 07</div>
+      <div class="demo-body">
+        <div class="demo-header">
+          <div>
+            <div class="eyebrow">Counter · narrative number animation</div>
+            <h3 class="demo-title" style="margin-top:12px;">Cifras que <span class="it">cuentan.</span></h3>
+          </div>
+          <div class="demo-info">
+            <span><b>Duración</b> 1600ms</span>
+            <span><b>Curva</b> ease-out</span>
+            <span><b>Trigger</b> on view</span>
+          </div>
+        </div>
+        <div class="demo-desc">
+          Los números de la sección de trayectoria cuentan de 0 hasta su valor cuando entran al viewport. Es la única animación que dura más de un segundo — el peso narrativo lo justifica.
+        </div>
+        <div class="demo-stage stage-07" data-stage="07">
+          <button class="demo-replay" data-target="07"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6h6M2 6V2M2 6l4-4M14 10h-6M14 10v4M14 10l-4 4"/></svg>Replay</button>
+          <div class="stage-07-stats">
+            <div class="counter-stat">
+              <div class="num"><span data-target="340" data-prefix="+">0</span></div>
+              <div class="lbl">Empresarios atendidos<br>en programa activo</div>
+            </div>
+            <div class="counter-stat">
+              <div class="num"><span data-target="19">0</span> <span class="un">años</span></div>
+              <div class="lbl">De ejercicio continuo<br>en estrategia fiscal</div>
+            </div>
+            <div class="counter-stat">
+              <div class="num"><span data-target="5">0</span> <span class="un">países</span></div>
+              <div class="lbl">Jurisdicciones donde<br>estructuramos activos</div>
+            </div>
+          </div>
+        </div>
+        <pre class="demo-code"><span class="demo-code-label">JS</span><span class="k">function</span> <span class="v">countUp</span>(el, target, duration = <span class="s">1600</span>) {
+  <span class="k">const</span> start = performance.now();
+  <span class="k">const</span> ease = t =&gt; <span class="s">1</span> - Math.pow(<span class="s">1</span> - t, <span class="s">3</span>);  <span class="c">// ease-out cubic</span>
+  <span class="k">const</span> tick = (now) =&gt; {
+    <span class="k">const</span> p = Math.min(<span class="s">1</span>, (now - start) / duration);
+    el.textContent = Math.round(target * ease(p));
+    p &lt; <span class="s">1</span> &amp;&amp; requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}</pre>
+      </div>
+    </div>
+
+    <!-- DEMO 08 -->
+    <div class="demo-card">
+      <div class="demo-num">— 08</div>
+      <div class="demo-body">
+        <div class="demo-header">
+          <div>
+            <div class="eyebrow">Page transition · paper curtain</div>
+            <h3 class="demo-title" style="margin-top:12px;">Cortina de <span class="it">papel.</span></h3>
+          </div>
+          <div class="demo-info">
+            <span><b>Duración</b> 700ms</span>
+            <span><b>Curva</b> ease-curtain</span>
+            <span><b>Total</b> 1400ms (ida+vuelta)</span>
+          </div>
+        </div>
+        <div class="demo-desc">
+          Al navegar entre páginas, una cortina negra (con noise) baja desde arriba en 700ms, mantiene el nombre de la siguiente sección por un beat, y sube desde abajo. Crea continuidad sin fade brusco.
+        </div>
+        <div class="demo-stage stage-08">
+          <button class="demo-replay" data-target="08"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6h6M2 6V2M2 6l4-4M14 10h-6M14 10v4M14 10l-4 4"/></svg>Replay</button>
+          <div class="curtain-stage">
+            <div class="curtain-content">
+              <span class="sm">— Página actual · Home</span>
+              <span>Diego <span class="it">Díaz.</span></span>
+            </div>
+            <div class="paper-curtain" id="curtain08">
+              <div class="label">Cargando<span class="it">.</span></div>
+            </div>
+          </div>
+        </div>
+        <pre class="demo-code"><span class="demo-code-label">CSS</span><span class="k">.curtain</span> { <span class="k">position</span>: <span class="v">fixed</span>; <span class="k">inset</span>: <span class="s">0</span>; <span class="k">background</span>: <span class="v">var</span>(--ink); <span class="k">transform</span>: <span class="v">scaleY</span>(<span class="s">0</span>); }
+<span class="k">.curtain.in</span>  { <span class="k">animation</span>: <span class="v">curtainIn</span>  <span class="s">700ms var</span>(--ease-curtain) <span class="v">forwards</span>; }
+<span class="k">.curtain.out</span> { <span class="k">animation</span>: <span class="v">curtainOut</span> <span class="s">700ms var</span>(--ease-curtain) <span class="v">forwards</span>; }
+
+<span class="k">@keyframes</span> <span class="v">curtainIn</span>  { <span class="s">0%</span> { <span class="k">transform</span>: <span class="v">scaleY</span>(<span class="s">0</span>); <span class="k">transform-origin</span>: <span class="v">top</span>; }    <span class="s">100%</span> { <span class="k">transform</span>: <span class="v">scaleY</span>(<span class="s">1</span>); } }
+<span class="k">@keyframes</span> <span class="v">curtainOut</span> { <span class="s">0%</span> { <span class="k">transform</span>: <span class="v">scaleY</span>(<span class="s">1</span>); <span class="k">transform-origin</span>: <span class="v">bottom</span>; } <span class="s">100%</span> { <span class="k">transform</span>: <span class="v">scaleY</span>(<span class="s">0</span>); } }</pre>
+      </div>
+    </div>
+
+    <!-- DEMO 09 -->
+    <div class="demo-card">
+      <div class="demo-num">— 09</div>
+      <div class="demo-body">
+        <div class="demo-header">
+          <div>
+            <div class="eyebrow">Kinetic typography · underline grow</div>
+            <h3 class="demo-title" style="margin-top:12px;">Tipografía <span class="it">cinética.</span></h3>
+          </div>
+          <div class="demo-info">
+            <span><b>Duración</b> 500ms</span>
+            <span><b>Curva</b> ease-out</span>
+            <span><b>Origen</b> left</span>
+          </div>
+        </div>
+        <div class="demo-desc">
+          Los links editoriales del sitio crecen su subrayado de izquierda a derecha en hover, y la palabra en cursiva muta de color a clay. Marquee horizontal lento como bonus para eyebrows ticker.
+        </div>
+        <div class="demo-stage stage-09">
+          <a class="link-grow"><span>Conferencia magistral <span class="kinetic-italic it">2026.</span></span></a>
+          <a class="link-grow"><span>Programa académico <span class="kinetic-italic it">Díaz Lara.</span></span></a>
+          <a class="link-grow"><span>Dossier editorial <span class="kinetic-italic it">completo.</span></span></a>
+          <div class="marquee">
+            <div class="marquee-track">
+              <span><strong>+340</strong> empresarios</span><span>·</span>
+              <span><strong>19 años</strong> de ejercicio</span><span>·</span>
+              <span><strong>5 jurisdicciones</strong></span><span>·</span>
+              <span><strong>SLA &lt;24 hrs</strong></span><span>·</span>
+              <span><strong>+340</strong> empresarios</span><span>·</span>
+              <span><strong>19 años</strong> de ejercicio</span><span>·</span>
+              <span><strong>5 jurisdicciones</strong></span><span>·</span>
+              <span><strong>SLA &lt;24 hrs</strong></span><span>·</span>
+            </div>
+          </div>
+        </div>
+        <pre class="demo-code"><span class="demo-code-label">CSS</span><span class="k">.link-grow</span> { <span class="k">position</span>: <span class="v">relative</span>; }
+<span class="k">.link-grow::after</span> {
+  <span class="k">content</span>: <span class="s">""</span>; <span class="k">position</span>: <span class="v">absolute</span>; <span class="k">left</span>: <span class="s">0</span>; <span class="k">bottom</span>: <span class="s">0</span>;
+  <span class="k">width</span>: <span class="s">100%</span>; <span class="k">height</span>: <span class="s">1px</span>; <span class="k">background</span>: <span class="v">currentColor</span>;
+  <span class="k">transform</span>: <span class="v">scaleX</span>(<span class="s">0</span>); <span class="k">transform-origin</span>: <span class="v">left</span>;
+  <span class="k">transition</span>: <span class="v">transform</span> <span class="s">500ms var</span>(--ease-out);
+}
+<span class="k">.link-grow:hover::after</span> { <span class="k">transform</span>: <span class="v">scaleX</span>(<span class="s">1</span>); }
+<span class="k">.link-grow:hover .kinetic-italic</span> { <span class="k">color</span>: <span class="v">var</span>(--accent); }</pre>
+      </div>
+    </div>
+
+    <!-- DEMO 10 -->
+    <div class="demo-card">
+      <div class="demo-num">— 10</div>
+      <div class="demo-body">
+        <div class="demo-header">
+          <div>
+            <div class="eyebrow">Form · focus underline + placeholder fade</div>
+            <h3 class="demo-title" style="margin-top:12px;">Forma <span class="it">se enciende.</span></h3>
+          </div>
+          <div class="demo-info">
+            <span><b>Duración</b> 500ms</span>
+            <span><b>Curva</b> ease-out</span>
+            <span><b>Trigger</b> focus</span>
+          </div>
+        </div>
+        <div class="demo-desc">
+          Al hacer focus en un input, el underline negro crece de izquierda a derecha sobre la línea base. El placeholder italic se desliza 8px y se desvanece. El label superior cambia de muted a ink.
+        </div>
+        <div class="demo-stage stage-10">
+          <div class="form-demo">
+            <div class="field">
+              <label>— Nombre completo</label>
+              <div class="field-line"><input type="text" placeholder="María González"></div>
+            </div>
+            <div class="field">
+              <label>— Correo</label>
+              <div class="field-line"><input type="email" placeholder="maria@empresa.mx"></div>
+            </div>
+          </div>
+        </div>
+        <pre class="demo-code"><span class="demo-code-label">CSS</span><span class="k">.field-line::after</span>  { <span class="c">/* línea base muted */</span> <span class="k">height</span>: <span class="s">1px</span>; <span class="k">background</span>: <span class="v">var</span>(--line-strong); }
+<span class="k">.field-line::before</span> { <span class="c">/* línea activa negra */</span>
+  <span class="k">height</span>: <span class="s">1px</span>; <span class="k">background</span>: <span class="v">var</span>(--ink);
+  <span class="k">transform</span>: <span class="v">scaleX</span>(<span class="s">0</span>); <span class="k">transform-origin</span>: <span class="v">left</span>;
+  <span class="k">transition</span>: <span class="v">transform</span> <span class="s">500ms var</span>(--ease-out);
+}
+<span class="k">.field-line:focus-within::before</span> { <span class="k">transform</span>: <span class="v">scaleX</span>(<span class="s">1</span>); }
+<span class="k">.field-line:focus-within input::placeholder</span> { <span class="k">transform</span>: <span class="v">translateX</span>(<span class="s">8px</span>); <span class="k">opacity</span>: <span class="s">0.4</span>; }</pre>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- REDUCED MOTION -->
+<section id="reduced">
+  <div class="container">
+    <div class="reduced">
+      <div>
+        <div class="eyebrow" style="margin-bottom:14px;">— A11y · prefers-reduced-motion</div>
+        <h3>El sistema honra el <span class="it">silencio.</span></h3>
+        <p>Toda animación respeta la preferencia del sistema operativo del usuario. Si tiene "reducir movimiento" activado, todas las transiciones se vuelven instantáneas y los reveals se sustituyen por fades de 10ms. La funcionalidad no se pierde.</p>
+      </div>
+      <code>@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}</code>
+    </div>
+  </div>
+</section>
+
+<!-- REFERENCES -->
+<section class="refs" id="refs">
+  <div class="container">
+    <div class="section-header">
+      <div class="marker">— 04</div>
+      <div>
+        <h2>Linaje y <span class="it">referencias.</span></h2>
+        <div class="sub">El sistema dialoga con la tradición editorial premium del web 2024-2026. No copia: traduce los gestos al lenguaje del sitio.</div>
+      </div>
+      <div class="tag">Linaje<br>editorial</div>
+    </div>
+    <div class="refs-grid">
+      <div class="ref">
+        <div class="ek">— Awwwards · 2025-2026</div>
+        <h4>Reveals masked <span class="it">por palabra</span> en hero.</h4>
+        <p>El patrón de cortina invisible que sube por debajo y revela palabra a palabra se consolidó como gesto premium de hero en sitios de Site of the Day 2025-26. Aplicado aquí en la animación 01 con cubic-bezier(.2,.8,.2,1) y stagger de 60ms.</p>
+        <div class="nt">Aplicado en · Demo 01</div>
+      </div>
+      <div class="ref">
+        <div class="ek">— Codrops · 2026</div>
+        <h4>Mask transitions con <span class="it">GSAP ScrollTrigger.</span></h4>
+        <p>Los reveals con SVG mask sincronizados al scroll son la técnica de referencia 2026. El sitio lo implementa con IntersectionObserver vanilla — sin GSAP — manteniendo la calidad visual.</p>
+        <div class="nt">Aplicado en · Demos 02, 03, 07</div>
+      </div>
+      <div class="ref">
+        <div class="ek">— Lenis · industria</div>
+        <h4>Smooth scroll como <span class="it">norma actual.</span></h4>
+        <p>Lenis se consolidó como estándar de smooth scrolling en sitios premium. Para diegodiaz.mx evaluamos integrarlo cuando se construya el sitio real — el demo usa scroll nativo con scroll-behavior:smooth para simplicidad.</p>
+        <div class="nt">Recomendación · producción</div>
+      </div>
+      <div class="ref">
+        <div class="ek">— Editorial print · histórico</div>
+        <h4>Italic como <span class="it">pausa retórica.</span></h4>
+        <p>La regla "el italic llega después" viene de la tradición tipográfica de El País / Reforma / NYT: la palabra en cursiva del título lleva un beat de respiración. Aquí se traduce a 240ms de delay adicional sobre el último reveal.</p>
+        <div class="nt">Aplicado en · Demos 01, 09</div>
+      </div>
+      <div class="ref">
+        <div class="ek">— GPU best practices</div>
+        <h4>Solo transform <span class="it">y opacity.</span></h4>
+        <p>Todas las animaciones se restringen a propiedades aceleradas por GPU: transform, opacity, filter. Cero animación de width, height, top, left. Resultado: 60fps en cualquier laptop de últimos 6 años.</p>
+        <div class="nt">Aplicado en · Todos los demos</div>
+      </div>
+      <div class="ref">
+        <div class="ek">— Apple / Stripe / Linear</div>
+        <h4>Curva <span class="it">.2, .8, .2, 1.</span></h4>
+        <p>El cubic-bezier(.2,.8,.2,1) es la curva de transición pseudo-default de Apple/Stripe/Linear. Aceleración rápida, desaceleración suave. Lo adoptamos como --ease-out default del sistema.</p>
+        <div class="nt">Aplicado en · Todos los demos</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="foot">
+  <div class="container">
+    <div class="foot-mega">Que <span class="it">se mueva.</span></div>
+    <div class="foot-meta">
+      <div><strong>— Documento</strong><span>Sistema de motion · v2.1<br>Anexo del manual maestro</span></div>
+      <div><strong>— Demos</strong><span>10 animaciones en vivo<br>+ 1 marquee bonus</span></div>
+      <div><strong>— Tokens</strong><span>5 duraciones, 3 easings<br>2 staggers</span></div>
+      <div><strong>— Siguiente paso</strong><span>Integrar con la maqueta Figma<br>como prototype interactivo</span></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ========== UTILS ==========
+const $ = (sel, el=document) => el.querySelector(sel);
+const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
+const prm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ========== HERO ENTRY ==========
+window.addEventListener('load', () => {
+  setTimeout(() => $('#hero-reveal').classList.add('play'), 200);
+});
+
+// ========== INTERSECTION OBSERVER ==========
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('in');
+      if (e.target.matches('.stage-01, .stage-02, .stage-03, .stage-07')) {
+        e.target.classList.add('play');
+      }
+      io.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.18 });
+
+$$('.section-header, .principles, .stage-01, .stage-02, .stage-03, .stage-07').forEach(el => io.observe(el));
+
+// ========== REPLAY BUTTONS ==========
+$$('.demo-replay').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.target;
+    const stage = $('.stage-' + target);
+    if (!stage) return;
+
+    if (target === '08') {
+      // Curtain replay
+      const c = $('#curtain08');
+      c.classList.remove('in', 'out');
+      void c.offsetWidth;
+      c.classList.add('in');
+      setTimeout(() => {
+        c.classList.remove('in');
+        c.classList.add('out');
+      }, 1100);
+      return;
+    }
+
+    stage.classList.remove('play');
+    void stage.offsetWidth;
+    stage.classList.add('play');
+
+    if (target === '07') {
+      animateCounters(stage);
+    }
+  });
+});
+
+// ========== COUNTER ANIMATION ==========
+function animateCounters(scope = document) {
+  if (prm) {
+    $$('[data-target]', scope).forEach(el => {
+      const prefix = el.dataset.prefix || '';
+      el.textContent = prefix + el.dataset.target;
+    });
+    return;
+  }
+  $$('[data-target]', scope).forEach(el => {
+    const target = parseInt(el.dataset.target, 10);
+    const prefix = el.dataset.prefix || '';
+    const duration = 1600;
+    const start = performance.now();
+    const ease = t => 1 - Math.pow(1 - t, 3);
+    const tick = (now) => {
+      const p = Math.min(1, (now - start) / duration);
+      el.textContent = prefix + Math.round(target * ease(p));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
+// Run counters when stage-07 enters
+const counterObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      animateCounters(e.target);
+      counterObserver.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.4 });
+const s07 = $('.stage-07');
+if (s07) counterObserver.observe(s07);
+
+// ========== STAGE 06 — NAV COMPACT ON SCROLL ==========
+const scrollEl = $('#stage06scroll');
+const nav06 = $('#stage06nav');
+if (scrollEl && nav06) {
+  scrollEl.addEventListener('scroll', () => {
+    nav06.classList.toggle('compact', scrollEl.scrollTop > 60);
+  });
+}
+
+// ========== STAGE 08 — CURTAIN auto on view ==========
+const s08 = $('#curtain08');
+if (s08) {
+  const c08o = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        s08.classList.add('in');
+        setTimeout(() => {
+          s08.classList.remove('in');
+          s08.classList.add('out');
+        }, 1100);
+        c08o.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.4 });
+  c08o.observe(s08);
+}
+
+// ========== AUTO-PLAY when stage enters ==========
+$$('.stage-01, .stage-02, .stage-03').forEach(stage => {
+  const o = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        stage.classList.add('play');
+        o.unobserve(stage);
+      }
+    });
+  }, { threshold: 0.3 });
+  o.observe(stage);
+});
+</script>
+
+</body>
+</html>

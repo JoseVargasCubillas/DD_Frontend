@@ -21,7 +21,7 @@ export default function PricingCard({ plan, price, currency = 'MXN', period = '/
       <div>
         <h3 className="text-xl font-bold text-white capitalize">{plan}</h3>
         <div className="flex items-end gap-1 mt-2">
-          <span className="text-4xl font-heading font-black text-brand-400">
+          <span className="text-4xl font-heading font-bold text-brand-400">
             ${price.toLocaleString('es-MX')}
           </span>
           <span className="text-gray-400 mb-1">{currency}{period}</span>

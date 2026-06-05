@@ -1,5 +1,5 @@
 import { useCartStore } from '@store/cartStore';
-import type { OrderItem } from '@types/index';
+import type { OrderItem } from '@t/index';
 
 export const useCart = () => {
   const { items, addItem, removeItem, clear, total } = useCartStore();

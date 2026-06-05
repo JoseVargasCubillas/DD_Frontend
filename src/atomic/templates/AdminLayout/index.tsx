@@ -13,7 +13,7 @@ export default function AdminLayout() {
     <div className="min-h-screen bg-dark-900 flex">
       <aside className="w-56 bg-dark-800 border-r border-dark-600 flex flex-col">
         <div className="px-5 py-5 border-b border-dark-600">
-          <Link to="/" className="font-heading font-black text-xl text-white">Diego<span className="text-brand-500">Díaz</span></Link>
+          <Link to="/" className="font-heading font-bold text-xl text-white">Diego<span className="text-brand-500">Díaz</span></Link>
           <p className="text-xs text-gray-500 mt-0.5">Panel Admin</p>
         </div>
         <nav className="flex flex-col gap-1 p-3 flex-1">

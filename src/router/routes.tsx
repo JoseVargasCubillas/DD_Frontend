@@ -1,3 +1,4 @@
+import { lazy } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import MainLayout from '@templates/MainLayout';
 import AuthLayout from '@templates/AuthLayout';
@@ -6,29 +7,29 @@ import AdminLayout from '@templates/AdminLayout';
 import ProtectedRoute from './ProtectedRoute';
 import AdminRoute from './AdminRoute';
 
-import Home from '@pages/Home';
-import About from '@pages/About';
-import CourseList from '@pages/Courses/CourseList';
-import CourseDetail from '@pages/Courses/CourseDetail';
-import CourseLesson from '@pages/Courses/CourseLesson';
-import Events from '@pages/Events';
-import EventDetail from '@pages/Events/EventDetail';
-import BlogList from '@pages/Blog/BlogList';
-import BlogPost from '@pages/Blog/BlogPost';
-import Academy from '@pages/Academy';
-import Resources from '@pages/Resources';
-import Contact from '@pages/Contact';
-import Login from '@pages/Auth/Login';
-import Register from '@pages/Auth/Register';
-import UserDashboard from '@pages/Dashboard/UserDashboard';
-import MyCourses from '@pages/Dashboard/MyCourses';
-import Profile from '@pages/Dashboard/Profile';
-import Checkout from '@pages/Checkout';
-import AdminDashboard from '@pages/Admin/AdminDashboard';
-import ManageCourses from '@pages/Admin/ManageCourses';
-import ManageUsers from '@pages/Admin/ManageUsers';
-import ManageEvents from '@pages/Admin/ManageEvents';
-import ManageBlog from '@pages/Admin/ManageBlog';
+const Home           = lazy(() => import('@pages/Home'));
+const About          = lazy(() => import('@pages/About'));
+const CourseList     = lazy(() => import('@pages/Courses/CourseList'));
+const CourseDetail   = lazy(() => import('@pages/Courses/CourseDetail'));
+const CourseLesson   = lazy(() => import('@pages/Courses/CourseLesson'));
+const Events         = lazy(() => import('@pages/Events'));
+const EventDetail    = lazy(() => import('@pages/Events/EventDetail'));
+const BlogList       = lazy(() => import('@pages/Blog/BlogList'));
+const BlogPost       = lazy(() => import('@pages/Blog/BlogPost'));
+const Academy        = lazy(() => import('@pages/Academy'));
+const Resources      = lazy(() => import('@pages/Resources'));
+const Contact        = lazy(() => import('@pages/Contact'));
+const Login          = lazy(() => import('@pages/Auth/Login'));
+const Register       = lazy(() => import('@pages/Auth/Register'));
+const UserDashboard  = lazy(() => import('@pages/Dashboard/UserDashboard'));
+const MyCourses      = lazy(() => import('@pages/Dashboard/MyCourses'));
+const Profile        = lazy(() => import('@pages/Dashboard/Profile'));
+const Checkout       = lazy(() => import('@pages/Checkout'));
+const AdminDashboard = lazy(() => import('@pages/Admin/AdminDashboard'));
+const ManageCourses  = lazy(() => import('@pages/Admin/ManageCourses'));
+const ManageUsers    = lazy(() => import('@pages/Admin/ManageUsers'));
+const ManageEvents   = lazy(() => import('@pages/Admin/ManageEvents'));
+const ManageBlog     = lazy(() => import('@pages/Admin/ManageBlog'));
 
 export const router = createBrowserRouter([
   {

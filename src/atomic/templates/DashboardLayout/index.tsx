@@ -14,7 +14,7 @@ export default function DashboardLayout() {
   return (
     <div className="min-h-screen bg-dark-900 flex flex-col">
       <header className="bg-dark-800 border-b border-dark-600 px-6 py-4 flex items-center justify-between">
-        <Link to="/" className="font-heading font-black text-xl text-white">Diego<span className="text-brand-500">Díaz</span></Link>
+        <Link to="/" className="font-heading font-bold text-xl text-white">Diego<span className="text-brand-500">Díaz</span></Link>
         {user && <div className="flex items-center gap-2"><Avatar name={user.name} size="sm" /><span className="text-sm text-gray-300 hidden sm:block">{user.name}</span></div>}
       </header>
       <div className="flex flex-1 container-app py-8 gap-8">

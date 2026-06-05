@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { Event } from '@types/index';
+import type { Event } from '@t/index';
 import { formatDate } from '@utils/formatters';
 
 interface EventCardProps { event: Event }

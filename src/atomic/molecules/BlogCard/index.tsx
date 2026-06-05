@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import Badge from '@atoms/Badge';
-import type { BlogPost } from '@types/index';
+import type { BlogPost } from '@t/index';
 import { formatDate } from '@utils/formatters';
 
 interface BlogCardProps { post: BlogPost }
