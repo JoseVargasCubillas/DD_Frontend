@@ -1,5 +1,5 @@
 import { client } from './client';
-import type { Course, Lesson, PaginatedResponse, ApiResponse } from '@types/index';
+import type { Course, Lesson, PaginatedResponse, ApiResponse } from '@t/index';
 
 interface CourseParams { page?: number; limit?: number; category?: string; status?: string; search?: string }
 

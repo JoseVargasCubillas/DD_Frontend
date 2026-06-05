@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import * as coursesApi from '@api/courses.api';
 
-interface UseCourseParams { page?: number; limit?: number; category?: string; search?: string }
+interface UseCourseParams { page?: number; limit?: number; category?: string; status?: string; search?: string }
 
 export const useCourses = (params?: UseCourseParams) =>
   useQuery({

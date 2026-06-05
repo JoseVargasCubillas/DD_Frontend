@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useUIStore } from '@store/uiStore';
 import logoDD from '../../../../assets/012_home_main logo_DD.png';
@@ -7,74 +8,99 @@ const NAV_LINKS = [
   { to: '/eventos',  label: 'Eventos' },
   { to: '/academia', label: 'Academia' },
   { to: '/recursos', label: 'Recursos' },
-  { to: '/contacto', label: 'Diaz Lara ↓' },
+  { to: 'https://diazlara.mx/', label: 'Díaz Lara ↗', external: true },
 ];
 
 export default function Navbar() {
   const { isMobileMenuOpen, toggleMobileMenu, closeMobileMenu } = useUIStore();
+  const [compact, setCompact] = useState(false);
+
+  // Demo 06 — sticky nav compact on scroll
+  useEffect(() => {
+    const onScroll = () => setCompact(window.scrollY > 60);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
     <>
-      {/* ── Barra superior negra ─────────────────── */}
-      <div className="bg-ink-900 py-2.5">
+      {/* ── Barra superior cream ─────────────────── */}
+      <div className="hidden md:block bg-cream-200 border-b border-cream-400 py-2">
         <div className="container-app flex items-center justify-between">
-          <div className="flex items-center gap-6 text-[10px] uppercase tracking-[0.25em] text-ink-300">
-            <span className="text-white">Estrategia Fiscal</span>
-            <span className="text-ink-500">·</span>
+          <div className="flex items-center gap-5 text-[11px] uppercase tracking-[0.25em] text-ink-500">
+            <span>Estrategia Fiscal</span>
+            <span className="text-ink-300">·</span>
             <span>Próximo Evento</span>
-            <span className="text-ink-500">·</span>
-            <span>15-Junio</span>
-            <span className="text-ink-500">·</span>
+            <span className="text-ink-300">·</span>
+            <span>15 Junio</span>
+            <span className="text-ink-300">·</span>
             <span>CDMX</span>
           </div>
-          <div className="flex items-center gap-6 text-[10px] uppercase tracking-[0.25em] text-ink-300">
+          <div className="flex items-center gap-5 text-[11px] uppercase tracking-[0.25em] text-ink-500">
             <span>ES / EN</span>
-            <Link
-              to="/academia"
-              className="hover:text-white transition-colors"
-            >
+            <Link to="/academia" className="hover:text-ink-900 transition-colors">
               Acceder a Academia →
             </Link>
           </div>
         </div>
       </div>
 
-      {/* ── Navbar principal (cream) ──────────────── */}
-      <nav className="bg-cream-200 border-b border-cream-400 sticky top-0 z-50">
-        <div className="container-app flex items-center justify-between h-[72px]">
-
+      {/* ── Navbar principal — Demo 06 compact ────── */}
+      <nav className="bg-cream-200 border-b border-cream-400 sticky top-0 z-40">
+        <div
+          className={`container-app flex items-center justify-between transition-all duration-[400ms] ease-[cubic-bezier(.2,.8,.2,1)] ${
+            compact ? 'h-[48px]' : 'h-[64px] lg:h-[72px]'
+          }`}
+        >
           {/* Logo */}
           <Link to="/" onClick={closeMobileMenu} className="flex-shrink-0">
-            <img src={logoDD} alt="Diego Díaz" className="h-12 object-contain" />
+            <img
+              src={logoDD}
+              alt="Diego Díaz"
+              className={`object-contain transition-all duration-[400ms] ease-[cubic-bezier(.2,.8,.2,1)] ${
+                compact ? 'h-8' : 'h-10 lg:h-12'
+              }`}
+            />
           </Link>
 
-          {/* Nav links (desktop) */}
+          {/* Nav links (desktop) — Demo 09 underline grow */}
           <ul className="hidden lg:flex items-center gap-8">
-            {NAV_LINKS.map(({ to, label }) => (
+            {NAV_LINKS.map(({ to, label, external }) => (
               <li key={to}>
-                <NavLink
-                  to={to}
-                  className={({ isActive }) =>
-                    `text-sm font-sans transition-colors ${
-                      isActive
-                        ? 'text-ink-900 font-semibold'
-                        : 'text-ink-500 hover:text-ink-900'
-                    }`
-                  }
-                >
-                  {label}
-                </NavLink>
+                {external ? (
+                  <a
+                    href={to}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-sans text-ink-500 hover:text-ink-900 link-grow transition-colors"
+                  >
+                    {label}
+                  </a>
+                ) : (
+                  <NavLink
+                    to={to}
+                    className={({ isActive }) =>
+                      `text-sm font-sans link-grow transition-colors ${
+                        isActive
+                          ? 'text-ink-900 font-semibold'
+                          : 'text-ink-500 hover:text-ink-900'
+                      }`
+                    }
+                  >
+                    {label}
+                  </NavLink>
+                )}
               </li>
             ))}
           </ul>
 
           {/* CTA + Mobile toggle */}
           <div className="flex items-center gap-4">
-            <Link to="/eventos" className="hidden lg:inline-flex btn-primary text-[10px] py-3 px-6">
+            <Link to="/eventos" className="hidden lg:inline-flex btn-primary text-[11px] py-3 px-6">
               Próximo Evento →
             </Link>
             <button
-              className="lg:hidden text-ink-900 p-2"
+              className="lg:hidden text-ink-900 p-3 -mr-3 min-w-11 min-h-11 flex items-center justify-center"
               onClick={toggleMobileMenu}
               aria-label="Menú"
             >
@@ -91,15 +117,28 @@ export default function Navbar() {
         {/* Mobile menu */}
         {isMobileMenuOpen && (
           <div className="lg:hidden bg-cream-200 border-t border-cream-400 py-4 px-6 flex flex-col gap-1">
-            {NAV_LINKS.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className="text-ink-600 hover:text-ink-900 py-2.5 text-sm border-b border-cream-300 last:border-0"
-                onClick={closeMobileMenu}
-              >
-                {label}
-              </NavLink>
+            {NAV_LINKS.map(({ to, label, external }) => (
+              external ? (
+                <a
+                  key={to}
+                  href={to}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-ink-600 hover:text-ink-900 py-2.5 text-sm border-b border-cream-300 last:border-0"
+                  onClick={closeMobileMenu}
+                >
+                  {label}
+                </a>
+              ) : (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className="text-ink-600 hover:text-ink-900 py-2.5 text-sm border-b border-cream-300 last:border-0"
+                  onClick={closeMobileMenu}
+                >
+                  {label}
+                </NavLink>
+              )
             ))}
             <Link to="/eventos" className="btn-primary mt-4 justify-center" onClick={closeMobileMenu}>
               Próximo Evento →

@@ -3,7 +3,7 @@ import Spinner from '@atoms/Spinner';
 import Button from '@atoms/Button';
 
 export default function ManageCourses() {
-  const { data, isLoading } = useCourses({ status: 'all' as any });
+  const { data, isLoading } = useCourses({ status: 'all' });
 
   return (
     <div>

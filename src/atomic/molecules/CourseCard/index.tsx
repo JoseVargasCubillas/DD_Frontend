@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import Badge from '@atoms/Badge';
-import type { Course } from '@types/index';
+import type { Course } from '@t/index';
 import { formatCurrency } from '@utils/formatters';
 
 interface CourseCardProps { course: Course }

@@ -1,5 +1,5 @@
 import { client } from './client';
-import type { BlogPost, PaginatedResponse, ApiResponse } from '@types/index';
+import type { BlogPost, PaginatedResponse, ApiResponse } from '@t/index';
 
 export const getPosts = (params?: Record<string, unknown>): Promise<PaginatedResponse<BlogPost>> =>
   client.get<PaginatedResponse<BlogPost>>('/blog', params);

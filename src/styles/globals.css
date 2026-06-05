@@ -3,13 +3,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Motion tokens ─────────────────────────────── */
+:root {
+  --ease-out:     cubic-bezier(.2,.8,.2,1);
+  --ease-curtain: cubic-bezier(.7,0,.3,1);
+  --ease-soft:    cubic-bezier(.32,.72,.32,1);
+  --d-instant: 120ms;
+  --d-fast:    200ms;
+  --d-base:    400ms;
+  --d-slow:    800ms;
+  --d-narrative: 1600ms;
+}
+
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
 
   html { scroll-behavior: smooth; }
 
   body {
-    @apply bg-cream text-ink-900 font-sans antialiased;
+    @apply bg-cream text-ink-900 font-sans antialiased overflow-x-hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -19,34 +31,89 @@
   a { @apply transition-colors duration-200; }
 }
 
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes hero-up {
+  from { opacity: 0; transform: translateY(36px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes hero-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Demo 01 — Hero word mask: clip container.
+     The inner span transition is driven via inline styles in HeroSection. */
+  .word-mask {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+    padding: 0.08em 0.05em;
+    margin: -0.08em -0.05em;
+  }
+}
+
 @layer components {
   /* ─── Layout ──────────────────────────────────── */
   .container-app {
     @apply max-w-[1280px] mx-auto px-6 lg:px-10;
   }
 
-  /* ─── Botones cuadrados (sin border-radius) ────── */
+  /* ─── Botones — Demo 04 curtain fill ───────────── */
+  /* Base: gradient split at 50%, initial pos shows top half (original color) */
   .btn-primary {
     @apply bg-ink-900 text-white text-[11px] font-semibold uppercase tracking-[0.18em]
-           px-8 py-3.5 hover:bg-ink-700 transition-colors duration-200
-           inline-flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed;
+           px-6 sm:px-8 py-3.5
+           inline-flex items-center justify-center text-center gap-2 min-h-[44px]
+           disabled:opacity-40 disabled:cursor-not-allowed;
+    background-image: linear-gradient(to top, #1a1a1a 50%, #0a0a0a 50%);
+    background-size: 100% 200%;
+    background-position: 0% 0%;
+    transition: background-position 400ms cubic-bezier(.7,0,.3,1);
   }
   .btn-secondary {
     @apply border border-ink-900 text-ink-900 text-[11px] font-semibold uppercase tracking-[0.18em]
-           px-8 py-3.5 hover:bg-ink-900 hover:text-white transition-colors duration-200
-           inline-flex items-center gap-2;
+           px-6 sm:px-8 py-3.5 hover:text-white
+           inline-flex items-center justify-center text-center gap-2 min-h-[44px];
+    background-image: linear-gradient(to top, #0a0a0a 50%, transparent 50%);
+    background-size: 100% 200%;
+    background-position: 0% 0%;
+    transition: background-position 400ms cubic-bezier(.7,0,.3,1),
+                color 400ms cubic-bezier(.2,.8,.2,1);
   }
 
   /* Variantes para fondos oscuros */
   .btn-primary-inv {
     @apply bg-white text-ink-900 text-[11px] font-semibold uppercase tracking-[0.18em]
-           px-8 py-3.5 hover:bg-cream-100 transition-colors duration-200
-           inline-flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed;
+           px-6 sm:px-8 py-3.5
+           inline-flex items-center justify-center text-center gap-2 min-h-[44px]
+           disabled:opacity-40 disabled:cursor-not-allowed;
+    background-image: linear-gradient(to top, #f5f0e8 50%, #ffffff 50%);
+    background-size: 100% 200%;
+    background-position: 0% 0%;
+    transition: background-position 400ms cubic-bezier(.7,0,.3,1);
   }
   .btn-secondary-inv {
     @apply border border-white text-white text-[11px] font-semibold uppercase tracking-[0.18em]
-           px-8 py-3.5 hover:bg-white hover:text-ink-900 transition-colors duration-200
-           inline-flex items-center gap-2;
+           px-6 sm:px-8 py-3.5 hover:text-ink-900
+           inline-flex items-center justify-center text-center gap-2 min-h-[44px];
+    background-image: linear-gradient(to top, #ffffff 50%, transparent 50%);
+    background-size: 100% 200%;
+    background-position: 0% 0%;
+    transition: background-position 400ms cubic-bezier(.7,0,.3,1),
+                color 400ms cubic-bezier(.2,.8,.2,1);
+  }
+
+  /* Hover: shift background to reveal second half (curtain wipes up from bottom) */
+  .btn-primary:hover,
+  .btn-primary-inv:hover,
+  .btn-secondary:hover,
+  .btn-secondary-inv:hover {
+    background-position: 0% 100%;
   }
 
   /* ─── Formularios ─────────────────────────────── */
@@ -54,11 +121,13 @@
     @apply w-full bg-ink-800 border border-ink-700 text-white
            px-4 py-3.5 focus:outline-none focus:border-ink-300
            placeholder-ink-400 text-sm;
+    transition: border-color 400ms cubic-bezier(.2,.8,.2,1);
   }
   .input-cream {
     @apply w-full bg-white border border-cream-400 text-ink-900
            px-4 py-3.5 focus:outline-none focus:border-ink-900
            placeholder-ink-300 text-sm;
+    transition: border-color 400ms cubic-bezier(.2,.8,.2,1);
   }
 
   /* ─── Tipografía editorial ─────────────────────── */
@@ -85,15 +154,35 @@
 
   /* ─── Badge de disponibilidad ─────────────────── */
   .badge-avail {
-    @apply text-[9px] font-semibold uppercase tracking-[0.2em]
+    @apply text-[11px] font-semibold uppercase tracking-[0.2em]
            border border-ink-900 text-ink-900 px-3 py-1 inline-block;
   }
   .badge-limited {
-    @apply text-[9px] font-semibold uppercase tracking-[0.2em]
+    @apply text-[11px] font-semibold uppercase tracking-[0.2em]
            bg-ink-900 text-white px-3 py-1 inline-block;
   }
   .badge-avail-inv {
-    @apply text-[9px] font-semibold uppercase tracking-[0.2em]
+    @apply text-[11px] font-semibold uppercase tracking-[0.2em]
            border border-white text-white px-3 py-1 inline-block;
+  }
+
+  /* ─── Demo 09 — Underline grow ────────────────── */
+  .link-grow {
+    position: relative;
+  }
+  .link-grow::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    width: 100%;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 500ms cubic-bezier(.2,.8,.2,1);
+  }
+  .link-grow:hover::after {
+    transform: scaleX(1);
   }
 }

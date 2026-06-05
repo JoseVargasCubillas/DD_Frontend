@@ -1,5 +1,5 @@
 import { client } from './client';
-import type { AuthResult, ApiResponse } from '@types/index';
+import type { AuthResult, ApiResponse } from '@t/index';
 
 export const login = (credentials: { email: string; password: string }): Promise<AuthResult> =>
   client.post<ApiResponse<AuthResult>>('/auth/login', credentials).then((r) => r.data);
