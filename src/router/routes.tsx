@@ -21,15 +21,25 @@ const Resources      = lazy(() => import('@pages/Resources'));
 const Contact        = lazy(() => import('@pages/Contact'));
 const Login          = lazy(() => import('@pages/Auth/Login'));
 const Register       = lazy(() => import('@pages/Auth/Register'));
-const UserDashboard  = lazy(() => import('@pages/Dashboard/UserDashboard'));
-const MyCourses      = lazy(() => import('@pages/Dashboard/MyCourses'));
-const Profile        = lazy(() => import('@pages/Dashboard/Profile'));
-const Checkout       = lazy(() => import('@pages/Checkout'));
-const AdminDashboard = lazy(() => import('@pages/Admin/AdminDashboard'));
-const ManageCourses  = lazy(() => import('@pages/Admin/ManageCourses'));
-const ManageUsers    = lazy(() => import('@pages/Admin/ManageUsers'));
-const ManageEvents   = lazy(() => import('@pages/Admin/ManageEvents'));
-const ManageBlog     = lazy(() => import('@pages/Admin/ManageBlog'));
+
+// Cliente
+const UserDashboard      = lazy(() => import('@pages/Dashboard/UserDashboard'));
+const MyCourses          = lazy(() => import('@pages/Dashboard/MyCourses'));
+const Profile            = lazy(() => import('@pages/Dashboard/Profile'));
+const ClientCourseView   = lazy(() => import('@pages/Dashboard/ClientCourseView'));
+const Checkout           = lazy(() => import('@pages/Checkout'));
+
+// Admin
+const AdminDashboard       = lazy(() => import('@pages/Admin/AdminDashboard'));
+const ManageProducts       = lazy(() => import('@pages/Admin/ManageProducts'));
+const ProductDetail        = lazy(() => import('@pages/Admin/ProductDetail'));
+const ManageContacts       = lazy(() => import('@pages/Admin/ManageContacts'));
+const ContactDetail        = lazy(() => import('@pages/Admin/ContactDetail'));
+const ManageOffers         = lazy(() => import('@pages/Admin/ManageOffers'));
+const ManageSubscriptions  = lazy(() => import('@pages/Admin/ManageSubscriptions'));
+const ManageAccounts       = lazy(() => import('@pages/Admin/ManageAccounts'));
+const ManageEvents         = lazy(() => import('@pages/Admin/ManageEvents'));
+const ManageBlog           = lazy(() => import('@pages/Admin/ManageBlog'));
 
 export const router = createBrowserRouter([
   {
@@ -57,25 +67,32 @@ export const router = createBrowserRouter([
     element: <AuthLayout />,
     children: [
       { path: '/iniciar-sesion', element: <Login /> },
-      { path: '/registro', element: <Register /> },
+      { path: '/registro', element: <Register /> }, // redirige a /iniciar-sesion (no hay registro público)
     ],
   },
   {
     element: <ProtectedRoute><DashboardLayout /></ProtectedRoute>,
     children: [
-      { path: '/mi-cuenta', element: <UserDashboard /> },
-      { path: '/mi-cuenta/cursos', element: <MyCourses /> },
-      { path: '/mi-cuenta/perfil', element: <Profile /> },
+      { path: '/mi-cuenta',              element: <UserDashboard /> },
+      { path: '/mi-cuenta/cursos',       element: <MyCourses /> },
+      { path: '/mi-cuenta/cursos/:productId', element: <ClientCourseView /> },
+      { path: '/mi-cuenta/perfil',       element: <Profile /> },
     ],
   },
   {
     element: <AdminRoute><AdminLayout /></AdminRoute>,
     children: [
-      { path: '/admin', element: <AdminDashboard /> },
-      { path: '/admin/cursos', element: <ManageCourses /> },
-      { path: '/admin/usuarios', element: <ManageUsers /> },
-      { path: '/admin/eventos', element: <ManageEvents /> },
-      { path: '/admin/blog', element: <ManageBlog /> },
+      { path: '/admin',                            element: <AdminDashboard /> },
+      { path: '/admin/productos',                  element: <ManageProducts /> },
+      { path: '/admin/productos/:id',              element: <ProductDetail /> },
+      { path: '/admin/ofertas',                    element: <ManageOffers /> },
+      { path: '/admin/suscripciones',              element: <ManageSubscriptions /> },
+      { path: '/admin/contactos',                  element: <ManageContacts /> },
+      { path: '/admin/contactos/:id',              element: <ContactDetail /> },
+      { path: '/admin/usuarios',                   element: <ManageAccounts /> },
+      { path: '/admin/eventos',                    element: <ManageEvents /> },
+      { path: '/admin/blog',                       element: <ManageBlog /> },
     ],
   },
 ]);
+
