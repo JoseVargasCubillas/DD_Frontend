@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useUIStore } from '@store/uiStore';
+import { useAuthStore } from '@store/authStore';
 import logoDD from '../../../../assets/012_home_main logo_DD.png';
 
 const NAV_LINKS = [
@@ -13,7 +14,13 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const { isMobileMenuOpen, toggleMobileMenu, closeMobileMenu } = useUIStore();
+  const { user, isAuthenticated } = useAuthStore();
   const [compact, setCompact] = useState(false);
+
+  const academyHref = isAuthenticated
+    ? (user?.role === 'admin' ? '/admin' : '/mi-cuenta')
+    : '/iniciar-sesion';
+  const academyLabel = isAuthenticated ? 'Ir a mi panel →' : 'Acceder a Academia →';
 
   // Demo 06 — sticky nav compact on scroll
   useEffect(() => {
@@ -38,8 +45,8 @@ export default function Navbar() {
           </div>
           <div className="flex items-center gap-5 text-[11px] uppercase tracking-[0.25em] text-ink-500">
             <span>ES / EN</span>
-            <Link to="/academia" className="hover:text-ink-900 transition-colors">
-              Acceder a Academia →
+            <Link to={academyHref} className="hover:text-ink-900 transition-colors">
+              {academyLabel}
             </Link>
           </div>
         </div>
