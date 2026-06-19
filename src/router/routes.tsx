@@ -4,6 +4,7 @@ import MainLayout from '@templates/MainLayout';
 import AuthLayout from '@templates/AuthLayout';
 import DashboardLayout from '@templates/DashboardLayout';
 import AdminLayout from '@templates/AdminLayout';
+import Events from '@pages/Events';
 import ProtectedRoute from './ProtectedRoute';
 import AdminRoute from './AdminRoute';
 
@@ -12,7 +13,7 @@ const About          = lazy(() => import('@pages/About'));
 const CourseList     = lazy(() => import('@pages/Courses/CourseList'));
 const CourseDetail   = lazy(() => import('@pages/Courses/CourseDetail'));
 const CourseLesson   = lazy(() => import('@pages/Courses/CourseLesson'));
-const Events         = lazy(() => import('@pages/Events'));
+const EstrategiaFiscalLanding = lazy(() => import('@pages/Events/EstrategiaFiscal'));
 const EventDetail    = lazy(() => import('@pages/Events/EventDetail'));
 const BlogList       = lazy(() => import('@pages/Blog/BlogList'));
 const BlogPost       = lazy(() => import('@pages/Blog/BlogPost'));
@@ -21,25 +22,22 @@ const Resources      = lazy(() => import('@pages/Resources'));
 const Contact        = lazy(() => import('@pages/Contact'));
 const Login          = lazy(() => import('@pages/Auth/Login'));
 const Register       = lazy(() => import('@pages/Auth/Register'));
-
-// Cliente
-const UserDashboard      = lazy(() => import('@pages/Dashboard/UserDashboard'));
-const MyCourses          = lazy(() => import('@pages/Dashboard/MyCourses'));
-const Profile            = lazy(() => import('@pages/Dashboard/Profile'));
-const ClientCourseView   = lazy(() => import('@pages/Dashboard/ClientCourseView'));
-const Checkout           = lazy(() => import('@pages/Checkout'));
-
-// Admin
-const AdminDashboard       = lazy(() => import('@pages/Admin/AdminDashboard'));
-const ManageProducts       = lazy(() => import('@pages/Admin/ManageProducts'));
-const ProductDetail        = lazy(() => import('@pages/Admin/ProductDetail'));
-const ManageContacts       = lazy(() => import('@pages/Admin/ManageContacts'));
-const ContactDetail        = lazy(() => import('@pages/Admin/ContactDetail'));
-const ManageOffers         = lazy(() => import('@pages/Admin/ManageOffers'));
-const ManageSubscriptions  = lazy(() => import('@pages/Admin/ManageSubscriptions'));
-const ManageAccounts       = lazy(() => import('@pages/Admin/ManageAccounts'));
-const ManageEvents         = lazy(() => import('@pages/Admin/ManageEvents'));
-const ManageBlog           = lazy(() => import('@pages/Admin/ManageBlog'));
+const UserDashboard  = lazy(() => import('@pages/Dashboard/UserDashboard'));
+const MyCourses      = lazy(() => import('@pages/Dashboard/MyCourses'));
+const Profile        = lazy(() => import('@pages/Dashboard/Profile'));
+const Checkout       = lazy(() => import('@pages/Checkout'));
+const AdminDashboard = lazy(() => import('@pages/Admin/AdminDashboard'));
+const ManageCourses  = lazy(() => import('@pages/Admin/ManageCourses'));
+const CourseDetailAdmin = lazy(() => import('@pages/Admin/CourseDetail'));
+const ManagePackages = lazy(() => import('@pages/Admin/ManagePackages'));
+const ManagePromotions = lazy(() => import('@pages/Admin/ManagePromotions'));
+const ManageUsers    = lazy(() => import('@pages/Admin/ManageUsers'));
+const ManageContacts = lazy(() => import('@pages/Admin/ManageContacts'));
+const ContactProfile = lazy(() => import('@pages/Admin/ContactProfile'));
+const ManageTags     = lazy(() => import('@pages/Admin/ManageTags'));
+const ManageEvents   = lazy(() => import('@pages/Admin/ManageEvents'));
+const ManageBlog     = lazy(() => import('@pages/Admin/ManageBlog'));
+const DiazLara       = lazy(() => import('@pages/DiazLara'));
 
 export const router = createBrowserRouter([
   {
@@ -50,10 +48,12 @@ export const router = createBrowserRouter([
       { path: '/cursos', element: <CourseList /> },
       { path: '/cursos/:slug', element: <CourseDetail /> },
       { path: '/eventos', element: <Events /> },
+      { path: '/eventos/estrategia-fiscal', element: <EstrategiaFiscalLanding /> },
       { path: '/eventos/:slug', element: <EventDetail /> },
       { path: '/blog', element: <BlogList /> },
       { path: '/blog/:slug', element: <BlogPost /> },
       { path: '/academia', element: <Academy /> },
+      { path: '/despacho', element: <DiazLara /> },
       { path: '/recursos', element: <Resources /> },
       { path: '/contacto', element: <Contact /> },
       { path: '/checkout', element: <ProtectedRoute><Checkout /></ProtectedRoute> },
@@ -67,32 +67,31 @@ export const router = createBrowserRouter([
     element: <AuthLayout />,
     children: [
       { path: '/iniciar-sesion', element: <Login /> },
-      { path: '/registro', element: <Register /> }, // redirige a /iniciar-sesion (no hay registro público)
+      { path: '/registro', element: <Register /> },
     ],
   },
   {
     element: <ProtectedRoute><DashboardLayout /></ProtectedRoute>,
     children: [
-      { path: '/mi-cuenta',              element: <UserDashboard /> },
-      { path: '/mi-cuenta/cursos',       element: <MyCourses /> },
-      { path: '/mi-cuenta/cursos/:productId', element: <ClientCourseView /> },
-      { path: '/mi-cuenta/perfil',       element: <Profile /> },
+      { path: '/mi-cuenta', element: <UserDashboard /> },
+      { path: '/mi-cuenta/cursos', element: <MyCourses /> },
+      { path: '/mi-cuenta/perfil', element: <Profile /> },
     ],
   },
   {
     element: <AdminRoute><AdminLayout /></AdminRoute>,
     children: [
-      { path: '/admin',                            element: <AdminDashboard /> },
-      { path: '/admin/productos',                  element: <ManageProducts /> },
-      { path: '/admin/productos/:id',              element: <ProductDetail /> },
-      { path: '/admin/ofertas',                    element: <ManageOffers /> },
-      { path: '/admin/suscripciones',              element: <ManageSubscriptions /> },
-      { path: '/admin/contactos',                  element: <ManageContacts /> },
-      { path: '/admin/contactos/:id',              element: <ContactDetail /> },
-      { path: '/admin/usuarios',                   element: <ManageAccounts /> },
-      { path: '/admin/eventos',                    element: <ManageEvents /> },
-      { path: '/admin/blog',                       element: <ManageBlog /> },
+      { path: '/admin', element: <AdminDashboard /> },
+      { path: '/admin/cursos', element: <ManageCourses /> },
+      { path: '/admin/cursos/:id', element: <CourseDetailAdmin /> },
+      { path: '/admin/paquetes', element: <ManagePackages /> },
+      { path: '/admin/promociones', element: <ManagePromotions /> },
+      { path: '/admin/contactos', element: <ManageContacts /> },
+      { path: '/admin/contactos/:id', element: <ContactProfile /> },
+      { path: '/admin/etiquetas', element: <ManageTags /> },
+      { path: '/admin/usuarios', element: <ManageUsers /> },
+      { path: '/admin/eventos', element: <ManageEvents /> },
+      { path: '/admin/blog', element: <ManageBlog /> },
     ],
   },
 ]);
-

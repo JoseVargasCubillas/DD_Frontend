@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import * as coursesApi from '@api/courses.api';
 
-interface UseCourseParams { page?: number; limit?: number; category?: string; status?: string; search?: string }
+interface UseCourseParams { page?: number; limit?: number; category?: string; status?: string; search?: string; includeAll?: boolean }
 
 export const useCourses = (params?: UseCourseParams) =>
   useQuery({
@@ -14,6 +14,13 @@ export const useCourse = (slug: string) =>
     queryKey: ['course', slug],
     queryFn: () => coursesApi.getCourseBySlug(slug),
     enabled: !!slug,
+  });
+
+export const useCourseAdmin = (id: string | undefined) =>
+  useQuery({
+    queryKey: ['course-admin', id],
+    queryFn: () => coursesApi.getCourseAdmin(id!),
+    enabled: !!id,
   });
 
 export const useLessons = (courseId: string) =>

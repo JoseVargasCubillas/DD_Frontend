@@ -1,7 +1,7 @@
 import { client } from './client';
 import type { Course, Lesson, PaginatedResponse, ApiResponse } from '@t/index';
 
-interface CourseParams { page?: number; limit?: number; category?: string; status?: string; search?: string }
+interface CourseParams { page?: number; limit?: number; category?: string; status?: string; search?: string; includeAll?: boolean }
 
 export const getCourses = (params?: CourseParams): Promise<PaginatedResponse<Course>> =>
   client.get<PaginatedResponse<Course>>('/courses', params as Record<string, unknown>);
@@ -23,3 +23,6 @@ export const updateCourse = (id: string, data: Partial<Course>): Promise<Course>
 
 export const deleteCourse = (id: string): Promise<ApiResponse<{ message: string }>> =>
   client.delete<ApiResponse<{ message: string }>>(`/courses/${id}`);
+
+export const getCourseAdmin = (id: string): Promise<Course & { modules: any[] }> =>
+  client.get<ApiResponse<Course & { modules: any[] }>>(`/courses/admin/${id}`).then((r) => r.data);

@@ -17,10 +17,72 @@ export interface User {
   bio: string;
   plan: Plan;
   enrolledCourses: string[];
+  tagIds?: string[];
+  tags?: Tag[];
+  notes?: string;
+  contactStatus?: 'lead' | 'customer' | 'churned';
+  marketingStatus?: 'never_subscribed' | 'subscribed' | 'unsubscribed';
+  signInCount?: number;
   isActive: boolean;
   isEmailVerified: boolean;
   lastLogin?: string;
   createdAt: string;
+}
+
+export interface Tag {
+  id?: string;
+  _id: string;
+  name: string;
+  slug: string;
+  color: string;
+  description?: string;
+  contactsCount?: number;
+  createdAt?: string;
+}
+
+export interface Module {
+  id?: string;
+  _id: string;
+  courseId: string;
+  title: string;
+  slug: string;
+  description: string;
+  order: number;
+  lessonIds: string[];
+  isPublished: boolean;
+  lessons?: Lesson[];
+  createdAt?: string;
+}
+
+export interface Package {
+  id?: string;
+  _id: string;
+  name: string;
+  slug: string;
+  description: string;
+  price: number;
+  currency: string;
+  courseIds: string[];
+  durationDays: number;
+  isActive: boolean;
+  isFeatured: boolean;
+  createdAt?: string;
+}
+
+export interface Promotion {
+  id?: string;
+  _id: string;
+  code: string;
+  description: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  scope: 'all' | 'course' | 'package';
+  targetId: string;
+  expiresAt: string | null;
+  maxUses: number;
+  usedCount: number;
+  isActive: boolean;
+  createdAt?: string;
 }
 
 export interface Course {
