@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode, type MouseEvent } from "react";
+import { useMemo, useRef, useState, type ReactNode, type MouseEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useCourses } from "@hooks/useCourses";
@@ -269,10 +269,27 @@ function OfferRow({
   onStats: () => void;
 }) {
   const isMenuOpen = openMenu === offer.id;
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ left: number; top: number } | null>(null);
   const link = `${window.location.origin}/checkout?offer=${encodeURIComponent(offer.id)}`;
   const copyLink = async () => {
     await navigator.clipboard.writeText(link);
     toast.success("Copiado al portapapeles");
+  };
+  const toggleMenu = () => {
+    if (isMenuOpen) {
+      setOpenMenu(null);
+      return;
+    }
+    const rect = menuButtonRef.current?.getBoundingClientRect();
+    if (rect) {
+      const menuWidth = 224;
+      setMenuPosition({
+        left: Math.max(16, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 16)),
+        top: rect.bottom + 8,
+      });
+    }
+    setOpenMenu(offer.id);
   };
 
   return (
@@ -316,16 +333,23 @@ function OfferRow({
           <IconAction label="Estadísticas" onClick={onStats}>
             <BarsIcon />
           </IconAction>
-          <IconAction
-            label="Más"
-            onClick={() => setOpenMenu(isMenuOpen ? null : offer.id)}
+          <button
+            type="button"
+            ref={menuButtonRef}
+            onClick={toggleMenu}
+            className="group relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-ink-600 hover:bg-ink-900/6 hover:text-ink-900"
+            aria-label="Más"
           >
+            <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-ink-900 px-3 py-2 text-xs font-semibold text-cream group-hover:block">
+              Más
+            </span>
             <DotsIcon />
-          </IconAction>
+          </button>
         </div>
         {isMenuOpen && (
           <MoreMenu
             offer={offer}
+            position={menuPosition}
             onClose={() => setOpenMenu(null)}
             onCopy={copyLink}
             onStats={onStats}
@@ -341,16 +365,21 @@ function MoreMenu({
   onClose,
   onCopy,
   onStats,
+  position,
 }: {
   offer: OfferRecord;
   onClose: () => void;
   onCopy: () => void;
   onStats: () => void;
+  position: { left: number; top: number } | null;
 }) {
   const itemClass =
     "flex min-h-10 w-full cursor-pointer items-center gap-3 px-4 text-left text-sm text-ink-600 hover:bg-ink-900/6";
   return (
-    <div className="absolute right-0 top-12 z-20 w-56 overflow-hidden rounded-xl border border-ink-900/10 bg-white py-2 text-left shadow-xl">
+    <div
+      className="fixed z-[100] w-56 overflow-hidden rounded-xl border border-ink-900/10 bg-white py-2 text-left shadow-xl"
+      style={{ left: position?.left ?? 16, top: position?.top ?? 16 }}
+    >
       <button type="button" className={itemClass} onClick={onCopy}>
         <LinkIcon /> Obtener link
       </button>

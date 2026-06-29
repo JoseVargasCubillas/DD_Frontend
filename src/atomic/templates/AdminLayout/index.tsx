@@ -19,7 +19,6 @@ interface MenuItem {
 const MENU: MenuItem[] = [
   { to: "/admin", label: "Inicio", group: "General", end: true },
   { to: "/admin/contactos", label: "Contactos", group: "Comunidad" },
-  { to: "/admin/etiquetas", label: "Etiquetas", group: "Comunidad" },
 ];
 
 const GROUPS = ["General", "Comunidad"] as const;
