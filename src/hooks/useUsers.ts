@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import * as usersApi from '@api/users.api';
 
-export const useUsers = (params?: { page?: number; limit?: number; search?: string; tagId?: string; role?: string }) =>
+export const useUsers = (params?: { page?: number; limit?: number; search?: string; tagId?: string; role?: string; sort?: string; segment?: string }) =>
   useQuery({
     queryKey: ['users', params],
     queryFn: () => usersApi.listUsers(params),
@@ -50,6 +50,22 @@ export const useAdminCreateUser = () => {
       });
     },
     onError: (e: Error) => toast.error(e.message || 'No se pudo crear la cuenta'),
+  });
+};
+
+export const useImportContacts = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: usersApi.importContacts,
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['users'] });
+      qc.invalidateQueries({ queryKey: ['tags'] });
+      qc.invalidateQueries({ queryKey: ['courses'] });
+      toast.success(`Importación lista: ${data.summary.created} creados, ${data.summary.updated} actualizados`, {
+        duration: 6000,
+      });
+    },
+    onError: (e: Error) => toast.error(e.message || 'No se pudo importar'),
   });
 };
 
