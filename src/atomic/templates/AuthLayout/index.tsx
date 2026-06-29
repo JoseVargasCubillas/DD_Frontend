@@ -1,14 +1,11 @@
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 
 export default function AuthLayout() {
+  // El layout solo provee el lienzo cream; la página Login arma su propio periódico.
   return (
-    <div className="min-h-screen bg-dark-900 flex flex-col items-center justify-center px-4">
-      <Link to="/" className="font-heading font-bold text-3xl text-white mb-8">
-        Diego<span className="text-brand-500">Díaz</span>
-      </Link>
-      <div className="w-full max-w-sm bg-dark-800 border border-dark-600 rounded-2xl p-8">
-        <Outlet />
-      </div>
+    <div className="min-h-screen bg-cream text-ink-900 overflow-hidden">
+      <Outlet />
     </div>
   );
 }
+

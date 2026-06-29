@@ -1,6 +1,6 @@
 import { useAuthStore } from '@store/authStore';
 
-const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:5000/api/v1';
+const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:4000/api/v1';
 
 interface FetchOptions extends RequestInit {
   _retry?: boolean;
@@ -11,8 +11,10 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
 
   const token = useAuthStore.getState().accessToken;
 
+  const isFormData = fetchOptions.body instanceof FormData;
+
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(extraHeaders as Record<string, string>),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
@@ -66,13 +68,37 @@ export const client = {
     request<T>(buildUrl(path, params)),
 
   post: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: 'POST', body: body !== undefined ? JSON.stringify(body) : undefined }),
+    request<T>(path, {
+      method: 'POST',
+      body:
+        body instanceof FormData
+          ? body
+          : body !== undefined
+            ? JSON.stringify(body)
+            : undefined,
+    }),
 
   put: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: 'PUT', body: body !== undefined ? JSON.stringify(body) : undefined }),
+    request<T>(path, {
+      method: 'PUT',
+      body:
+        body instanceof FormData
+          ? body
+          : body !== undefined
+            ? JSON.stringify(body)
+            : undefined,
+    }),
 
   patch: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: 'PATCH', body: body !== undefined ? JSON.stringify(body) : undefined }),
+    request<T>(path, {
+      method: 'PATCH',
+      body:
+        body instanceof FormData
+          ? body
+          : body !== undefined
+            ? JSON.stringify(body)
+            : undefined,
+    }),
 
   delete: <T>(path: string) =>
     request<T>(path, { method: 'DELETE' }),

@@ -1,10 +1,15 @@
-export type Role = 'admin' | 'user' | 'instructor';
-export type Plan = 'free' | 'basic' | 'pro' | 'enterprise';
-export type CourseStatus = 'draft' | 'published' | 'archived';
-export type OrderStatus = 'pending' | 'completed' | 'failed' | 'refunded';
-export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'trialing';
-export type EventStatus = 'upcoming' | 'ongoing' | 'finished' | 'canceled';
-export type CourseLevel = 'beginner' | 'intermediate' | 'advanced';
+export type Role = "admin" | "user" | "instructor";
+export type Plan = "free" | "basic" | "pro" | "enterprise";
+export type CourseStatus = "draft" | "published" | "archived";
+export type CourseType = "evergreen" | "cohort";
+export type OrderStatus = "pending" | "completed" | "failed" | "refunded";
+export type SubscriptionStatus =
+  | "active"
+  | "canceled"
+  | "past_due"
+  | "trialing";
+export type EventStatus = "upcoming" | "ongoing" | "finished" | "canceled";
+export type CourseLevel = "beginner" | "intermediate" | "advanced";
 
 export interface User {
   id?: string;
@@ -17,10 +22,72 @@ export interface User {
   bio: string;
   plan: Plan;
   enrolledCourses: string[];
+  tagIds?: string[];
+  tags?: Tag[];
+  notes?: string;
+  contactStatus?: "lead" | "customer" | "churned";
+  marketingStatus?: "never_subscribed" | "subscribed" | "unsubscribed";
+  signInCount?: number;
   isActive: boolean;
   isEmailVerified: boolean;
   lastLogin?: string;
   createdAt: string;
+}
+
+export interface Tag {
+  id?: string;
+  _id: string;
+  name: string;
+  slug: string;
+  color: string;
+  description?: string;
+  contactsCount?: number;
+  createdAt?: string;
+}
+
+export interface Module {
+  id?: string;
+  _id: string;
+  courseId: string;
+  title: string;
+  slug: string;
+  description: string;
+  order: number;
+  lessonIds: string[];
+  isPublished: boolean;
+  lessons?: Lesson[];
+  createdAt?: string;
+}
+
+export interface Package {
+  id?: string;
+  _id: string;
+  name: string;
+  slug: string;
+  description: string;
+  price: number;
+  currency: string;
+  courseIds: string[];
+  durationDays: number;
+  isActive: boolean;
+  isFeatured: boolean;
+  createdAt?: string;
+}
+
+export interface Promotion {
+  id?: string;
+  _id: string;
+  code: string;
+  description: string;
+  type: "percentage" | "fixed";
+  value: number;
+  scope: "all" | "course" | "package";
+  targetId: string;
+  expiresAt: string | null;
+  maxUses: number;
+  usedCount: number;
+  isActive: boolean;
+  createdAt?: string;
 }
 
 export interface Course {
@@ -48,6 +115,9 @@ export interface Course {
   requirements: string[];
   whatYouLearn: string[];
   createdAt: string;
+  courseType?: CourseType;
+  primaryColor?: string;
+  accentColor?: string;
 }
 
 export interface Lesson {
@@ -64,6 +134,10 @@ export interface Lesson {
   resources: { name: string; url: string }[];
   isPreview: boolean;
   isFree: boolean;
+  thumbnail?: string;
+  mediaType?: "none" | "video" | "audio";
+  isPublished?: boolean;
+  commentsVisibility?: "visible" | "hidden" | "locked";
 }
 
 export interface Event {
@@ -74,8 +148,8 @@ export interface Event {
   description: string;
   shortDescription: string;
   thumbnail: string;
-  type: 'seminar' | 'workshop' | 'webinar' | 'conference';
-  modality: 'in-person' | 'online' | 'hybrid';
+  type: "seminar" | "workshop" | "webinar" | "conference";
+  modality: "in-person" | "online" | "hybrid";
   location: string;
   onlineUrl: string;
   startDate: string;
@@ -101,7 +175,7 @@ export interface BlogPost {
   author: User | string;
   category: string;
   tags: string[];
-  status: 'draft' | 'published' | 'archived';
+  status: "draft" | "published" | "archived";
   publishedAt?: string;
   readTime: number;
   viewsCount: number;
@@ -131,6 +205,16 @@ export interface OrderItem {
 export interface Order {
   id?: string;
   _id?: string;
+  user?: User | string;
+  userId?: string;
+  customer?: User | string;
+  customerId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  contactId?: string;
+  subscriptionId?: string;
+  paymentIntentId?: string;
+  paymentProvider?: string;
   items: OrderItem[];
   total: number;
   currency: string;
@@ -151,7 +235,7 @@ export interface PaginatedResponse<T> {
 }
 
 export interface AuthResult {
-  user: Pick<User, 'id' | 'name' | 'email' | 'role'>;
+  user: Pick<User, "id" | "name" | "email" | "role">;
   accessToken: string;
   refreshToken: string;
 }

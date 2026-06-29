@@ -1,33 +1,89 @@
-import { Outlet, NavLink, Link } from 'react-router-dom';
-import { useAuthStore } from '@store/authStore';
-import Avatar from '@atoms/Avatar';
+import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@hooks/useAuth';
+import logoDD from '../../../../assets/home/012_home_main logo_DD.png';
 
 const MENU = [
-  { to: '/mi-cuenta', label: 'Resumen', end: true },
-  { to: '/mi-cuenta/cursos', label: 'Mis cursos', end: false },
-  { to: '/mi-cuenta/perfil', label: 'Perfil', end: false },
+  { to: '/mi-cuenta',         label: 'Edición de hoy', end: true },
+  { to: '/mi-cuenta/cursos',  label: 'Mis cursos' },
+  { to: '/mi-cuenta/perfil',  label: 'Perfil' },
 ];
 
 export default function DashboardLayout() {
-  const user = useAuthStore((s) => s.user);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-dark-900 flex flex-col">
-      <header className="bg-dark-800 border-b border-dark-600 px-6 py-4 flex items-center justify-between">
-        <Link to="/" className="font-heading font-bold text-xl text-white">Diego<span className="text-brand-500">Díaz</span></Link>
-        {user && <div className="flex items-center gap-2"><Avatar name={user.name} size="sm" /><span className="text-sm text-gray-300 hidden sm:block">{user.name}</span></div>}
-      </header>
-      <div className="flex flex-1 container-app py-8 gap-8">
-        <aside className="hidden md:flex flex-col gap-1 w-48 shrink-0">
+    <div className="min-h-screen bg-cream text-ink-900 flex flex-col">
+      {/* ── Masthead superior ─────────────────────────── */}
+      <header className="bg-cream-100 border-b border-ink-900/20">
+        <div className="container-app flex items-center justify-between py-4">
+          <Link to="/" className="flex items-center gap-3">
+            <img src={logoDD} alt="Diego Díaz" className="h-10 object-contain" />
+            <div className="hidden md:block border-l border-ink-900/20 pl-3">
+              <p className="text-[10px] uppercase tracking-[0.4em] text-ink-700">Academia</p>
+              <p className="font-serif italic text-sm text-ink-600">edición del lector</p>
+            </div>
+          </Link>
+
+          <div className="flex items-center gap-4">
+            <span className="hidden lg:inline text-[10px] uppercase tracking-[0.32em] text-ink-600 capitalize">
+              {new Date().toLocaleDateString('es-MX', { weekday: 'long', day: '2-digit', month: 'long' })}
+            </span>
+            {user && (
+              <div className="flex items-center gap-2.5 border-l border-ink-900/20 pl-4">
+                <div className="w-8 h-8 rounded-full bg-ink-900 text-cream flex items-center justify-center font-serif text-sm">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <span className="hidden sm:block text-sm font-medium">{user.name.split(' ')[0]}</span>
+                <button
+                  onClick={() => { logout(); navigate('/'); }}
+                  className="text-[10px] uppercase tracking-[0.28em] text-ink-600 hover:text-ink-900 transition-colors cursor-pointer ml-2"
+                >
+                  Salir
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Reglas dobles tipo periódico */}
+        <div className="container-app">
+          <div className="h-px bg-ink-900/40 mb-0.5" />
+          <div className="h-px bg-ink-900/20" />
+        </div>
+
+        {/* Tabs de navegación */}
+        <nav className="container-app flex items-center gap-8 py-3 overflow-x-auto">
           {MENU.map(({ to, label, end }) => (
-            <NavLink key={to} to={to} end={end}
-              className={({ isActive }) => `px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-brand-500 text-white' : 'text-gray-400 hover:text-white hover:bg-dark-700'}`}>
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                `text-[11px] uppercase tracking-[0.32em] py-2 border-b-2 transition-colors whitespace-nowrap ${
+                  isActive
+                    ? 'border-ink-900 text-ink-900 font-semibold'
+                    : 'border-transparent text-ink-600 hover:text-ink-900'
+                }`
+              }
+            >
               {label}
             </NavLink>
           ))}
-        </aside>
-        <main className="flex-1 min-w-0"><Outlet /></main>
-      </div>
+        </nav>
+      </header>
+
+      <main className="flex-1 container-app py-10">
+        <Outlet />
+      </main>
+
+      <footer className="border-t border-ink-900/15 bg-cream-200/60">
+        <div className="container-app py-4 flex items-center justify-between text-[10px] uppercase tracking-[0.32em] text-ink-600">
+          <span>© Diego Díaz · Academia</span>
+          <span>Edición Digital</span>
+        </div>
+      </footer>
     </div>
   );
 }
+
