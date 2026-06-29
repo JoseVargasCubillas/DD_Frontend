@@ -1,19 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useUIStore } from '@store/uiStore';
-import logoDD from '../../../../assets/012_home_main logo_DD.png';
+import { useAuthStore } from '@store/authStore';
+import logoDD from '../../../../assets/home/012_home_main logo_DD.png';
 
-const NAV_LINKS = [
+const NAV_LINKS: Array<{ to: string; label: string; external?: boolean }> = [
   { to: '/acerca',   label: 'Diego' },
   { to: '/eventos',  label: 'Eventos' },
   { to: '/academia', label: 'Academia' },
   { to: '/recursos', label: 'Recursos' },
-  { to: 'https://diazlara.mx/', label: 'Díaz Lara ↗', external: true },
+  { to: '/despacho', label: 'Díaz Lara' },
 ];
 
 export default function Navbar() {
   const { isMobileMenuOpen, toggleMobileMenu, closeMobileMenu } = useUIStore();
+  const { user, isAuthenticated } = useAuthStore();
   const [compact, setCompact] = useState(false);
+
+  const academyHref = isAuthenticated
+    ? (user?.role === 'admin' ? '/admin' : '/mi-cuenta')
+    : '/iniciar-sesion';
+  const academyLabel = isAuthenticated ? 'Ir a mi panel →' : 'Acceder a Academia →';
 
   // Demo 06 — sticky nav compact on scroll
   useEffect(() => {
@@ -38,8 +45,8 @@ export default function Navbar() {
           </div>
           <div className="flex items-center gap-5 text-[11px] uppercase tracking-[0.25em] text-ink-500">
             <span>ES / EN</span>
-            <Link to="/academia" className="hover:text-ink-900 transition-colors">
-              Acceder a Academia →
+            <Link to={academyHref} className="hover:text-ink-900 transition-colors">
+              {academyLabel}
             </Link>
           </div>
         </div>
@@ -124,7 +131,7 @@ export default function Navbar() {
                   href={to}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-ink-600 hover:text-ink-900 py-2.5 text-sm border-b border-cream-300 last:border-0"
+                  className="flex min-h-[44px] items-center text-sm text-ink-600 hover:text-ink-900 border-b border-cream-300 last:border-0"
                   onClick={closeMobileMenu}
                 >
                   {label}
@@ -133,7 +140,7 @@ export default function Navbar() {
                 <NavLink
                   key={to}
                   to={to}
-                  className="text-ink-600 hover:text-ink-900 py-2.5 text-sm border-b border-cream-300 last:border-0"
+                  className="flex min-h-[44px] items-center text-sm text-ink-600 hover:text-ink-900 border-b border-cream-300 last:border-0"
                   onClick={closeMobileMenu}
                 >
                   {label}

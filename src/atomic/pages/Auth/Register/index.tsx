@@ -1,10 +1,7 @@
-import RegisterForm from '@organisms/RegisterForm';
+import { Navigate } from 'react-router-dom';
 
+// El registro público está deshabilitado: solo el administrador crea cuentas.
 export default function Register() {
-  return (
-    <>
-      <h2 className="text-2xl font-heading font-bold text-white mb-6 text-center">Crear cuenta</h2>
-      <RegisterForm />
-    </>
-  );
+  return <Navigate to="/iniciar-sesion" replace />;
 }
+

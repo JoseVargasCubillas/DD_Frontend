@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import heroImage from '../../../../assets/001_home_foto_DD.png';
+import heroImage from '../../../../assets/home/001_home_foto_DD.png';
 import { useInView } from '@hooks/useInView';
 
 const EASE_OUT = 'cubic-bezier(.2,.8,.2,1)';
@@ -84,7 +84,7 @@ export default function HeroSection() {
             <div style={bodyStyle(200)} className="space-y-8">
               <p className="text-[15px] text-ink-500 leading-relaxed max-w-sm">
                 Diego D&iacute;az capacita, ayuda y apoya empresarios a tomar el control
-                de su carga fiscal. M&aacute;s de 25 a&ntilde;os, 3 libros publicados y
+                de su carga fiscal. M&aacute;s de 20 a&ntilde;os, 3 libros publicados y
                 +10,000 directivos formados.
               </p>
 

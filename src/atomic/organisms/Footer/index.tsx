@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import logoFooter from '../../../../assets/012_home_footerlogo_DD.png';
-import logoDiegoWatermark from '../../../../assets/010_home_logo_fotter2_DD.png';
+import logoFooter from '../../../../assets/home/012_home_footerlogo_DD.png';
+import logoDiegoWatermark from '../../../../assets/home/010_home_logo_fotter2_DD.png';
 
 export default function Footer() {
   const [email, setEmail] = useState('');
