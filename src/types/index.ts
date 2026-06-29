@@ -121,6 +121,29 @@ export interface Course {
   accentColor?: string;
 }
 
+export interface OfferContentItem {
+  courseId: string;
+  access: "full" | "modules";
+  moduleIds: string[];
+}
+
+export interface Offer {
+  id?: string;
+  _id: string;
+  title: string;
+  slug: string;
+  description: string;
+  type: "standard" | "trial";
+  status: "draft" | "published" | "archived";
+  price: number;
+  currency: string;
+  content: OfferContentItem[];
+  assignedUserIds: string[];
+  startsAt?: string | null;
+  expiresAt?: string | null;
+  createdAt: string;
+}
+
 export interface Lesson {
   id?: string;
   _id?: string;
