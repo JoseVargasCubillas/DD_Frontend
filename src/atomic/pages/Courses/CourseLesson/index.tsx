@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Spinner from "@atoms/Spinner";
-import { useLessons } from "@hooks/useCourses";
+import { useCourse } from "@hooks/useCourses";
 import { getMediaFile, localMediaId } from "@utils/lessonMedia";
+
+const isDrivePreviewUrl = (url: string): boolean =>
+  /drive\.google\.com\/file\/d\/[^/]+\/preview/.test(url);
 
 export default function CourseLesson() {
   const { slug, lessonId } = useParams<{ slug: string; lessonId: string }>();
-  const { data: lessons, isLoading } = useLessons(slug!);
+  const { data: course, isLoading } = useCourse(slug!);
+  const lessons = course?.lessons ?? [];
   const lesson = lessons?.find((l) => l.id === lessonId || l._id === lessonId);
   const [mediaUrl, setMediaUrl] = useState("");
+  const [shieldActive, setShieldActive] = useState(false);
 
   useEffect(() => {
     if (!lesson?.videoUrl) {
@@ -34,6 +39,38 @@ export default function CourseLesson() {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [lesson?.videoUrl]);
+
+  useEffect(() => {
+    if (!mediaUrl) return;
+
+    let timer: number | undefined;
+    const showShield = () => {
+      window.clearTimeout(timer);
+      setShieldActive(true);
+      timer = window.setTimeout(() => setShieldActive(false), 1800);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+      const blocked =
+        event.key === "PrintScreen" ||
+        ((event.ctrlKey || event.metaKey) && event.shiftKey && key === "s") ||
+        ((event.ctrlKey || event.metaKey) && ["s", "p", "u"].includes(key)) ||
+        ((event.ctrlKey || event.metaKey) && event.shiftKey && ["i", "j", "c"].includes(key));
+      if (blocked) {
+        event.preventDefault();
+        showShield();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyDown);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyDown);
+    };
+  }, [mediaUrl]);
 
   const downloadResource = async (name: string, url: string) => {
     const id = localMediaId(url);
@@ -69,12 +106,33 @@ export default function CourseLesson() {
       <h1 className="text-2xl font-bold text-white mb-6">{lesson.title}</h1>
       {mediaUrl && (
         <div
-          className={`${lesson.mediaType === "audio" ? "p-6" : "aspect-video overflow-hidden"} mb-6 rounded-xl bg-black`}
+          className={`${lesson.mediaType === "audio" ? "p-6" : "aspect-video overflow-hidden"} relative mb-6 rounded-xl bg-black`}
         >
-          {lesson.mediaType === "audio" ? (
+          {isDrivePreviewUrl(mediaUrl) ? (
+            <iframe
+              src={mediaUrl}
+              title={lesson.title}
+              allow="autoplay; fullscreen"
+              allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+              className="h-full w-full border-0"
+            />
+          ) : lesson.mediaType === "audio" ? (
             <audio src={mediaUrl} controls className="w-full" />
           ) : (
-            <video src={mediaUrl} controls className="h-full w-full" />
+            <video
+              src={mediaUrl}
+              controls
+              controlsList="nodownload noremoteplayback"
+              disablePictureInPicture
+              className="h-full w-full"
+            />
+          )}
+          {shieldActive && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black text-xs uppercase tracking-[0.35em] text-white">
+              Contenido protegido
+            </div>
           )}
         </div>
       )}

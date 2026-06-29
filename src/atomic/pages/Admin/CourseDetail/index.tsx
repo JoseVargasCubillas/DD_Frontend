@@ -617,10 +617,11 @@ function LessonEditor({
   }, [form.videoUrl]);
 
   const save = () => {
+    const normalizedVideoUrl = normalizePersistedMediaUrl(form.videoUrl);
     saveLessonPreferences(lessonId, {
       thumbnail: form.thumbnail,
       mediaType: form.mediaType,
-      videoUrl: form.videoUrl,
+      videoUrl: normalizedVideoUrl,
       resources: form.resources,
       isPublished: form.isPublished,
       commentsVisibility: form.commentsVisibility,
@@ -631,7 +632,7 @@ function LessonEditor({
         data: {
           title: form.title,
           content: form.content,
-          videoUrl: form.videoUrl,
+          videoUrl: normalizedVideoUrl,
           mediaType: form.mediaType,
           resources: form.resources,
         },
@@ -900,7 +901,9 @@ function LessonEditor({
                               setMediaInfo(null);
                               setForm((current) => ({
                                 ...current,
-                                videoUrl: event.target.value,
+                                videoUrl: normalizePersistedMediaUrl(
+                                  event.target.value,
+                                ),
                               }));
                             }}
                             placeholder="https://..."
@@ -911,12 +914,24 @@ function LessonEditor({
                       {mediaPreview ? (
                         <div className="space-y-4">
                           {form.mediaType === "video" ? (
-                            <video
-                              src={mediaPreview}
-                              controls
-                              preload="metadata"
-                              className="aspect-video w-full rounded-xl bg-black"
-                            />
+                            isDrivePreviewUrl(mediaPreview) ? (
+                              <iframe
+                                src={mediaPreview}
+                                title={form.title || "Vista previa del video"}
+                                allow="autoplay; fullscreen"
+                                allowFullScreen
+                                referrerPolicy="strict-origin-when-cross-origin"
+                                sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                                className="aspect-video w-full rounded-xl border-0 bg-black"
+                              />
+                            ) : (
+                              <video
+                                src={mediaPreview}
+                                controls
+                                preload="metadata"
+                                className="aspect-video w-full rounded-xl bg-black"
+                              />
+                            )
                           ) : (
                             <audio
                               src={mediaPreview}
@@ -4325,7 +4340,19 @@ function loadLessonPreferences(
   }
 }
 function normalizePersistedMediaUrl(url?: string) {
-  return url && !url.startsWith("blob:") ? url : "";
+  if (!url || url.startsWith("blob:")) return "";
+  const driveFileMatch = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+  if (driveFileMatch?.[1]) {
+    return `https://drive.google.com/file/d/${driveFileMatch[1]}/preview`;
+  }
+  const driveOpenMatch = url.match(/[?&]id=([^&]+)/);
+  if (url.includes("drive.google.com") && driveOpenMatch?.[1]) {
+    return `https://drive.google.com/file/d/${driveOpenMatch[1]}/preview`;
+  }
+  return url;
+}
+function isDrivePreviewUrl(url: string) {
+  return /drive\.google\.com\/file\/d\/[^/]+\/preview/.test(url);
 }
 function saveLessonPreferences(
   lessonId: string,

@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'reac
 import { useQuery } from '@tanstack/react-query';
 import * as eventsApi from '@api/events.api';
 import heroDiego from '../../../../../assets/home/007_home_bios_DD.png';
-import heroVideo from '../../../../../assets/eventos/Video EF.mp4';
+import heroVideo from '../../../../../assets/eventos/VIDEO SEF vertical web.mp4';
 import diegoPortrait from '../../../../../assets/eventos/LEF_img_001.png';
 import irmaPortrait from '../../../../../assets/eventos/LEF_img 002.png';
 import azucenaPortrait from '../../../../../assets/eventos/LEF_img 003.png';

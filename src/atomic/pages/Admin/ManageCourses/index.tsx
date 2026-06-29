@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useCourses } from "@hooks/useCourses";
-import { createCourse, deleteCourse } from "@api/courses.api";
+import { createCourse, deleteCourse, importDriveCourses } from "@api/courses.api";
 import type { Course, CourseType } from "@t/index";
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
@@ -75,6 +75,7 @@ export default function ManageCourses() {
   const { data, isLoading } = useCourses({ status: "", includeAll: true });
   const courses = data?.data ?? [];
   const [showWizard, setShowWizard] = useState(false);
+  const [showDriveImport, setShowDriveImport] = useState(false);
   const [showProductDialog, setShowProductDialog] = useState<
     ProductBundle | "new" | null
   >(null);
@@ -207,6 +208,26 @@ export default function ManageCourses() {
           <span aria-hidden="true">＋</span> Nuevo curso
         </button>
       </header>
+
+      <section className="mb-7 rounded-2xl border border-ink-900/15 bg-white/75 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.35em] text-ink-500">
+              Migracion Kajabi
+            </p>
+            <h2 className="mt-1 font-serif text-2xl text-ink-900">
+              Importar cursos desde Drive
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowDriveImport(true)}
+            className="min-h-11 cursor-pointer rounded-full border border-ink-900/20 px-5 text-sm font-semibold text-ink-800 transition-colors hover:border-ink-900"
+          >
+            Importar desde Drive
+          </button>
+        </div>
+      </section>
 
       <section
         className="rounded-2xl border border-ink-900/15 bg-cream-50 shadow-sm"
@@ -382,6 +403,9 @@ export default function ManageCourses() {
 
       {showWizard && (
         <CourseCreationWizard onClose={() => setShowWizard(false)} />
+      )}
+      {showDriveImport && (
+        <DriveImportDialog onClose={() => setShowDriveImport(false)} />
       )}
     </div>
   );
@@ -972,6 +996,170 @@ function ListIcon() {
         d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"
       />
     </svg>
+  );
+}
+
+const DRIVE_IMPORT_EXAMPLE = `{
+  "status": "draft",
+  "courses": [
+    {
+      "title": "Nombre del curso",
+      "modules": [
+        {
+          "title": "Contenido",
+          "lessons": [
+            {
+              "title": "Tema 1",
+              "videoUrl": "https://drive.google.com/file/d/FILE_ID/preview"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}`;
+
+function DriveImportDialog({ onClose }: { onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [folderUrl, setFolderUrl] = useState("");
+  const [status, setStatus] = useState<"draft" | "published">("draft");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [value, setValue] = useState(DRIVE_IMPORT_EXAMPLE);
+  const mutation = useMutation({
+    mutationFn: importDriveCourses,
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+      toast.success(
+        `Importados ${result.createdCourses} cursos, ${result.createdModules} modulos y ${result.createdLessons} lecciones`,
+      );
+      onClose();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const submit = () => {
+    const cleanUrl = folderUrl.trim();
+    if (cleanUrl) {
+      mutation.mutate({ folderUrl: cleanUrl, status });
+      return;
+    }
+
+    if (!advancedOpen) {
+      toast.error("Pega el link de una carpeta de Drive");
+      return;
+    }
+
+    try {
+      const payload = JSON.parse(value);
+      mutation.mutate(payload);
+    } catch {
+      toast.error("El manifiesto no es JSON valido");
+      return;
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/45 px-4 py-8"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="drive-import-title"
+    >
+      <div className="max-h-full w-full max-w-3xl overflow-y-auto rounded-2xl border border-ink-900/15 bg-cream-50 shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-ink-900/10 p-6">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.35em] text-ink-500">
+              Google Drive
+            </p>
+            <h2 id="drive-import-title" className="mt-1 font-serif text-3xl text-ink-900">
+              Importar cursos
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-ink-900/20 text-xl hover:border-ink-900"
+            aria-label="Cerrar"
+          >
+            x
+          </button>
+        </div>
+        <div className="p-6">
+          <label htmlFor="drive-folder-url" className="ink-label">
+            Link de carpeta de Drive
+          </label>
+          <input
+            id="drive-folder-url"
+            value={folderUrl}
+            onChange={(event) => setFolderUrl(event.target.value)}
+            placeholder="https://drive.google.com/drive/folders/..."
+            className="ink-input mt-2 min-h-12 bg-white"
+          />
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-ink-900/15 bg-white px-4">
+              <input
+                type="radio"
+                checked={status === "draft"}
+                onChange={() => setStatus("draft")}
+                className="accent-ink-900"
+              />
+              <span className="text-sm text-ink-800">Importar como borrador</span>
+            </label>
+            <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-ink-900/15 bg-white px-4">
+              <input
+                type="radio"
+                checked={status === "published"}
+                onChange={() => setStatus("published")}
+                className="accent-ink-900"
+              />
+              <span className="text-sm text-ink-800">Importar publicado</span>
+            </label>
+          </div>
+          <p className="mt-3 text-xs leading-5 text-ink-500">
+            La carpeta debe estar compartida y el backend debe tener GOOGLE_DRIVE_API_KEY. Cada subcarpeta se convierte en curso; sus subcarpetas se convierten en modulos y los videos en lecciones.
+          </p>
+          <button
+            type="button"
+            onClick={() => setAdvancedOpen((current) => !current)}
+            className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-ink-700 underline-offset-4 hover:underline"
+          >
+            {advancedOpen ? "Ocultar JSON avanzado" : "Usar JSON avanzado"}
+          </button>
+          {advancedOpen && (
+            <div className="mt-4">
+              <label htmlFor="drive-import-json" className="ink-label">
+                Manifiesto JSON
+              </label>
+              <textarea
+                id="drive-import-json"
+                value={value}
+                onChange={(event) => setValue(event.target.value)}
+                rows={14}
+                spellCheck={false}
+                className="ink-input mt-2 min-h-[280px] resize-y bg-white font-mono text-xs leading-5"
+              />
+            </div>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-ink-900/10 p-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-11 cursor-pointer rounded-full border border-ink-900/20 px-5 text-sm hover:border-ink-900"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={mutation.isPending}
+            className="min-h-11 cursor-pointer rounded-full bg-ink-900 px-6 text-sm font-semibold text-cream disabled:opacity-60"
+          >
+            {mutation.isPending ? "Importando..." : "Importar"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

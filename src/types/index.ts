@@ -109,6 +109,7 @@ export interface Course {
   instructor: User | string;
   totalDuration: number;
   totalLessons: number;
+  lessons?: Lesson[];
   enrolledCount: number;
   rating: number;
   isFeatured: boolean;

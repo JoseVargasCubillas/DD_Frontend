@@ -1,11 +1,21 @@
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import * as usersApi from '@api/users.api';
 import { useAuthStore } from '@store/authStore';
-import { useCourses } from '@hooks/useCourses';
+import type { Course } from '@t/index';
+
+type EnrolledCourse = Course | string;
+
+const isCourse = (course: EnrolledCourse): course is Course =>
+  typeof course === 'object' && course !== null;
 
 export default function UserDashboard() {
   const user = useAuthStore((s) => s.user);
-  const { data, isLoading } = useCourses({ limit: 6 });
-  const courses = data?.data ?? [];
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ['profile'],
+    queryFn: usersApi.getProfile,
+  });
+  const courses = ((profile?.enrolledCourses ?? []) as EnrolledCourse[]).filter(isCourse);
 
   return (
     <div className="space-y-12">

@@ -1,6 +1,6 @@
 import { useAuthStore } from '@store/authStore';
 
-const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:4000/api/v1';
+const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:5000/api/v1';
 
 interface FetchOptions extends RequestInit {
   _retry?: boolean;
