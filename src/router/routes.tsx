@@ -8,6 +8,7 @@ import Events from "@pages/Events";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 
+
 const Home = lazy(() => import("@pages/Home"));
 const About = lazy(() => import("@pages/About"));
 const CourseList = lazy(() => import("@pages/Courses/CourseList"));
@@ -16,6 +17,7 @@ const CourseLesson = lazy(() => import("@pages/Courses/CourseLesson"));
 const EstrategiaFiscalLanding = lazy(
   () => import("@pages/Events/EstrategiaFiscal"),
 );
+
 const EventDetail = lazy(() => import("@pages/Events/EventDetail"));
 const BlogList = lazy(() => import("@pages/Blog/BlogList"));
 const BlogPost = lazy(() => import("@pages/Blog/BlogPost"));
