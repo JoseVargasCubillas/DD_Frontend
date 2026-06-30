@@ -18,14 +18,26 @@ export interface DriveImportPayload {
     }>;
   }>;
   status?: 'draft' | 'published';
+  resetExisting?: boolean;
 }
 
 export interface DriveImportResult {
   createdCourses: number;
   updatedCourses: number;
+  resetCourses?: number;
   createdModules: number;
   createdLessons: number;
   skippedLessons: number;
+}
+
+export interface DrivePreviewResult {
+  rootFolders: number;
+  rootVideos: number;
+  courses: Array<{
+    title: string;
+    modules: number;
+    lessons: number;
+  }>;
 }
 
 export const getCourses = (params?: CourseParams): Promise<PaginatedResponse<Course>> =>
@@ -54,3 +66,6 @@ export const getCourseAdmin = (id: string): Promise<Course & { modules: any[] }>
 
 export const importDriveCourses = (payload: DriveImportPayload): Promise<DriveImportResult> =>
   client.post<ApiResponse<DriveImportResult>>('/courses/import/drive', payload).then((r) => r.data);
+
+export const previewDriveCourses = (folderUrl: string): Promise<DrivePreviewResult> =>
+  client.post<ApiResponse<DrivePreviewResult>>('/courses/import/drive/preview', { folderUrl }).then((r) => r.data);
