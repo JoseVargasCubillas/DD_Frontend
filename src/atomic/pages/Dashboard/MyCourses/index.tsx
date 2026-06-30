@@ -1,9 +1,19 @@
 import { Link } from 'react-router-dom';
-import { useCourses } from '@hooks/useCourses';
+import { useQuery } from '@tanstack/react-query';
+import * as usersApi from '@api/users.api';
+import type { Course } from '@t/index';
+
+type EnrolledCourse = Course | string;
+
+const isCourse = (course: EnrolledCourse): course is Course =>
+  typeof course === 'object' && course !== null;
 
 export default function MyCourses() {
-  const { data, isLoading } = useCourses();
-  const courses = data?.data ?? [];
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ['profile'],
+    queryFn: usersApi.getProfile,
+  });
+  const courses = ((profile?.enrolledCourses ?? []) as EnrolledCourse[]).filter(isCourse);
 
   return (
     <div className="space-y-8">

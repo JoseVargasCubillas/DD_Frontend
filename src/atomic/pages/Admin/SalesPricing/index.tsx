@@ -2,8 +2,10 @@ import { useMemo, useRef, useState, type ReactNode, type MouseEvent } from "reac
 import { Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useCourses } from "@hooks/useCourses";
+import { useModules } from "@hooks/useModules";
+import { useCreateOffer, useOffers } from "@hooks/useOffers";
 import { useOrders } from "@hooks/usePayments";
-import type { Course, Order } from "@t/index";
+import type { Course, Module, Offer, Order } from "@t/index";
 
 type PricingTab = "offers" | "upsells";
 type StatusFilter = "published" | "draft" | "all";
@@ -52,12 +54,9 @@ export default function SalesPricing() {
   const [search, setSearch] = useState("");
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
-  const [showNewOfferModal, setShowNewOfferModal] = useState(false);
+  const [showOfferModal, setShowOfferModal] = useState(false);
   const [upsells, setUpsells] = useState<UpsellRecord[]>(() =>
     loadJson<UpsellRecord[]>("dd-sales-upsells", []),
-  );
-  const [standaloneOffers, setStandaloneOffers] = useState<OfferRecord[]>(() =>
-    loadJson<OfferRecord[]>("dd-standalone-offers", []),
   );
   const [offerOverrides, setOfferOverrides] = useState<Record<string, Partial<OfferRecord>>>(
     () => loadJson<Record<string, Partial<OfferRecord>>>("dd-offer-overrides", {}),
@@ -67,11 +66,15 @@ export default function SalesPricing() {
     includeAll: true,
   });
   const { data: orders = [] } = useOrders();
+  const { data: persistedOffers = [] } = useOffers();
   const courses = coursesResponse?.data ?? [];
-  const offers = useMemo(() => {
-    const base = [...collectOffers(courses), ...standaloneOffers];
-    return base.map((o) => (offerOverrides[o.id] ? { ...o, ...offerOverrides[o.id] } : o));
-  }, [courses, standaloneOffers, offerOverrides]);
+  const offers = useMemo(
+    () =>
+      persistedOffers
+        .map((offer) => mapPersistedOffer(offer, courses))
+        .map((offer) => (offerOverrides[offer.id] ? { ...offer, ...offerOverrides[offer.id] } : offer)),
+    [persistedOffers, courses, offerOverrides],
+  );
   const selectedOffer = offers.find((offer) => offer.id === statsOfferId);
   const offerMetrics = useMemo(
     () => buildOfferMetrics(offers, orders),
@@ -170,7 +173,7 @@ export default function SalesPricing() {
         ) : (
           <button
             type="button"
-            onClick={() => setShowNewOfferModal(true)}
+            onClick={() => setShowOfferModal(true)}
             className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-ink-900 px-5 text-sm font-semibold text-cream"
           >
             <span aria-hidden="true">＋</span> Nueva oferta
@@ -293,22 +296,219 @@ export default function SalesPricing() {
               )}
             </div>
           </section>
-          {showNewOfferModal && (
+          {showOfferModal && (
             <NewOfferModal
               courses={courses}
-              onClose={() => setShowNewOfferModal(false)}
-              onCreate={(offer) => {
-                const next = [...standaloneOffers, offer];
-                setStandaloneOffers(next);
-                localStorage.setItem("dd-standalone-offers", JSON.stringify(next));
-                toast.success("Oferta creada");
-                setShowNewOfferModal(false);
-              }}
+              onClose={() => setShowOfferModal(false)}
             />
           )}
         </>
       )}
     </div>
+  );
+}
+
+function NewOfferModal({ courses, onClose }: { courses: Course[]; onClose: () => void }) {
+  const create = useCreateOffer();
+  const [title, setTitle] = useState("");
+  const [type, setType] = useState<"standard" | "trial">("standard");
+  const [status, setStatus] = useState<"draft" | "published">("published");
+  const [price, setPrice] = useState(0);
+  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
+  const [selectedModulesByCourse, setSelectedModulesByCourse] = useState<Record<string, string[]>>({});
+
+  const toggleCourse = (courseId: string) =>
+    setSelectedCourseIds((current) =>
+      current.includes(courseId) ? current.filter((id) => id !== courseId) : [...current, courseId],
+    );
+
+  const toggleTrialModule = (courseId: string, moduleId: string) =>
+    setSelectedModulesByCourse((current) => {
+      const currentModules = current[courseId] ?? [];
+      const nextModules = currentModules.includes(moduleId)
+        ? currentModules.filter((id) => id !== moduleId)
+        : [...currentModules, moduleId];
+      const next = { ...current };
+      if (nextModules.length) next[courseId] = nextModules;
+      else delete next[courseId];
+      return next;
+    });
+
+  const submit = () => {
+    const content =
+      type === "standard"
+        ? selectedCourseIds.map((courseId) => ({ courseId, access: "full" as const, moduleIds: [] }))
+        : Object.entries(selectedModulesByCourse).map(([courseId, moduleIds]) => ({
+            courseId,
+            access: "modules" as const,
+            moduleIds,
+          }));
+
+    create.mutate(
+      { title, type, status, price, currency: "MXN", content },
+      { onSuccess: onClose },
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-6">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-ink-900/15 bg-white p-7 shadow-xl">
+        <p className="mb-2 text-[10px] uppercase tracking-[0.36em] text-ink-500">Oferta</p>
+        <h3 className="font-serif text-3xl text-ink-900">Nueva oferta</h3>
+        <div className="mt-6 grid gap-4">
+          <label className="grid gap-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-ink-500">Titulo</span>
+            <input value={title} onChange={(event) => setTitle(event.target.value)} className="min-h-11 rounded-lg border border-ink-900/20 px-3 text-sm outline-none focus:border-ink-900" />
+          </label>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="grid gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.24em] text-ink-500">Tipo</span>
+              <select value={type} onChange={(event) => setType(event.target.value as "standard" | "trial")} className="min-h-11 rounded-lg border border-ink-900/20 px-3 text-sm">
+                <option value="standard">Normal</option>
+                <option value="trial">Prueba</option>
+              </select>
+            </label>
+            <label className="grid gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.24em] text-ink-500">Estado</span>
+              <select value={status} onChange={(event) => setStatus(event.target.value as "draft" | "published")} className="min-h-11 rounded-lg border border-ink-900/20 px-3 text-sm">
+                <option value="published">Publicada</option>
+                <option value="draft">Borrador</option>
+              </select>
+            </label>
+            <label className="grid gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.24em] text-ink-500">Precio</span>
+              <input type="number" min="0" value={price} onChange={(event) => setPrice(Number(event.target.value || 0))} className="min-h-11 rounded-lg border border-ink-900/20 px-3 text-sm outline-none focus:border-ink-900" />
+            </label>
+          </div>
+          {type === "standard" ? (
+            <section className="rounded-xl border border-ink-900/10 p-4">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-ink-500">Cursos incluidos</p>
+              <div className="grid max-h-72 gap-2 overflow-y-auto sm:grid-cols-2">
+                {courses.map((course) => {
+                  const courseId = course._id || course.id || "";
+                  return (
+                    <label key={courseId} className="flex cursor-pointer items-center gap-3 rounded-lg border border-ink-900/10 p-3 text-sm hover:bg-cream-100">
+                      <input type="checkbox" checked={selectedCourseIds.includes(courseId)} onChange={() => toggleCourse(courseId)} />
+                      <span className="min-w-0 truncate">{course.title}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+          ) : (
+            <section className="rounded-xl border border-ink-900/10 p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-ink-500">Modulos de prueba</p>
+                <span className="text-xs text-ink-500">
+                  {Object.values(selectedModulesByCourse).reduce((sum, ids) => sum + ids.length, 0)} seleccionados
+                </span>
+              </div>
+              <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
+                {courses.map((course) => {
+                  const courseId = course._id || course.id || "";
+                  return (
+                    <TrialCourseModules
+                      key={courseId}
+                      course={course}
+                      selectedModuleIds={selectedModulesByCourse[courseId] ?? []}
+                      onToggleModule={(moduleId) => toggleTrialModule(courseId, moduleId)}
+                      onSetModules={(moduleIds) =>
+                        setSelectedModulesByCourse((current) => {
+                          const next = { ...current };
+                          if (moduleIds.length) next[courseId] = moduleIds;
+                          else delete next[courseId];
+                          return next;
+                        })
+                      }
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          )}
+        </div>
+        <div className="mt-6 flex gap-2">
+          <button type="button" onClick={onClose} className="min-h-11 flex-1 rounded-full border border-ink-900/20 px-4 text-sm font-semibold hover:border-ink-900">
+            Cancelar
+          </button>
+          <button type="button" onClick={submit} disabled={create.isPending || !title.trim()} className="min-h-11 flex-1 rounded-full bg-ink-900 px-4 text-sm font-semibold text-white disabled:opacity-50">
+            {create.isPending ? "Creando..." : "Crear oferta"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TrialCourseModules({
+  course,
+  selectedModuleIds,
+  onToggleModule,
+  onSetModules,
+}: {
+  course: Course;
+  selectedModuleIds: string[];
+  onToggleModule: (moduleId: string) => void;
+  onSetModules: (moduleIds: string[]) => void;
+}) {
+  const courseId = course._id || course.id || "";
+  const [open, setOpen] = useState(false);
+  const { data: modules = [], isLoading } = useModules(open ? courseId : undefined);
+  const selectedCount = selectedModuleIds.length;
+
+  return (
+    <article className={`rounded-lg border ${selectedCount ? "border-ink-900 bg-cream-100" : "border-ink-900/10 bg-white"}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className="flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 px-4 text-left"
+      >
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold text-ink-900">{course.title}</span>
+          <span className="text-xs text-ink-500">
+            {selectedCount ? `${selectedCount} modulo${selectedCount === 1 ? "" : "s"} seleccionado${selectedCount === 1 ? "" : "s"}` : "Seleccionar modulos"}
+          </span>
+        </span>
+        <span className="shrink-0 text-lg text-ink-500">{open ? "−" : "+"}</span>
+      </button>
+      {open && (
+        <div className="border-t border-ink-900/10 p-3">
+          {isLoading ? (
+            <p className="py-3 text-sm text-ink-500">Cargando modulos...</p>
+          ) : modules.length === 0 ? (
+            <p className="py-3 text-sm text-ink-500">Este curso no tiene modulos todavia.</p>
+          ) : (
+            <>
+              <div className="mb-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() =>
+                    selectedModuleIds.length === modules.length
+                      ? onSetModules([])
+                      : onSetModules(modules.map((module: Module) => module._id))
+                  }
+                  className="min-h-9 rounded-full border border-ink-900/20 px-3 text-xs font-semibold text-ink-700 hover:border-ink-900"
+                >
+                  {selectedModuleIds.length === modules.length ? "Quitar todos" : "Seleccionar todos"}
+                </button>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {modules.map((module: Module) => (
+                  <label key={module._id} className="flex cursor-pointer items-center gap-3 rounded-lg border border-ink-900/10 bg-white p-3 text-sm hover:bg-cream-100">
+                    <input
+                      type="checkbox"
+                      checked={selectedModuleIds.includes(module._id)}
+                      onChange={() => onToggleModule(module._id)}
+                    />
+                    <span className="min-w-0 truncate">{module.title}</span>
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </article>
   );
 }
 
@@ -1047,6 +1247,29 @@ function collectOffers(courses: Course[]): OfferRecord[] {
       checkoutPath: `/checkout?offer=${encodeURIComponent(String(offer.id || courseId))}`,
     }));
   });
+}
+
+function mapPersistedOffer(offer: Offer, courses: Course[]): OfferRecord {
+  const firstContent = offer.content?.[0];
+  const firstCourse = courses.find((course) => (course._id || course.id) === firstContent?.courseId);
+  const products = offer.content?.reduce((sum, item) => {
+    if (item.access === "full") return sum + 1;
+    return sum + Math.max(1, item.moduleIds.length);
+  }, 0) ?? 0;
+
+  return {
+    id: offer._id || offer.id || offer.slug,
+    courseId: firstContent?.courseId || "",
+    title: offer.title,
+    status: offer.status === "draft" ? "draft" : "published",
+    products,
+    price: Number(offer.price || 0),
+    currency: offer.currency || "MXN",
+    paymentType: Number(offer.price || 0) > 0 ? "one_time" : "free",
+    thumbnail: firstCourse?.thumbnail || "",
+    courseTitle: firstCourse?.title || `${products} producto${products === 1 ? "" : "s"}`,
+    checkoutPath: `/checkout?offer=${encodeURIComponent(offer._id || offer.id || offer.slug)}`,
+  };
 }
 
 function buildOfferMetrics(offers: OfferRecord[], orders: Order[]) {

@@ -3,7 +3,13 @@ import { Link, useLocation } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useCourses } from "@hooks/useCourses";
-import { createCourse, deleteCourse } from "@api/courses.api";
+import {
+  createCourse,
+  deleteCourse,
+  importDriveCourses,
+  previewDriveCourses,
+  type DrivePreviewResult,
+} from "@api/courses.api";
 import type { Course, CourseType } from "@t/index";
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
@@ -69,16 +75,24 @@ const INITIAL_DRAFT: CourseDraft = {
   paywall: false,
 };
 
+const TABLE_PAGE_SIZE = 10;
+
 export default function ManageCourses() {
   const location = useLocation();
   const isAllProducts = location.pathname === "/admin/productos";
-  const { data, isLoading } = useCourses({ status: "", includeAll: true });
+  const { data, isLoading } = useCourses({
+    status: "",
+    includeAll: true,
+    limit: 200,
+  });
   const courses = data?.data ?? [];
   const [showWizard, setShowWizard] = useState(false);
+  const [showDriveImport, setShowDriveImport] = useState(false);
   const [showProductDialog, setShowProductDialog] = useState<
     ProductBundle | "new" | null
   >(null);
   const [search, setSearch] = useState("");
+  const [coursePage, setCoursePage] = useState(1);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [bundles, setBundles] = useState<ProductBundle[]>(() =>
     loadProductBundles(),
@@ -124,6 +138,15 @@ export default function ManageCourses() {
         )
       : courses;
   }, [courses, search]);
+  const coursePageCount = Math.max(
+    1,
+    Math.ceil(filteredCourses.length / TABLE_PAGE_SIZE),
+  );
+  const currentCoursePage = Math.min(coursePage, coursePageCount);
+  const paginatedCourses = filteredCourses.slice(
+    (currentCoursePage - 1) * TABLE_PAGE_SIZE,
+    currentCoursePage * TABLE_PAGE_SIZE,
+  );
 
   const saveBundles = (next: ProductBundle[]) => {
     setBundles(next);
@@ -137,7 +160,10 @@ export default function ManageCourses() {
         bundles={bundles}
         isLoading={isLoading}
         search={search}
-        setSearch={setSearch}
+        setSearch={(value) => {
+          setSearch(value);
+          setCoursePage(1);
+        }}
         openMenuId={openMenuId}
         setOpenMenuId={setOpenMenuId}
         onNewProduct={() => setShowProductDialog("new")}
@@ -208,6 +234,26 @@ export default function ManageCourses() {
         </button>
       </header>
 
+      <section className="mb-7 rounded-2xl border border-ink-900/15 bg-white/75 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.35em] text-ink-500">
+              Migracion Kajabi
+            </p>
+            <h2 className="mt-1 font-serif text-2xl text-ink-900">
+              Importar cursos desde Drive
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowDriveImport(true)}
+            className="min-h-11 cursor-pointer rounded-full border border-ink-900/20 px-5 text-sm font-semibold text-ink-800 transition-colors hover:border-ink-900"
+          >
+            Importar desde Drive
+          </button>
+        </div>
+      </section>
+
       <section
         className="rounded-2xl border border-ink-900/15 bg-cream-50 shadow-sm"
         aria-label="Listado de cursos"
@@ -228,7 +274,10 @@ export default function ManageCourses() {
             </svg>
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setCoursePage(1);
+              }}
               placeholder="Buscar..."
               className="min-h-11 w-full rounded-lg border border-ink-900/20 bg-white py-2 pl-10 pr-3 text-sm outline-none transition-colors focus:border-ink-900"
             />
@@ -259,7 +308,7 @@ export default function ManageCourses() {
             </p>
           </div>
         ) : (
-          filteredCourses.map((course: Course) => {
+          paginatedCourses.map((course: Course) => {
             const id = String(course._id || course.id);
             const createdAt = course.createdAt
               ? new Date(course.createdAt).toLocaleDateString("es-MX", {
@@ -378,10 +427,22 @@ export default function ManageCourses() {
             );
           })
         )}
+        {filteredCourses.length > TABLE_PAGE_SIZE && (
+          <PaginationControls
+            page={currentCoursePage}
+            pageCount={coursePageCount}
+            total={filteredCourses.length}
+            pageSize={TABLE_PAGE_SIZE}
+            onPageChange={setCoursePage}
+          />
+        )}
       </section>
 
       {showWizard && (
         <CourseCreationWizard onClose={() => setShowWizard(false)} />
+      )}
+      {showDriveImport && (
+        <DriveImportDialog onClose={() => setShowDriveImport(false)} />
       )}
     </div>
   );
@@ -416,6 +477,7 @@ function AllProductsView({
   onDeleteProduct: (id: string) => void;
   children?: ReactNode;
 }) {
+  const [page, setPage] = useState(1);
   const rows = useMemo(() => {
     const courseRows: ProductRow[] = courses.map((course) => ({
       id: String(course._id || course.id),
@@ -451,6 +513,17 @@ function AllProductsView({
           new Date(a.createdAt || 0).getTime(),
       );
   }, [bundles, courses, search]);
+  const pageCount = Math.max(1, Math.ceil(rows.length / TABLE_PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const paginatedRows = rows.slice(
+    (currentPage - 1) * TABLE_PAGE_SIZE,
+    currentPage * TABLE_PAGE_SIZE,
+  );
+
+  const updateSearch = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
 
   return (
     <div>
@@ -490,7 +563,7 @@ function AllProductsView({
             <SearchInlineIcon />
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => updateSearch(event.target.value)}
               placeholder="Buscar..."
               className="min-h-11 w-full rounded-lg border border-ink-900/20 bg-white py-2 pl-10 pr-3 text-sm outline-none transition-colors focus:border-ink-900"
             />
@@ -521,7 +594,7 @@ function AllProductsView({
             </p>
           </div>
         ) : (
-          rows.map((row) => (
+          paginatedRows.map((row) => (
             <article
               key={`${row.type}-${row.id}`}
               className="grid gap-3 border-b border-ink-900/10 px-5 py-4 last:border-0 md:grid-cols-[minmax(260px,2fr)_0.7fr_0.9fr_1fr_44px] md:items-center md:gap-5"
@@ -653,8 +726,63 @@ function AllProductsView({
             </article>
           ))
         )}
+        {rows.length > TABLE_PAGE_SIZE && (
+          <PaginationControls
+            page={currentPage}
+            pageCount={pageCount}
+            total={rows.length}
+            pageSize={TABLE_PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        )}
       </section>
       {children}
+    </div>
+  );
+}
+
+function PaginationControls({
+  page,
+  pageCount,
+  total,
+  pageSize,
+  onPageChange,
+}: {
+  page: number;
+  pageCount: number;
+  total: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+}) {
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const end = Math.min(total, page * pageSize);
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ink-900/10 px-5 py-4">
+      <p className="text-sm text-ink-600">
+        Mostrando {start}-{end} de {total}
+      </p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+          disabled={page <= 1}
+          className="min-h-9 rounded-full border border-ink-900/20 px-4 text-sm font-semibold text-ink-700 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Anterior
+        </button>
+        <span className="min-w-16 text-center text-sm text-ink-600">
+          {page} / {pageCount}
+        </span>
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.min(pageCount, page + 1))}
+          disabled={page >= pageCount}
+          className="min-h-9 rounded-full border border-ink-900/20 px-4 text-sm font-semibold text-ink-700 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Siguiente
+        </button>
+      </div>
     </div>
   );
 }
@@ -972,6 +1100,247 @@ function ListIcon() {
         d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"
       />
     </svg>
+  );
+}
+
+const DRIVE_IMPORT_EXAMPLE = `{
+  "status": "draft",
+  "courses": [
+    {
+      "title": "Nombre del curso",
+      "modules": [
+        {
+          "title": "Contenido",
+          "lessons": [
+            {
+              "title": "Tema 1",
+              "videoUrl": "https://drive.google.com/file/d/FILE_ID/preview"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}`;
+const FINAL_DRIVE_FOLDER_URL =
+  "https://drive.google.com/drive/folders/1u0OMUqg9msjE1LDGtjS6Syxyia8ZXnX6?usp=drive_link";
+
+function DriveImportDialog({ onClose }: { onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [folderUrl, setFolderUrl] = useState(FINAL_DRIVE_FOLDER_URL);
+  const [status, setStatus] = useState<"draft" | "published">("published");
+  const [resetExisting, setResetExisting] = useState(true);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [value, setValue] = useState(DRIVE_IMPORT_EXAMPLE);
+  const [preview, setPreview] = useState<DrivePreviewResult | null>(null);
+  const mutation = useMutation({
+    mutationFn: importDriveCourses,
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+      toast.success(
+        `Importados ${result.createdCourses} cursos nuevos, ${result.updatedCourses} actualizados, ${result.createdModules} modulos y ${result.createdLessons} lecciones`,
+      );
+      onClose();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const previewMutation = useMutation({
+    mutationFn: previewDriveCourses,
+    onSuccess: (result) => {
+      setPreview(result);
+      toast.success(`Drive detecto ${result.rootFolders} carpetas raiz`);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const submit = () => {
+    const cleanUrl = folderUrl.trim();
+    if (cleanUrl) {
+      mutation.mutate({ folderUrl: cleanUrl, status, resetExisting });
+      return;
+    }
+
+    if (!advancedOpen) {
+      toast.error("Pega el link de una carpeta de Drive");
+      return;
+    }
+
+    try {
+      const payload = JSON.parse(value);
+      mutation.mutate(payload);
+    } catch {
+      toast.error("El manifiesto no es JSON valido");
+      return;
+    }
+  };
+
+  const previewDrive = () => {
+    const cleanUrl = folderUrl.trim();
+    if (!cleanUrl) {
+      toast.error("Pega el link de una carpeta de Drive");
+      return;
+    }
+    previewMutation.mutate(cleanUrl);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/45 px-4 py-8"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="drive-import-title"
+    >
+      <div className="max-h-full w-full max-w-3xl overflow-y-auto rounded-2xl border border-ink-900/15 bg-cream-50 shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-ink-900/10 p-6">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.35em] text-ink-500">
+              Google Drive
+            </p>
+            <h2 id="drive-import-title" className="mt-1 font-serif text-3xl text-ink-900">
+              Importar cursos
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-ink-900/20 text-xl hover:border-ink-900"
+            aria-label="Cerrar"
+          >
+            x
+          </button>
+        </div>
+        <div className="p-6">
+          <label htmlFor="drive-folder-url" className="ink-label">
+            Link de carpeta de Drive
+          </label>
+          <input
+            id="drive-folder-url"
+            value={folderUrl}
+            onChange={(event) => {
+              setFolderUrl(event.target.value);
+              setPreview(null);
+            }}
+            placeholder="https://drive.google.com/drive/folders/..."
+            className="ink-input mt-2 min-h-12 bg-white"
+          />
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={previewDrive}
+              disabled={previewMutation.isPending}
+              className="min-h-10 rounded-full border border-ink-900/20 px-4 text-sm font-semibold text-ink-800 hover:border-ink-900 disabled:opacity-60"
+            >
+              {previewMutation.isPending ? "Leyendo Drive..." : "Previsualizar Drive"}
+            </button>
+            {preview && (
+              <span className="inline-flex min-h-10 items-center rounded-full bg-ink-900 px-4 text-sm font-semibold text-cream">
+                {preview.rootFolders} carpetas raiz · {preview.courses.reduce((sum, course) => sum + course.lessons, 0)} videos
+              </span>
+            )}
+          </div>
+          {preview && (
+            <div className="mt-4 max-h-56 overflow-y-auto rounded-xl border border-ink-900/10 bg-white p-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-ink-500">
+                Cursos detectados por la API
+              </p>
+              <div className="space-y-1">
+                {preview.courses.map((course) => (
+                  <div key={course.title} className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-sm text-ink-700 hover:bg-cream-100">
+                    <span className="min-w-0 truncate">{course.title}</span>
+                    <span className="shrink-0 text-xs text-ink-500">
+                      {course.modules} mod · {course.lessons} videos
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {preview.rootFolders < 29 && (
+                <p className="mt-3 rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+                  Drive solo entrego {preview.rootFolders} carpetas al backend. Si en el navegador ves mas, revisa permisos de esas carpetas o conviertelas en carpetas reales compartidas; la API no puede importar lo que no le aparece.
+                </p>
+              )}
+            </div>
+          )}
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-ink-900/15 bg-white px-4">
+              <input
+                type="radio"
+                checked={status === "draft"}
+                onChange={() => setStatus("draft")}
+                className="accent-ink-900"
+              />
+              <span className="text-sm text-ink-800">Importar como borrador</span>
+            </label>
+            <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-ink-900/15 bg-white px-4">
+              <input
+                type="radio"
+                checked={status === "published"}
+                onChange={() => setStatus("published")}
+                className="accent-ink-900"
+              />
+              <span className="text-sm text-ink-800">Importar publicado</span>
+            </label>
+          </div>
+          <p className="mt-3 text-xs leading-5 text-ink-500">
+            Estructura definitiva: carpetas raiz = cursos, carpetas internas = modulos, videos = lecciones. La carpeta debe estar compartida y el backend debe tener GOOGLE_DRIVE_API_KEY.
+          </p>
+          <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+            <input
+              type="checkbox"
+              checked={resetExisting}
+              onChange={(event) => setResetExisting(event.target.checked)}
+              className="mt-1 accent-ink-900"
+            />
+            <span>
+              <span className="block text-sm font-semibold text-ink-900">
+                Reconstruir cursos existentes desde Drive
+              </span>
+              <span className="mt-1 block text-xs leading-5 text-ink-600">
+                Recomendado para importacion definitiva. Si un curso ya existe, elimina sus modulos y lecciones actuales y los vuelve a crear con lo que hay ahora en Drive.
+              </span>
+            </span>
+          </label>
+          <button
+            type="button"
+            onClick={() => setAdvancedOpen((current) => !current)}
+            className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-ink-700 underline-offset-4 hover:underline"
+          >
+            {advancedOpen ? "Ocultar JSON avanzado" : "Usar JSON avanzado"}
+          </button>
+          {advancedOpen && (
+            <div className="mt-4">
+              <label htmlFor="drive-import-json" className="ink-label">
+                Manifiesto JSON
+              </label>
+              <textarea
+                id="drive-import-json"
+                value={value}
+                onChange={(event) => setValue(event.target.value)}
+                rows={14}
+                spellCheck={false}
+                className="ink-input mt-2 min-h-[280px] resize-y bg-white font-mono text-xs leading-5"
+              />
+            </div>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-ink-900/10 p-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-11 cursor-pointer rounded-full border border-ink-900/20 px-5 text-sm hover:border-ink-900"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={mutation.isPending}
+            className="min-h-11 cursor-pointer rounded-full bg-ink-900 px-6 text-sm font-semibold text-cream disabled:opacity-60"
+          >
+            {mutation.isPending ? "Importando..." : resetExisting ? "Importar definitivo" : "Importar"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
