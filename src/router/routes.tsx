@@ -45,6 +45,7 @@ const SalesPayments = lazy(() => import("@pages/Admin/SalesPayments"));
 const SalesPricing = lazy(() => import("@pages/Admin/SalesPricing"));
 const SalesCart = lazy(() => import("@pages/Admin/SalesCart"));
 const DiazLara = lazy(() => import("@pages/DiazLara"));
+const ManageEmail = lazy(() => import("@pages/Admin/ManageEmail"));
 
 export const router = createBrowserRouter([
   {
@@ -126,6 +127,7 @@ export const router = createBrowserRouter([
       { path: "/admin/ventas/pagos", element: <SalesPayments /> },
       { path: "/admin/ventas/precios", element: <SalesPricing /> },
       { path: "/admin/ventas/carrito", element: <SalesCart /> },
+      { path: "/admin/email", element: <ManageEmail /> },
     ],
   },
 ]);

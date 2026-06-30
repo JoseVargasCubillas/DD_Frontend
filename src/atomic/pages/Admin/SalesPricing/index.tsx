@@ -49,6 +49,7 @@ export default function SalesPricing() {
   const [params, setParams] = useSearchParams();
   const activeTab = params.get("tab") === "upsells" ? "upsells" : "offers";
   const statsOfferId = params.get("stats");
+  const editOfferId = params.get("edit");
   const [filter, setFilter] = useState<StatusFilter>("published");
   const [search, setSearch] = useState("");
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -56,6 +57,9 @@ export default function SalesPricing() {
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [upsells, setUpsells] = useState<UpsellRecord[]>(() =>
     loadJson<UpsellRecord[]>("dd-sales-upsells", []),
+  );
+  const [offerOverrides, setOfferOverrides] = useState<Record<string, Partial<OfferRecord>>>(
+    () => loadJson<Record<string, Partial<OfferRecord>>>("dd-offer-overrides", {}),
   );
   const { data: coursesResponse } = useCourses({
     status: "",
@@ -65,8 +69,11 @@ export default function SalesPricing() {
   const { data: persistedOffers = [] } = useOffers();
   const courses = coursesResponse?.data ?? [];
   const offers = useMemo(
-    () => persistedOffers.map((offer) => mapPersistedOffer(offer, courses)),
-    [persistedOffers, courses],
+    () =>
+      persistedOffers
+        .map((offer) => mapPersistedOffer(offer, courses))
+        .map((offer) => (offerOverrides[offer.id] ? { ...offer, ...offerOverrides[offer.id] } : offer)),
+    [persistedOffers, courses, offerOverrides],
   );
   const selectedOffer = offers.find((offer) => offer.id === statsOfferId);
   const offerMetrics = useMemo(
@@ -80,6 +87,27 @@ export default function SalesPricing() {
         offer={selectedOffer}
         metrics={offerMetrics.get(selectedOffer.id) ?? emptyOfferMetrics()}
         onBack={() => setParams({})}
+      />
+    );
+  }
+
+  const editOfferRecord = offers.find((o) => o.id === editOfferId);
+  if (editOfferRecord) {
+    return (
+      <OfferEditView
+        offer={editOfferRecord}
+        courses={courses}
+        onBack={() => setParams({})}
+        onSave={(patch) => {
+          const next = {
+            ...offerOverrides,
+            [editOfferRecord.id]: { ...(offerOverrides[editOfferRecord.id] ?? {}), ...patch },
+          };
+          setOfferOverrides(next);
+          localStorage.setItem("dd-offer-overrides", JSON.stringify(next));
+          toast.success("Oferta guardada");
+          setParams({});
+        }}
       />
     );
   }
@@ -100,6 +128,11 @@ export default function SalesPricing() {
   const saveUpsells = (next: UpsellRecord[]) => {
     setUpsells(next);
     localStorage.setItem("dd-sales-upsells", JSON.stringify(next));
+  };
+  const saveOverride = (id: string, patch: Partial<OfferRecord>) => {
+    const next = { ...offerOverrides, [id]: { ...(offerOverrides[id] ?? {}), ...patch } };
+    setOfferOverrides(next);
+    localStorage.setItem("dd-offer-overrides", JSON.stringify(next));
   };
 
   return (
@@ -141,7 +174,7 @@ export default function SalesPricing() {
           <button
             type="button"
             onClick={() => setShowOfferModal(true)}
-            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-ink-900 px-5 text-sm font-semibold text-cream"
+            className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-ink-900 px-5 text-sm font-semibold text-cream"
           >
             <span aria-hidden="true">＋</span> Nueva oferta
           </button>
@@ -245,6 +278,12 @@ export default function SalesPricing() {
                         openMenu={openMenu}
                         setOpenMenu={setOpenMenu}
                         onStats={() => setParams({ stats: offer.id })}
+                        onEdit={() => setParams({ edit: offer.id })}
+                        onToggleStatus={() =>
+                          saveOverride(offer.id, {
+                            status: offer.status === "published" ? "draft" : "published",
+                          })
+                        }
                       />
                     );
                   })}
@@ -479,12 +518,16 @@ function OfferRow({
   openMenu,
   setOpenMenu,
   onStats,
+  onEdit,
+  onToggleStatus,
 }: {
   offer: OfferRecord;
   metrics: OfferMetrics;
   openMenu: string | null;
   setOpenMenu: (id: string | null) => void;
   onStats: () => void;
+  onEdit: () => void;
+  onToggleStatus: () => void;
 }) {
   const isMenuOpen = openMenu === offer.id;
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -525,7 +568,11 @@ function OfferRow({
           )}
         </div>
       </td>
-      <td className="py-4 font-medium text-ink-700">{offer.title}</td>
+      <td className="py-4 font-medium text-ink-700">
+        <button type="button" onClick={onEdit} className="text-left hover:underline cursor-pointer">
+          {offer.title}
+        </button>
+      </td>
       <td className="py-4">{offer.products}</td>
       <td className="py-4">{formatOfferPrice(offer)}</td>
       <td className="py-4">{metrics.qtySold}</td>
@@ -535,9 +582,15 @@ function OfferRow({
       <td className="py-4">
         <button
           type="button"
-          className="rounded-full border border-emerald-400 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"
+          onClick={onToggleStatus}
+          title="Cambiar estado"
+          className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+            offer.status === "published"
+              ? "border-emerald-400 bg-emerald-50 text-emerald-700"
+              : "border-amber-400 bg-amber-50 text-amber-700"
+          }`}
         >
-          {offer.status === "published" ? "Publicada" : "Borrador"}⌄
+          {offer.status === "published" ? "Publicada" : "Borrador"}
         </button>
       </td>
       <td className="relative py-4 text-right">
@@ -1482,5 +1535,944 @@ function TrashIcon() {
     >
       <path d="M5 7h14M9 7V5h6v2m-8 0 1 13h8l1-13" />
     </svg>
+  );
+}
+
+// =====================================================================
+// OfferEditView – full Kajabi-style tabbed editor
+// =====================================================================
+
+interface OfferFullSettings {
+  title: string;
+  internalTitle: string;
+  description: string;
+  paymentType: "free" | "one_time" | "subscription";
+  price: number;
+  currency: string;
+  billingInterval: "month" | "year";
+  billingCount: number;
+  trialDays: string;
+  setupFee: string;
+  acceptStripe: boolean;
+  acceptPaypal: boolean;
+  status: "published" | "draft";
+  postPurchase: string;
+  postPurchaseEmail: "default" | "custom" | "none";
+  customEmailSubject: string;
+  customEmailContent: string;
+  checkoutButtonColor: string;
+  collectName: boolean;
+  collectPhone: boolean;
+  collectAddress: boolean;
+  collectTaxId: boolean;
+  serviceAgreement: "not_required" | "default" | "custom";
+  affiliateEnabled: boolean;
+  affiliateType: "percentage" | "fixed";
+  affiliateValue: string;
+  selectedProductIds: string[];
+}
+
+function defaultFullSettings(offer: OfferRecord): OfferFullSettings {
+  return {
+    title: offer.title,
+    internalTitle: "",
+    description: "",
+    paymentType:
+      offer.paymentType === "free"
+        ? "free"
+        : offer.title.toLowerCase().includes("mensual") || offer.title.toLowerCase().includes("suscripcion")
+        ? "subscription"
+        : "one_time",
+    price: offer.price,
+    currency: offer.currency || "MXN",
+    billingInterval: "month",
+    billingCount: 1,
+    trialDays: "",
+    setupFee: "",
+    acceptStripe: true,
+    acceptPaypal: false,
+    status: offer.status,
+    postPurchase: "Member's Product Library",
+    postPurchaseEmail: "default",
+    customEmailSubject: "",
+    customEmailContent: "",
+    checkoutButtonColor: "#efc75a",
+    collectName: true,
+    collectPhone: true,
+    collectAddress: false,
+    collectTaxId: false,
+    serviceAgreement: "not_required",
+    affiliateEnabled: false,
+    affiliateType: "percentage",
+    affiliateValue: "20",
+    selectedProductIds:
+      offer.courseId && offer.courseId !== "standalone" ? [offer.courseId] : [],
+  };
+}
+
+type EditOfferTab = "details" | "pricing" | "flow" | "settings";
+
+function OfferEditView({
+  offer,
+  courses,
+  onBack,
+  onSave,
+}: {
+  offer: OfferRecord;
+  courses: Course[];
+  onBack: () => void;
+  onSave: (patch: Partial<OfferRecord>) => void;
+}) {
+  const settingsKey = `dd-offer-full-${offer.id}`;
+  const [settings, setSettings] = useState<OfferFullSettings>(() => {
+    const saved = loadJson<Partial<OfferFullSettings>>(settingsKey, {});
+    return { ...defaultFullSettings(offer), ...saved };
+  });
+  const [tab, setTab] = useState<EditOfferTab>("details");
+  const [editCheckout, setEditCheckout] = useState(false);
+  const [productSearch, setProductSearch] = useState("");
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
+
+  const upd = <K extends keyof OfferFullSettings>(key: K, value: OfferFullSettings[K]) =>
+    setSettings((prev) => ({ ...prev, [key]: value }));
+
+  const handleSave = () => {
+    localStorage.setItem(settingsKey, JSON.stringify(settings));
+    onSave({
+      title: settings.title,
+      status: settings.status,
+      price: settings.price,
+      currency: settings.currency,
+      paymentType: settings.paymentType === "subscription" ? "one_time" : settings.paymentType,
+    });
+  };
+
+  const selectedCourses = courses.filter((c) => {
+    const id = String(c._id || c.id || c.slug || "");
+    return settings.selectedProductIds.includes(id);
+  });
+
+  const filteredProductList = courses.filter((c) => {
+    const id = String(c._id || c.id || c.slug || "");
+    return (
+      !settings.selectedProductIds.includes(id) &&
+      c.title.toLowerCase().includes(productSearch.toLowerCase())
+    );
+  });
+
+  const addProduct = (courseId: string) => {
+    upd("selectedProductIds", [...settings.selectedProductIds, courseId]);
+    setShowProductDropdown(false);
+    setProductSearch("");
+  };
+
+  const removeProduct = (courseId: string) => {
+    upd("selectedProductIds", settings.selectedProductIds.filter((id) => id !== courseId));
+  };
+
+  const displayPrice =
+    settings.paymentType === "free"
+      ? "Gratis"
+      : `$${settings.price.toLocaleString("es-MX", { minimumFractionDigits: 2 })} ${settings.currency}`;
+
+  const TABS: Array<[EditOfferTab, string]> = [
+    ["details", "Details"],
+    ["pricing", "Pricing"],
+    ["flow", "Purchase flow"],
+    ["settings", "Settings"],
+  ];
+
+  return (
+    <div className="mx-auto max-w-6xl space-y-6">
+      {/* ── Header ── */}
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <button type="button" onClick={onBack} className="text-sm font-semibold text-ink-600 underline">
+          ← Volver a precios
+        </button>
+        <div className="flex items-center gap-3">
+          {tab === "settings" && (
+            <button
+              type="button"
+              onClick={() => setEditCheckout((v) => !v)}
+              className="flex items-center gap-1.5 rounded-full border border-ink-900/20 px-4 py-2 text-sm font-medium hover:border-ink-900"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4">
+                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              {editCheckout ? "Cerrar editor" : "Edit checkout"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleSave}
+            className="rounded-full bg-ink-900 px-5 py-2 text-sm font-semibold text-cream hover:bg-ink-700"
+          >
+            Save
+          </button>
+        </div>
+      </header>
+
+      {/* ── Title + Tabs ── */}
+      <div>
+        <h1 className="font-serif text-3xl text-ink-900">{settings.title}</h1>
+        <nav className="mt-4 flex gap-1 border-b border-ink-900/10">
+          {TABS.map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => { setTab(value); setEditCheckout(false); }}
+              className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold ${
+                tab === value
+                  ? "border-ink-900 text-ink-900"
+                  : "border-transparent text-ink-500 hover:text-ink-900"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* ── Content ── */}
+      <div className={`flex gap-8 ${tab === "details" ? "items-start" : ""}`}>
+        <div className="min-w-0 flex-1">
+
+          {/* ═══════ DETAILS ═══════ */}
+          {tab === "details" && (
+            <div className="space-y-5">
+              <div className="rounded-2xl border border-ink-900/10 bg-white p-6 shadow-sm">
+                <h2 className="mb-5 text-base font-semibold">Offer details</h2>
+
+                <label className="block">
+                  <span className="text-sm font-medium">Title</span>
+                  <input
+                    value={settings.title}
+                    onChange={(e) => upd("title", e.target.value)}
+                    maxLength={100}
+                    className="mt-1.5 block w-full rounded-lg border border-ink-900/20 px-3 py-2.5 text-sm outline-none focus:border-ink-900"
+                  />
+                  <span className="mt-1 block text-xs text-ink-400">{settings.title.length}/100 characters</span>
+                </label>
+
+                <label className="mt-5 block">
+                  <span className="text-sm font-medium">
+                    Internal Title{" "}
+                    <span className="font-normal text-ink-400">(optional)</span>
+                  </span>
+                  <input
+                    value={settings.internalTitle}
+                    onChange={(e) => upd("internalTitle", e.target.value)}
+                    maxLength={150}
+                    className="mt-1.5 block w-full rounded-lg border border-ink-900/20 px-3 py-2.5 text-sm outline-none focus:border-ink-900"
+                  />
+                  <span className="mt-1 block text-xs text-ink-400">
+                    {settings.internalTitle.length}/150 characters
+                  </span>
+                </label>
+
+                <label className="mt-5 block">
+                  <span className="text-sm font-medium">Description</span>
+                  <textarea
+                    value={settings.description}
+                    onChange={(e) => upd("description", e.target.value)}
+                    rows={5}
+                    placeholder="Describe tu oferta..."
+                    className="mt-1.5 block w-full rounded-lg border border-ink-900/20 px-3 py-2.5 text-sm outline-none focus:border-ink-900"
+                  />
+                </label>
+              </div>
+
+              <div className="rounded-2xl border border-ink-900/10 bg-white p-6 shadow-sm">
+                <h2 className="mb-1 text-base font-semibold">Products in this Offer</h2>
+                <p className="mb-4 text-sm text-ink-500">
+                  Choose the Products you'd like to sell in this Offer.
+                </p>
+
+                {selectedCourses.map((course) => {
+                  const cid = String(course._id || course.id || course.slug || "");
+                  return (
+                    <div key={cid} className="mb-2 flex items-center gap-3 rounded-xl border border-ink-900/10 p-3">
+                      <div className="flex h-10 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ink-900/6">
+                        {course.thumbnail ? (
+                          <img src={course.thumbnail} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <ImageIcon />
+                        )}
+                      </div>
+                      <span className="flex-1 truncate text-sm font-medium">{course.title}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeProduct(cid)}
+                        className="shrink-0 text-xl leading-none text-ink-400 hover:text-red-500"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  );
+                })}
+
+                <div className="relative mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowProductDropdown((v) => !v)}
+                    className="flex items-center gap-1.5 text-sm font-medium text-ink-600 hover:text-ink-900"
+                  >
+                    <span className="text-lg leading-none">+</span> Add Product
+                  </button>
+                  {showProductDropdown && (
+                    <div className="absolute left-0 top-8 z-20 w-80 rounded-xl border border-ink-900/10 bg-white shadow-xl">
+                      <div className="border-b border-ink-900/10 p-2">
+                        <input
+                          autoFocus
+                          value={productSearch}
+                          onChange={(e) => setProductSearch(e.target.value)}
+                          placeholder="Buscar producto..."
+                          className="w-full rounded-md border border-ink-900/20 px-3 py-1.5 text-sm outline-none"
+                        />
+                      </div>
+                      <div className="max-h-52 overflow-y-auto py-1">
+                        {filteredProductList.map((c) => {
+                          const cid = String(c._id || c.id || c.slug || "");
+                          return (
+                            <button
+                              key={cid}
+                              type="button"
+                              onClick={() => addProduct(cid)}
+                              className="flex w-full items-center gap-3 px-3 py-2 text-sm hover:bg-ink-900/5"
+                            >
+                              <div className="h-8 w-12 shrink-0 overflow-hidden rounded bg-ink-900/6">
+                                {c.thumbnail && (
+                                  <img src={c.thumbnail} alt="" className="h-full w-full object-cover" />
+                                )}
+                              </div>
+                              <span className="truncate">{c.title}</span>
+                            </button>
+                          );
+                        })}
+                        {filteredProductList.length === 0 && (
+                          <p className="px-3 py-4 text-center text-xs text-ink-400">Sin resultados</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-ink-900/10 bg-white p-6 shadow-sm">
+                <h2 className="text-base font-semibold">Product Access</h2>
+                <p className="mt-0.5 text-sm text-ink-500">
+                  Set limits for members who purchase this Offer.
+                </p>
+                <label className="mt-4 flex cursor-pointer items-center gap-3 text-sm">
+                  <input type="checkbox" className="h-4 w-4 rounded border-ink-900/30" />
+                  Begin access at a specific date
+                </label>
+                <label className="mt-3 flex cursor-pointer items-center gap-3 text-sm">
+                  <input type="checkbox" className="h-4 w-4 rounded border-ink-900/30" />
+                  Restrict access to a specific amount of days
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════ PRICING ═══════ */}
+          {tab === "pricing" && (
+            <div className="space-y-5">
+              <div className="rounded-2xl border border-ink-900/10 bg-white p-6 shadow-sm">
+                <h2 className="mb-5 text-base font-semibold">Price Details</h2>
+
+                <label className="block">
+                  <span className="text-sm font-medium">Payment type</span>
+                  <select
+                    value={settings.paymentType}
+                    onChange={(e) =>
+                      upd("paymentType", e.target.value as OfferFullSettings["paymentType"])
+                    }
+                    className="mt-1.5 min-h-11 w-full rounded-lg border border-ink-900/20 bg-white px-3 text-sm"
+                  >
+                    <option value="one_time">One-time</option>
+                    <option value="subscription">Subscription</option>
+                    <option value="free">Free</option>
+                  </select>
+                </label>
+
+                {settings.paymentType !== "free" && (
+                  <div className="mt-5 grid grid-cols-2 gap-4">
+                    <label className="block">
+                      <span className="text-sm font-medium">Payment amount</span>
+                      <input
+                        type="number"
+                        value={settings.price}
+                        onChange={(e) => upd("price", Number(e.target.value))}
+                        className="mt-1.5 block w-full rounded-lg border border-ink-900/20 px-3 py-2.5 text-sm outline-none focus:border-ink-900"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-sm font-medium">Currency</span>
+                      <select
+                        value={settings.currency}
+                        onChange={(e) => upd("currency", e.target.value)}
+                        className="mt-1.5 min-h-11 w-full rounded-lg border border-ink-900/20 bg-white px-3 text-sm"
+                      >
+                        <option value="MXN">MXN - Mexican Peso</option>
+                        <option value="USD">USD - US Dollar</option>
+                      </select>
+                    </label>
+                  </div>
+                )}
+
+                {settings.paymentType === "subscription" && (
+                  <div className="mt-5 grid grid-cols-2 gap-4">
+                    <label className="block">
+                      <span className="text-sm font-medium">Bill the customer every</span>
+                      <input
+                        type="number"
+                        min={1}
+                        value={settings.billingCount}
+                        onChange={(e) => upd("billingCount", Number(e.target.value))}
+                        className="mt-1.5 block w-full rounded-lg border border-ink-900/20 px-3 py-2.5 text-sm outline-none focus:border-ink-900"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-sm font-medium">Billing interval</span>
+                      <select
+                        value={settings.billingInterval}
+                        onChange={(e) =>
+                          upd("billingInterval", e.target.value as "month" | "year")
+                        }
+                        className="mt-1.5 min-h-11 w-full rounded-lg border border-ink-900/20 bg-white px-3 text-sm"
+                      >
+                        <option value="month">month</option>
+                        <option value="year">year</option>
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="text-sm font-medium">
+                        Trial period days{" "}
+                        <span className="font-normal text-ink-400">(optional)</span>
+                      </span>
+                      <input
+                        type="number"
+                        value={settings.trialDays}
+                        onChange={(e) => upd("trialDays", e.target.value)}
+                        placeholder="1-365"
+                        className="mt-1.5 block w-full rounded-lg border border-ink-900/20 px-3 py-2.5 text-sm outline-none focus:border-ink-900"
+                      />
+                      <span className="mt-1 block text-xs text-ink-400">
+                        1-365, or leave blank for none
+                      </span>
+                    </label>
+                    <label className="block">
+                      <span className="text-sm font-medium">
+                        Setup fee{" "}
+                        <span className="font-normal text-ink-400">(optional)</span>
+                      </span>
+                      <input
+                        type="number"
+                        value={settings.setupFee}
+                        onChange={(e) => upd("setupFee", e.target.value)}
+                        placeholder="0.00"
+                        className="mt-1.5 block w-full rounded-lg border border-ink-900/20 px-3 py-2.5 text-sm outline-none focus:border-ink-900"
+                      />
+                      <span className="mt-1 block text-xs text-ink-400">
+                        Amount charged immediately upon purchase.
+                      </span>
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-ink-900/10 bg-white p-6 shadow-sm">
+                <h2 className="mb-4 text-base font-semibold">Payment Providers</h2>
+                <div className="space-y-3">
+                  <label className="flex cursor-pointer items-center gap-3">
+                    <input
+                      type="radio"
+                      checked={settings.acceptStripe}
+                      onChange={() => upd("acceptStripe", true)}
+                      className="h-4 w-4"
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-7 w-7 items-center justify-center rounded bg-[#635bff] text-xs font-bold text-white">
+                        S
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium">Stripe</p>
+                        <p className="text-xs text-ink-400">
+                          Debit and credit cards through Stripe
+                        </p>
+                      </div>
+                    </div>
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-3">
+                    <input
+                      type="radio"
+                      checked={!settings.acceptStripe}
+                      onChange={() => upd("acceptStripe", false)}
+                      className="h-4 w-4"
+                    />
+                    <div>
+                      <p className="text-sm font-medium">None</p>
+                      <p className="text-xs text-ink-400">No debit/credit card payments</p>
+                    </div>
+                  </label>
+                </div>
+                {settings.paymentType !== "free" && (
+                  <div className="mt-5 border-t border-ink-900/10 pt-5">
+                    <h3 className="mb-3 text-sm font-semibold">Third-party payment options</h3>
+                    <label className="flex cursor-pointer items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={settings.acceptPaypal}
+                        onChange={(e) => upd("acceptPaypal", e.target.checked)}
+                        className="h-4 w-4 rounded"
+                      />
+                      <span className="text-sm font-bold text-[#003087]">PayPal</span>
+                    </label>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ═══════ PURCHASE FLOW ═══════ */}
+          {tab === "flow" && (
+            <div className="space-y-5">
+              <div className="rounded-2xl border border-ink-900/10 bg-white p-6 shadow-sm">
+                <h2 className="mb-1 text-base font-semibold">Post-purchase</h2>
+                <p className="mb-5 text-sm text-ink-500">
+                  Choose where to send members after their Offer purchase.
+                </p>
+                <label className="block">
+                  <span className="text-sm font-medium">Post-purchase</span>
+                  <select
+                    value={settings.postPurchase}
+                    onChange={(e) => upd("postPurchase", e.target.value)}
+                    className="mt-1.5 min-h-11 w-full rounded-lg border border-ink-900/20 bg-white px-3 text-sm"
+                  >
+                    <option>Member's Product Library</option>
+                    <option>Custom URL</option>
+                    <option>Specific Product</option>
+                  </select>
+                </label>
+                <div className="mt-5 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Skip account creation page</p>
+                    <p className="text-xs text-ink-400">
+                      When enabled, new customers bypass the account creation page.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="relative h-6 w-11 shrink-0 rounded-full bg-ink-900/20"
+                  >
+                    <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow" />
+                  </button>
+                </div>
+                <div className="mt-5 border-t border-ink-900/10 pt-5">
+                  <h3 className="mb-1 text-sm font-semibold">Post-purchase email</h3>
+                  <p className="mb-3 text-sm text-ink-500">
+                    Choose a communication preference for members who make an Offer purchase.
+                  </p>
+                  <div className="flex gap-2">
+                    {(["default", "custom", "none"] as const).map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => upd("postPurchaseEmail", v)}
+                        className={`flex-1 rounded-xl border py-2.5 text-sm font-medium ${
+                          settings.postPurchaseEmail === v
+                            ? "border-ink-900 bg-white font-semibold shadow-sm"
+                            : "border-ink-900/15 text-ink-500 hover:border-ink-900"
+                        }`}
+                      >
+                        {v === "default" ? "Default email" : v === "custom" ? "Custom email" : "None"}
+                      </button>
+                    ))}
+                  </div>
+                  {settings.postPurchaseEmail === "custom" && (
+                    <div className="mt-4 space-y-3">
+                      <label className="block">
+                        <span className="text-sm font-medium">Email subject</span>
+                        <input
+                          value={settings.customEmailSubject}
+                          onChange={(e) => upd("customEmailSubject", e.target.value)}
+                          placeholder="Email subject"
+                          className="mt-1.5 block w-full rounded-lg border border-ink-900/20 px-3 py-2.5 text-sm outline-none focus:border-ink-900"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-sm font-medium">Email content</span>
+                        <textarea
+                          value={settings.customEmailContent}
+                          onChange={(e) => upd("customEmailContent", e.target.value)}
+                          rows={6}
+                          className="mt-1.5 block w-full rounded-lg border border-ink-900/20 px-3 py-2.5 text-sm outline-none focus:border-ink-900"
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-ink-900/10 bg-white p-6 shadow-sm">
+                <h2 className="mb-1 text-base font-semibold">Upsell funnel</h2>
+                <p className="mb-4 text-sm text-ink-500">
+                  Create an upsell sequence that appears after checkout.
+                </p>
+                <label className="block">
+                  <span className="text-sm font-medium">Choose an upsell</span>
+                  <select className="mt-1.5 min-h-11 w-full rounded-lg border border-ink-900/20 bg-white px-3 text-sm">
+                    <option value="">Choose an option</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className="mt-3 flex items-center gap-1.5 text-sm font-medium text-ink-600 hover:text-ink-900"
+                >
+                  <span className="text-lg leading-none">+</span> Create a new upsell
+                </button>
+              </div>
+
+              <div className="rounded-2xl border border-ink-900/10 bg-white p-6 shadow-sm">
+                <h2 className="mb-1 text-base font-semibold">Automations</h2>
+                <p className="mb-4 text-sm text-ink-400">
+                  Automations help you set up repeating tasks and streamline your workflow.
+                </p>
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 text-sm font-medium text-ink-600 hover:text-ink-900"
+                >
+                  <span className="text-lg leading-none">+</span> Add Automation
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════ SETTINGS ═══════ */}
+          {tab === "settings" && (
+            <div className="space-y-5">
+              {editCheckout ? (
+                /* ── Checkout editor split view ── */
+                <div className="overflow-hidden rounded-2xl border border-ink-900/10 bg-white shadow-sm">
+                  <div className="grid grid-cols-[260px_1fr] divide-x divide-ink-900/10">
+                    <div className="space-y-5 p-5">
+                      <div>
+                        <p className="text-sm font-semibold">Solid button background</p>
+                        <div className="mt-2 flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={settings.checkoutButtonColor}
+                            onChange={(e) => upd("checkoutButtonColor", e.target.value)}
+                            className="h-8 w-8 cursor-pointer rounded border border-ink-900/20 p-0.5"
+                          />
+                          <input
+                            value={settings.checkoutButtonColor}
+                            onChange={(e) => upd("checkoutButtonColor", e.target.value)}
+                            className="w-28 rounded-lg border border-ink-900/20 px-2 py-1.5 text-sm outline-none focus:border-ink-900"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <p className="mb-2 text-sm font-semibold">Checkout fields</p>
+                        <label className="flex cursor-pointer items-center gap-2 py-1 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={settings.collectName}
+                            onChange={(e) => upd("collectName", e.target.checked)}
+                            className="h-4 w-4 rounded"
+                          />
+                          Name
+                        </label>
+                        <label className="flex cursor-pointer items-center gap-2 py-1 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={settings.collectPhone}
+                            onChange={(e) => upd("collectPhone", e.target.checked)}
+                            className="h-4 w-4 rounded"
+                          />
+                          Phone number
+                        </label>
+                        <label className="flex cursor-pointer items-center gap-2 py-1 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={settings.collectAddress}
+                            onChange={(e) => upd("collectAddress", e.target.checked)}
+                            className="h-4 w-4 rounded"
+                          />
+                          Address
+                        </label>
+                        <label className="flex cursor-pointer items-center gap-2 py-1 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={settings.collectTaxId}
+                            onChange={(e) => upd("collectTaxId", e.target.checked)}
+                            className="h-4 w-4 rounded"
+                          />
+                          Tax ID
+                        </label>
+                      </div>
+                    </div>
+                    {/* Live checkout preview */}
+                    <div className="flex items-center justify-center bg-gray-50 p-8">
+                      <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                        <p className="mb-4 text-center text-2xl font-bold">{displayPrice}</p>
+                        <div className="space-y-3">
+                          <input
+                            readOnly
+                            placeholder="Direccion de correo electronico"
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-400"
+                          />
+                          {settings.collectName && (
+                            <input
+                              readOnly
+                              placeholder="Nombre y Apellido"
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-400"
+                            />
+                          )}
+                          <input
+                            readOnly
+                            placeholder="Numero de tarjeta"
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-400"
+                          />
+                          <div className="flex gap-2">
+                            <input
+                              readOnly
+                              placeholder="MM/AA"
+                              className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-400"
+                            />
+                            <input
+                              readOnly
+                              placeholder="CVC"
+                              className="w-20 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-400"
+                            />
+                          </div>
+                          {settings.collectPhone && (
+                            <input
+                              readOnly
+                              placeholder="Numero de telefono"
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-400"
+                            />
+                          )}
+                          <button
+                            type="button"
+                            style={{ backgroundColor: settings.checkoutButtonColor }}
+                            className="w-full rounded-full py-2.5 text-sm font-semibold text-white"
+                          >
+                            {settings.paymentType === "free"
+                              ? "Obtener gratis"
+                              : `Pagar ${displayPrice}`}
+                          </button>
+                          <p className="text-center text-xs text-gray-400">
+                            Las transacciones son seguras y estan encriptadas
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-2xl border border-ink-900/10 bg-white p-6 shadow-sm">
+                    <h2 className="mb-4 text-base font-semibold">Customer account settings</h2>
+                    <h3 className="mb-1 text-sm font-semibold">Service agreement</h3>
+                    <p className="mb-3 text-xs text-ink-400">
+                      Allow customers to consent to the Terms and Conditions policy.
+                    </p>
+                    <div className="space-y-2">
+                      {(
+                        [
+                          ["not_required", "Not required"],
+                          ["default", "Default service agreement"],
+                          ["custom", "Custom"],
+                        ] as const
+                      ).map(([v, label]) => (
+                        <label key={v} className="flex cursor-pointer items-center gap-3 text-sm">
+                          <input
+                            type="radio"
+                            checked={settings.serviceAgreement === v}
+                            onChange={() => upd("serviceAgreement", v)}
+                            className="h-4 w-4"
+                          />
+                          {label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-ink-900/10 bg-white p-6 shadow-sm">
+                    <h2 className="mb-4 text-base font-semibold">Notifications</h2>
+                    {(
+                      [
+                        [
+                          "Send customers to third-party email provider",
+                          "Send contact information to third-party platforms when a customer purchases an Offer.",
+                        ],
+                        [
+                          "Get notified when a purchase has been made",
+                          "Set up email notifications for you or your team after every purchase.",
+                        ],
+                        [
+                          "Send checkout abandonment emails",
+                          "Recover abandoned checkouts by emailing both contacts and new visitors who don't complete their purchase.",
+                        ],
+                      ] as const
+                    ).map(([title, desc]) => (
+                      <div
+                        key={title}
+                        className="mb-4 flex items-start justify-between gap-4 last:mb-0"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold">{title}</p>
+                          <p className="mt-0.5 text-xs text-ink-400">{desc}</p>
+                        </div>
+                        <button
+                          type="button"
+                          className="relative mt-0.5 h-6 w-11 shrink-0 rounded-full bg-ink-900/20"
+                        >
+                          <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-2xl border border-ink-900/10 bg-white p-6 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-base font-semibold">Affiliate commission</h2>
+                      <button
+                        type="button"
+                        onClick={() => upd("affiliateEnabled", !settings.affiliateEnabled)}
+                        className={`relative h-6 w-11 rounded-full transition-colors ${
+                          settings.affiliateEnabled ? "bg-blue-500" : "bg-ink-900/20"
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                            settings.affiliateEnabled ? "left-[calc(100%-22px)]" : "left-0.5"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    {settings.affiliateEnabled && (
+                      <div className="mt-4 space-y-3">
+                        <p className="text-sm text-ink-500">
+                          Give an Affiliate commission for this Offer to credit the transaction to
+                          your Affiliate users.
+                        </p>
+                        <label className="flex cursor-pointer items-center gap-3 text-sm">
+                          <input
+                            type="radio"
+                            checked={settings.affiliateType === "percentage"}
+                            onChange={() => upd("affiliateType", "percentage")}
+                            className="h-4 w-4"
+                          />
+                          Percentage
+                        </label>
+                        {settings.affiliateType === "percentage" && (
+                          <div className="ml-7 flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={settings.affiliateValue}
+                              onChange={(e) => upd("affiliateValue", e.target.value)}
+                              className="w-24 rounded-lg border border-ink-900/20 px-3 py-2 text-sm outline-none focus:border-ink-900"
+                            />
+                            <span className="text-sm">%</span>
+                          </div>
+                        )}
+                        <label className="ml-7 flex cursor-pointer items-center gap-2 text-sm">
+                          <input type="checkbox" className="h-4 w-4 rounded" />
+                          Collect commission only on the first subscription payment
+                        </label>
+                        <label className="flex cursor-pointer items-center gap-3 text-sm">
+                          <input
+                            type="radio"
+                            checked={settings.affiliateType === "fixed"}
+                            onChange={() => upd("affiliateType", "fixed")}
+                            className="h-4 w-4"
+                          />
+                          Fixed amount
+                        </label>
+                        {settings.affiliateType === "fixed" && (
+                          <div className="ml-7 flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={settings.affiliateValue}
+                              onChange={(e) => upd("affiliateValue", e.target.value)}
+                              className="w-24 rounded-lg border border-ink-900/20 px-3 py-2 text-sm outline-none focus:border-ink-900"
+                            />
+                            <span className="text-sm">{settings.currency}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── RIGHT SIDEBAR (Details tab only) ── */}
+        {tab === "details" && (
+          <div className="w-64 shrink-0 space-y-4">
+            <div className="rounded-2xl border border-ink-900/10 bg-white p-5 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold">Offer Status</h3>
+              <label className="flex cursor-pointer items-center gap-3 py-1 text-sm">
+                <input
+                  type="radio"
+                  checked={settings.status === "draft"}
+                  onChange={() => upd("status", "draft")}
+                  className="h-4 w-4"
+                />
+                Draft
+              </label>
+              <label className="flex cursor-pointer items-center gap-3 py-1 text-sm">
+                <input
+                  type="radio"
+                  checked={settings.status === "published"}
+                  onChange={() => upd("status", "published")}
+                  className="h-4 w-4"
+                />
+                <span className="flex items-center gap-1.5 font-medium text-emerald-700">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    className="h-3.5 w-3.5"
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                  Published
+                </span>
+              </label>
+              <button
+                type="button"
+                className="mt-3 flex items-center gap-1.5 text-sm text-ink-600 hover:underline"
+              >
+                <LinkIcon /> Get Link
+              </button>
+            </div>
+
+            <div className="rounded-2xl border border-ink-900/10 bg-white p-5 shadow-sm">
+              <h3 className="mb-2 text-sm font-semibold">Offer Pricing</h3>
+              <p className="text-xl font-bold text-ink-900">{displayPrice}</p>
+              {settings.paymentType === "subscription" && (
+                <p className="mt-0.5 text-sm text-emerald-600">
+                  Every{" "}
+                  {settings.billingCount > 1 ? `${settings.billingCount} ` : ""}
+                  {settings.billingInterval}
+                </p>
+              )}
+              {offer.thumbnail && (
+                <div className="mt-3 overflow-hidden rounded-lg">
+                  <img src={offer.thumbnail} alt="" className="w-full object-cover" />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
