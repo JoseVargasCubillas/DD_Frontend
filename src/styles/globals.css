@@ -490,13 +490,23 @@
   }
 
   .academy-hero-title {
-    font-size: clamp(68px, 10vw, 144px);
+    max-width: min(100%, 760px);
+    font-size: clamp(58px, 7.4vw, 118px);
+    line-height: 0.94;
+    letter-spacing: -0.025em;
+    font-weight: 400;
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: antialiased;
+    font-kerning: normal;
   }
   .academy-hero-title .line-mask {
-    padding-right: 0.16em;
-    padding-bottom: 0.28em;
-    margin-right: -0.16em;
-    margin-bottom: -0.28em;
+    padding-right: 0.22em;
+    padding-bottom: 0.34em;
+    margin-right: -0.22em;
+    margin-bottom: -0.34em;
+  }
+  .academy-hero-title em {
+    letter-spacing: -0.035em;
   }
 
   .academy-cta-title {

@@ -1,5 +1,5 @@
 import { client } from './client';
-import type { Course, Lesson, PaginatedResponse, ApiResponse } from '@t/index';
+import type { Course, CourseComment, Lesson, PaginatedResponse, ApiResponse } from '@t/index';
 
 interface CourseParams { page?: number; limit?: number; category?: string; status?: string; search?: string; includeAll?: boolean }
 export interface DriveImportPayload {
@@ -51,6 +51,21 @@ export const getLessons = (courseId: string): Promise<Lesson[]> =>
 
 export const getLessonById = (courseId: string, lessonId: string): Promise<Lesson> =>
   client.get<ApiResponse<Lesson>>(`/courses/${courseId}/lessons/${lessonId}`).then((r) => r.data);
+
+export const getCourseComments = (courseId: string, lessonId?: string): Promise<CourseComment[]> =>
+  client.get<ApiResponse<CourseComment[]>>(
+    `/courses/${courseId}/comments`,
+    lessonId ? { lessonId } : undefined,
+  ).then((r) => r.data);
+
+export const createCourseComment = (
+  courseId: string,
+  data: { body: string; lessonId?: string },
+): Promise<CourseComment> =>
+  client.post<ApiResponse<CourseComment>>(`/courses/${courseId}/comments`, data).then((r) => r.data);
+
+export const deleteCourseComment = (courseId: string, commentId: string): Promise<void> =>
+  client.delete<void>(`/courses/${courseId}/comments/${commentId}`);
 
 export const createCourse = (data: Partial<Course>): Promise<Course> =>
   client.post<ApiResponse<Course>>('/courses', data).then((r) => r.data);

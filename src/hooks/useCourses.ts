@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as coursesApi from '@api/courses.api';
 
 interface UseCourseParams { page?: number; limit?: number; category?: string; status?: string; search?: string; includeAll?: boolean }
@@ -29,3 +29,32 @@ export const useLessons = (courseId: string) =>
     queryFn: () => coursesApi.getLessons(courseId),
     enabled: !!courseId,
   });
+
+export const useCourseComments = (courseId: string | undefined, lessonId?: string) =>
+  useQuery({
+    queryKey: ['course-comments', courseId, lessonId || 'all'],
+    queryFn: () => coursesApi.getCourseComments(courseId!, lessonId),
+    enabled: !!courseId,
+  });
+
+export const useCreateCourseComment = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ courseId, body, lessonId }: { courseId: string; body: string; lessonId?: string }) =>
+      coursesApi.createCourseComment(courseId, { body, lessonId }),
+    onSuccess: (_comment, variables) => {
+      qc.invalidateQueries({ queryKey: ['course-comments', variables.courseId] });
+    },
+  });
+};
+
+export const useDeleteCourseComment = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ courseId, commentId }: { courseId: string; commentId: string }) =>
+      coursesApi.deleteCourseComment(courseId, commentId),
+    onSuccess: (_result, variables) => {
+      qc.invalidateQueries({ queryKey: ['course-comments', variables.courseId] });
+    },
+  });
+};

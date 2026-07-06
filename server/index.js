@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import multer from "multer";
 import mysql from "mysql2/promise";
+import { installAcademyApi } from "./academy-api.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,7 +16,7 @@ dotenv.config({ path: path.join(rootDir, ".env.backend") });
 dotenv.config({ path: path.join(rootDir, ".env") });
 
 const env = process.env;
-const PORT = Number(env.PORT || 4000);
+const PORT = Number(env.PORT || 5000);
 const API_PREFIX = env.API_PREFIX || "api";
 const API_BASE = `/${API_PREFIX}/v1`;
 const uploadDir = path.resolve(rootDir, env.UPLOAD_DIR || "./uploads");
@@ -39,7 +40,14 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.json({ limit: "50mb" }));
+app.use(
+  express.json({
+    limit: "50mb",
+    verify: (req, _res, buffer) => {
+      req.rawBody = buffer;
+    },
+  }),
+);
 app.use("/uploads", express.static(uploadDir));
 
 const dbConnectionConfig = {
@@ -188,6 +196,8 @@ const upload = multer({ storage });
 app.get(`${API_BASE}/health`, (_req, res) => {
   res.json({ success: true, data: { ok: true } });
 });
+
+installAcademyApi(app, API_BASE, rootDir);
 
 app.post(`${API_BASE}/uploads/events`, upload.single("file"), (req, res) => {
   if (!req.file) {
@@ -355,12 +365,11 @@ app.use((error, _req, res, _next) => {
 });
 
 ensureDatabase()
-  .then(() => {
+  .catch((error) => {
+    console.warn("Eventos con MySQL no inicializados; Academia local sigue disponible:", error.message);
+  })
+  .finally(() => {
     app.listen(PORT, () => {
       console.log(`API local lista en http://localhost:${PORT}${API_BASE}`);
     });
-  })
-  .catch((error) => {
-    console.error("No se pudo inicializar la base de datos:", error);
-    process.exit(1);
   });

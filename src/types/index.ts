@@ -164,6 +164,20 @@ export interface Lesson {
   commentsVisibility?: "visible" | "hidden" | "locked";
 }
 
+export interface CourseComment {
+  id?: string;
+  _id: string;
+  courseId: string;
+  lessonId?: string;
+  userId: string;
+  body: string;
+  status: "published" | "hidden";
+  author: Pick<User, "id" | "_id" | "name" | "email" | "avatar" | "role"> | null;
+  lesson: Pick<Lesson, "id" | "_id" | "title" | "order"> | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface Event {
   id?: string;
   _id?: string;

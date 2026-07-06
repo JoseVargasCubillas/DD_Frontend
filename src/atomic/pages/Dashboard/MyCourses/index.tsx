@@ -16,53 +16,57 @@ export default function MyCourses() {
   const courses = ((profile?.enrolledCourses ?? []) as EnrolledCourse[]).filter(isCourse);
 
   return (
-    <div className="space-y-8">
-      <header>
-        <p className="text-[10px] uppercase tracking-[0.4em] text-ink-700 mb-2">Tu biblioteca</p>
-        <h1 className="font-serif text-4xl text-ink-900">Mis cursos</h1>
-        <p className="font-serif italic text-ink-600 mt-1">
+    <div className="space-y-10">
+      <header className="border-b border-cream-400 pb-8">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-ink-300">Tu biblioteca</p>
+        <h1 className="mt-5 font-serif text-[clamp(48px,7vw,82px)] font-normal leading-[0.92] tracking-[-0.055em] text-ink-900">
+          Mis
+          <span className="block italic tracking-[-0.07em]">cursos.</span>
+        </h1>
+        <p className="mt-5 text-[16px] leading-[1.6] text-ink-500">
           {courses.length} {courses.length === 1 ? 'curso disponible' : 'cursos disponibles'} en tu cuenta.
         </p>
       </header>
-      <div className="h-px bg-ink-900/30" />
 
-      {isLoading && <p className="text-ink-600 font-serif italic">Cargando…</p>}
+      {isLoading && <p className="font-serif italic text-ink-600">Cargando...</p>}
       {!isLoading && courses.length === 0 && (
-        <p className="text-ink-600 font-serif italic">
+        <div className="border border-cream-400 bg-cream-100 p-8 text-ink-600">
           Aún no tienes cursos asignados. Si compraste uno y no lo ves, escribe a{' '}
-          <a href="mailto:academia@diegodiaz.mx" className="underline decoration-ink-900/40 hover:decoration-ink-900 text-ink-900">
+          <a href="mailto:academia@diegodiaz.mx" className="text-ink-900 underline decoration-ink-900/40 underline-offset-2 hover:decoration-ink-900">
             academia@diegodiaz.mx
           </a>.
-        </p>
+        </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {courses.map((c) => (
+      <div className="divide-y divide-cream-400 border-y border-cream-400">
+        {courses.map((course, index) => (
           <Link
-            key={c.id ?? c._id}
-            to={`/cursos/${c.slug}`}
-            className="group block bg-cream-100 border border-ink-900/15 hover:border-ink-900 transition-colors cursor-pointer"
+            key={course.id ?? course._id}
+            to={`/cursos/${course.slug}`}
+            className="grid gap-6 py-8 transition-colors hover:bg-cream-100 md:grid-cols-[180px_minmax(0,1fr)_140px_36px] md:items-center"
           >
-            {c.thumbnail && (
-              <div className="aspect-[16/10] bg-cream-200 overflow-hidden">
-                <img
-                  src={c.thumbnail}
-                  alt={c.title}
-                  className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
-                />
-              </div>
-            )}
-            <div className="p-5">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-ink-700">{c.category}</p>
-              <h3 className="font-serif text-xl text-ink-900 mt-2 leading-snug">{c.title}</h3>
-              <p className="font-serif italic text-ink-600 text-sm mt-2 line-clamp-2">
-                {c.shortDescription}
-              </p>
+            <div className="flex items-start">
+              <span className="font-serif text-[72px] italic leading-[0.8] tracking-[-0.08em] text-ink-900">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <span className="ml-2 font-serif text-[22px] italic leading-none text-[#78562a]">VO</span>
             </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-ink-300">{course.category || 'Academia'}</p>
+              <h2 className="mt-3 font-serif text-[32px] font-normal leading-[1] tracking-[-0.045em] text-ink-900">
+                {course.title}
+              </h2>
+              <p className="mt-3 max-w-[680px] text-[15px] leading-[1.55] text-ink-500">{course.shortDescription}</p>
+            </div>
+            <div className="text-[10px] uppercase tracking-[0.2em] text-ink-400 md:text-right">
+              {course.totalLessons || course.lessons?.length || 0} lecciones
+            </div>
+            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-ink-900 text-[13px] text-ink-900">
+              →
+            </span>
           </Link>
         ))}
       </div>
     </div>
   );
 }
-

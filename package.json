@@ -8,7 +8,7 @@
     "dev:api": "node server/index.js",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint src/"
+    "lint": "eslint \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^2.4.0",

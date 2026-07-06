@@ -67,6 +67,19 @@ function PaymentForm({ mode, total, onSuccess }: PaymentFormProps) {
   );
 }
 
+function DemoPaymentForm({ mode, total, onSuccess }: PaymentFormProps) {
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="rounded-lg border border-brand-500/30 bg-brand-500/10 px-4 py-3 text-sm text-brand-200">
+        Modo local activo: se confirmara el acceso sin contactar a Stripe.
+      </div>
+      <Button type="button" onClick={onSuccess} fullWidth>
+        {mode === 'subscription' ? 'Activar suscripcion demo' : 'Confirmar compra demo ' + formatCurrency(total)}
+      </Button>
+    </div>
+  );
+}
+
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, removeItem, total, clear } = useCartStore();
@@ -220,6 +233,13 @@ export default function Checkout() {
                   Pagos seguros con Stripe
                 </div>
               </div>
+            ) : clientSecret.startsWith('demo_') ? (
+              <>
+                <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-5">
+                  Confirmacion local
+                </h2>
+                <DemoPaymentForm mode={mode} total={total()} onSuccess={() => setSuccess(true)} />
+              </>
             ) : (
               <Elements stripe={stripePromise} options={elementsOptions}>
                 <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-5">
