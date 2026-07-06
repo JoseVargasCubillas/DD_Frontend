@@ -6,7 +6,6 @@ import heroVideo from '../../../../../assets/eventos/VIDEO SEF vertical web.mp4'
 import diegoPortrait from '../../../../../assets/eventos/LEF_img_001.png';
 import irmaPortrait from '../../../../../assets/eventos/LEF_img 002.png';
 import azucenaPortrait from '../../../../../assets/eventos/LEF_img 003.png';
-import jessicaPortrait from '../../../../../assets/eventos/LEF_img_004.png';
 import type { Event as SiteEvent } from '@t/index';
 
 const EVENT_SLUG = 'estrategia-fiscal';
@@ -210,7 +209,7 @@ const agenda = [
   },
   {
     time: '17:00',
-    title: 'Cierrre + Q&A en vivo con Diego Díaz',
+    title: 'Cierre + Q&A en vivo con Diego Díaz',
     description: '60 minutos de preguntas y respuestas sin filtros. Asistentes prioritarios: tier General + VIP.',
     duration: '60 min',
   },
@@ -224,22 +223,16 @@ const speakers = [
     bio: 'Autor de 3 libros, 25 años de trayectoria, fundador de Díaz Lara. Conferencista y facilitador de temas fiscales y empresariales.',
   },
   {
-    name: 'Imar Amor',
-    role: 'Invitada',
+    name: 'Invitado especial',
+    role: 'Ponente invitado',
     image: irmaPortrait,
-    bio: 'Licenciada en Finanzas y Contaduría Pública. Colabora en la formación de empresarios con estructura empresarial y análisis financiero.',
+    bio: 'Especialista con +15 años de experiencia contable y asesoría empresarial. Imparte el módulo de blindaje.',
   },
   {
-    name: 'Jazmín Robles',
-    role: 'Invitada',
+    name: 'Invitada especial',
+    role: 'Ponente invitada',
     image: azucenaPortrait,
-    bio: 'Abogada Fiscalista, Maestra en Derecho Fiscal y Doctorante en Ciencias de lo Fiscal. Distinción internacional "The Lawyer of the Year 2025"',
-  },
-  {
-    name: 'Jessica Tapia',
-    role: 'Invitada',
-    image: jessicaPortrait,
-    bio: 'Soporte especializado para revisar obligaciones, escenarios y documentación empresarial.',
+    bio: 'Directora financiera con experiencia en holdings de manufactura y comercio. Perspectiva desde el C-level.',
   },
 ];
 
@@ -291,7 +284,7 @@ const faqItems = [
   {
     question: '¿Hay grabación si no puedo asistir?',
     answer:
-      'El evento es 100% presencial. Por lo cual no hay grabación del mismo, para un evento grabado consultar opciones online.',
+      'El evento es 100% presencial. El plan General y VIP incluye acceso a la grabación post-evento durante 30 días. El plan Early Bird no incluye grabación.',
   },
   {
     question: '¿Puedo cancelar o transferir mi lugar?',
@@ -310,8 +303,8 @@ const faqItems = [
     answer: 'La agenda contempla bloques de trabajo durante el día, con comida y espacios de pausa incluidos.',
   },
   {
-    question: '¿Tengo que llevar material extra?',
-    answer: 'No. Recibirás el material necesario para seguir la sesión y tomar notas durante el seminario.',
+    question: '¿Cómo se aplica al tier VIP?',
+    answer: 'El acceso VIP incluye beneficios adicionales y cupos limitados. Después de reservar, el equipo confirma disponibilidad y detalles de seguimiento.',
   },
 ];
 
@@ -374,7 +367,7 @@ const FaqSection = memo(function FaqSection() {
             <span className="block italic">frecuentes.</span>
           </h2>
           <p className="mb-[47px] hidden text-right text-[9px] lowercase tracking-[0.28em] text-ink-300 md:block">
-            8 preguntas
+            6 preguntas
           </p>
         </div>
 
@@ -411,7 +404,6 @@ const FaqSection = memo(function FaqSection() {
 export default function EstrategiaFiscalLanding() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const unlockedRef = useRef(false);
-  const [isMuted, setIsMuted] = useState(true);
   const [syncedEvent, setSyncedEvent] = useState<SiteEvent | null>(() => loadStoredEvent());
   const { data: apiEvent } = useQuery({
     queryKey: ['event', EVENT_SLUG],
@@ -430,7 +422,6 @@ export default function EstrategiaFiscalLanding() {
       if (video) {
         video.muted = false;
         video.volume = 1;
-        setIsMuted(false);
       }
       window.removeEventListener('pointerdown', unlock);
     };
@@ -449,15 +440,6 @@ export default function EstrategiaFiscalLanding() {
       window.removeEventListener('focus', refreshEvent);
     };
   }, []);
-
-  const toggleMute = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    unlockedRef.current = true;
-    video.muted = !video.muted;
-    video.volume = video.muted ? 0 : 1;
-    setIsMuted(video.muted);
-  };
 
   const currentEvent = apiEvent ?? syncedEvent ?? FALLBACK_EVENT;
   const currentEventDate = currentEvent.startDate || EVENT_DATE;
@@ -490,7 +472,7 @@ export default function EstrategiaFiscalLanding() {
           <div className="mt-[38px] flex flex-wrap items-center gap-3 text-[8px] uppercase tracking-[0.28em] text-ink-400">
             <span className="border border-ink-900 bg-ink-900 px-4 py-2 text-white">Seminario · 1 día</span>
             <span className="border border-cream-400 px-4 py-2">CDMX · WTC</span>
-            <span className="border border-cream-400 px-4 py-2">+ 90 · 18 Jun</span>
+            <span className="border border-cream-400 px-4 py-2">+ 90 · 15 Jun</span>
           </div>
 
           <h1 className="ef-hero-title mt-7 max-w-[760px] text-[clamp(64px,11vw,156px)] leading-[0.78] tracking-[-0.075em] text-ink-900">
@@ -708,45 +690,35 @@ export default function EstrategiaFiscalLanding() {
               frente
             </h2>
             <p className="mb-[76px] hidden whitespace-nowrap text-right text-[9px] lowercase tracking-[0.28em] text-ink-300 md:block">
-              1 anfitrión / 3 invitadas
+              3 ponentes / 1 invitado
             </p>
           </div>
 
-          <div className="mt-[52px] overflow-hidden">
-            <div className="flex w-max motion-safe:animate-[speaker-carousel_60s_linear_infinite]">
-              {[0, 1].map((group) => (
-                <div
-                  key={group}
-                  aria-hidden={group === 1}
-                  className="flex shrink-0 gap-5 pr-5"
-                >
-                  {featuredSpeakers.map((speaker) => (
-                    <article
-                      key={`${group}-${speaker.name}`}
-                      className="w-[78vw] shrink-0 border border-cream-400 bg-cream-50 sm:w-[42vw] md:w-[29vw] md:max-w-[386px]"
-                    >
-                      <div className="aspect-[4/5] overflow-hidden bg-cream-200">
-                        <img
-                          src={speaker.image}
-                          alt={speaker.name}
-                          className="h-full w-full object-cover object-top"
-                          loading={group === 0 ? 'eager' : 'lazy'}
-                        />
-                      </div>
-                      <div className="min-h-[128px] border-t border-cream-400 px-5 py-5">
-                        <p className="text-[8px] uppercase tracking-[0.3em] text-ink-300">— {speaker.role}</p>
-                        <h3 className="mt-5 font-serif text-[26px] italic leading-none tracking-[-0.04em] text-ink-900">
-                          {speaker.name}
-                        </h3>
-                        <p className="mt-4 max-w-[310px] text-[13px] font-normal leading-[1.18] tracking-[-0.01em] text-ink-500">
-                          {speaker.bio}
-                        </p>
-                      </div>
-                    </article>
-                  ))}
+          <div className="mt-[52px] grid gap-5 md:grid-cols-3">
+            {featuredSpeakers.map((speaker) => (
+              <article
+                key={speaker.name}
+                className="border border-cream-400 bg-cream-50"
+              >
+                <div className="aspect-[4/5] overflow-hidden bg-cream-200">
+                  <img
+                    src={speaker.image}
+                    alt={speaker.name}
+                    className="h-full w-full object-cover object-top"
+                    loading="lazy"
+                  />
                 </div>
-              ))}
-            </div>
+                <div className="min-h-[150px] border-t border-cream-400 px-5 py-5">
+                  <p className="text-[8px] uppercase tracking-[0.3em] text-ink-300">— {speaker.role}</p>
+                  <h3 className="mt-5 font-serif text-[26px] italic leading-none tracking-[-0.04em] text-ink-900">
+                    {speaker.name}
+                  </h3>
+                  <p className="mt-4 max-w-[310px] text-[13px] font-normal leading-[1.18] tracking-[-0.01em] text-ink-500">
+                    {speaker.bio}
+                  </p>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>
@@ -760,7 +732,7 @@ export default function EstrategiaFiscalLanding() {
               Sede
             </p>
             <h2 className="max-w-[650px] pb-2 text-[clamp(50px,6.1vw,72px)] font-normal leading-[0.9] tracking-[-0.05em] text-ink-900">
-              Donde y cómo
+              Dónde y cómo
               <br />
               llegar
             </h2>
@@ -772,22 +744,31 @@ export default function EstrategiaFiscalLanding() {
           <div className="mt-[52px] overflow-hidden border border-cream-400 md:grid md:min-h-[402px] md:grid-cols-[0.46fr_0.54fr]">
             <div className="min-h-[332px] bg-cream-200 px-8 py-12 md:min-h-[402px] lg:px-[32px]">
               <h3 className="text-[clamp(30px,3.4vw,42px)] font-normal leading-[0.95] tracking-[-0.045em] text-ink-900">
-                JW Marriott Hotel
-                <span className="block font-serif tracking-[-0.055em]">Mexico City Santa Fe</span>
+                WTC Ciudad
+                <span className="block font-serif italic tracking-[-0.055em]">de México</span>
+                <span className="mt-2 block font-serif text-[16px] italic tracking-[-0.03em] text-ink-400">
+                  Nápoles, Benito Juárez
+                </span>
               </h3>
-              <div className="mt-[64px] grid grid-cols-[64px_minmax(0,1fr)] gap-8 border-b border-cream-400 pb-4">
-                <p className="text-[8px] uppercase tracking-[0.34em] text-ink-300">Dirección</p>
-                <p className="text-[13px] font-normal leading-[1.2] tracking-[-0.02em] text-ink-900">
-                  212 Antonio Dovali Jaime
-                  <br />
-                  Ciudad de México, Cd. de México
-                </p>
-              </div>
+              <dl className="mt-[52px] space-y-0 border-y border-cream-400">
+                {[
+                  ['Dirección', 'Montecito 38, piso 35'],
+                  ['Estacionamiento', 'Incluido identificación'],
+                  ['Hotel aliado', 'Tarifa especial sin confirmación'],
+                  ['Transporte público', 'Metro San Antonio · L7'],
+                  ['Incluye', 'Coffee + comida + material'],
+                ].map(([term, detail]) => (
+                  <div key={term} className="grid grid-cols-[112px_minmax(0,1fr)] gap-5 border-b border-cream-400 py-3 last:border-b-0">
+                    <dt className="text-[8px] uppercase tracking-[0.34em] text-ink-300">{term}</dt>
+                    <dd className="text-[12px] font-semibold leading-[1.25] tracking-[-0.02em] text-ink-900">{detail}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
             <div className="min-h-[360px] bg-white md:min-h-[402px]">
               <iframe
-                title="Mapa JW Marriott Hotel Mexico City Santa Fe"
-                src="https://www.google.com/maps?q=JW%20Marriott%20Hotel%20Mexico%20City%20Santa%20Fe&output=embed"
+                title="Mapa WTC Ciudad de México"
+                src="https://www.google.com/maps?q=WTC%20Ciudad%20de%20Mexico%20Montecito%2038&output=embed"
                 className="h-[360px] w-full border-0 md:h-[402px]"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
@@ -882,6 +863,10 @@ export default function EstrategiaFiscalLanding() {
               );
             })}
           </div>
+
+          <p className="mt-8 text-center text-[8px] uppercase tracking-[0.34em] text-ink-300">
+            — Acepta tarjeta, transferencia y OXXO Pay · Factura disponible para todos los tiers
+          </p>
         </div>
       </section>
 
@@ -896,22 +881,17 @@ export default function EstrategiaFiscalLanding() {
           </div>
 
           <blockquote className="mx-auto mt-[86px] max-w-[790px] text-center text-[clamp(29px,4.1vw,38px)] font-normal leading-[1.32] tracking-[-0.052em] text-ink-900">
-            Fui por asesoría fiscal y terminé transformando
+            &quot;Salí con un plan <span className="font-serif italic tracking-[-0.06em]">concreto</span> para los
             <br className="hidden md:block" />
-            <span> mi empresa. </span>
-            <span className="font-serif tracking-[-0.06em]">Hoy tengo 47 personas alineadas,</span>
+            próximos seis meses.
             <br className="hidden md:block" />
-            <span> finanzas estructuradas y una cultura de liderazgo</span>
-            <br className="hidden md:block" />
-            <span> real. </span>
-            <span className="tracking-[-0.045em]">Diego te hace mirar más allá de los{' '}</span>
-            <br className="hidden md:block" />
-            <span className="tracking-[-0.045em]">números, y eso cambia todo.</span>
+            Lo mejor: las estrategias funcionan,
+            <span className="block font-serif italic tracking-[-0.06em]">no son teoría.&quot;</span>
           </blockquote>
 
           <div className="mt-[34px] text-center text-ink-900">
-            <p className="font-serif text-[11px] italic leading-none tracking-[-0.02em]">C4 Group</p>
-            <p className="mt-1 text-[11px] font-normal leading-none tracking-[-0.01em]">Cliente corporativo</p>
+            <p className="font-serif text-[11px] italic leading-none tracking-[-0.02em]">— Asistente Edición Mayo 2025</p>
+            <p className="mt-1 text-[11px] font-normal leading-none tracking-[-0.01em]">Director General · PyME familiar</p>
           </div>
 
           <div className="mt-[31px] flex justify-center gap-[6px]" aria-label="Testimonio 1 de 8">
@@ -930,17 +910,17 @@ export default function EstrategiaFiscalLanding() {
 
       <section id="cta-final" className="border-b border-white/10 bg-[#070707] text-white">
         <div className="mx-auto flex min-h-[790px] max-w-[1344px] flex-col items-center px-5 pb-[130px] pt-[127px] text-center sm:px-8 md:min-h-[790px]">
-          <p className="text-[8px] uppercase tracking-[0.42em] text-white/35">09 / Ultima llamada</p>
+          <p className="text-[8px] uppercase tracking-[0.42em] text-white/35">09 / Última llamada</p>
 
-          <h2 className="mt-[31px] max-w-[820px] text-[clamp(46px,7.1vw,68px)] font-bold leading-[1.14] tracking-[-0.055em] text-white">
-            No esperes a que una{' '}
-            <span className="block font-serif font-normal tracking-[-0.07em]">contingencia fiscal</span>
-            <span className="block">te obligue a estructurarte.</span>
+          <h2 className="mt-[31px] max-w-[760px] text-[clamp(54px,7.1vw,92px)] font-normal leading-[0.9] tracking-[-0.065em] text-white">
+            El cambio
+            <span className="block font-serif italic font-normal tracking-[-0.08em]">empieza</span>
+            <span className="block">el 15 de junio.</span>
           </h2>
 
           <p className="mt-[32px] max-w-[520px] font-serif text-[15px] italic leading-[1.32] tracking-[-0.015em] text-white/55">
-            &quot;Hoy decides si te quedas pagando lo de siempre — o tomas
-            <span className="block">el control de tu estrategia fiscal.&quot;</span>
+            &quot;Hoy decides si te quedas pagando lo de siempre — o tomas el
+            <span className="block">control de tu estrategia fiscal.&quot;</span>
           </p>
 
           <div className="mt-[45px] w-full border-t border-white/12 pt-[27px]">
