@@ -569,18 +569,31 @@
      Use only on standalone cards (not border-grid layouts). */
   .card-lift {
     transition: transform 400ms cubic-bezier(.2,.8,.2,1),
-                box-shadow 400ms cubic-bezier(.2,.8,.2,1);
+                box-shadow 400ms cubic-bezier(.2,.8,.2,1),
+                border-color 400ms cubic-bezier(.2,.8,.2,1);
+    will-change: transform;
   }
-  .card-lift:hover {
+  .card-lift:hover,
+  .card-lift:focus-within {
     transform: translateY(-6px);
     box-shadow: 0 12px 32px -4px rgba(10,10,10,0.12);
   }
-  .card-lift:hover .card-arrow {
+  .card-lift:hover .card-arrow,
+  .card-lift:focus-within .card-arrow {
     transform: translateX(6px);
   }
   .card-arrow {
     transition: transform 400ms cubic-bezier(.2,.8,.2,1);
     display: inline-block;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card-lift,
+    .card-lift:hover,
+    .card-lift:focus-within {
+      transform: none;
+      transition-duration: 1ms;
+    }
   }
 
   /* ─── Badge de disponibilidad ─────────────────── */

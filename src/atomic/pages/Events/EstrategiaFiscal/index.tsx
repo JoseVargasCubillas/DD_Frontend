@@ -606,7 +606,7 @@ export default function EstrategiaFiscalLanding() {
             {learningCards.map((card, index) => (
               <article
                 key={card.number}
-                className={`min-h-[250px] border-cream-400 p-7 md:min-h-[320px] md:p-10 ${
+                className={`relative z-0 min-h-[250px] border-cream-400 p-7 transition-[transform,background-color,box-shadow] duration-[400ms] ease-[cubic-bezier(.2,.8,.2,1)] hover:z-10 hover:-translate-y-1.5 hover:bg-white hover:shadow-[0_18px_42px_-20px_rgba(10,10,10,0.35)] motion-reduce:hover:translate-y-0 md:min-h-[320px] md:p-10 ${
                   index < 3 ? 'md:border-b' : ''
                 } ${index % 3 !== 2 ? 'md:border-r' : ''} ${index !== learningCards.length - 1 ? 'max-md:border-b' : ''}`}
               >
@@ -698,13 +698,13 @@ export default function EstrategiaFiscalLanding() {
             {featuredSpeakers.map((speaker) => (
               <article
                 key={speaker.name}
-                className="border border-cream-400 bg-cream-50"
+                className="card-lift group overflow-hidden border border-cream-400 bg-cream-50 transition-colors hover:border-ink-900"
               >
                 <div className="aspect-[4/5] overflow-hidden bg-cream-200">
                   <img
                     src={speaker.image}
                     alt={speaker.name}
-                    className="h-full w-full object-cover object-top"
+                    className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.02]"
                     loading="lazy"
                   />
                 </div>
@@ -801,14 +801,14 @@ export default function EstrategiaFiscalLanding() {
             <div className="hidden md:block" />
           </div>
 
-          <div className="mx-auto mt-[50px] grid max-w-[1240px] grid-cols-1 overflow-hidden border border-cream-400 md:grid-cols-3">
+          <div className="mx-auto mt-[50px] grid max-w-[1240px] grid-cols-1 overflow-visible border border-cream-400 md:grid-cols-3">
             {tickets.map((ticket) => {
               const isGeneral = ticket.variant === 'general';
               const checkoutHref = ticket.href || '#formatos';
               return (
                 <article
                   key={ticket.eyebrow}
-                  className={`relative flex min-h-[600px] flex-col border-cream-400 px-[34px] pb-[40px] pt-[56px] md:min-h-[688px] md:px-[40px] ${
+                  className={`card-lift relative z-0 flex min-h-[600px] flex-col border-cream-400 px-[34px] pb-[40px] pt-[56px] hover:z-10 md:min-h-[688px] md:px-[40px] ${
                     isGeneral
                       ? 'bg-[#050505] pt-[88px] text-white'
                       : 'bg-cream-50 text-ink-900'
@@ -857,7 +857,7 @@ export default function EstrategiaFiscalLanding() {
                     } ${ticket.href ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
                   >
                     <span>{ticket.cta}</span>
-                    <span aria-hidden="true">→</span>
+                    <span className="card-arrow" aria-hidden="true">→</span>
                   </a>
                 </article>
               );
