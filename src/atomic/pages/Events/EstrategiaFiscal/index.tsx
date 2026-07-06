@@ -483,11 +483,6 @@ export default function EstrategiaFiscalLanding() {
       <header className="border-b border-cream-400 bg-cream-200">
         <div className="mx-auto max-w-[1440px] px-5 pb-12 pt-7 sm:px-8 lg:px-14 lg:pb-[75px] lg:pt-10">
           <div className="grid gap-3 border-b border-cream-400 pb-4 text-[9px] uppercase tracking-[0.32em] text-ink-300 sm:grid-cols-[1fr_auto]">
-            <p>Diego / eventos / estrategia fiscal / CDMX</p>
-            <p>Vol. 06 / 2026 · Edición Q2</p>
-          </div>
-
-          <div className="mt-8 grid gap-3 border-b border-cream-400 pb-4 text-[9px] uppercase tracking-[0.32em] text-ink-300 sm:grid-cols-[1fr_auto]">
             <p>— Próximo evento · Seminario presencial</p>
             <p>23 / 80 / Total · Quedan 23 cupos</p>
           </div>
