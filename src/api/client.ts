@@ -10,6 +10,8 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
   const { _retry, headers: extraHeaders, ...fetchOptions } = options;
 
   const token = useAuthStore.getState().accessToken;
+  const refreshToken = useAuthStore.getState().refreshToken;
+  const isAuthRequest = path.startsWith('/auth/login') || path.startsWith('/auth/register') || path.startsWith('/auth/refresh');
 
   const isFormData = fetchOptions.body instanceof FormData;
 
@@ -25,9 +27,8 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
     credentials: 'include',
   });
 
-  if (res.status === 401 && !_retry) {
+  if (res.status === 401 && !_retry && refreshToken && !isAuthRequest) {
     try {
-      const refreshToken = useAuthStore.getState().refreshToken;
       const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
