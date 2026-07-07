@@ -53,6 +53,7 @@ export const router = createBrowserRouter([
     children: [
       { path: "/", element: <Home /> },
       { path: "/acerca", element: <About /> },
+      { path: "/prensa", element: <About /> },
       { path: "/cursos", element: <CourseList /> },
       { path: "/cursos/:slug", element: <CourseDetail /> },
       { path: "/eventos", element: <Events /> },

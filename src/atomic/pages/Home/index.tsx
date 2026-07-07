@@ -261,7 +261,7 @@ const SERVICES = [
     id: "diazlara",
     label: "Más servicios",
     title: "Díaz Lara",
-    desc: "¿Tu empresa necesita asesoría fiscal corporativa? Conoce la firma que Diego fundó: certificada GPTW® y Cruz de Malta",
+    desc: "¿Tu empresa necesita asesoría fiscal corporativa? Conoce Díaz Lara | Firma de Estrategia Empresarial: certificada GPTW® y Latin American Quality Awards 2025.",
     cta: "Visitar diazlara.mx",
     link: "https://diazlara.mx/",
     dark: true,
@@ -817,12 +817,18 @@ export default function Home() {
             style={{ animation: "marquee 22s linear infinite" }}
           >
             {[...MEDIA_LOGOS, ...MEDIA_LOGOS].map((logo, i) => (
-              <img
+              <Link
                 key={i}
-                src={logo.src}
-                alt={logo.alt}
-                className="h-7 md:h-8 object-contain opacity-60 hover:opacity-100 transition-opacity duration-300"
-              />
+                to="/prensa"
+                aria-label={`Ver a Diego en prensa: ${logo.alt}`}
+                className="inline-flex cursor-pointer items-center transition-opacity duration-300 opacity-60 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900/35"
+              >
+                <img
+                  src={logo.src}
+                  alt={logo.alt}
+                  className="h-7 md:h-8 object-contain"
+                />
+              </Link>
             ))}
           </div>
         </div>
@@ -1058,15 +1064,14 @@ export default function Home() {
             </h2>
 
             <p className="text-[13px] text-ink-500 leading-relaxed max-w-md mx-auto">
-              Diego es fundador y director de Díaz Lara, su firma fiscal. Es
+              Diego es fundador y director de Díaz Lara | Firma de Estrategia Empresarial. Es
               facilitador de temas empresariales, fiscales y jurídicos.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-8 py-2">
               {[
                 "Great Place to Work",
-                "Cruz de Malta",
-                "Latin American Quality Awards",
+                "Latin American Quality Awards 2025",
               ].map((cert) => (
                 <span
                   key={cert}

@@ -171,7 +171,7 @@ export default function CourseLesson() {
   const instructorBio =
     typeof course.instructor === "object" && course.instructor && "bio" in course.instructor && course.instructor.bio
       ? String(course.instructor.bio)
-      : "Estratega fiscal. CEO de Diaz Lara Contabilidad. Acompana a empresarios a tomar mejores decisiones con claridad patrimonial y fiscal.";
+      : "Estratega fiscal. CEO de Díaz Lara | Firma de Estrategia Empresarial. Acompaña a empresarios a tomar mejores decisiones con claridad patrimonial y fiscal.";
   const resources = lesson.resources ?? [];
   const commentsEnabled = lesson.commentsVisibility !== "hidden";
   const commentsLocked = lesson.commentsVisibility === "locked";

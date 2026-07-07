@@ -25,7 +25,7 @@ const getInstructorBio = (instructor: unknown) => {
   if (typeof instructor === "object" && instructor && "bio" in instructor && instructor.bio) {
     return String(instructor.bio);
   }
-  return "Estratega fiscal. CEO de Diaz Lara Contabilidad. Acompana a empresarios a tomar mejores decisiones con claridad patrimonial y fiscal.";
+  return "Estratega fiscal. CEO de Díaz Lara | Firma de Estrategia Empresarial. Acompaña a empresarios a tomar mejores decisiones con claridad patrimonial y fiscal.";
 };
 
 const getTitleLengthClass = (title: string) => {

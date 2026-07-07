@@ -177,45 +177,6 @@ const learningCards = [
   },
 ];
 
-const agenda = [
-  {
-    time: '09:00',
-    title: 'Registro y bienvenida',
-    description: 'Acreditación, café de cortesía y networking inicial entre asistentes.',
-    duration: '60 min',
-  },
-  {
-    time: '10:00',
-    title: 'Apertura: Panorama fiscal MX 2026',
-    description: 'Por Diego Díaz. Estado actual del SAT, reformas vigentes y lo que viene en el resto del año.',
-    duration: '90 min',
-  },
-  {
-    time: '11:30',
-    title: 'Bloque I: Blindaje fiscal',
-    description: 'Los 7 documentos clave + 3 casos reales de revisión y cómo se resolvieron.',
-    duration: '150 min',
-  },
-  {
-    time: '14:00',
-    title: 'Comida + networking',
-    description: 'Comida formal incluida. Mesa con asignación por sector empresarial.',
-    duration: '90 min',
-  },
-  {
-    time: '15:30',
-    title: 'Bloque II: Estructura y deducciones',
-    description: 'Holding · Partes relacionadas · Deducciones inteligentes con ejercicios en vivo.',
-    duration: '90 min',
-  },
-  {
-    time: '17:00',
-    title: 'Cierre + Q&A en vivo con Diego Díaz',
-    description: '60 minutos de preguntas y respuestas sin filtros. Asistentes prioritarios: tier General + VIP.',
-    duration: '60 min',
-  },
-];
-
 const speakers = [
   {
     name: 'Diego Díaz',
@@ -289,11 +250,6 @@ const tickets = [
 
 const faqItems = [
   {
-    question: '¿Hay grabación si no puedo asistir?',
-    answer:
-      'El evento es 100% presencial. El plan General y VIP incluye acceso a la grabación post-evento durante 30 días. El plan Early Bird no incluye grabación.',
-  },
-  {
     question: '¿Puedo cancelar o transferir mi lugar?',
     answer: 'Puedes transferir tu lugar a otra persona avisando al equipo antes del cierre de registro.',
   },
@@ -307,7 +263,7 @@ const faqItems = [
   },
   {
     question: '¿Cuánto dura cada bloque y hay descansos?',
-    answer: 'La agenda contempla bloques de trabajo durante el día, con comida y espacios de pausa incluidos.',
+    answer: 'El día contempla bloques de trabajo, comida y espacios de pausa incluidos.',
   },
   {
     question: '¿Cómo se aplica al tier VIP?',
@@ -374,7 +330,7 @@ const FaqSection = memo(function FaqSection() {
             <span className="block italic">frecuentes.</span>
           </h2>
           <p className="mb-[47px] hidden text-right text-[9px] lowercase tracking-[0.28em] text-ink-300 md:block">
-            6 preguntas
+            5 preguntas
           </p>
         </div>
 
@@ -628,57 +584,6 @@ export default function EstrategiaFiscalLanding() {
                 </p>
               </article>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="agenda" className="border-t border-cream-400 bg-cream-50">
-        <div className="mx-auto max-w-[1344px] px-5 py-20 sm:px-8 md:py-[104px] lg:px-10 lg:py-[112px]">
-          <div className="grid items-end border-b border-cream-400 md:grid-cols-[96px_minmax(0,1fr)_100px] lg:grid-cols-[128px_minmax(0,1fr)_120px]">
-            <p className="mb-8 text-[9px] uppercase leading-[1.35] tracking-[0.34em] text-ink-300 md:mb-[70px]">
-              03 /{' '}
-              <br />
-              Programa
-            </p>
-            <h2 className="max-w-[650px] pb-1 text-[clamp(50px,6.1vw,72px)] font-normal leading-[0.88] tracking-[-0.05em] text-ink-900">
-              Agenda{' '}
-              <br />
-              del <span className="font-serif italic tracking-[-0.06em]">día</span>
-            </h2>
-            <p className="mb-[74px] hidden whitespace-nowrap text-right text-[9px] lowercase tracking-[0.28em] text-ink-300 md:block">
-              9 hrs / 6 bloques
-            </p>
-          </div>
-
-          <div className="mx-auto mt-[52px] w-full md:w-[min(76vw,980px)]">
-            <div className="flex min-h-8 flex-wrap items-center justify-between gap-x-6 gap-y-1 overflow-hidden bg-ink-900 px-4 py-2 text-[7px] uppercase tracking-[0.2em] text-white sm:flex-nowrap sm:px-7 sm:text-[9px] sm:tracking-[0.34em]">
-              <span className="sm:whitespace-nowrap">— {formatLandingDate(currentEventDate)} · Día único</span>
-              <span className="sm:whitespace-nowrap">{currentEventLocation}</span>
-            </div>
-
-            <div className="border-b border-cream-400">
-              {agenda.map((item) => (
-                <article
-                  key={item.time}
-                  className="grid min-h-[104px] grid-cols-[92px_minmax(0,1fr)] border-t border-cream-400 px-4 py-6 sm:grid-cols-[148px_minmax(0,1fr)_104px] sm:px-7"
-                >
-                  <time className="text-[32px] font-normal leading-none tracking-[-0.04em] text-ink-900 md:text-[34px]">
-                    {item.time}
-                  </time>
-                  <div>
-                    <h3 className="font-serif text-[25px] font-normal leading-[0.98] tracking-[-0.03em] text-ink-900 md:text-[28px]">
-                      {item.title}
-                    </h3>
-                    <p className="mt-2 max-w-[620px] text-[13px] font-normal leading-[1.2] tracking-[-0.01em] text-ink-500 md:text-[14px]">
-                      {item.description}
-                    </p>
-                  </div>
-                  <span className="mt-[17px] hidden text-right text-[9px] uppercase tracking-[0.32em] text-ink-300 sm:block">
-                    — {item.duration}
-                  </span>
-                </article>
-              ))}
-            </div>
           </div>
         </div>
       </section>

@@ -40,13 +40,13 @@ const milestones = [
     tag: 'Best seller',
   },
   {
-    year: '2022',
-    body: 'Díaz Lara recibe la Cruz de Malta por Latin American Quality Awards.',
+    year: '2025',
+    body: 'Díaz Lara recibe el reconocimiento Latin American Quality Awards 2025.',
     tag: 'Galardón continental',
   },
   {
     year: '2024',
-    body: 'Certificación Great Place to Work® en Díaz Lara Consultores.',
+    body: 'Certificación Great Place to Work® en Díaz Lara | Firma de Estrategia Empresarial.',
     tag: 'Cultura validada',
   },
   {
@@ -432,7 +432,7 @@ export default function About() {
               <p>
                 <span className="font-sans text-[10px] font-bold uppercase tracking-[0.24em] text-ink-300">Presente</span>
                 <span className="mt-3 block">
-                  Hoy, Díaz opera en tres espacios convergentes: como conferencista en foros empresariales; como autor de 3 libros en la materia; y como director fundador de Díaz Lara Consultores, la firma que atiende a más de mil empresas.
+                  Hoy, Díaz opera en tres espacios convergentes: como conferencista en foros empresariales; como autor de 3 libros en la materia; y como director fundador de Díaz Lara | Firma de Estrategia Empresarial, la firma que atiende a más de mil empresas.
                 </span>
               </p>
             </article>
@@ -575,10 +575,10 @@ export default function About() {
               </h2>
               <h3 className="font-serif text-[52px] leading-[0.9] tracking-[-0.05em]">
                 Díaz Lara
-                <span className="block italic">Consultores</span>
+                <span className="block italic">Firma de Estrategia Empresarial</span>
               </h3>
               <p className="mt-9 max-w-[520px] font-serif text-[18px] leading-[1.62] tracking-[-0.015em] text-white/62">
-                Diego es fundador y director de Díaz Lara Consultores, firma especializada en estrategia fiscal, defensa SAT, blindaje patrimonial y estructuras holding. Hoy atiende a empresas con operaciones nacionales e internacionales.
+                Diego es fundador y director de Díaz Lara | Firma de Estrategia Empresarial, especializada en estrategia fiscal, defensa SAT, blindaje patrimonial y estructuras holding. Hoy atiende a empresas con operaciones nacionales e internacionales.
               </p>
               <p className="mt-7 max-w-[520px] font-serif text-[18px] leading-[1.62] tracking-[-0.015em] text-white/62">
                 La firma cuenta con dos distinciones que validan su cultura y excelencia operacional.
@@ -590,7 +590,7 @@ export default function About() {
                 </div>
                 <div className="p-7">
                   <p className="text-[10px] uppercase tracking-[0.24em] text-white/35">- Excelencia</p>
-                  <p className="mt-5 font-serif text-[23px] leading-[1.15]">Cruz de<br /><span className="italic">Malta</span></p>
+                  <p className="mt-5 font-serif text-[23px] leading-[1.15]">Latin American<br /><span className="italic">Quality Awards 2025</span></p>
                 </div>
               </div>
               <a
@@ -651,7 +651,7 @@ export default function About() {
       </section>
 
       {/* ── 06 Prensa ────────────────────────────────────────── */}
-      <section className="border-b border-cream-400 bg-cream-100">
+      <section id="prensa" className="border-b border-cream-400 bg-cream-100">
         <div className="mx-auto max-w-[1184px] px-5 py-24 sm:px-8 lg:px-0">
           <SectionMeta index="06" label="Cobertura" right={`${press.length} apariciones verificadas`} />
           <h2 className="about-section-title mt-14 font-normal leading-[0.94] tracking-[-0.055em]">
