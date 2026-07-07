@@ -187,7 +187,7 @@ function ResourceCard({ resource }: { resource: Resource }) {
   const isPremium = resource.premium;
 
   return (
-    <article className="group relative flex flex-col border border-cream-400 bg-white transition-shadow duration-200 hover:shadow-md">
+    <article className="card-lift group relative flex flex-col border border-cream-400 bg-white transition-colors duration-200 hover:border-ink-900">
       {resource.new && (
         <div className="absolute right-4 top-4 bg-ink-900 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-white">
           Nuevo

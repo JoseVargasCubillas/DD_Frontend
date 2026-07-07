@@ -25,7 +25,7 @@ export default function EventCard({ event }: EventCardProps) {
   return (
     <Link
       to={`/eventos/${event.slug}`}
-      className="group flex flex-col overflow-hidden border border-cream-400 hover:border-ink-400 transition-colors bg-white"
+      className="card-lift group flex flex-col overflow-hidden border border-cream-400 bg-white transition-colors hover:border-ink-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900/30"
     >
       {/* Imagen */}
       {event.thumbnail && (
@@ -56,7 +56,7 @@ export default function EventCard({ event }: EventCardProps) {
         {/* Footer card */}
         <div className="flex items-center justify-between mt-auto pt-2">
           <span className={badgeClass}>{statusLabel}</span>
-          <span className="w-8 h-8 border border-ink-900 flex items-center justify-center text-ink-900 text-sm group-hover:bg-ink-900 group-hover:text-white transition-colors">
+          <span className="card-arrow w-8 h-8 border border-ink-900 flex items-center justify-center text-ink-900 text-sm group-hover:bg-ink-900 group-hover:text-white transition-colors">
             →
           </span>
         </div>

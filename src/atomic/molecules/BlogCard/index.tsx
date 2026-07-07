@@ -7,7 +7,7 @@ interface BlogCardProps { post: BlogPost }
 
 export default function BlogCard({ post }: BlogCardProps) {
   return (
-    <Link to={`/blog/${post.slug}`} className="card group hover:border-brand-500 transition-all duration-300 block">
+    <Link to={`/blog/${post.slug}`} className="card card-lift group block transition-colors duration-300 hover:border-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50">
       <div className="aspect-video overflow-hidden">
         <img src={post.thumbnail || '/placeholder-blog.jpg'} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
       </div>

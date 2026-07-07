@@ -433,7 +433,7 @@ function AgendaCard({
   compact?: boolean;
 }) {
   return (
-    <article className="group flex w-[280px] flex-none flex-col border border-cream-400 bg-cream-50 transition-colors duration-200 hover:border-ink-900 sm:w-[304px] lg:w-[calc((100%-3.5rem)/3)]">
+    <article className="card-lift group flex w-[280px] flex-none flex-col border border-cream-400 bg-cream-50 transition-colors duration-200 hover:border-ink-900 sm:w-[304px] lg:w-[calc((100%-3.5rem)/3)]">
       <div className="p-4 pb-0">
         <Placeholder
           src={event.image}
@@ -503,7 +503,7 @@ function AgendaFeature({
 }) {
   return (
     <article
-      className={`group grid min-h-[340px] border border-cream-400 bg-cream-50 transition-colors duration-200 hover:border-ink-900 ${
+      className={`card-lift group grid min-h-[340px] border border-cream-400 bg-cream-50 transition-colors duration-200 hover:border-ink-900 ${
         imageSide === "right" ? "md:grid-cols-[1fr_340px]" : ""
       }`}
     >
