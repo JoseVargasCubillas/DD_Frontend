@@ -819,7 +819,7 @@ export default function Home() {
             {[...MEDIA_LOGOS, ...MEDIA_LOGOS].map((logo, i) => (
               <Link
                 key={i}
-                to="/prensa"
+                to="/prensa#prensa"
                 aria-label={`Ver a Diego en prensa: ${logo.alt}`}
                 className="inline-flex cursor-pointer items-center transition-opacity duration-300 opacity-60 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900/35"
               >

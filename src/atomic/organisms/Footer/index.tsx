@@ -47,7 +47,7 @@ export default function Footer() {
           <div className="space-y-4">
             <h5 className="text-[11px] uppercase tracking-[0.3em] text-ink-400 font-normal">Explora</h5>
             <ul className="space-y-3">
-              {[['Diego','/acerca'],['Prensa','/prensa'],['Blog','/blog'],['Recursos','/recursos']].map(([label, to]) => (
+              {[['Diego','/acerca'],['Prensa','/prensa#prensa'],['Blog','/blog'],['Recursos','/recursos']].map(([label, to]) => (
                 <li key={to}><Link to={to} className="text-[13px] text-ink-300 hover:text-white transition-colors">{label}</Link></li>
               ))}
             </ul>

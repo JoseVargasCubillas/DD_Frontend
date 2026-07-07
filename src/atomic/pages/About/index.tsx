@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useReveal, useHeroReveal } from '@hooks/useReveal';
 import { useCountUp } from '@hooks/useCountUp';
@@ -326,6 +326,7 @@ function BookCardTilt({ children }: { children: ReactNode }) {
 }
 
 export default function About() {
+  const location = useLocation();
   const heroRef      = useHeroReveal();
   const milestonesRef = useReveal();
   const statsRef     = useReveal();
@@ -334,6 +335,13 @@ export default function About() {
   const count18Ref   = useCountUp(18);
   const [showAllPress, setShowAllPress] = useState(false);
   const visiblePress = showAllPress ? press : press.slice(0, 8);
+
+  useEffect(() => {
+    if (location.hash !== '#prensa') return;
+    window.requestAnimationFrame(() => {
+      document.getElementById('prensa')?.scrollIntoView({ block: 'start' });
+    });
+  }, [location.hash]);
 
   return (
     <div className="bg-cream-50 text-ink-900">
