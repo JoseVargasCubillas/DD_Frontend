@@ -6,6 +6,7 @@ import heroVideo from '../../../../../assets/eventos/VIDEO SEF vertical web.mp4'
 import diegoPortrait from '../../../../../assets/eventos/LEF_img_001.png';
 import irmaPortrait from '../../../../../assets/eventos/LEF_img 002.png';
 import azucenaPortrait from '../../../../../assets/eventos/LEF_img 003.png';
+import jessicaPortrait from '../../../../../assets/eventos/LEF_img_004.png';
 import type { Event as SiteEvent } from '@t/index';
 
 const EVENT_SLUG = 'estrategia-fiscal';
@@ -223,16 +224,22 @@ const speakers = [
     bio: 'Autor de 3 libros, 25 años de trayectoria, fundador de Díaz Lara. Conferencista y facilitador de temas fiscales y empresariales.',
   },
   {
-    name: 'Invitado especial',
-    role: 'Ponente invitado',
+    name: 'Imar Amor',
+    role: 'Invitada',
     image: irmaPortrait,
-    bio: 'Especialista con +15 años de experiencia contable y asesoría empresarial. Imparte el módulo de blindaje.',
+    bio: 'Licenciada en Finanzas y Contaduría Pública. Colabora en la formación de empresarios con estructura empresarial y análisis financiero.',
   },
   {
-    name: 'Invitada especial',
-    role: 'Ponente invitada',
+    name: 'Jazmín Robles',
+    role: 'Invitada',
     image: azucenaPortrait,
-    bio: 'Directora financiera con experiencia en holdings de manufactura y comercio. Perspectiva desde el C-level.',
+    bio: 'Abogada Fiscalista, Maestra en Derecho Fiscal y Doctorante en Ciencias de lo Fiscal. Distinción internacional "The Lawyer of the Year 2025"',
+  },
+  {
+    name: 'Jessica Tapia',
+    role: 'Invitada',
+    image: jessicaPortrait,
+    bio: 'Soporte especializado para revisar obligaciones, escenarios y documentación empresarial.',
   },
 ];
 
@@ -690,35 +697,45 @@ export default function EstrategiaFiscalLanding() {
               frente
             </h2>
             <p className="mb-[76px] hidden whitespace-nowrap text-right text-[9px] lowercase tracking-[0.28em] text-ink-300 md:block">
-              3 ponentes / 1 invitado
+              1 anfitrión / 3 invitadas
             </p>
           </div>
 
-          <div className="mt-[52px] grid gap-5 md:grid-cols-3">
-            {featuredSpeakers.map((speaker) => (
-              <article
-                key={speaker.name}
-                className="card-lift group overflow-hidden border border-cream-400 bg-cream-50 transition-colors hover:border-ink-900"
-              >
-                <div className="aspect-[4/5] overflow-hidden bg-cream-200">
-                  <img
-                    src={speaker.image}
-                    alt={speaker.name}
-                    className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.02]"
-                    loading="lazy"
-                  />
+          <div className="mt-[52px] overflow-hidden">
+            <div className="flex w-max motion-safe:animate-[speaker-carousel_60s_linear_infinite]">
+              {[0, 1].map((group) => (
+                <div
+                  key={group}
+                  aria-hidden={group === 1}
+                  className="flex shrink-0 gap-5 pr-5"
+                >
+                  {featuredSpeakers.map((speaker) => (
+                    <article
+                      key={`${group}-${speaker.name}`}
+                      className="w-[78vw] shrink-0 border border-cream-400 bg-cream-50 sm:w-[42vw] md:w-[29vw] md:max-w-[386px]"
+                    >
+                      <div className="aspect-[4/5] overflow-hidden bg-cream-200">
+                        <img
+                          src={speaker.image}
+                          alt={speaker.name}
+                          className="h-full w-full object-cover object-top"
+                          loading={group === 0 ? 'eager' : 'lazy'}
+                        />
+                      </div>
+                      <div className="min-h-[128px] border-t border-cream-400 px-5 py-5">
+                        <p className="text-[8px] uppercase tracking-[0.3em] text-ink-300">— {speaker.role}</p>
+                        <h3 className="mt-5 font-serif text-[26px] italic leading-none tracking-[-0.04em] text-ink-900">
+                          {speaker.name}
+                        </h3>
+                        <p className="mt-4 max-w-[310px] text-[13px] font-normal leading-[1.18] tracking-[-0.01em] text-ink-500">
+                          {speaker.bio}
+                        </p>
+                      </div>
+                    </article>
+                  ))}
                 </div>
-                <div className="min-h-[150px] border-t border-cream-400 px-5 py-5">
-                  <p className="text-[8px] uppercase tracking-[0.3em] text-ink-300">— {speaker.role}</p>
-                  <h3 className="mt-5 font-serif text-[26px] italic leading-none tracking-[-0.04em] text-ink-900">
-                    {speaker.name}
-                  </h3>
-                  <p className="mt-4 max-w-[310px] text-[13px] font-normal leading-[1.18] tracking-[-0.01em] text-ink-500">
-                    {speaker.bio}
-                  </p>
-                </div>
-              </article>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
