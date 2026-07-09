@@ -68,14 +68,7 @@ export const router = createBrowserRouter([
       { path: "/despacho", element: <DiazLara /> },
       { path: "/recursos", element: <Resources /> },
       { path: "/contacto", element: <Contact /> },
-      {
-        path: "/checkout",
-        element: (
-          <ProtectedRoute>
-            <Checkout />
-          </ProtectedRoute>
-        ),
-      },
+      { path: "/checkout", element: <Checkout /> },
       {
         path: "/cursos/:slug/leccion/:lessonId",
         element: (

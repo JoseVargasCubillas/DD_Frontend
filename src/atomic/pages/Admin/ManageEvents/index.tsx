@@ -18,6 +18,9 @@ type EventForm = {
   startDate: string;
   endDate: string;
   price: string;
+  currency: string;
+  paymentType: Event["paymentType"];
+  stripePriceId: string;
   capacity: string;
   status: Event["status"];
   isFeatured: boolean;
@@ -56,6 +59,9 @@ const DEFAULT_FORM: EventForm = {
   startDate: "2026-09-26T09:07",
   endDate: "2026-09-26T17:00",
   price: "0",
+  currency: "MXN",
+  paymentType: "one_time",
+  stripePriceId: "",
   capacity: "80",
   status: "upcoming",
   isFeatured: false,
@@ -230,6 +236,12 @@ const STATUS_LABEL: Record<Event["status"], string> = {
   canceled: "Oculto",
 };
 
+const PAYMENT_TYPE_LABEL = {
+  free: "Gratis",
+  one_time: "Pago unico",
+  subscription: "Suscripcion",
+} as const;
+
 const getEventId = (event: Event) => event.id ?? event._id ?? "";
 const isSeedId = (id?: string) => Boolean(id?.startsWith("seed-"));
 const isLocalId = (id?: string) => Boolean(id?.startsWith("local-"));
@@ -359,6 +371,9 @@ const formFromEvent = (event: Event): EventForm => ({
   startDate: toDateTimeInput(event.startDate),
   endDate: toDateTimeInput(event.endDate),
   price: String(event.salePrice ?? event.price ?? 0),
+  currency: event.currency || "MXN",
+  paymentType: event.paymentType || (Number(event.price || 0) > 0 ? "one_time" : "free"),
+  stripePriceId: event.stripePriceId || "",
   capacity: String(event.capacity ?? 80),
   status: event.status,
   isFeatured: Boolean(event.isFeatured),
@@ -382,6 +397,9 @@ const buildPayload = (form: EventForm): Partial<Event> => ({
   startDate: new Date(form.startDate).toISOString(),
   endDate: new Date(form.endDate || form.startDate).toISOString(),
   price: Number(form.price) || 0,
+  currency: form.currency,
+  paymentType: form.paymentType,
+  stripePriceId: form.stripePriceId,
   capacity: Number(form.capacity) || 0,
   registeredCount: 0,
   status: form.status,
@@ -403,6 +421,9 @@ const eventFromForm = (form: EventForm, id: string): Event => ({
   startDate: new Date(form.startDate).toISOString(),
   endDate: new Date(form.endDate || form.startDate).toISOString(),
   price: Number(form.price) || 0,
+  currency: form.currency,
+  paymentType: form.paymentType,
+  stripePriceId: form.stripePriceId,
   capacity: Number(form.capacity) || 0,
   registeredCount: 0,
   status: form.status,
@@ -904,6 +925,51 @@ const selectedIsNew = selectedId === "new";
                   </option>
                 ))}
               </select>
+            </Field>
+
+            <Field label="Tipo de cobro">
+              <select
+                value={form.paymentType}
+                onChange={(event) =>
+                  update("paymentType", event.target.value as Event["paymentType"])
+                }
+                className={INPUT_CLASS}
+              >
+                {Object.entries(PAYMENT_TYPE_LABEL).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Precio">
+              <input
+                type="number"
+                min="0"
+                value={form.price}
+                onChange={(event) => update("price", event.target.value)}
+                className={INPUT_CLASS}
+              />
+            </Field>
+
+            <Field label="Moneda">
+              <input
+                value={form.currency}
+                onChange={(event) =>
+                  update("currency", event.target.value.toUpperCase().slice(0, 3))
+                }
+                className={INPUT_CLASS}
+              />
+            </Field>
+
+            <Field label="Stripe Price ID">
+              <input
+                value={form.stripePriceId}
+                onChange={(event) => update("stripePriceId", event.target.value)}
+                placeholder="price_..."
+                className={INPUT_CLASS}
+              />
             </Field>
 
             <Field label="Enlace botón">

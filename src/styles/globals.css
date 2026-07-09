@@ -513,6 +513,20 @@
     font-size: clamp(54px, 7.5vw, 96px);
   }
 
+  .academy-dark-button {
+    @apply inline-flex min-h-[38px] cursor-pointer items-center justify-center border border-[#0d0d0d]
+           bg-[#0d0d0d] px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.18em]
+           text-[#f7f2ea] transition-colors duration-200 hover:bg-transparent hover:text-[#0d0d0d]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0d0d0d]/30;
+  }
+
+  .academy-light-button {
+    @apply inline-flex min-h-[38px] cursor-pointer items-center justify-center border border-[#bdb4aa]
+           bg-transparent px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.18em]
+           text-[#15120f] transition-colors duration-200 hover:border-[#0d0d0d] hover:bg-[#0d0d0d]
+           hover:text-[#f7f2ea] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0d0d0d]/30;
+  }
+
   .dl-hero-title {
     font-size: clamp(56px, 7.2vw, 100px);
   }

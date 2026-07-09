@@ -1,30 +1,37 @@
-import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useCartStore } from '@store/cartStore';
-import { useAuthStore } from '@store/authStore';
 import { createPaymentIntent } from '@api/payments.api';
-import { subscribe } from '@api/subscriptions.api';
+import { subscribe, type CheckoutCustomerInfo } from '@api/subscriptions.api';
+import * as eventsApi from '@api/events.api';
+import { listOffers } from '@api/offers.api';
 import { formatCurrency } from '@utils/formatters';
+import type { OrderItem } from '@t/index';
 import Button from '@atoms/Button';
 import Spinner from '@atoms/Spinner';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string);
+const stripePublishableKey = String(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+const stripePromise = stripePublishableKey.startsWith('pk_')
+  ? loadStripe(stripePublishableKey)
+  : Promise.resolve(null);
 
 type CheckoutMode = 'subscription' | 'one_time';
 
 function detectMode(items: { type?: string }[]): CheckoutMode {
-  return items.some((i) => i.type === 'subscription') ? 'subscription' : 'one_time';
+  return items.some((i) => i.type === 'subscription' || (i as OrderItem).paymentType === 'subscription') ? 'subscription' : 'one_time';
 }
 
 interface PaymentFormProps {
   mode: CheckoutMode;
   total: number;
+  customer: CheckoutCustomerInfo;
   onSuccess: () => void;
 }
 
-function PaymentForm({ mode, total, onSuccess }: PaymentFormProps) {
+function PaymentForm({ mode, total, customer, onSuccess }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [paying, setPaying] = useState(false);
@@ -36,19 +43,47 @@ function PaymentForm({ mode, total, onSuccess }: PaymentFormProps) {
     setError('');
     setPaying(true);
 
-    const result = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: window.location.origin + '/mi-cuenta?pago=exitoso',
-      },
-      redirect: 'if_required',
-    });
+    try {
+      const submitResult = await elements.submit();
+      if (submitResult.error) {
+        setError(submitResult.error.message ?? 'Revisa los datos de pago.');
+        setPaying(false);
+        return;
+      }
 
-    if (result.error) {
-      setError(result.error.message ?? 'Error al procesar el pago.');
+      const result = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.origin + '/checkout?pago=exitoso',
+          payment_method_data: {
+            billing_details: {
+              name: customer.name,
+              email: customer.email,
+              phone: customer.phone,
+            },
+          },
+        },
+        redirect: 'if_required',
+      });
+
+      if (result.error) {
+        setError(result.error.message ?? 'Error al procesar el pago.');
+        setPaying(false);
+        return;
+      }
+
+      const status = result.paymentIntent?.status;
+      if (!status || ['succeeded', 'processing', 'requires_capture'].includes(status)) {
+        onSuccess();
+        setPaying(false);
+        return;
+      }
+
+      setError('El pago no se pudo confirmar. Revisa el metodo de pago e intenta de nuevo.');
       setPaying(false);
-    } else {
-      onSuccess();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Stripe no pudo confirmar el pago. Intenta de nuevo.');
+      setPaying(false);
     }
   };
 
@@ -82,42 +117,115 @@ function DemoPaymentForm({ mode, total, onSuccess }: PaymentFormProps) {
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { items, removeItem, total, clear } = useCartStore();
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const [searchParams] = useSearchParams();
+  const paymentStatus = searchParams.get('pago');
+  const routeEventId = searchParams.get('event');
+  const routeOfferId = searchParams.get('offer');
+  const { items, removeItem, clear } = useCartStore();
 
   const [clientSecret, setClientSecret] = useState('' as string);
   const [loading, setLoading] = useState(false);
   const [initError, setInitError] = useState('' as string);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState(paymentStatus === 'exitoso');
+  const [customer, setCustomer] = useState<CheckoutCustomerInfo>({
+    name: '',
+    email: '',
+    phone: '',
+  });
 
-  const mode = detectMode(items);
+  useEffect(() => {
+    if (success) clear();
+  }, [clear, success]);
 
-  if (!isAuthenticated) {
-    navigate('/iniciar-sesion?redirect=/checkout');
+  const shouldLoadRouteItem = items.length === 0;
+  const { data: routeEvent, isLoading: loadingRouteEvent } = useQuery({
+    queryKey: ['checkout-event', routeEventId],
+    queryFn: () => eventsApi.getEventBySlug(routeEventId!),
+    enabled: shouldLoadRouteItem && Boolean(routeEventId),
+  });
+  const { data: offers = [], isLoading: loadingRouteOffer } = useQuery({
+    queryKey: ['checkout-offers'],
+    queryFn: listOffers,
+    enabled: shouldLoadRouteItem && Boolean(routeOfferId),
+  });
+  const routeOffer = useMemo(
+    () => offers.find((offer) => (offer._id || offer.id || offer.slug) === routeOfferId),
+    [offers, routeOfferId],
+  );
+  const routeItem = useMemo<OrderItem | null>(() => {
+    if (routeEvent) {
+      const price = routeEvent.salePrice != null && routeEvent.salePrice > 0 ? routeEvent.salePrice : routeEvent.price;
+      return {
+        type: 'event',
+        refId: routeEvent._id || routeEvent.id || routeEvent.slug || '',
+        title: routeEvent.title,
+        price,
+        quantity: 1,
+        currency: routeEvent.currency || 'MXN',
+        paymentType: routeEvent.paymentType || (price > 0 ? 'one_time' : 'free'),
+      };
+    }
+
+    if (routeOffer) {
+      return {
+        type: 'offer',
+        refId: routeOffer._id || routeOffer.id || routeOffer.slug || '',
+        title: routeOffer.title,
+        price: routeOffer.price,
+        quantity: 1,
+        currency: routeOffer.currency || 'MXN',
+        paymentType: routeOffer.paymentType || (routeOffer.price > 0 ? 'one_time' : 'free'),
+        plan: routeOffer.plan,
+      };
+    }
+
     return null;
-  }
+  }, [routeEvent, routeOffer]);
+  const checkoutItems = items.length > 0 ? items : routeItem ? [routeItem] : [];
+  const checkoutTotal = checkoutItems.reduce((sum, item) => sum + item.price * (item.quantity ?? 1), 0);
+  const mode = detectMode(checkoutItems);
+  const customerComplete = customer.name.trim().length >= 2 && /\S+@\S+\.\S+/.test(customer.email) && customer.phone.trim().length >= 8;
+
+  const updateCustomer = (field: keyof CheckoutCustomerInfo, value: string) => {
+    setCustomer((current) => ({ ...current, [field]: value }));
+  };
 
   const handleInitPayment = async () => {
     setInitError('');
+    if (!customerComplete) {
+      setInitError('Ingresa nombre, correo electronico y telefono para continuar.');
+      return;
+    }
     setLoading(true);
     try {
       if (mode === 'subscription') {
-        const priceId = import.meta.env.VITE_STRIPE_PRICE_INICIATIVA_MENSUAL as string;
-        const result = await subscribe({ priceId, plan: 'pro' });
-        setClientSecret((result as Record<string, string>).clientSecret ?? '');
+        const subscriptionItem = checkoutItems.find((item) => item.paymentType === 'subscription' || item.type === 'subscription');
+        if (!subscriptionItem) throw new Error('No se encontro la suscripcion seleccionada.');
+        const result = await subscribe({
+          item: {
+            type: subscriptionItem.type,
+            refId: subscriptionItem.refId,
+            quantity: subscriptionItem.quantity,
+          },
+          customer: {
+            name: customer.name.trim(),
+            email: customer.email.trim(),
+            phone: customer.phone.trim(),
+          },
+        });
+        setClientSecret(result.clientSecret ?? '');
       } else {
-        const result = await createPaymentIntent(items);
-        setClientSecret((result as Record<string, string>).clientSecret ?? '');
+        const result = await createPaymentIntent(checkoutItems);
+        setClientSecret(result.clientSecret ?? '');
       }
-    } catch {
-      setInitError('No se pudo iniciar el pago. Intenta de nuevo.');
+    } catch (error) {
+      setInitError(error instanceof Error ? error.message : 'No se pudo iniciar el pago. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }
   };
 
   if (success) {
-    clear();
     return (
       <div className="container-app py-20 max-w-xl text-center">
         <div className="mb-6 flex justify-center">
@@ -136,7 +244,15 @@ export default function Checkout() {
     );
   }
 
-  if (items.length === 0) {
+  if (shouldLoadRouteItem && (loadingRouteEvent || loadingRouteOffer)) {
+    return (
+      <div className="container-app flex min-h-[50vh] items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (checkoutItems.length === 0) {
     return (
       <div className="container-app py-20 max-w-xl text-center">
         <h1 className="section-title mb-4">Checkout</h1>
@@ -173,18 +289,18 @@ export default function Checkout() {
               Resumen
             </h2>
             <div className="divide-y divide-dark-600">
-              {items.map((item) => (
-                <div key={item.id} className="flex items-start justify-between gap-3 py-3">
+              {checkoutItems.map((item) => (
+                <div key={`${item.type}:${item.refId}`} className="flex items-start justify-between gap-3 py-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-white text-sm font-medium leading-snug truncate">{item.title}</p>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {item.type === 'subscription' ? 'Suscripcion mensual' : 'Pago unico'}
+                      {item.paymentType === 'subscription' || item.type === 'subscription' ? 'Suscripcion mensual' : 'Pago unico'}
                     </p>
                     <p className="text-brand-400 text-sm font-semibold mt-1">{formatCurrency(item.price)}</p>
                   </div>
-                  {!clientSecret && (
+                  {!clientSecret && items.length > 0 && (
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => removeItem((item as OrderItem & { id?: string }).id ?? item.refId)}
                       className="text-gray-600 hover:text-red-400 text-xs shrink-0"
                     >
                       Quitar
@@ -197,7 +313,7 @@ export default function Checkout() {
               <span className="text-gray-400 text-sm">
                 {mode === 'subscription' ? 'Total mensual' : 'Total'}
               </span>
-              <span className="text-white font-bold text-lg">{formatCurrency(total())}</span>
+              <span className="text-white font-bold text-lg">{formatCurrency(checkoutTotal)}</span>
             </div>
             {mode === 'subscription' && (
               <p className="text-xs text-gray-500 mt-2">
@@ -217,12 +333,47 @@ export default function Checkout() {
                 <p className="text-gray-400 text-sm">
                   Haz clic en continuar para ingresar los datos de tu tarjeta de forma segura a traves de Stripe.
                 </p>
+                <div className="grid gap-3">
+                  <label className="grid gap-1 text-sm text-gray-300">
+                    Nombre completo
+                    <input
+                      type="text"
+                      value={customer.name}
+                      onChange={(event) => updateCustomer('name', event.target.value)}
+                      disabled={loading}
+                      className="min-h-11 rounded-lg border border-dark-600 bg-dark-800 px-3 text-white outline-none transition-colors focus:border-brand-500"
+                      placeholder="Nombre y apellidos"
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm text-gray-300">
+                    Correo electronico
+                    <input
+                      type="email"
+                      value={customer.email}
+                      onChange={(event) => updateCustomer('email', event.target.value)}
+                      disabled={loading}
+                      className="min-h-11 rounded-lg border border-dark-600 bg-dark-800 px-3 text-white outline-none transition-colors focus:border-brand-500"
+                      placeholder="tu@correo.com"
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm text-gray-300">
+                    Telefono
+                    <input
+                      type="tel"
+                      value={customer.phone}
+                      onChange={(event) => updateCustomer('phone', event.target.value)}
+                      disabled={loading}
+                      className="min-h-11 rounded-lg border border-dark-600 bg-dark-800 px-3 text-white outline-none transition-colors focus:border-brand-500"
+                      placeholder="+52 55 0000 0000"
+                    />
+                  </label>
+                </div>
                 {initError && (
                   <p className="rounded-lg bg-red-950/50 border border-red-700 px-4 py-3 text-sm text-red-300">
                     {initError}
                   </p>
                 )}
-                <Button onClick={handleInitPayment} disabled={loading} fullWidth>
+                <Button onClick={handleInitPayment} disabled={loading || !customerComplete} fullWidth>
                   {loading ? <Spinner size="sm" /> : 'Continuar al pago'}
                 </Button>
                 <div className="flex items-center justify-center gap-2 text-xs text-gray-600">
@@ -238,14 +389,18 @@ export default function Checkout() {
                 <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-5">
                   Confirmacion local
                 </h2>
-                <DemoPaymentForm mode={mode} total={total()} onSuccess={() => setSuccess(true)} />
+                <DemoPaymentForm mode={mode} total={checkoutTotal} customer={customer} onSuccess={() => setSuccess(true)} />
               </>
+            ) : !stripePublishableKey.startsWith('pk_') ? (
+              <p className="rounded-lg bg-red-950/50 border border-red-700 px-4 py-3 text-sm text-red-300">
+                Falta configurar VITE_STRIPE_PUBLISHABLE_KEY con una llave publica valida de Stripe.
+              </p>
             ) : (
               <Elements stripe={stripePromise} options={elementsOptions}>
                 <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-5">
                   Datos de pago
                 </h2>
-                <PaymentForm mode={mode} total={total()} onSuccess={() => setSuccess(true)} />
+                <PaymentForm mode={mode} total={checkoutTotal} customer={customer} onSuccess={() => setSuccess(true)} />
               </Elements>
             )}
           </div>
