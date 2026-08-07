@@ -1,307 +1,565 @@
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '@store/cartStore';
+import diegoPortrait from '../../../../assets/eventos/LEF_img_001.png';
+import imarPortrait from '../../../../assets/eventos/LEF_img 002.png';
+import jazminPortrait from '../../../../assets/eventos/LEF_img 003.png';
+import jessicaPortrait from '../../../../assets/eventos/LEF_img_004.png';
 
-type CardTone = 'dark' | 'warm' | 'light';
+const cream = 'bg-[#f5f2ec]';
+const pearl = 'bg-[#efebe2]';
+const line = 'border-[#0a0a0a]/10';
+const mono = 'font-mono text-[10px] uppercase tracking-[0.18em] text-[#0a0a0a]/40';
 
-interface AcademyCard {
-  title: string;
-  author?: string;
-  eyebrow?: string;
-  meta: string;
-  tone?: CardTone;
-}
-
-const trainingCards: AcademyCard[] = [
-  { title: 'Comunicación estratégica.', author: 'Óscar Capistrán', eyebrow: 'Curso · 5 sesiones', meta: 'Empresarial', tone: 'dark' },
-  { title: '3 claves para cobrar.', author: 'Jessica Tapia', eyebrow: 'Curso · 8 sesiones', meta: 'Fiscal', tone: 'dark' },
-  { title: 'Tu asistente de IA.', author: 'Mauricio Beltrán', eyebrow: 'Curso · 6 sesiones', meta: 'Otro', tone: 'dark' },
-  { title: 'Beneficiario controlador.', author: 'Seminario Clúster D Diego Díaz', eyebrow: 'Curso · 6 sesiones', meta: 'Fiscal', tone: 'dark' },
+const featuredCourses = [
+  { title: 'Equipos de Alto Impacto', hours: '8 hrs' },
+  { title: 'Deducciones Inteligentes', hours: '6 hrs' },
+  { title: 'Precios de Transferencia', hours: '10 hrs' },
+  { title: 'Derechos de Autor', hours: '5 hrs' },
 ];
 
-const interviewCards: AcademyCard[] = [
-  { title: 'Entrevista ex-recaudador SAT.', author: 'Lic. Castillejos', meta: 'Fiscal', tone: 'dark' },
-  { title: 'Valuación de intangibles.', author: 'Patricia Galván', meta: 'Fiscal', tone: 'dark' },
-  { title: 'Holding trinacional.', author: 'Patricia Galván', meta: 'Fiscal', tone: 'warm' },
-  { title: 'Verdades ocultas del SAT.', author: 'Entrevista privada', meta: 'Fiscal', tone: 'warm' },
-  { title: 'Estructuras internacionales.', author: 'Lic. Javier Mendoza', meta: 'Fiscal', tone: 'dark' },
-];
-
-const optimizationModules = [
+const speakers = [
   {
-    number: '1',
-    suffix: 'ER',
-    title: 'CFDI 4.0',
-    description: 'Estructuración del comprobante. Casos prácticos por giro. Riesgos comunes y rutas de defensa frente al SAT.',
+    name: 'Jazmín Robles',
+    role: 'Defensa fiscal',
+    bio: 'Abogada Fiscalista, Maestra en Derecho Fiscal y Doctora en Ciencias de lo Fiscal.',
+    image: jazminPortrait,
+    position: 'object-[50%_16%]',
   },
   {
-    number: '2',
-    suffix: 'DO',
-    title: 'Estrategias y sus riesgos.',
-    description: 'Tres estrategias fiscales aplicadas, con análisis honesto de los riesgos y zonas grises de cada una.',
+    name: 'Jessica Tapía',
+    role: 'Defensa SAT',
+    bio: 'Líder del área de consultoría y abogada fiscal-corporativa.',
+    image: jessicaPortrait,
+    position: 'object-[50%_14%]',
   },
   {
-    number: '3',
-    suffix: 'ER',
-    title: 'Aumenta tus deducciones.',
-    description: 'Clasificación correcta de colaboraciones. Transformación de mercancía en gasto deducible. Casos por sector.',
+    name: 'Imar Amor',
+    role: 'Finanzas',
+    bio: 'Licenciada en Finanzas y Contaduría Pública. Proyectos de análisis corporativo con componente internacional.',
+    image: imarPortrait,
+    position: 'object-[50%_14%]',
   },
   {
-    number: '4',
-    suffix: 'TO',
-    title: 'Formas de cobrar.',
-    description: 'Tu hombre clave, ahorro deducible, control de impuestos y flujo de efectivo. Inteligencia en inversiones.',
-  },
-  {
-    number: '5',
-    suffix: 'TO',
-    title: 'Deduce tus terrenos.',
-    description: 'Multas ilegales del SAT. Defensa patrimonial específica. Cómo dar protección con carga individual del costo.',
+    name: 'Diego Díaz',
+    role: 'Estratega principal',
+    bio: 'Fundador de Díaz Lara. Autor de 3 libros.',
+    image: diegoPortrait,
+    position: 'object-[50%_12%]',
   },
 ];
 
-const salesCards: AcademyCard[] = [
-  { title: '¿Qué es una venta?', author: 'Diego Díaz', eyebrow: 'El arte de vender · Lección 01', meta: 'Empresarial', tone: 'light' },
-  { title: 'Proceso de ventas.', author: 'Diego Díaz', eyebrow: 'El arte de vender · Lección 02', meta: 'Empresarial', tone: 'light' },
-  { title: 'Necesidades del cliente.', author: 'Diego Díaz', eyebrow: 'El arte de vender · Lección 03', meta: 'Empresarial', tone: 'light' },
-  { title: 'Preguntas tipo sí.', author: 'Diego Díaz', eyebrow: 'El arte de vender · Lección 04', meta: 'Empresarial', tone: 'light' },
-  { title: 'Derribando creencias.', author: 'Diego Díaz', eyebrow: 'El arte de vender · Lección 05', meta: 'Empresarial', tone: 'light' },
+const speakerLoop = [...speakers, ...speakers];
+
+const plans = [
+  {
+    id: 'off_academia_entrepreneur',
+    name: 'Entrepreneur',
+    eyebrow: 'Plan básico',
+    price: '4,997',
+    amount: 4997,
+    plan: 'entrepreneur',
+    suffix: '/ año',
+    note: '7 días gratis · Cancela cuando quieras',
+    items: ['Acceso ilimitado al catálogo', '+120 hrs de contenido'],
+    dark: true,
+    cta: 'Aplicar',
+  },
+  {
+    id: 'off_academia_plus',
+    name: 'Academia +',
+    eyebrow: 'Más demandado',
+    price: '14,997',
+    amount: 14997,
+    plan: 'plus',
+    suffix: 'Anual',
+    note: '',
+    items: ['Todo lo anterior incluido', 'Mastermind mensual en vivo', 'Material descargable exclusivo'],
+    featured: true,
+    cta: 'Aplicar',
+  },
+  {
+    id: 'off_academia_master',
+    name: 'Master',
+    eyebrow: 'Acceso total',
+    price: '49,997',
+    amount: 49997,
+    plan: 'master',
+    suffix: '/ Anual',
+    note: 'Plazas limitadas',
+    items: ['Todo lo anterior incluido', 'Grupo directo con Diego', 'Acceso a eventos VIP'],
+    dark: true,
+    cta: 'Aplicar a Master',
+  },
 ];
 
-const questionCards: AcademyCard[] = [
+const faqs = [
   {
-    title: 'Q&A deducciones.',
-    author: 'Deducciones, inversiones, tipos de regímenes y sus alcances.',
-    eyebrow: 'Sesión · 01',
-    meta: 'Fiscal · 1h 42min',
-    tone: 'dark',
+    question: '¿Cómo funciona la academia?',
+    answer:
+      'Al contactar con un asesor comercial, te proporcionara tu acceso que llegara a tu correo. A tu mail llegaran tus datos de acceso los cuales podrás modificar con el primer inicio de sesion',
+    open: true,
   },
   {
-    title: 'Q&A nómina.',
-    author: 'Nómina, tasa de interés y cómo cobrarle a tu empresa.',
-    eyebrow: 'Sesión · 02',
-    meta: 'Fiscal · 2h 08min',
-    tone: 'dark',
+    question: '¿Los cursos se actualizan?',
+    answer: 'Hay cursos nuevos cada mes, si no pudiste verlos en vivo podrás encontrarlos aquí.',
   },
   {
-    title: 'Q&A terrenos.',
-    author: 'Casas deducibles y creación de capital.',
-    eyebrow: 'Sesión · 03',
-    meta: 'Fiscal · 1h 58min',
-    tone: 'dark',
+    question: '¿Hay certificación?',
+    answer: 'Si, con tu asesor comercial podrás solicitar el certificado digital de cada curso.',
+  },
+  {
+    question: '¿Cómo se accede a las masterminds?',
+    answer:
+      'Se te asignara un grupo de WhatsApp en el se estarán publicando cuando será el siguiente mastermind y las masterclass.',
+  },
+  {
+    question: '¿Emiten factura?',
+    answer: 'Si, pregunta a tu asesor comercial por tu factura al momento de realizar el pago.',
   },
 ];
 
-function SectionHeader({
-  kicker,
-  title,
-  italic,
-  description,
+function EditorialTitle({
+  children,
   inverted = false,
+  className = '',
 }: {
-  kicker?: string;
-  title: string;
-  italic?: string;
-  description: string;
+  children: React.ReactNode;
   inverted?: boolean;
+  className?: string;
 }) {
   return (
-    <header className={`border-b pb-8 ${inverted ? 'border-white/15' : 'border-ink-900/12'}`}>
-      {kicker && (
-        <p className={`mb-5 text-[10px] uppercase tracking-[0.32em] ${inverted ? 'text-white/35' : 'text-ink-300'}`}>
-          {kicker}
-        </p>
-      )}
-      <h2
-        className={`font-serif text-[38px] font-normal leading-[0.98] tracking-[-0.045em] md:text-[54px] ${
-          inverted ? 'text-cream-50' : 'text-ink-900'
-        }`}
-      >
-        {title}
-        {italic && <span className="italic tracking-[-0.06em]"> {italic}</span>}
-      </h2>
-      <p className={`mt-4 max-w-[720px] text-[15px] leading-[1.58] ${inverted ? 'text-white/62' : 'text-ink-600'}`}>
-        {description}
-      </p>
-    </header>
+    <h2
+      className={`font-serif text-[clamp(54px,7vw,80px)] font-light leading-[0.95] tracking-[-0.045em] ${
+        inverted ? 'text-[#f5f2ec]' : 'text-[#0a0a0a]'
+      } ${className}`}
+    >
+      {children}
+    </h2>
   );
 }
 
-function CourseCard({ card, compact = false }: { card: AcademyCard; compact?: boolean }) {
-  const isDark = card.tone === 'dark';
-  const isWarm = card.tone === 'warm';
-
+function SectionIntro({
+  index,
+  label,
+  side,
+  children,
+  inverted = false,
+}: {
+  index: string;
+  label: string;
+  side: string;
+  children: React.ReactNode;
+  inverted?: boolean;
+}) {
   return (
-    <article className="group grid min-h-[238px] grid-rows-[minmax(118px,1fr)_auto] border border-ink-900/12 bg-cream-50">
-      <div
-        className={`relative overflow-hidden p-5 ${
-          isDark
-            ? 'bg-[radial-gradient(circle_at_35%_34%,#423b32_0%,#171717_44%,#070707_100%)] text-white'
-            : isWarm
-              ? 'bg-[radial-gradient(circle_at_52%_42%,#4b3926_0%,#181411_58%,#0d0c0b_100%)] text-white'
-              : 'bg-[#e2dbce] text-ink-700'
-        }`}
-      >
-        <p className={`text-[8px] uppercase tracking-[0.28em] ${isDark || isWarm ? 'text-white/35' : 'text-ink-400'}`}>
-          {card.eyebrow ?? 'Curso · Disponible'}
-        </p>
-        <div className="absolute bottom-5 right-5 h-[2px] w-9 bg-current opacity-70" />
-        {!compact && <div className="absolute inset-x-0 bottom-0 h-px bg-white/10" />}
-      </div>
-      <div className="flex min-h-[92px] flex-col justify-between px-4 py-4">
-        <div>
-          <h3 className="font-serif text-[17px] leading-[1.08] tracking-[-0.035em] text-ink-900">
-            {card.title.includes('.') ? (
-              <>
-                {card.title.replace('.', '')}
-                <span className="italic">.</span>
-              </>
-            ) : (
-              card.title
-            )}
-          </h3>
-          {card.author && <p className="mt-1 font-serif text-[10px] italic leading-snug text-ink-500">{card.author}</p>}
-        </div>
-        <div className="mt-4 flex items-center justify-between border-t border-ink-900/10 pt-3 text-[8px] uppercase tracking-[0.22em] text-ink-500">
-          <span>{card.meta}</span>
-          <span>Entrar -</span>
-        </div>
-      </div>
-    </article>
+    <div className={`grid gap-8 border-b pb-8 md:grid-cols-[100px_minmax(0,1fr)_220px] ${inverted ? 'border-white/15' : line}`}>
+      <p className={`${mono} ${inverted ? 'text-white/50' : ''}`}>
+        {index} /
+        <span className="block normal-case tracking-[0.16em]">{label}</span>
+      </p>
+      <div>{children}</div>
+      <p className={`${mono} text-left md:text-right ${inverted ? 'text-white/50' : ''}`}>{side}</p>
+    </div>
+  );
+}
+
+function ButtonLike({
+  children,
+  dark = false,
+  onClick,
+}: {
+  children: React.ReactNode;
+  dark?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex h-14 items-center gap-5 border px-7 text-[11px] uppercase tracking-[0.14em] transition ${
+        dark
+          ? 'border-[#0a0a0a] bg-[#0a0a0a] text-[#f5f2ec] hover:bg-[#1a1a1a]'
+          : 'border-[#0a0a0a] bg-transparent text-[#0a0a0a] hover:bg-[#0a0a0a] hover:text-[#f5f2ec]'
+      }`}
+    >
+      <span>{children}</span>
+      <span>→</span>
+    </button>
+  );
+}
+
+function Tag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="border border-[#0a0a0a]/45 px-3 py-2 font-mono text-[9px] uppercase tracking-[0.16em] text-[#0a0a0a]">
+      {children}
+    </span>
   );
 }
 
 export default function Academy() {
   const navigate = useNavigate();
   const addItem = useCartStore((state) => state.addItem);
+  const clearCart = useCartStore((state) => state.clear);
 
-  const startAcademyCheckout = () => {
+  const startAcademyCheckout = (plan = plans[1]) => {
+    clearCart();
     addItem({
-      id: 'subscription-academia-business',
+      id: `subscription-${plan.id}`,
       type: 'subscription',
-      refId: 'off_academia_mensual',
-      title: 'Academia Business',
-      price: 1999,
+      refId: plan.id,
+      title: plan.name,
+      price: plan.amount,
       quantity: 1,
     });
     navigate('/checkout');
   };
 
+  const scrollToPricing = () => {
+    document.getElementById('academy-pricing')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  };
+
   return (
-    <div className="bg-[#f4f0e8] text-ink-900">
-      <section className="px-6 py-14 md:py-24 lg:px-10">
-        <div className="mx-auto grid max-w-[1120px] items-center gap-12 lg:grid-cols-[420px_minmax(0,1fr)] lg:gap-[72px]">
-          <div className="relative aspect-square bg-[radial-gradient(circle_at_35%_42%,#51483d_0%,#201f1c_42%,#0a0a0a_100%)]">
-            <div className="absolute bottom-9 left-8 text-[9px] font-semibold uppercase leading-[1.8] tracking-[0.34em] text-white/52">
-              Diego Díaz Lara
-              <span className="block">Estrategia fiscal · CDMX</span>
+    <div className={`${cream} text-[#0a0a0a]`}>
+      <section className="border-b border-[#0a0a0a]/10 px-5 pb-24 pt-16 md:px-10 lg:px-14 lg:pb-[101px] lg:pt-20">
+        <div className={`mx-auto flex max-w-[1512px] justify-between border-b ${line} pb-8 ${mono}`}>
+          <span>— Academia · Suscripción anual</span>
+          <span>Contenido nuevo cada mes</span>
+        </div>
+
+        <div className="mx-auto grid max-w-[1512px] items-center gap-16 pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,420px)] lg:gap-20">
+          <div className="flex flex-col justify-center lg:min-h-[620px]">
+            <h1 className="font-serif text-[clamp(76px,10vw,144px)] font-light leading-[0.88] tracking-[-0.045em]">
+              La Academia
+              <span className="block">donde</span>
+              <em className="block font-normal italic">aprendes a ser</em>
+              empresario.
+            </h1>
+            <p className="mt-8 max-w-[580px] text-[19px] leading-[1.5] text-[#0a0a0a]/65">
+              Más de 120 horas de cursos especializados en estrategia fiscal mexicana, sesiones mastermind mensuales en vivo y contenido nuevo cada semana. Un solo pago con acceso anual
+            </p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <ButtonLike dark onClick={() => startAcademyCheckout(plans[1])}>Comenzar</ButtonLike>
+              <ButtonLike>Ver catálogo</ButtonLike>
             </div>
           </div>
 
-          <div>
-            <h1 className="font-serif text-[68px] font-normal leading-[0.9] tracking-[-0.055em] text-ink-900 md:text-[104px] lg:text-[126px]">
-              Academia.
-            </h1>
-            <p className="mt-7 max-w-[590px] text-[17px] leading-[1.55] text-ink-700">
-              La plataforma de streaming especializada que permite acceder a cientos de lecciones en video impartidas por los mejores
-              expertos fiscales y contables del país.
-            </p>
-            <p className="mt-5 max-w-[620px] text-[17px] leading-[1.55] text-ink-700">
-              Planificación fiscal, contabilidad empresarial, obligaciones tributarias, auditorías, finanzas corporativas, cumplimiento
-              normativo, estrategias de optimización. Disponibles en cualquier momento desde tu computadora o celular.
-            </p>
-            <button type="button" onClick={startAcademyCheckout} className="btn-primary mt-8">
-              Iniciar suscripción -
+          <div className="relative mx-auto flex aspect-[420/582] w-full max-w-[420px] items-center justify-center border border-[#0a0a0a]/20 bg-[linear-gradient(135deg,#1a1a1a,#2a2a2a)] shadow-[0_28px_70px_rgba(10,10,10,0.16)] lg:mx-0 lg:justify-self-end">
+            <button
+              type="button"
+              aria-label="Reproducir tour"
+              className="grid size-20 place-items-center rounded-full border border-[#f5f2ec] bg-white/10 text-[22px] text-[#f5f2ec]"
+            >
+              ▶
             </button>
+            <div className="absolute bottom-5 left-6 right-6 flex justify-between font-mono text-[10px] uppercase tracking-[0.15em] text-white/50">
+              <span>— Tour 360°</span>
+              <span>02:14</span>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="px-6 py-16 lg:px-10">
-        <div className="mx-auto max-w-[1120px]">
-          <SectionHeader
-            title="Capacitaciones, temas"
-            italic="especializados."
-            description="Cursos en video estructurados por los expertos invitados al programa. Cinco a doce sesiones por curso, con material descargable y casos aplicados."
-          />
-          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-            {trainingCards.map((card) => (
-              <CourseCard key={card.title} card={card} />
-            ))}
-          </div>
+      <section className={`${cream} border-b ${line} px-5 py-24 md:px-10 lg:px-14 lg:py-[140px]`}>
+        <SectionIntro index="01" label="Audiencia" side="— Empresarios + Contadores">
+          <EditorialTitle>
+            Diseñada para
+            <span className="block">dos <em className="font-normal italic">perfiles.</em></span>
+          </EditorialTitle>
+        </SectionIntro>
+
+        <div className={`mt-20 grid border ${line} md:grid-cols-2`}>
+          {[
+            {
+              title: 'Para empresarios',
+              body: 'Dueños y socios de PyMEs y medianas empresas que quieren tomar decisiones fiscales informadas sin depender 100% de su contador. Estrategia, blindaje y planeación a largo plazo.',
+              tags: ['PYMES', 'DIRECCIÓN', 'ESTRATEGIA', 'PATRIMONIO'],
+            },
+            {
+              title: 'Para el se va a capacitar',
+              body: 'Profesionales fiscales y despachos que quieren especializarse en estrategia y dar un servicio más completo a sus clientes. Track específico con material técnico avanzado.',
+              tags: ['CONTADORES', 'DESPACHOS', 'CONSULTORÍA', 'DEFENSA'],
+            },
+          ].map((audience) => (
+            <button
+              key={audience.title}
+              type="button"
+              onClick={scrollToPricing}
+              className={`group min-h-[380px] cursor-pointer border-b ${line} p-9 text-left transition-colors duration-300 hover:bg-[#0a0a0a] hover:text-[#f5f2ec] focus-visible:bg-[#0a0a0a] focus-visible:text-[#f5f2ec] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#6b4f2a] md:border-b-0 md:border-r md:last:border-r-0 lg:p-12`}
+            >
+              <h3 className="font-serif text-[44px] font-light leading-none tracking-[-0.025em]">
+                {audience.title.includes('empresarios') ? (
+                  <>Para <em className="font-normal italic">empresarios</em></>
+                ) : (
+                  audience.title
+                )}
+              </h3>
+              <p className="mt-6 max-w-[560px] font-serif text-[19px] leading-[1.55] text-[#0a0a0a]/65 transition-colors group-hover:text-[#f5f2ec]/75 group-focus-visible:text-[#f5f2ec]/75">{audience.body}</p>
+              <div className={`mt-8 flex flex-wrap gap-2 border-t ${line} pt-6 transition-colors group-hover:border-white/25 group-focus-visible:border-white/25`}>
+                {audience.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="border border-[#0a0a0a]/45 px-3 py-2 font-mono text-[9px] uppercase tracking-[0.16em] text-[#0a0a0a] transition-colors group-hover:border-[#f5f2ec]/45 group-hover:text-[#f5f2ec] group-focus-visible:border-[#f5f2ec]/45 group-focus-visible:text-[#f5f2ec]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </button>
+          ))}
         </div>
       </section>
 
-      <section className="px-6 pb-20 pt-8 lg:px-10">
-        <div className="mx-auto max-w-[1120px]">
-          <SectionHeader
-            title="Entrevista con los"
-            italic="expertos."
-            description="Conversaciones cerradas con figuras de la fiscalidad mexicana. Sin grabación pública, sólo para suscriptores activos."
-          />
-          <div className="mt-10 grid gap-0 md:grid-cols-2 lg:grid-cols-5">
-            {interviewCards.map((card) => (
-              <CourseCard key={card.title} card={card} compact />
-            ))}
-          </div>
+      <section className={`${pearl} border-b ${line} px-5 py-24 md:px-10 lg:px-14 lg:py-[140px]`}>
+        <SectionIntro index="02" label="Beneficios" side="Acceso ilimitado · 24/7">
+          <EditorialTitle>
+            Qué incluye
+            <span className="block">tu <em className="font-normal italic">membresía.</em></span>
+          </EditorialTitle>
+        </SectionIntro>
+
+        <div className={`mt-20 grid border ${line} bg-[#f5f2ec] md:grid-cols-5`}>
+          {['+120 horas de contenido', 'Cursos nuevos cada mes', 'Sesiones mastermind', 'Descargables exclusivos', 'Acceso 24/7'].map((benefit) => (
+            <button
+              key={benefit}
+              type="button"
+              onClick={scrollToPricing}
+              className={`group grid min-h-[200px] cursor-pointer place-items-center border-b ${line} p-7 text-center font-serif text-[19px] leading-[1.2] transition-colors duration-300 hover:bg-[#0a0a0a] hover:text-[#f5f2ec] focus-visible:bg-[#0a0a0a] focus-visible:text-[#f5f2ec] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#6b4f2a] md:border-b-0 md:border-r md:last:border-r-0`}
+            >
+              <span>{benefit}</span>
+            </button>
+          ))}
         </div>
       </section>
 
-      <section className="bg-[#070707] px-6 py-20 text-white lg:px-10">
-        <div className="mx-auto max-w-[1120px]">
-          <SectionHeader
-            title="Optimización fiscal"
-            italic="empresarial."
-            description="Programa secuencial de cinco módulos. Cada uno con sesiones aplicadas, material descargable y caso de cohorte. Cohortes cerradas de máximo dieciséis empresarios."
-            inverted
-          />
+      <section className={`${cream} border-b ${line} px-5 py-24 md:px-10 lg:px-14 lg:py-[140px]`}>
+        <SectionIntro index="03" label="Catálogo" side="+40 cursos · 8 categorías">
+          <EditorialTitle>
+            Cursos
+            <span className="block"><em className="font-normal italic">destacados.</em></span>
+          </EditorialTitle>
+        </SectionIntro>
 
-          <div className="mt-12 grid border-l border-t border-white/12 md:grid-cols-2 lg:grid-cols-5">
-            {optimizationModules.map((module) => (
-              <article key={module.number} className="min-h-[292px] border-b border-r border-white/12 p-5">
-                <div className="flex items-start gap-1 font-serif text-white">
-                  <span className="text-[54px] leading-none tracking-[-0.06em]">{module.number}</span>
-                  <span className="mt-3 text-[14px] italic uppercase tracking-[-0.02em] text-[#c4a66a]">{module.suffix}</span>
+        <div className={`mt-12 border ${line} bg-[#0a0a0a]/10 pt-8`}>
+          <div className={`grid border-t ${line} bg-[#faf8f3] lg:grid-cols-4 lg:grid-rows-2`}>
+            <button
+              type="button"
+              onClick={scrollToPricing}
+              className={`group flex min-h-[420px] cursor-pointer flex-col border-b ${line} p-7 text-left transition-colors duration-300 hover:bg-[#0a0a0a] hover:text-[#f5f2ec] focus-visible:bg-[#0a0a0a] focus-visible:text-[#f5f2ec] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#6b4f2a] lg:col-span-2 lg:row-span-2 lg:min-h-[560px] lg:border-r`}
+            >
+              <h3 className="font-serif text-[clamp(32px,4vw,44px)] font-light uppercase leading-[1.1] tracking-[-0.015em]">
+                ¿Cómo saber si pago mucho o lo justo en impuestos? 2026
+              </h3>
+              <div className={`mt-auto flex items-center justify-end border-t ${line} pt-5 transition-colors group-hover:border-white/25 group-focus-visible:border-white/25`}>
+                <span className="grid size-8 place-items-center rounded-full border border-[#0a0a0a] transition-colors group-hover:border-[#f5f2ec] group-focus-visible:border-[#f5f2ec]">→</span>
+              </div>
+            </button>
+            {featuredCourses.map((course) => (
+              <button
+                key={course.title}
+                type="button"
+                onClick={scrollToPricing}
+                className={`group flex min-h-[280px] cursor-pointer flex-col border-b ${line} p-7 text-left transition-colors duration-300 hover:bg-[#0a0a0a] hover:text-[#f5f2ec] focus-visible:bg-[#0a0a0a] focus-visible:text-[#f5f2ec] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#6b4f2a] lg:border-r lg:[&:nth-child(3n)]:border-r-0`}
+              >
+                <p className={`${mono} transition-colors group-hover:text-[#f5f2ec]/55 group-focus-visible:text-[#f5f2ec]/55`}>— {course.hours}</p>
+                <h3 className="mt-6 font-serif text-2xl font-light leading-[1.1] tracking-[-0.015em]">
+                  {course.title.split(' ').slice(0, -1).join(' ')}{' '}
+                  <em className="font-normal italic">{course.title.split(' ').slice(-1)}</em>
+                </h3>
+                <div className={`mt-auto flex items-center justify-end border-t ${line} pt-5 transition-colors group-hover:border-white/25 group-focus-visible:border-white/25`}>
+                  <span className="grid size-8 place-items-center rounded-full border border-[#0a0a0a] transition-colors group-hover:border-[#f5f2ec] group-focus-visible:border-[#f5f2ec]">→</span>
                 </div>
-                <p className="mt-5 text-[8px] uppercase tracking-[0.28em] text-white/35">Módulo</p>
-                <h3 className="mt-4 font-serif text-[20px] leading-[1.06] tracking-[-0.04em] text-white">{module.title}</h3>
-                <p className="mt-4 text-[11px] leading-[1.55] text-white/48">{module.description}</p>
-                <div className="mt-8 flex items-center justify-between border-t border-white/12 pt-4 text-[8px] uppercase tracking-[0.22em] text-white/40">
-                  <span>Entrar</span>
-                  <span>-</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="mt-10 text-center">
+          <ButtonLike onClick={scrollToPricing}>Ver catálogo completo</ButtonLike>
+        </div>
+      </section>
+
+      <section className={`${pearl} border-b ${line} px-5 py-24 md:px-10 lg:px-14 lg:py-[140px]`}>
+        <SectionIntro index="04" label="Ponentes" side="7 ponentes · expertos">
+          <EditorialTitle>
+            Quién
+            <span className="block"><em className="font-normal italic">imparte.</em></span>
+          </EditorialTitle>
+        </SectionIntro>
+
+        <div className="mt-12 overflow-hidden border-y border-[#0a0a0a]/10 py-6 [mask-image:linear-gradient(90deg,transparent,black_7%,black_93%,transparent)]">
+          <div className="flex w-max gap-6 motion-safe:animate-[speaker-carousel_42s_linear_infinite] hover:[animation-play-state:paused]">
+            {speakerLoop.map((speaker, index) => (
+              <article
+                key={`${speaker.name}-${index}`}
+                className={`group w-[260px] shrink-0 border ${line} bg-[#f5f2ec] transition duration-300 hover:-translate-y-1 hover:bg-[#0a0a0a] hover:text-[#f5f2ec] md:w-[300px] lg:w-[326px]`}
+              >
+                <div className={`aspect-[1.04] overflow-hidden border-b ${line} bg-[linear-gradient(135deg,#e7e2d6,#efebe2)]`}>
+                  <img
+                    src={speaker.image}
+                    alt={speaker.name}
+                    loading="lazy"
+                    className={`h-full w-full object-cover transition duration-700 group-hover:scale-[1.04] ${speaker.position}`}
+                  />
+                </div>
+                <div className="p-5">
+                  <p className={`${mono} transition-colors group-hover:text-[#f5f2ec]/55`}>— {speaker.role}</p>
+                  <h3 className="mt-3 font-serif text-[22px] leading-tight">
+                    {speaker.name === 'Diego Díaz' ? <>Diego <em className="italic">Díaz</em></> : speaker.name}
+                  </h3>
+                  <p className="mt-2 text-[12px] leading-[1.5] text-[#0a0a0a]/65 transition-colors group-hover:text-[#f5f2ec]/70">{speaker.bio}</p>
                 </div>
               </article>
             ))}
           </div>
         </div>
-      </section>
-
-      <section className="px-6 py-20 lg:px-10">
-        <div className="mx-auto max-w-[1120px]">
-          <SectionHeader
-            title="El arte de"
-            italic="vender."
-            description="Serie de seis lecciones impartidas por Diego Díaz. La venta no es persuasión: es claridad sobre lo que ofreces y para quién."
-          />
-          <div className="mt-10 grid gap-0 md:grid-cols-2 lg:grid-cols-5">
-            {salesCards.map((card) => (
-              <CourseCard key={card.title} card={card} compact />
-            ))}
-          </div>
+        <div className="mt-10 text-center">
+          <ButtonLike>Ver todos los ponentes</ButtonLike>
         </div>
       </section>
 
-      <section className="bg-[#e5decf] px-6 py-20 lg:px-10">
-        <div className="mx-auto max-w-[1120px]">
-          <SectionHeader
-            title="Preguntas, y sus"
-            italic="respuestas."
-            description="Sesiones grabadas donde Diego responde dudas del cohorte en vivo. Tres sesiones disponibles este trimestre."
-          />
-          <div className="mt-10 grid gap-8 md:grid-cols-3">
-            {questionCards.map((card) => (
-              <CourseCard key={card.title} card={card} />
-            ))}
+      <section id="academy-pricing" className="scroll-mt-24 border-b border-white/15 bg-[#0a0a0a] px-5 py-24 text-[#f5f2ec] md:px-10 lg:px-14 lg:py-[140px]">
+        <SectionIntro index="05" label="Inversión" side="— MXN + IVA" inverted>
+          <EditorialTitle inverted>
+            Tres planes.
+            <span className="block">Una <em className="font-normal italic">academia.</em></span>
+          </EditorialTitle>
+        </SectionIntro>
+
+        <div className="mt-20 grid border border-white/15 lg:grid-cols-3">
+          {plans.map((plan) => (
+            <article
+              key={plan.name}
+              className={`relative min-h-[680px] border-b border-white/15 p-10 lg:border-b-0 lg:border-r lg:last:border-r-0 ${
+                plan.featured ? 'bg-[#f5f2ec] pt-24 text-[#0a0a0a]' : 'bg-[#0a0a0a] text-[#f5f2ec]'
+              }`}
+            >
+              {plan.featured && (
+                <div className="absolute inset-x-0 top-0 bg-[#6b4f2a] py-2 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-[#f5f2ec]">
+                  Más demandado
+                </div>
+              )}
+              <p className={`${mono} ${plan.featured ? '' : 'text-white/50'}`}>— {plan.eyebrow}</p>
+              <h3 className="mt-3 font-serif text-[44px] font-light italic leading-none tracking-[-0.025em]">{plan.name}</h3>
+              <div className="mt-5 flex items-baseline gap-2">
+                <span className={plan.featured ? 'text-[#0a0a0a]/40' : 'text-white/50'}>$</span>
+                <span className="font-serif text-[80px] font-light leading-none tracking-[-0.045em]">{plan.price}</span>
+                <span className={`font-mono text-[11px] uppercase tracking-[0.12em] ${plan.featured ? 'text-[#0a0a0a]/65' : 'text-white/60'}`}>{plan.suffix}</span>
+              </div>
+              {plan.note && <p className={`${mono} mt-2 ${plan.featured ? '' : 'text-white/50'}`}>— {plan.note}</p>}
+              <ul className="mt-8">
+                {plan.items.map((item) => (
+                  <li key={item} className={`border-b py-4 pl-7 text-sm ${plan.featured ? 'border-[#0a0a0a]/10 text-[#0a0a0a]/65' : 'border-white/12 text-white/85'}`}>
+                    <span className="absolute -ml-7 opacity-60">→</span>{item}
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={() => startAcademyCheckout(plan)}
+                className={`absolute bottom-14 left-10 right-10 flex h-14 items-center justify-between border px-6 text-[11px] uppercase tracking-[0.14em] ${
+                  plan.featured ? 'border-[#0a0a0a] bg-[#0a0a0a] text-[#f5f2ec]' : 'border-[#f5f2ec] text-[#f5f2ec]'
+                }`}
+              >
+                <span>{plan.cta}</span>
+                <span>→</span>
+              </button>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className={`${cream} border-b ${line} px-5 py-24 md:px-10 lg:px-14 lg:py-[140px]`}>
+        <SectionIntro index="06" label="Para empresas" side="— Plan B2B">
+          <EditorialTitle>
+            Academia
+            <span className="block">para tu <em className="font-normal italic">Equipo.</em></span>
+          </EditorialTitle>
+        </SectionIntro>
+
+        <div className="mt-20 grid gap-16 lg:grid-cols-[1.3fr_1fr] lg:gap-24">
+          <div>
+            <h3 className="font-serif text-[clamp(44px,6vw,64px)] font-light leading-[0.95] tracking-[-0.03em]">
+              Capacita a tu equipo
+              <span className="block">de un <em className="font-normal italic">solo golpe.</em></span>
+            </h3>
+            <p className="mt-8 max-w-[560px] font-serif text-[19px] leading-[1.6] text-[#0a0a0a]/65">
+              Si lideras un equipo, el plan B2B te permite suscribir a todo tu equipo, acceder a reportes consolidados de avance, y compartir el mismo nivel técnico de capacitación que reciben los clientes de Diego.
+            </p>
+            <div className={`mt-8 grid border ${line} md:grid-cols-2`}>
+              {['Acceso para todo el equipo', 'Reportes de avance', 'Capacitación certificada', 'Onboarding dedicado'].map((item, index) => (
+                <div key={item} className={`min-h-[148px] border-b ${line} p-7 md:border-r md:[&:nth-child(even)]:border-r-0`}>
+                  <p className="font-serif text-[40px] font-light tracking-[-0.04em] text-[#0a0a0a]/40">{String(index + 1).padStart(2, '0')}</p>
+                  <p className="mt-2 font-serif text-[17px] leading-tight">{item}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-8">
+              <ButtonLike dark>Habla con ventas</ButtonLike>
+            </div>
           </div>
+
+          <aside className="self-center border border-[#0a0a0a] bg-[#faf8f3] p-10 lg:p-12">
+            <p className="font-serif text-[80px] font-light italic leading-none text-[#6b4f2a]">~B2B</p>
+            <h3 className="mt-8 font-serif text-[28px] leading-[1.15]">Academia for<br /><em className="italic">Teams</em></h3>
+            <p className="mt-5 text-sm leading-[1.6] text-[#0a0a0a]/65">
+              Plan empresarial con licencias por usuario, descuentos por volumen y soporte dedicado. Ideal para equipos de +5 integrantes.
+            </p>
+            <p className={`${mono} mt-6`}>— Desde 5 usuarios · Cotización a medida</p>
+            <div className="mt-4">
+              <ButtonLike>Solicitar propuesta</ButtonLike>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section className={`${pearl} border-b ${line} px-5 py-24 text-center md:px-10 lg:px-14 lg:py-[140px]`}>
+        <div className="flex justify-between">
+          <span className={mono}>07 / Voces</span>
+          <span className={mono}>01 / 12 alumnos</span>
+        </div>
+        <blockquote className="mx-auto mt-16 max-w-[1200px] font-serif text-[clamp(42px,6vw,72px)] font-light leading-[1.1] tracking-[-0.03em]">
+          "La Academia ha sido la <em className="font-normal italic">mejor inversión</em> que hemos hecho con mi equipo de socios. Estrategias prácticas, <em className="font-normal italic">no teoría.</em>"
+        </blockquote>
+        <p className="mt-12 font-serif text-[22px] italic">— Lic. Cristian Orlando García Cruz</p>
+        <p className={`${mono} mt-2`}>Director de consultoría administrativa y fiscal</p>
+        <div className="mt-10 flex justify-center gap-2">
+          {[0, 1, 2, 3, 4].map((dot) => <span key={dot} className={`size-1.5 rounded-full ${dot === 0 ? 'bg-[#0a0a0a]' : 'bg-[#0a0a0a]/20'}`} />)}
+        </div>
+      </section>
+
+      <section className={`${cream} border-b ${line} px-5 py-24 md:px-10 lg:px-14 lg:py-[140px]`}>
+        <SectionIntro index="08" label="FAQ" side="6 preguntas">
+          <EditorialTitle>
+            Preguntas
+            <span className="block"><em className="font-normal italic">frecuentes.</em></span>
+          </EditorialTitle>
+        </SectionIntro>
+        <div className={`mx-auto mt-20 max-w-[1000px] border-t ${line}`}>
+          {faqs.map((faq, index) => (
+            <article key={faq.question} className={`grid gap-5 border-b ${line} py-8 md:grid-cols-[60px_minmax(0,1fr)_40px]`}>
+              <p className="font-serif text-2xl font-light italic text-[#0a0a0a]/40">{String(index + 1).padStart(2, '0')}.</p>
+              <div>
+                <h3 className="font-serif text-[32px] font-light leading-tight tracking-[-0.015em]">{faq.question}</h3>
+                <p className="mt-3 text-base leading-[1.7] text-[#0a0a0a]/65">{faq.answer}</p>
+              </div>
+              <span className="text-right text-2xl text-[#0a0a0a]/40">{faq.open ? '−' : '+'}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className={`${cream} px-5 py-24 text-center md:px-10 lg:px-14 lg:py-[140px]`}>
+        <p className={mono}>09 / Empieza hoy</p>
+        <h2 className="mt-8 font-serif text-[clamp(58px,8vw,96px)] font-light leading-none tracking-[-0.04em]">
+          El éxito ama la preparación.
+        </h2>
+        <p className="mx-auto mt-8 max-w-[680px] font-serif text-[28px] text-[#0a0a0a]/65">
+          "La mejor forma de prevenir una emergencia fiscal es la capacitación"
+        </p>
+        <div className="mt-8">
+          <ButtonLike dark onClick={() => startAcademyCheckout(plans[1])}>Empezar a aprender</ButtonLike>
         </div>
       </section>
     </div>

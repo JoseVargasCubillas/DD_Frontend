@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import reformaFiscal from '../../../../assets/ddweb/reforma-fiscal-2026.jpg';
+import satDigital from '../../../../assets/ddweb/sat-cumplimiento-digital.jpg';
+import recibosDeducibles from '../../../../assets/ddweb/recibos-deducibles.jpg';
+import blindajeDigital from '../../../../assets/ddweb/blindaje-digital.jpg';
 
 // ── Tipos ─────────────────────────────────────────────────────
 type ResourceCategory = 'guias' | 'plantillas' | 'herramientas' | 'todos';
@@ -15,6 +19,7 @@ interface Resource {
   level: 'Básico' | 'Intermedio' | 'Avanzado';
   new?: boolean;
   premium?: boolean;
+  image?: string;
   downloadUrl: string;
 }
 
@@ -26,6 +31,7 @@ const resources: Resource[] = [
     format: 'PDF',
     title: 'Guía de Estructuración Fiscal para PyMEs',
     description: 'Cómo elegir el régimen fiscal correcto según el tipo de empresa, volumen de ventas y perfil del socio.',
+    image: satDigital,
     pages: 48,
     size: '3.2 MB',
     level: 'Intermedio',
@@ -38,6 +44,7 @@ const resources: Resource[] = [
     format: 'PDF',
     title: 'Novedades SAT 2026 — Lo que necesitas saber',
     description: 'Resumen ejecutivo de las reformas fiscales, nuevas obligaciones y cambios en plataformas digitales.',
+    image: reformaFiscal,
     pages: 24,
     size: '1.8 MB',
     level: 'Avanzado',
@@ -51,6 +58,7 @@ const resources: Resource[] = [
     format: 'PDF',
     title: 'Manual de Defensa ante el SAT',
     description: 'Protocolo paso a paso para responder auditorías, cartas invitación y requerimientos de información.',
+    image: blindajeDigital,
     pages: 62,
     size: '4.1 MB',
     level: 'Avanzado',
@@ -63,6 +71,7 @@ const resources: Resource[] = [
     format: 'PDF',
     title: 'Precios de Transferencia — Guía Práctica',
     description: 'Principios OCDE aplicados a México, métodos de análisis y cómo preparar tu estudio de partes relacionadas.',
+    image: satDigital,
     pages: 38,
     size: '2.7 MB',
     level: 'Avanzado',
@@ -75,6 +84,7 @@ const resources: Resource[] = [
     format: 'XLSX',
     title: 'Plantilla de Flujo de Caja Empresarial',
     description: 'Control mensual de ingresos, egresos y proyección a 12 meses. Incluye dashboard visual automático.',
+    image: recibosDeducibles,
     size: '820 KB',
     level: 'Básico',
     premium: false,
@@ -86,6 +96,7 @@ const resources: Resource[] = [
     format: 'XLSX',
     title: 'Registro de Gastos Deducibles',
     description: 'Clasificación por categoría SAT, validación automática de límites y resumen para declaración anual.',
+    image: recibosDeducibles,
     size: '640 KB',
     level: 'Intermedio',
     new: true,
@@ -98,6 +109,7 @@ const resources: Resource[] = [
     format: 'XLSX',
     title: 'Cálculo de Nómina — Régimen de Sueldos',
     description: 'ISR, IMSS, INFONAVIT y percepciones integradas. Compatible con CFDI de nómina 4.0.',
+    image: satDigital,
     size: '1.1 MB',
     level: 'Avanzado',
     premium: true,
@@ -109,6 +121,7 @@ const resources: Resource[] = [
     format: 'XLSX',
     title: 'Valuación de Empresa — Método DCF',
     description: 'Descuento de flujos de caja con supuestos editables, WACC y análisis de sensibilidad integrado.',
+    image: blindajeDigital,
     size: '980 KB',
     level: 'Avanzado',
     premium: true,
@@ -120,6 +133,7 @@ const resources: Resource[] = [
     format: 'PDF',
     title: 'Checklist de Auditoría Fiscal Interna',
     description: '87 puntos de revisión para detectar riesgos antes que el SAT. Actualizado a RMF 2026.',
+    image: reformaFiscal,
     pages: 14,
     size: '560 KB',
     level: 'Intermedio',
@@ -133,6 +147,7 @@ const resources: Resource[] = [
     format: 'XLSX',
     title: 'Calculadora ISR Persona Moral 2026',
     description: 'Coeficiente de utilidad, pagos provisionales y ajuste anual. Tablas actualizadas para el ejercicio 2026.',
+    image: satDigital,
     size: '490 KB',
     level: 'Intermedio',
     premium: false,
@@ -144,6 +159,7 @@ const resources: Resource[] = [
     format: 'XLSX',
     title: 'Comparador de Regímenes Fiscales',
     description: 'Ingresa tus datos y compara ISR efectivo, IMSS, deducciones y carga total entre regímenes.',
+    image: recibosDeducibles,
     size: '720 KB',
     level: 'Básico',
     premium: false,
@@ -155,6 +171,7 @@ const resources: Resource[] = [
     format: 'ZIP',
     title: 'Pack de Contratos Fiscales Básicos',
     description: 'Modelos editables: servicios, honorarios, arrendamiento y compraventa. Con cláusulas fiscales incluidas.',
+    image: blindajeDigital,
     size: '2.3 MB',
     level: 'Básico',
     premium: true,
@@ -195,6 +212,16 @@ function ResourceCard({ resource }: { resource: Resource }) {
       )}
 
       <div className="flex-1 p-7">
+        {resource.image && (
+          <div className="-mx-7 -mt-7 mb-6 overflow-hidden border-b border-cream-300">
+            <img
+              src={resource.image}
+              alt=""
+              className="h-36 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              loading="lazy"
+            />
+          </div>
+        )}
         {/* Format + Level */}
         <div className="mb-5 flex items-center gap-3">
           <span className={`inline-block rounded-sm px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] ${formatColors[resource.format]}`}>
@@ -292,7 +319,9 @@ export default function Resources() {
                 <span className="block font-serif italic font-normal tracking-[-0.055em]">fiscales.</span>
               </h1>
               <p className="mt-7 max-w-[520px] text-[16px] leading-relaxed text-ink-600">
-                Guías, plantillas y herramientas prácticas para empresarios y contadores. Descargables gratuitos y material premium de la Academia.
+                Guías, plantillas y herramientas prácticas para revisar reforma
+                fiscal, gastos deducibles, defensa SAT y control documental antes
+                de que el cierre del ejercicio te alcance.
               </p>
             </div>
 

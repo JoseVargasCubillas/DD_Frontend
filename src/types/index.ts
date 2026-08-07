@@ -240,6 +240,17 @@ export interface OrderItem {
   quantity: number;
 }
 
+export interface ShippingAddress {
+  fullName: string;
+  phone: string;
+  street: string;
+  colony: string;
+  postalCode: string;
+  city: string;
+  state: string;
+  references?: string;
+}
+
 export interface Order {
   id?: string;
   _id?: string;
@@ -254,11 +265,36 @@ export interface Order {
   paymentIntentId?: string;
   paymentProvider?: string;
   items: OrderItem[];
+  subtotal?: number;
+  tax?: number;
+  shippingCost?: number;
+  shipping?: ShippingAddress | null;
   total: number;
   currency: string;
   status: OrderStatus;
   paidAt?: string;
   createdAt: string;
+}
+
+export interface Book {
+  id?: string;
+  _id?: string;
+  title: string;
+  slug: string;
+  subtitle: string;
+  author: string;
+  description: string;
+  price: number;
+  shippingCost: number;
+  currency: string;
+  format: string;
+  pages: number;
+  language: string;
+  year: number;
+  coverImage: string;
+  stock: number;
+  isActive: boolean;
+  createdAt?: string;
 }
 
 export interface ApiResponse<T> {

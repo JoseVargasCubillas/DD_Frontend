@@ -8,6 +8,7 @@ const NAV_LINKS: Array<{ to: string; label: string; external?: boolean }> = [
   { to: '/acerca',   label: 'Diego' },
   { to: '/eventos',  label: 'Eventos' },
   { to: '/academia', label: 'Academia' },
+  { to: '/blog',     label: 'Blog' },
   { to: '/recursos', label: 'Recursos' },
   { to: '/despacho', label: 'Díaz Lara' },
 ];

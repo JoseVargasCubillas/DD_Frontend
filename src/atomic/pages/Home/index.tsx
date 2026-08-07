@@ -254,7 +254,7 @@ const SERVICES = [
     title: "Libros",
     desc: "Tres obras sobre estrategia fiscal mexicana. Más de 50,000 lectores en LATAM. Envío a todo el país.",
     cta: "Ver biblioteca",
-    link: "/recursos",
+    link: "/libros",
     dark: false,
   },
   {

@@ -4,6 +4,12 @@ import { useReveal, useHeroReveal } from "@hooks/useReveal";
 import { useCountUp } from "@hooks/useCountUp";
 import { useEvents } from "@hooks/useEvents";
 import type { Event as SiteEvent } from "@t/index";
+import equipoUnido from "../../../../assets/ddweb/equipo-unido.jpg";
+import equipoDiazLara from "../../../../assets/ddweb/equipo-diaz-lara-escaleras.jpg";
+import reformaFiscal from "../../../../assets/ddweb/reforma-fiscal-2026.jpg";
+import satDigital from "../../../../assets/ddweb/sat-cumplimiento-digital.jpg";
+import inmobiliarioConstruccion from "../../../../assets/ddweb/inmobiliario-construccion.jpg";
+import diegoPasarela from "../../../../assets/ddweb/diego-pasarela.jpg";
 
 type EventTone = "cream" | "dark";
 
@@ -255,6 +261,7 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         date: "28 Mayo 2026",
         rawDate: "2026-05-28T09:07:00-06:00",
         location: "Online",
+        image: equipoUnido,
         to: "/eventos/formacion-equipos",
         cta: "Cupo limitado",
       },
@@ -273,6 +280,7 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         date: "5 Junio 2026",
         rawDate: "2026-06-05T09:07:00-06:00",
         location: "CDMX",
+        image: reformaFiscal,
         to: "/eventos/revision-estrategica",
       },
       {
@@ -285,6 +293,7 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         date: "28 Agosto 2026",
         rawDate: "2026-08-28T09:00:00-06:00",
         location: "WTC CDMX",
+        image: satDigital,
         slug: "estrategia-fiscal",
         isFeatured: true,
         to: "/eventos/estrategia-fiscal",
@@ -305,6 +314,7 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         date: "4 Sep 2026",
         rawDate: "2026-09-04T09:07:00-06:00",
         location: "Querétaro",
+        image: equipoDiazLara,
         to: "/eventos/equipos-creativos",
       },
     ],
@@ -322,6 +332,7 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         date: "16 Oct 2026",
         rawDate: "2026-10-16T09:07:00-06:00",
         location: "Monterrey",
+        image: inmobiliarioConstruccion,
         to: "/eventos/blindaje-patrimonial",
       },
     ],
@@ -339,6 +350,7 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         date: "20 Nov 2026",
         rawDate: "2026-11-20T09:07:00-06:00",
         location: "CDMX",
+        image: diegoPasarela,
         to: "/eventos/estrategia-rockefeller",
         cta: "Early price ends in 20h",
       },
@@ -406,22 +418,14 @@ function Placeholder({
   alt?: string;
   fit?: "cover" | "contain";
 }) {
-  if (src) {
-    return (
-      <img
-        src={src}
-        alt={alt ?? ""}
-        className={`${fit === "contain" ? "object-contain" : "object-cover"} ${className}`}
-      />
-    );
-  }
+  const resolvedSrc = src || satDigital;
 
   return (
-    <div
-      className={`flex items-center justify-center bg-[#eee9df] text-[10px] uppercase tracking-[0.24em] text-ink-400 ${className}`}
-    >
-      Imagen pendiente
-    </div>
+    <img
+      src={resolvedSrc}
+      alt={alt ?? ""}
+      className={`${fit === "contain" ? "object-contain" : "object-cover"} ${className}`}
+    />
   );
 }
 
@@ -1049,9 +1053,11 @@ export default function Events() {
       <section className="border-t border-cream-400 bg-cream-100">
         <div className="mx-auto grid max-w-[1360px] gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[0.86fr_1fr] lg:px-10">
           <div className="grid grid-cols-2 border border-cream-400">
-            {Array.from({ length: 4 }).map((_, index) => (
+            {[equipoDiazLara, equipoUnido, diegoPasarela, satDigital].map((image, index) => (
               <Placeholder
                 key={index}
+                src={image}
+                alt={`Edición pasada ${index + 1} de eventos Diego Díaz`}
                 className="aspect-square border border-cream-400"
               />
             ))}

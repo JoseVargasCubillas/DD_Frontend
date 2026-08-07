@@ -4,7 +4,12 @@ import type { Subscription, ApiResponse } from '@t/index';
 export const getActiveSubscription = (): Promise<Subscription | null> =>
   client.get<ApiResponse<Subscription | null>>('/subscriptions/active').then((r) => r.data);
 
-export const subscribe = (data: { priceId: string; plan: string }) =>
+export const subscribe = (data: {
+  priceId?: string;
+  plan?: string;
+  item?: { type?: string; refId?: string; quantity?: number };
+  customer?: { name?: string; email?: string; phone?: string };
+}) =>
   client.post<ApiResponse<unknown>>('/subscriptions', data).then((r) => r.data);
 
 export const cancelSubscription = (): Promise<Subscription> =>

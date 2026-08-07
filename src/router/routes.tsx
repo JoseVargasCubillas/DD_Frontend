@@ -46,6 +46,8 @@ const SalesPricing = lazy(() => import("@pages/Admin/SalesPricing"));
 const SalesCart = lazy(() => import("@pages/Admin/SalesCart"));
 const DiazLara = lazy(() => import("@pages/DiazLara"));
 const ManageEmail = lazy(() => import("@pages/Admin/ManageEmail"));
+const BookCheckout = lazy(() => import("@pages/Books/BookCheckout"));
+const Books = lazy(() => import("@pages/Books"));
 
 export const router = createBrowserRouter([
   {
@@ -53,6 +55,7 @@ export const router = createBrowserRouter([
     children: [
       { path: "/", element: <Home /> },
       { path: "/acerca", element: <About /> },
+      { path: "/diego", element: <About /> },
       { path: "/prensa", element: <About /> },
       { path: "/cursos", element: <CourseList /> },
       { path: "/cursos/:slug", element: <CourseDetail /> },
@@ -66,13 +69,23 @@ export const router = createBrowserRouter([
       { path: "/blog/:slug", element: <BlogPost /> },
       { path: "/academia", element: <Academy /> },
       { path: "/despacho", element: <DiazLara /> },
+      { path: "/diaz-lara", element: <DiazLara /> },
       { path: "/recursos", element: <Resources /> },
       { path: "/contacto", element: <Contact /> },
+      { path: "/libros", element: <Books /> },
       {
         path: "/checkout",
         element: (
           <ProtectedRoute>
             <Checkout />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/libros/:slug/checkout",
+        element: (
+          <ProtectedRoute>
+            <BookCheckout />
           </ProtectedRoute>
         ),
       },

@@ -56,7 +56,7 @@ export default function Footer() {
           <div className="space-y-4">
             <h5 className="text-[11px] uppercase tracking-[0.3em] text-ink-400 font-normal">Productos</h5>
             <ul className="space-y-3">
-              {[['Eventos','/eventos'],['Academia','/academia'],['Libros','/recursos']].map(([label, to]) => (
+              {[['Eventos','/eventos'],['Academia','/academia'],['Libros','/libros']].map(([label, to]) => (
                 <li key={to}><Link to={to} className="text-[13px] text-ink-300 hover:text-white transition-colors">{label}</Link></li>
               ))}
             </ul>
@@ -79,7 +79,11 @@ export default function Footer() {
           </div>
 
           <div className="space-y-4">
-            <h5 className="text-[11px] uppercase tracking-[0.3em] text-ink-400 font-normal">Contacto</h5>
+            <h5 className="text-[11px] uppercase tracking-[0.3em] text-ink-400 font-normal">
+              <Link to="/contacto" className="transition-colors hover:text-white">
+                Contacto
+              </Link>
+            </h5>
             <ul className="space-y-3">
               {[['WhatsApp','#'],['Email','#'],['Oficina','#'],['IG','#'],['LI','#'],['YT','#'],['TT','#']].map(([label, href]) => (
                 <li key={label}><a href={href} className="text-[13px] text-ink-300 hover:text-white transition-colors">{label}</a></li>

@@ -1,8 +1,19 @@
 import { client } from './client';
-import type { Order, OrderItem, ApiResponse } from '@t/index';
+import type { Order, OrderItem, ShippingAddress, ApiResponse } from '@t/index';
 
-export const createPaymentIntent = (items: OrderItem[]) =>
-  client.post<ApiResponse<{ clientSecret: string; orderId: string }>>('/payments/intent', { items }).then((r) => r.data);
+interface PaymentIntentResult {
+  clientSecret: string;
+  orderId: string;
+  subtotal: number;
+  tax: number;
+  shippingCost: number;
+  total: number;
+}
+
+export const createPaymentIntent = (items: OrderItem[], shipping?: ShippingAddress) =>
+  client
+    .post<ApiResponse<PaymentIntentResult>>('/payments/intent', { items, shipping })
+    .then((r) => r.data);
 
 export const getOrders = (): Promise<Order[]> =>
   client.get<ApiResponse<Order[]>>('/payments/orders').then((r) => r.data);

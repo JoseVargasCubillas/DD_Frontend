@@ -53,7 +53,6 @@
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
-
 /* ── Auth periódico: animaciones específicas ───────── */
 @keyframes paper-unfold {
   0%   { opacity: 0; transform: perspective(1400px) rotateY(-22deg) translateX(-40px); }
@@ -180,6 +179,14 @@
 .btn-broadsheet:hover:not(:disabled) .arrow { transform: translateX(6px); }
 
 @media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+
   .auth-paper-l, .auth-paper-r,
   .headline-stagger > span,
   .ink-rule, .ink-blot, .col-fade {
@@ -275,6 +282,32 @@
                 transform var(--d-base) var(--ease-out);
   }
   .fade-up.in { opacity: 1; transform: translateY(0); }
+
+  .motion-section {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity var(--d-base) var(--ease-out),
+                transform var(--d-base) var(--ease-out);
+  }
+  .motion-section.in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .section-header > * {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity var(--d-base) var(--ease-out),
+                transform var(--d-base) var(--ease-out);
+  }
+  .section-header.in > * {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .section-header.in > *:nth-child(1) { transition-delay: 0ms; }
+  .section-header.in > *:nth-child(2) { transition-delay: 80ms; }
+  .section-header.in > *:nth-child(3) { transition-delay: 160ms; }
+  .section-header.in > *:nth-child(4) { transition-delay: 240ms; }
 }
 
 @layer components {
@@ -359,6 +392,36 @@
   .btn-secondary-inv:hover {
     background-position: 0% 100%;
   }
+  .btn-primary,
+  .btn-primary-inv,
+  .btn-secondary,
+  .btn-secondary-inv {
+    cursor: pointer;
+  }
+  .btn-primary::after,
+  .btn-primary-inv::after,
+  .btn-secondary::after,
+  .btn-secondary-inv::after {
+    content: '';
+    display: inline-block;
+    width: 0;
+  }
+  .btn-primary > .arrow,
+  .btn-primary-inv > .arrow,
+  .btn-secondary > .arrow,
+  .btn-secondary-inv > .arrow,
+  .btn-primary:hover svg,
+  .btn-primary-inv:hover svg,
+  .btn-secondary:hover svg,
+  .btn-secondary-inv:hover svg {
+    transform: translateX(6px);
+  }
+  .btn-primary svg,
+  .btn-primary-inv svg,
+  .btn-secondary svg,
+  .btn-secondary-inv svg {
+    transition: transform 400ms cubic-bezier(.2,.8,.2,1);
+  }
 
   /* ─── Formularios ─────────────────────────────── */
   .input-base {
@@ -372,6 +435,18 @@
            px-4 py-3.5 focus:outline-none focus:border-ink-900
            placeholder-ink-300 text-sm;
     transition: border-color 400ms cubic-bezier(.2,.8,.2,1);
+  }
+  .input-base::placeholder,
+  .input-cream::placeholder,
+  .ink-input::placeholder {
+    transition: opacity 500ms cubic-bezier(.2,.8,.2,1),
+                transform 500ms cubic-bezier(.2,.8,.2,1);
+  }
+  .input-base:focus::placeholder,
+  .input-cream:focus::placeholder,
+  .ink-input:focus::placeholder {
+    opacity: 0.42;
+    transform: translateX(8px);
   }
 
   /* ─── Tipografía editorial ─────────────────────── */
@@ -613,6 +688,7 @@
   /* ─── Demo 09 — Underline grow ────────────────── */
   .link-grow {
     position: relative;
+    cursor: pointer;
   }
   .link-grow::after {
     content: '';
@@ -628,5 +704,10 @@
   }
   .link-grow:hover::after {
     transform: scaleX(1);
+  }
+  .link-grow:hover .kinetic-italic,
+  .link-grow:hover em,
+  .link-grow:hover i {
+    color: #6b4f2a;
   }
 }
