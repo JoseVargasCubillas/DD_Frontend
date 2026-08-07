@@ -80,6 +80,9 @@ const eventColumns = `
   end_date DATETIME NOT NULL,
   price DECIMAL(12,2) NOT NULL DEFAULT 0,
   sale_price DECIMAL(12,2) NULL,
+  currency VARCHAR(3) NOT NULL DEFAULT 'MXN',
+  payment_type ENUM('free','one_time','subscription') NOT NULL DEFAULT 'one_time',
+  stripe_price_id VARCHAR(255) NULL,
   capacity INT UNSIGNED NOT NULL DEFAULT 0,
   registered_count INT UNSIGNED NOT NULL DEFAULT 0,
   status ENUM('upcoming','ongoing','finished','canceled') NOT NULL DEFAULT 'upcoming',
@@ -96,6 +99,23 @@ async function ensureDatabase() {
   await bootstrap.query(`CREATE DATABASE IF NOT EXISTS \`${safeDatabaseName}\``);
   await bootstrap.end();
   await pool.query(`CREATE TABLE IF NOT EXISTS events (${eventColumns})`);
+  await ensureEventColumn("currency", "VARCHAR(3) NOT NULL DEFAULT 'MXN'");
+  await ensureEventColumn("payment_type", "ENUM('free','one_time','subscription') NOT NULL DEFAULT 'one_time'");
+  await ensureEventColumn("stripe_price_id", "VARCHAR(255) NULL");
+}
+
+async function ensureEventColumn(columnName, definition) {
+  const [rows] = await pool.execute(
+    `SELECT COUNT(*) AS total
+     FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = :databaseName
+       AND TABLE_NAME = 'events'
+       AND COLUMN_NAME = :columnName`,
+    { databaseName, columnName },
+  );
+  if (Number(rows[0]?.total || 0) === 0) {
+    await pool.query(`ALTER TABLE events ADD COLUMN ${columnName} ${definition}`);
+  }
 }
 
 function toIso(value) {
@@ -132,6 +152,9 @@ function mapEvent(row) {
     endDate: toIso(row.end_date),
     price: Number(row.price || 0),
     salePrice: row.sale_price == null ? undefined : Number(row.sale_price),
+    currency: row.currency || "MXN",
+    paymentType: row.payment_type || (Number(row.price || 0) > 0 ? "one_time" : "free"),
+    stripePriceId: row.stripe_price_id || "",
     capacity: Number(row.capacity || 0),
     registeredCount: Number(row.registered_count || 0),
     status: row.status,
@@ -163,6 +186,9 @@ function normalizeEventPayload(body) {
     end_date: toMysqlDate(body.endDate || body.end_date || body.startDate || new Date()),
     price: Number(body.price || 0),
     sale_price: body.salePrice ?? body.sale_price ?? null,
+    currency: String(body.currency || "MXN").toUpperCase().slice(0, 3),
+    payment_type: body.paymentType || body.payment_type || (Number(body.price || 0) > 0 ? "one_time" : "free"),
+    stripe_price_id: body.stripePriceId || body.stripe_price_id || "",
     capacity: Number(body.capacity || 0),
     registered_count: Number(body.registeredCount || body.registered_count || 0),
     status: body.status || "upcoming",
@@ -197,7 +223,37 @@ app.get(`${API_BASE}/health`, (_req, res) => {
   res.json({ success: true, data: { ok: true } });
 });
 
-installAcademyApi(app, API_BASE, rootDir);
+async function resolveEventCheckoutItem(item) {
+  if (item.type !== "event") return null;
+  const numericId = /^\d+$/.test(item.refId) ? Number(item.refId) : 0;
+  const [rows] = await pool.execute(
+    "SELECT * FROM events WHERE id = :id OR slug = :slug LIMIT 1",
+    { id: numericId, slug: item.refId },
+  );
+  if (!rows.length) throw new Error("Evento no disponible para checkout");
+
+  const event = mapEvent(rows[0]);
+  if (event.status === "canceled" || event.status === "finished") {
+    throw new Error("Este evento no esta disponible para compra");
+  }
+
+  const price = event.salePrice != null && event.salePrice > 0 ? event.salePrice : event.price;
+  const paymentType = event.paymentType || (price > 0 ? "one_time" : "free");
+  return {
+    type: "event",
+    refId: event._id || event.id,
+    title: event.title,
+    price,
+    quantity: item.quantity || 1,
+    currency: event.currency || "MXN",
+    paymentType,
+    stripePriceId: event.stripePriceId || "",
+  };
+}
+
+installAcademyApi(app, API_BASE, rootDir, {
+  resolveExternalCheckoutItem: resolveEventCheckoutItem,
+});
 
 app.post(`${API_BASE}/uploads/events`, upload.single("file"), (req, res) => {
   if (!req.file) {
@@ -248,8 +304,10 @@ app.get(`${API_BASE}/events`, async (req, res, next) => {
 
 app.get(`${API_BASE}/events/:slug`, async (req, res, next) => {
   try {
-    const [rows] = await pool.execute("SELECT * FROM events WHERE slug = :slug LIMIT 1", {
+    const numericId = /^\d+$/.test(req.params.slug) ? Number(req.params.slug) : 0;
+    const [rows] = await pool.execute("SELECT * FROM events WHERE slug = :slug OR id = :id LIMIT 1", {
       slug: req.params.slug,
+      id: numericId,
     });
     if (!rows.length) {
       res.status(404).json({ success: false, message: "Evento no encontrado" });
@@ -271,11 +329,13 @@ app.post(`${API_BASE}/events`, async (req, res, next) => {
     const [result] = await pool.execute(
       `INSERT INTO events (
         title, slug, short_description, description, thumbnail, type, modality,
-        location, online_url, start_date, end_date, price, sale_price, capacity,
+        location, online_url, start_date, end_date, price, sale_price, currency,
+        payment_type, stripe_price_id, capacity,
         registered_count, status, instructor, is_featured, agenda
       ) VALUES (
         :title, :slug, :short_description, :description, :thumbnail, :type, :modality,
-        :location, :online_url, :start_date, :end_date, :price, :sale_price, :capacity,
+        :location, :online_url, :start_date, :end_date, :price, :sale_price, :currency,
+        :payment_type, :stripe_price_id, :capacity,
         :registered_count, :status, :instructor, :is_featured, :agenda
       )`,
       event,
@@ -314,6 +374,9 @@ app.put(`${API_BASE}/events/:id`, async (req, res, next) => {
         end_date = :end_date,
         price = :price,
         sale_price = :sale_price,
+        currency = :currency,
+        payment_type = :payment_type,
+        stripe_price_id = :stripe_price_id,
         capacity = :capacity,
         registered_count = :registered_count,
         status = :status,

@@ -148,15 +148,56 @@ function defaultState() {
     promotions: [],
     offers: [
       {
-        _id: "off_academia_mensual",
-        id: "off_academia_mensual",
-        title: "Academia Business",
-        slug: "academia-business",
-        description: "Acceso mensual a la Academia.",
+        _id: "off_academia_entrepreneur",
+        id: "off_academia_entrepreneur",
+        title: "Academia Entrepreneur",
+        slug: "academia-entrepreneur",
+        description: "Plan mensual Entrepreneur de la Academia.",
         type: "standard",
         status: "published",
-        price: 1999,
+        price: 4997,
         currency: "MXN",
+        paymentType: "subscription",
+        stripePriceId: "",
+        plan: "entrepreneur",
+        content: [{ courseId, access: "full", moduleIds: [] }],
+        assignedUserIds: [adminId, userId],
+        startsAt: null,
+        expiresAt: null,
+        createdAt,
+      },
+      {
+        _id: "off_academia_plus",
+        id: "off_academia_plus",
+        title: "Academia +",
+        slug: "academia-plus",
+        description: "Plan mensual Academia +.",
+        type: "standard",
+        status: "published",
+        price: 14997,
+        currency: "MXN",
+        paymentType: "subscription",
+        stripePriceId: "",
+        plan: "plus",
+        content: [{ courseId, access: "full", moduleIds: [] }],
+        assignedUserIds: [adminId, userId],
+        startsAt: null,
+        expiresAt: null,
+        createdAt,
+      },
+      {
+        _id: "off_academia_master",
+        id: "off_academia_master",
+        title: "Academia Master",
+        slug: "academia-master",
+        description: "Plan mensual Master de la Academia.",
+        type: "standard",
+        status: "published",
+        price: 49997,
+        currency: "MXN",
+        paymentType: "subscription",
+        stripePriceId: "",
+        plan: "master",
         content: [{ courseId, access: "full", moduleIds: [] }],
         assignedUserIds: [adminId, userId],
         startsAt: null,
@@ -270,6 +311,45 @@ function requireUser(store, req, res) {
   return { state, user };
 }
 
+function checkoutSession(store, req) {
+  const state = store.get();
+  const user = userFromToken(state, req);
+  if (user) return { state, user };
+
+  const guestId = "usr_checkout_guest";
+  store.update((draft) => {
+    if (!draft.users.some((entry) => entry._id === guestId || entry.id === guestId)) {
+      draft.users.push({
+        _id: guestId,
+        id: guestId,
+        name: "Cliente Invitado",
+        email: "checkout@diegodiaz.mx",
+        password: "",
+        role: "user",
+        avatar: "",
+        phone: "",
+        bio: "",
+        plan: "guest",
+        enrolledCourses: [],
+        tagIds: [],
+        notes: "Usuario tecnico para compras sin login.",
+        contactStatus: "lead",
+        marketingStatus: "subscribed",
+        signInCount: 0,
+        isActive: true,
+        isEmailVerified: false,
+        createdAt: now(),
+      });
+    }
+  });
+
+  const nextState = store.get();
+  return {
+    state: nextState,
+    user: nextState.users.find((entry) => entry._id === guestId || entry.id === guestId),
+  };
+}
+
 function paginate(items, req) {
   const page = Math.max(1, Number(req.query.page || 1));
   const limit = Math.min(200, Math.max(1, Number(req.query.limit || 100)));
@@ -335,14 +415,11 @@ async function createStripeCustomer(user) {
   return stripeRequest("/customers", params);
 }
 
-async function createStripeSubscription({ user, plan }) {
-  const priceId =
-    process.env.STRIPE_PRICE_ACADEMIA ||
-    process.env.STRIPE_PRICE_INICIATIVA_MENSUAL ||
-    process.env.VITE_STRIPE_PRICE_INICIATIVA_MENSUAL;
+async function createStripeSubscription({ user, item }) {
+  const priceId = item.stripePriceId;
 
   if (!priceId?.startsWith("price_")) {
-    throw new Error("Configura STRIPE_PRICE_ACADEMIA=price_...");
+    throw new Error(`Configura stripePriceId=price_... en ${item.title}`);
   }
 
   const customer = await createStripeCustomer(user);
@@ -353,7 +430,9 @@ async function createStripeSubscription({ user, plan }) {
   appendStripeParam(params, "payment_settings[save_default_payment_method]", "on_subscription");
   appendStripeParam(params, "expand[]", "latest_invoice.payment_intent");
   appendStripeParam(params, "metadata[userId]", user._id);
-  appendStripeParam(params, "metadata[plan]", plan || "pro");
+  appendStripeParam(params, "metadata[plan]", item.plan || "pro");
+  appendStripeParam(params, "metadata[productType]", item.type);
+  appendStripeParam(params, "metadata[productId]", item.refId);
   return stripeRequest("/subscriptions", params);
 }
 
@@ -383,6 +462,134 @@ function verifyStripeSignature(req) {
     return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(expected));
   } catch {
     return false;
+  }
+}
+
+function checkoutQuantity(value) {
+  return Math.max(1, Math.min(99, Number(value || 1)));
+}
+
+function checkoutAmount(value) {
+  return Math.max(0, Number(value || 0));
+}
+
+function saleAmount(product) {
+  const salePrice = product.salePrice ?? product.sale_price;
+  return checkoutAmount(salePrice != null && Number(salePrice) > 0 ? salePrice : product.price);
+}
+
+function normalizePaymentType(product) {
+  if (product.paymentType === "subscription" || product.payment_type === "subscription") return "subscription";
+  if (product.paymentType === "free" || product.payment_type === "free" || saleAmount(product) <= 0) return "free";
+  return "one_time";
+}
+
+function normalizeCheckoutRef(item) {
+  const type = String(item?.type || "").toLowerCase();
+  return {
+    type: type === "subscription" ? "offer" : type,
+    refId: String(item?.refId || item?.id || item?._id || ""),
+    quantity: checkoutQuantity(item?.quantity),
+  };
+}
+
+function toCheckoutItem({ type, refId, product, quantity }) {
+  const amount = saleAmount(product);
+  const paymentType = normalizePaymentType(product);
+  return {
+    type,
+    refId,
+    title: product.title || product.name || "Producto",
+    price: amount,
+    quantity,
+    currency: product.currency || "MXN",
+    paymentType,
+    stripePriceId: product.stripePriceId || product.stripe_price_id || "",
+    plan: product.plan || "pro",
+  };
+}
+
+function findByIdentity(rows, refId) {
+  return rows.find((entry) => entry._id === refId || entry.id === refId || entry.slug === refId);
+}
+
+function resolveStoreCheckoutItem(state, requested) {
+  const item = normalizeCheckoutRef(requested);
+  if (!item.refId) throw new Error("Producto requerido");
+
+  if (item.type === "course") {
+    const product = findByIdentity(state.courses, item.refId);
+    if (!product || product.status !== "published") throw new Error("Curso no disponible");
+    return toCheckoutItem({ type: "course", refId: product._id || product.id, product, quantity: item.quantity });
+  }
+
+  if (item.type === "package") {
+    const product = findByIdentity(state.packages, item.refId);
+    if (!product || product.isActive === false) throw new Error("Paquete no disponible");
+    return toCheckoutItem({ type: "package", refId: product._id || product.id, product, quantity: item.quantity });
+  }
+
+  if (item.type === "offer") {
+    const product = findByIdentity(state.offers, item.refId);
+    if (!product || product.status === "archived") throw new Error("Oferta no disponible");
+    return toCheckoutItem({ type: "offer", refId: product._id || product.id, product, quantity: item.quantity });
+  }
+
+  return null;
+}
+
+async function resolveCheckoutItems({ store, items, resolveExternalCheckoutItem }) {
+  const requestedItems = Array.isArray(items) ? items : [];
+  if (!requestedItems.length) throw new Error("El carrito esta vacio");
+
+  const state = store.get();
+  const resolved = [];
+  for (const requested of requestedItems) {
+    const storeItem = resolveStoreCheckoutItem(state, requested);
+    if (storeItem) {
+      resolved.push(storeItem);
+      continue;
+    }
+
+    if (resolveExternalCheckoutItem) {
+      const externalItem = await resolveExternalCheckoutItem(normalizeCheckoutRef(requested));
+      if (externalItem) {
+        resolved.push(externalItem);
+        continue;
+      }
+    }
+
+    throw new Error("Producto no disponible para checkout");
+  }
+
+  return resolved;
+}
+
+function grantPurchasedAccess(draft, order) {
+  const user = draft.users.find((entry) => entry._id === order.userId || entry.id === order.userId);
+  if (!user) return;
+
+  for (const item of order.items || []) {
+    if (item.type === "course" && item.refId && !user.enrolledCourses.includes(item.refId)) {
+      user.enrolledCourses.push(item.refId);
+    }
+
+    if (item.type === "package") {
+      const pkg = draft.packages.find((entry) => entry._id === item.refId || entry.id === item.refId);
+      if (pkg) {
+        user.enrolledCourses = Array.from(new Set([...(user.enrolledCourses || []), ...(pkg.courseIds || [])]));
+      }
+    }
+
+    if (item.type === "offer") {
+      const offer = draft.offers.find((entry) => entry._id === item.refId || entry.id === item.refId);
+      if (offer && !(offer.assignedUserIds || []).includes(user._id)) {
+        offer.assignedUserIds = [...(offer.assignedUserIds || []), user._id];
+      }
+      const courseIds = (offer?.content || []).map((entry) => entry.courseId).filter(Boolean);
+      user.enrolledCourses = Array.from(new Set([...(user.enrolledCourses || []), ...courseIds]));
+      if (item.paymentType === "subscription") user.plan = item.plan || user.plan || "pro";
+    }
   }
 }
 
@@ -432,8 +639,9 @@ function createCrudRoutes(app, API_BASE, store, name, defaults, listShape = "arr
   });
 }
 
-export function installAcademyApi(app, API_BASE, rootDir) {
+export function installAcademyApi(app, API_BASE, rootDir, options = {}) {
   const store = createStore(path.join(rootDir, "server", "academy-data.json"));
+  const resolveExternalCheckoutItem = options.resolveExternalCheckoutItem;
 
   app.post(`${API_BASE}/auth/login`, (req, res) => {
     const state = store.get();
@@ -927,7 +1135,7 @@ export function installAcademyApi(app, API_BASE, rootDir) {
   createCrudRoutes(app, API_BASE, store, "tags", (body) => ({ name: body.name || "Etiqueta", color: body.color || "#78562a", description: body.description || "", contactsCount: 0 }), "array");
   createCrudRoutes(app, API_BASE, store, "packages", (body) => ({ name: body.name || "Paquete", description: "", price: 0, currency: "MXN", courseIds: [], durationDays: 30, isActive: true, isFeatured: false }), "array");
   createCrudRoutes(app, API_BASE, store, "promotions", (body) => ({ code: body.code || "PROMO", description: "", type: "percentage", value: 0, scope: "all", targetId: "", expiresAt: null, maxUses: 0, usedCount: 0, isActive: true }), "array");
-  createCrudRoutes(app, API_BASE, store, "offers", (body) => ({ title: body.title || "Oferta", description: "", type: "standard", status: "draft", price: 0, currency: "MXN", content: [], assignedUserIds: [], startsAt: null, expiresAt: null }), "array");
+  createCrudRoutes(app, API_BASE, store, "offers", (body) => ({ title: body.title || "Oferta", description: "", type: "standard", status: "draft", price: 0, currency: "MXN", paymentType: "one_time", stripePriceId: "", plan: "pro", content: [], assignedUserIds: [], startsAt: null, expiresAt: null }), "array");
   createCrudRoutes(app, API_BASE, store, "blog", (body) => ({ title: body.title || "Post", content: "", excerpt: "", thumbnail: "", author: "usr_admin", category: "General", tags: [], status: "draft", readTime: 1, viewsCount: 0, isFeatured: false, seo: { metaTitle: "", metaDescription: "", keywords: [] } }), "paginated");
 
   app.get(`${API_BASE}/blog/:slug`, (req, res) => {
@@ -973,15 +1181,27 @@ export function installAcademyApi(app, API_BASE, rootDir) {
   });
 
   app.post(`${API_BASE}/subscriptions`, async (req, res, next) => {
-    const session = requireUser(store, req, res);
-    if (!session) return;
+    const session = checkoutSession(store, req);
     try {
+      const [checkoutItem] = await resolveCheckoutItems({
+        store,
+        items: [req.body.item || { type: req.body.type || "offer", refId: req.body.refId }],
+        resolveExternalCheckoutItem,
+      });
+      if (checkoutItem.paymentType !== "subscription") {
+        res.status(400).json({ success: false, message: "Este producto no es una suscripcion" });
+        return;
+      }
+
       if (hasStripeSecret()) {
         const stripeSubscription = await createStripeSubscription({
           user: session.user,
-          plan: req.body.plan || "pro",
+          item: checkoutItem,
         });
         const paymentIntent = stripeSubscription.latest_invoice?.payment_intent;
+        if (!paymentIntent?.client_secret) {
+          throw new Error("Stripe no devolvio client_secret para la suscripcion");
+        }
         let subscription;
         store.update((draft) => {
           subscription = {
@@ -990,7 +1210,7 @@ export function installAcademyApi(app, API_BASE, rootDir) {
             stripeSubscriptionId: stripeSubscription.id,
             stripeCustomerId: stripeSubscription.customer,
             user: session.user._id,
-            plan: req.body.plan || "pro",
+            plan: checkoutItem.plan || "pro",
             status: stripeSubscription.status === "active" ? "active" : "trialing",
             currentPeriodEnd: stripeSubscription.current_period_end
               ? new Date(stripeSubscription.current_period_end * 1000).toISOString()
@@ -1011,10 +1231,10 @@ export function installAcademyApi(app, API_BASE, rootDir) {
 
       let subscription;
       store.update((draft) => {
-        const courseIds = draft.courses.filter((course) => course.status === "published").map((course) => course._id);
         const user = draft.users.find((entry) => entry._id === session.user._id);
-        user.plan = req.body.plan || "pro";
-        user.enrolledCourses = Array.from(new Set([...(user.enrolledCourses || []), ...courseIds]));
+        user.plan = checkoutItem.plan || "pro";
+        const order = { userId: user._id, items: [checkoutItem] };
+        grantPurchasedAccess(draft, order);
         subscription = { _id: id("sub"), id: "", user: user._id, plan: user.plan, status: "active", currentPeriodEnd: new Date(Date.now() + 30 * 86400000).toISOString(), cancelAtPeriodEnd: false };
         subscription.id = subscription._id;
         draft.subscriptions.push(subscription);
@@ -1040,11 +1260,22 @@ export function installAcademyApi(app, API_BASE, rootDir) {
   });
 
   app.post(`${API_BASE}/payments/intent`, async (req, res, next) => {
-    const session = requireUser(store, req, res);
-    if (!session) return;
+    const session = checkoutSession(store, req);
     try {
-      const items = req.body.items || [];
+      const items = await resolveCheckoutItems({
+        store,
+        items: req.body.items || [],
+        resolveExternalCheckoutItem,
+      });
+      if (items.some((item) => item.paymentType === "subscription")) {
+        res.status(400).json({ success: false, message: "Las suscripciones se procesan en /subscriptions" });
+        return;
+      }
       const total = items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 1), 0);
+      if (!items.length || total <= 0) {
+        res.status(400).json({ success: false, message: "El carrito no tiene productos de pago" });
+        return;
+      }
       const orderId = id("ord");
 
       if (hasStripeSecret()) {
@@ -1066,7 +1297,7 @@ export function installAcademyApi(app, API_BASE, rootDir) {
             customerEmail: user.email,
             items,
             total,
-            currency: "MXN",
+            currency: items[0]?.currency || "MXN",
             status: "pending",
             paymentProvider: "stripe",
             paymentIntentId: paymentIntent.id,
@@ -1081,10 +1312,8 @@ export function installAcademyApi(app, API_BASE, rootDir) {
       let order;
       store.update((draft) => {
         const user = draft.users.find((entry) => entry._id === session.user._id);
-        for (const item of items) {
-          if (item.type === "course" && item.refId && !user.enrolledCourses.includes(item.refId)) user.enrolledCourses.push(item.refId);
-        }
-        order = { _id: orderId, id: orderId, user: user._id, userId: user._id, customerId: user._id, customerName: user.name, customerEmail: user.email, items, total, currency: "MXN", status: "completed", paymentProvider: "demo", paymentIntentId: `demo_${orderId}`, paidAt: now(), createdAt: now() };
+        order = { _id: orderId, id: orderId, user: user._id, userId: user._id, customerId: user._id, customerName: user.name, customerEmail: user.email, items, total, currency: items[0]?.currency || "MXN", status: "completed", paymentProvider: "demo", paymentIntentId: `demo_${orderId}`, paidAt: now(), createdAt: now() };
+        grantPurchasedAccess(draft, order);
         draft.orders.push(order);
       });
       res.json({ success: true, data: { clientSecret: `demo_${order._id}`, orderId: order._id } });
@@ -1149,6 +1378,7 @@ export function installAcademyApi(app, API_BASE, rootDir) {
         if (order) {
           order.status = "completed";
           order.paidAt = now();
+          grantPurchasedAccess(draft, order);
         }
       }
 

@@ -10,9 +10,18 @@ interface PaymentIntentResult {
   total: number;
 }
 
+const checkoutRefs = (items: OrderItem[]) =>
+  items.map((item) => ({
+    type: item.type,
+    refId: item.refId,
+    title: item.title,
+    price: item.price,
+    quantity: item.quantity ?? 1,
+  }));
+
 export const createPaymentIntent = (items: OrderItem[], shipping?: ShippingAddress) =>
   client
-    .post<ApiResponse<PaymentIntentResult>>('/payments/intent', { items, shipping })
+    .post<ApiResponse<PaymentIntentResult>>('/payments/intent', { items: checkoutRefs(items), shipping })
     .then((r) => r.data);
 
 export const getOrders = (): Promise<Order[]> =>

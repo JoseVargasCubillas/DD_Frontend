@@ -227,8 +227,8 @@ export default function Checkout() {
             quantity: subscriptionItem?.quantity ?? 1,
           },
         });
-        setClientSecret((result as Record<string, string>).clientSecret ?? '');
-        const subscription = (result as { subscription?: { _id?: string; id?: string } }).subscription;
+        setClientSecret(result.clientSecret ?? '');
+        const subscription = result.subscription;
         setOrder({ mode, items, total: total(), orderId: subscription?._id ?? subscription?.id ?? '' });
       } else {
         const result = await createPaymentIntent(items);

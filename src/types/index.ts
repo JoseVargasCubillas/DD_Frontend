@@ -3,6 +3,7 @@ export type Plan = "free" | "basic" | "pro" | "enterprise";
 export type CourseStatus = "draft" | "published" | "archived";
 export type CourseType = "evergreen" | "cohort";
 export type OrderStatus = "pending" | "completed" | "failed" | "refunded";
+export type PaymentType = "free" | "one_time" | "subscription";
 export type SubscriptionStatus =
   | "active"
   | "canceled"
@@ -67,6 +68,8 @@ export interface Package {
   description: string;
   price: number;
   currency: string;
+  paymentType?: PaymentType;
+  stripePriceId?: string;
   courseIds: string[];
   durationDays: number;
   isActive: boolean;
@@ -102,6 +105,8 @@ export interface Course {
   price: number;
   salePrice?: number;
   currency: string;
+  paymentType?: PaymentType;
+  stripePriceId?: string;
   category: string;
   tags: string[];
   level: CourseLevel;
@@ -137,6 +142,9 @@ export interface Offer {
   status: "draft" | "published" | "archived";
   price: number;
   currency: string;
+  paymentType?: PaymentType;
+  stripePriceId?: string;
+  plan?: Plan;
   content: OfferContentItem[];
   assignedUserIds: string[];
   startsAt?: string | null;
@@ -194,6 +202,9 @@ export interface Event {
   endDate: string;
   price: number;
   salePrice?: number;
+  currency?: string;
+  paymentType?: PaymentType;
+  stripePriceId?: string;
   capacity: number;
   registeredCount: number;
   status: EventStatus;
@@ -238,6 +249,10 @@ export interface OrderItem {
   title: string;
   price: number;
   quantity: number;
+  plan?: Plan;
+  currency?: string;
+  paymentType?: PaymentType;
+  stripePriceId?: string;
 }
 
 export interface ShippingAddress {
