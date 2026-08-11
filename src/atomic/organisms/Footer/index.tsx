@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import logoFooter from '../../../../assets/home/012_home_footerlogo_DD.png';
 import logoDiegoWatermark from '../../../../assets/home/010_home_logo_fotter2_DD.png';
+import gptwBadge from '../../../../assets/certifications/gptw.png';
+import laqiBadge from '../../../../assets/certifications/laqi.png';
 
 export default function Footer() {
   const [email, setEmail] = useState('');
@@ -95,22 +97,19 @@ export default function Footer() {
 
       <div className="border-t border-ink-800">
         <div className="container-app py-10">
-          <div className="flex items-center gap-6 mb-6">
+          <div className="flex items-center gap-6 mb-8">
             <span className="text-[10px] uppercase tracking-[0.4em] text-ink-400 shrink-0">
               Certificaciones &amp; Reconocimientos
             </span>
             <div className="h-px flex-1 bg-ink-800" />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {/* Great Place to Work */}
-            <div className="flex items-center gap-5 border border-ink-700 bg-ink-800/40 px-5 py-4 hover:border-ink-500 transition-colors">
-              <svg viewBox="0 0 64 64" className="w-14 h-14 shrink-0 text-white" aria-hidden="true">
-                <circle cx="32" cy="32" r="30" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                <circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.5" />
-                <path d="M32 14 L36 26 L48 26 L38 33 L42 46 L32 38 L22 46 L26 33 L16 26 L28 26 Z" fill="currentColor" />
-                <text x="32" y="58" textAnchor="middle" fontFamily="serif" fontSize="4.5" fill="currentColor" letterSpacing="0.8">CERTIFIED</text>
-              </svg>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            {/* Great Place to Work — recorte tipo periódico */}
+            <div className="flex items-center gap-6">
+              <div className="bg-cream p-3 shadow-[0_2px_0_0_rgba(0,0,0,0.35)] shrink-0">
+                <img src={gptwBadge} alt="Great Place to Work Certified" className="h-20 w-auto object-contain block" loading="lazy" />
+              </div>
               <div className="min-w-0">
                 <p className="text-[9px] uppercase tracking-[0.35em] text-ink-500 mb-1">Certificada</p>
                 <p className="font-serif text-[18px] leading-tight text-white">Great Place to Work</p>
@@ -118,23 +117,11 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* Latin American Excellence — Cruz de Malta */}
-            <div className="flex items-center gap-5 border border-ink-700 bg-ink-800/40 px-5 py-4 hover:border-ink-500 transition-colors">
-              <svg viewBox="0 0 64 64" className="w-14 h-14 shrink-0 text-white" aria-hidden="true">
-                <circle cx="32" cy="32" r="30" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                {/* Cruz de Malta: 4 puntas triangulares desde el centro */}
-                <g fill="currentColor">
-                  {/* Norte */}
-                  <path d="M32 12 L26 26 L32 24 L38 26 Z" />
-                  {/* Sur */}
-                  <path d="M32 52 L26 38 L32 40 L38 38 Z" />
-                  {/* Oeste */}
-                  <path d="M12 32 L26 26 L24 32 L26 38 Z" />
-                  {/* Este */}
-                  <path d="M52 32 L38 26 L40 32 L38 38 Z" />
-                </g>
-                <circle cx="32" cy="32" r="3" fill="none" stroke="currentColor" strokeWidth="1.2" />
-              </svg>
+            {/* Latin American Excellence — recorte tipo periódico */}
+            <div className="flex items-center gap-6">
+              <div className="bg-cream p-3 shadow-[0_2px_0_0_rgba(0,0,0,0.35)] shrink-0">
+                <img src={laqiBadge} alt="Latin American Excellence — Cruz de Malta (LAQI)" className="h-20 w-auto object-contain block" loading="lazy" />
+              </div>
               <div className="min-w-0">
                 <p className="text-[9px] uppercase tracking-[0.35em] text-ink-500 mb-1">Galardonada</p>
                 <p className="font-serif text-[18px] leading-tight text-white">Latin American Excellence</p>
