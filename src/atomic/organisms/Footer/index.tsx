@@ -108,7 +108,7 @@ export default function Footer() {
             {/* Great Place to Work — recorte tipo periódico */}
             <div className="flex items-center gap-6">
               <div className="bg-cream p-3 shadow-[0_2px_0_0_rgba(0,0,0,0.35)] shrink-0">
-                <img src={gptwBadge} alt="Great Place to Work Certified" className="h-20 w-auto object-contain block" loading="lazy" />
+                <img src={gptwBadge} alt="Great Place to Work Certified" className="h-24 w-auto object-contain block" loading="lazy" />
               </div>
               <div className="min-w-0">
                 <p className="text-[9px] uppercase tracking-[0.35em] text-ink-500 mb-1">Certificada</p>
@@ -117,15 +117,15 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* Latin American Excellence — recorte tipo periódico */}
+            {/* Latin American Quality Institute — recorte tipo periódico */}
             <div className="flex items-center gap-6">
-              <div className="bg-cream p-3 shadow-[0_2px_0_0_rgba(0,0,0,0.35)] shrink-0">
-                <img src={laqiBadge} alt="Latin American Excellence — Cruz de Malta (LAQI)" className="h-20 w-auto object-contain block" loading="lazy" />
+              <div className="bg-white p-4 shadow-[0_2px_0_0_rgba(0,0,0,0.35)] shrink-0 flex items-center justify-center h-24 w-40">
+                <img src={laqiBadge} alt="Latin American Quality Institute" className="max-h-full max-w-full object-contain block" loading="lazy" />
               </div>
               <div className="min-w-0">
                 <p className="text-[9px] uppercase tracking-[0.35em] text-ink-500 mb-1">Galardonada</p>
-                <p className="font-serif text-[18px] leading-tight text-white">Latin American Excellence</p>
-                <p className="text-[11px] text-ink-400 mt-0.5">Cruz de Malta &middot; LAQI</p>
+                <p className="font-serif text-[18px] leading-tight text-white">Latin American Quality Institute</p>
+                <p className="text-[11px] text-ink-400 mt-0.5">Cruz de Malta a la excelencia</p>
               </div>
             </div>
           </div>
