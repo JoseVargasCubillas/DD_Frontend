@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import logoFooter from '../../../../assets/012_home_footerlogo_DD.png';
-import logoDiegoWatermark from '../../../../assets/010_home_logo_fotter2_DD.png';
+import logoFooter from '../../../../assets/home/012_home_footerlogo_DD.png';
+import logoDiegoWatermark from '../../../../assets/home/010_home_logo_fotter2_DD.png';
+import certificationsBadges from '../../../../assets/certifications/certifications-badges.png';
 
 export default function Footer() {
   const [email, setEmail] = useState('');
@@ -47,7 +48,7 @@ export default function Footer() {
           <div className="space-y-4">
             <h5 className="text-[11px] uppercase tracking-[0.3em] text-ink-400 font-normal">Explora</h5>
             <ul className="space-y-3">
-              {[['Diego','/acerca'],['Prensa','/prensa'],['Blog','/blog'],['Recursos','/recursos']].map(([label, to]) => (
+              {[['Diego','/acerca'],['Prensa','/prensa#prensa'],['Blog','/blog'],['Recursos','/recursos']].map(([label, to]) => (
                 <li key={to}><Link to={to} className="text-[13px] text-ink-300 hover:text-white transition-colors">{label}</Link></li>
               ))}
             </ul>
@@ -56,7 +57,7 @@ export default function Footer() {
           <div className="space-y-4">
             <h5 className="text-[11px] uppercase tracking-[0.3em] text-ink-400 font-normal">Productos</h5>
             <ul className="space-y-3">
-              {[['Eventos','/eventos'],['Academia','/academia'],['Libros','/recursos']].map(([label, to]) => (
+              {[['Eventos','/eventos'],['Academia','/academia'],['Libros','/libros']].map(([label, to]) => (
                 <li key={to}><Link to={to} className="text-[13px] text-ink-300 hover:text-white transition-colors">{label}</Link></li>
               ))}
             </ul>
@@ -79,13 +80,32 @@ export default function Footer() {
           </div>
 
           <div className="space-y-4">
-            <h5 className="text-[11px] uppercase tracking-[0.3em] text-ink-400 font-normal">Contacto</h5>
+            <h5 className="text-[11px] uppercase tracking-[0.3em] text-ink-400 font-normal">
+              <Link to="/contacto" className="transition-colors hover:text-white">
+                Contacto
+              </Link>
+            </h5>
             <ul className="space-y-3">
               {[['WhatsApp','#'],['Email','#'],['Oficina','#'],['IG','#'],['LI','#'],['YT','#'],['TT','#']].map(([label, href]) => (
                 <li key={label}><a href={href} className="text-[13px] text-ink-300 hover:text-white transition-colors">{label}</a></li>
               ))}
             </ul>
           </div>
+        </div>
+      </div>
+
+      <div className="border-t border-ink-800">
+        <div className="container-app py-8 flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
+          <p className="text-[10px] uppercase tracking-[0.4em] text-ink-400 shrink-0">
+            Reconocimientos
+          </p>
+          <div className="hidden sm:block h-px flex-1 bg-ink-800" />
+          <img
+            src={certificationsBadges}
+            alt="Great Place to Work Certified &middot; Latin American Excellence"
+            className="h-16 md:h-20 object-contain"
+            loading="lazy"
+          />
         </div>
       </div>
 
