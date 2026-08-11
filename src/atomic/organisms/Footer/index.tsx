@@ -3,7 +3,7 @@ import { useState } from 'react';
 import logoFooter from '../../../../assets/home/012_home_footerlogo_DD.png';
 import logoDiegoWatermark from '../../../../assets/home/010_home_logo_fotter2_DD.png';
 import gptwBadge from '../../../../assets/certifications/gptw.png';
-import laqiBadge from '../../../../assets/certifications/laqi.png';
+import latinBadge from '../../../../assets/certifications/latin-excellence.png';
 
 export default function Footer() {
   const [email, setEmail] = useState('');
@@ -105,27 +105,33 @@ export default function Footer() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-            {/* Great Place to Work — recorte tipo periódico */}
+            {/* Great Place to Work — badge oficial (fondo blanco propio) */}
             <div className="flex items-center gap-6">
-              <div className="bg-cream p-3 shadow-[0_2px_0_0_rgba(0,0,0,0.35)] shrink-0">
-                <img src={gptwBadge} alt="Great Place to Work Certified" className="h-24 w-auto object-contain block" loading="lazy" />
-              </div>
+              <img
+                src={gptwBadge}
+                alt="Great Place to Work Certificada · México · Sept 2025 – Sept 2026"
+                className="h-28 w-auto object-contain block shrink-0"
+                loading="lazy"
+              />
               <div className="min-w-0">
                 <p className="text-[9px] uppercase tracking-[0.35em] text-ink-500 mb-1">Certificada</p>
-                <p className="font-serif text-[18px] leading-tight text-white">Great Place to Work</p>
-                <p className="text-[11px] text-ink-400 mt-0.5">Cultura empresarial certificada</p>
+                <p className="font-serif text-[18px] leading-tight text-white">Great Place to Work<sup className="text-[10px] align-super">®</sup></p>
+                <p className="text-[11px] text-ink-400 mt-0.5">México &middot; Sept 2025 – Sept 2026</p>
               </div>
             </div>
 
-            {/* Latin American Quality Institute — recorte tipo periódico */}
+            {/* Latin American Excellence in Law — Silver Seal 2025 (metal, luce mejor sin caja) */}
             <div className="flex items-center gap-6">
-              <div className="bg-white p-4 shadow-[0_2px_0_0_rgba(0,0,0,0.35)] shrink-0 flex items-center justify-center h-24 w-40">
-                <img src={laqiBadge} alt="Latin American Quality Institute" className="max-h-full max-w-full object-contain block" loading="lazy" />
-              </div>
+              <img
+                src={latinBadge}
+                alt="Latin American Excellence in Law Awards — Silver Seal 2025"
+                className="h-28 w-28 object-contain block shrink-0"
+                loading="lazy"
+              />
               <div className="min-w-0">
                 <p className="text-[9px] uppercase tracking-[0.35em] text-ink-500 mb-1">Galardonada</p>
-                <p className="font-serif text-[18px] leading-tight text-white">Latin American Quality Institute</p>
-                <p className="text-[11px] text-ink-400 mt-0.5">Cruz de Malta a la excelencia</p>
+                <p className="font-serif text-[18px] leading-tight text-white">Latin American Excellence<br /><span className="text-ink-300 text-[15px]">in Law Awards</span></p>
+                <p className="text-[11px] text-ink-400 mt-1">Silver Seal 2025</p>
               </div>
             </div>
           </div>
