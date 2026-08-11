@@ -97,36 +97,36 @@ export default function Footer() {
 
       {/* Certificaciones — franja compacta */}
       <div className="border-t border-ink-800">
-        <div className="container-app py-5">
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
+        <div className="container-app py-8">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10">
             <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-ink-500 shrink-0">
               Distinciones 2025 – 2026
             </span>
-            <div className="hidden md:block h-8 w-px bg-ink-800" />
-            <div className="flex items-center gap-6 md:gap-8">
-              <div className="flex items-center gap-3">
+            <div className="hidden md:block h-14 w-px bg-ink-800" />
+            <div className="flex items-center gap-8 md:gap-10">
+              <div className="flex items-center gap-4">
                 <img
                   src={gptwBadge}
                   alt="Great Place to Work Certificada · México · Sept 2025 – Sept 2026"
-                  className="h-12 w-auto object-contain"
+                  className="h-20 w-auto object-contain"
                   loading="lazy"
                 />
                 <div className="leading-tight">
-                  <p className="font-serif text-[13px] text-white">Great Place to Work<sup className="text-[8px] ml-0.5">®</sup></p>
-                  <p className="text-[10px] text-ink-500">Certificada · Sept 2025 – Sept 2026</p>
+                  <p className="font-serif text-[16px] text-white">Great Place to Work<sup className="text-[9px] ml-0.5">®</sup></p>
+                  <p className="text-[11px] text-ink-400 mt-0.5">Certificada · Sept 2025 – Sept 2026</p>
                 </div>
               </div>
-              <div className="h-10 w-px bg-ink-800" />
-              <div className="flex items-center gap-3">
+              <div className="h-16 w-px bg-ink-800" />
+              <div className="flex items-center gap-4">
                 <img
                   src={latinBadge}
                   alt="Latin American Excellence in Law Awards — Silver Seal 2025"
-                  className="h-12 w-12 object-contain"
+                  className="h-20 w-20 object-contain"
                   loading="lazy"
                 />
                 <div className="leading-tight">
-                  <p className="font-serif text-[13px] text-white">Latin American Excellence <span className="italic text-ink-300">in Law</span></p>
-                  <p className="text-[10px] text-ink-500">Silver Seal · Edici&oacute;n 2025</p>
+                  <p className="font-serif text-[16px] text-white">Latin American Excellence <span className="italic text-ink-300">in Law</span></p>
+                  <p className="text-[11px] text-ink-400 mt-0.5">Silver Seal · Edici&oacute;n 2025</p>
                 </div>
               </div>
             </div>
