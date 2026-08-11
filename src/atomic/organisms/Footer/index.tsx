@@ -95,76 +95,41 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Certificaciones — presentación editorial */}
-      <div className="border-t border-ink-800 bg-gradient-to-b from-ink-900 to-ink-950">
-        <div className="container-app py-16 lg:py-20">
-          {/* Encabezado tipo periódico */}
-          <div className="text-center mb-12">
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <div className="h-px w-16 bg-ink-600" />
-              <span className="font-mono text-[10px] uppercase tracking-[0.45em] text-ink-400">
-                Distinciones 2025 – 2026
-              </span>
-              <div className="h-px w-16 bg-ink-600" />
-            </div>
-            <h3 className="font-serif italic text-[28px] md:text-[34px] leading-tight text-white">
-              Reconocimientos que respaldan
-              <br />
-              nuestro trabajo
-            </h3>
-            <p className="text-[12px] text-ink-400 mt-3 max-w-md mx-auto tracking-wide">
-              Certificaciones internacionales que avalan la cultura y la excelencia profesional de la firma.
-            </p>
-          </div>
-
-          {/* Sellos sobre pedestal */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {/* Great Place to Work */}
-            <figure className="group relative bg-ink-800/40 border border-ink-700/60 hover:border-ink-500 transition-all duration-300 p-8 text-center">
-              <span className="absolute top-4 left-4 font-mono text-[9px] uppercase tracking-[0.35em] text-ink-500">01</span>
-              <span className="absolute top-4 right-4 font-mono text-[9px] uppercase tracking-[0.35em] text-ink-500">MX</span>
-              <div className="flex items-center justify-center h-40 mb-6">
+      {/* Certificaciones — franja compacta */}
+      <div className="border-t border-ink-800">
+        <div className="container-app py-5">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
+            <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-ink-500 shrink-0">
+              Distinciones 2025 – 2026
+            </span>
+            <div className="hidden md:block h-8 w-px bg-ink-800" />
+            <div className="flex items-center gap-6 md:gap-8">
+              <div className="flex items-center gap-3">
                 <img
                   src={gptwBadge}
                   alt="Great Place to Work Certificada · México · Sept 2025 – Sept 2026"
-                  className="h-40 w-auto object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.45)] transition-transform duration-300 group-hover:scale-[1.03]"
+                  className="h-12 w-auto object-contain"
                   loading="lazy"
                 />
+                <div className="leading-tight">
+                  <p className="font-serif text-[13px] text-white">Great Place to Work<sup className="text-[8px] ml-0.5">®</sup></p>
+                  <p className="text-[10px] text-ink-500">Certificada · Sept 2025 – Sept 2026</p>
+                </div>
               </div>
-              <div className="pt-6 border-t border-ink-700/70">
-                <p className="text-[9px] uppercase tracking-[0.4em] text-ink-500 mb-2">Certificada</p>
-                <p className="font-serif text-[20px] leading-tight text-white">
-                  Great Place to Work<sup className="text-[10px] align-super ml-0.5">®</sup>
-                </p>
-                <p className="text-[11px] text-ink-400 mt-1.5 tracking-wide">
-                  Septiembre 2025 &mdash; Septiembre 2026
-                </p>
-              </div>
-            </figure>
-
-            {/* Latin American Excellence in Law — Silver Seal */}
-            <figure className="group relative bg-ink-800/40 border border-ink-700/60 hover:border-ink-500 transition-all duration-300 p-8 text-center">
-              <span className="absolute top-4 left-4 font-mono text-[9px] uppercase tracking-[0.35em] text-ink-500">02</span>
-              <span className="absolute top-4 right-4 font-mono text-[9px] uppercase tracking-[0.35em] text-ink-500">LATAM</span>
-              <div className="flex items-center justify-center h-40 mb-6">
+              <div className="h-10 w-px bg-ink-800" />
+              <div className="flex items-center gap-3">
                 <img
                   src={latinBadge}
                   alt="Latin American Excellence in Law Awards — Silver Seal 2025"
-                  className="h-40 w-40 object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.45)] transition-transform duration-300 group-hover:scale-[1.03]"
+                  className="h-12 w-12 object-contain"
                   loading="lazy"
                 />
+                <div className="leading-tight">
+                  <p className="font-serif text-[13px] text-white">Latin American Excellence <span className="italic text-ink-300">in Law</span></p>
+                  <p className="text-[10px] text-ink-500">Silver Seal · Edici&oacute;n 2025</p>
+                </div>
               </div>
-              <div className="pt-6 border-t border-ink-700/70">
-                <p className="text-[9px] uppercase tracking-[0.4em] text-ink-500 mb-2">Galardonada</p>
-                <p className="font-serif text-[20px] leading-tight text-white">
-                  Latin American Excellence
-                  <span className="block text-ink-300 text-[15px] italic mt-0.5">in Law Awards</span>
-                </p>
-                <p className="text-[11px] text-ink-400 mt-1.5 tracking-wide">
-                  Silver Seal &middot; Edici&oacute;n 2025
-                </p>
-              </div>
-            </figure>
+            </div>
           </div>
         </div>
       </div>
