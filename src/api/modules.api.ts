@@ -24,3 +24,9 @@ export const addLessonToModule = (
   input: { title: string; videoUrl?: string; duration?: number; content?: string },
 ): Promise<Lesson> =>
   client.post<ApiResponse<Lesson>>(`/modules/${moduleId}/lessons`, input).then((r) => r.data);
+
+export const updateLesson = (courseId: string, id: string, data: Partial<Lesson>): Promise<Lesson> =>
+  client.put<ApiResponse<Lesson>>(`/courses/${courseId}/lessons/${id}`, data).then((r) => r.data);
+
+export const deleteLesson = (courseId: string, id: string): Promise<void> =>
+  client.delete<void>(`/courses/${courseId}/lessons/${id}`);

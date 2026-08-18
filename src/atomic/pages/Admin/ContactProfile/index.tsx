@@ -3,7 +3,8 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useUser, useUpdateUser, useSendPassword, useUpdateNotes, useAssignTag, useRemoveTag, useToggleUserActive } from '@hooks/useUsers';
 import { useTags } from '@hooks/useTags';
 import { usePackages, useAssignPackage } from '@hooks/usePackages';
-import type { Tag, Package } from '@t/index';
+import { useAssignOffer, useOffers } from '@hooks/useOffers';
+import type { Course, Offer, Package, Tag } from '@t/index';
 
 type TabKey = 'lifecycle' | 'info' | 'purchases' | 'products' | 'notes';
 const TABS: { k: TabKey; label: string }[] = [
@@ -24,6 +25,7 @@ export default function ContactProfile() {
   const [editing, setEditing] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [showAssignPkg, setShowAssignPkg] = useState(false);
+  const [showAssignOffer, setShowAssignOffer] = useState(false);
 
   if (isLoading) return <p className="text-sm text-ink-500">Cargando contacto…</p>;
   if (!contact) return <p className="text-sm text-ink-500">Contacto no encontrado.</p>;
@@ -46,6 +48,9 @@ export default function ContactProfile() {
             </button>
             <button onClick={() => setShowAssignPkg(true)} className="text-[10px] uppercase tracking-[0.3em] bg-ink-900 text-cream hover:bg-ink-800 px-4 py-2.5 cursor-pointer">
               + Asignar paquete
+            </button>
+            <button onClick={() => setShowAssignOffer(true)} className="text-[10px] uppercase tracking-[0.3em] bg-ink-900 text-cream hover:bg-ink-800 px-4 py-2.5 cursor-pointer">
+              + Asignar oferta
             </button>
             <SendPasswordButton id={id} />
             <button onClick={() => setShowMore((s) => !s)} className="text-[10px] uppercase tracking-[0.3em] border border-ink-900/20 hover:border-ink-900 px-4 py-2.5 cursor-pointer">
@@ -92,7 +97,7 @@ export default function ContactProfile() {
           {tab === 'lifecycle' && <LifecycleTab contact={contact} />}
           {tab === 'info'      && <InfoTab contact={contact} />}
           {tab === 'purchases' && <PurchasesTab orders={contact.orders} />}
-          {tab === 'products'  && <ProductsTab courseIds={contact.enrolledCourses} />}
+          {tab === 'products'  && <ProductsTab courses={contact.enrolledCourses as any} offers={(contact as any).assignedOffers ?? []} />}
           {tab === 'notes'     && <NotesTab id={id} initial={contact.notes ?? ''} />}
         </section>
 
@@ -104,6 +109,49 @@ export default function ContactProfile() {
 
       {editing && <EditModal id={id} contact={contact} onClose={() => setEditing(false)} />}
       {showAssignPkg && <AssignPackageModal userId={id} packages={allPackages} onClose={() => setShowAssignPkg(false)} />}
+      {showAssignOffer && <AssignOfferModal userId={id} onClose={() => setShowAssignOffer(false)} />}
+    </div>
+  );
+}
+
+function AssignOfferModal({ userId, onClose }: { userId: string; onClose: () => void }) {
+  const { data: offers = [] } = useOffers();
+  const assign = useAssignOffer();
+  const [selected, setSelected] = useState('');
+  const available = offers.filter((offer) => offer.status !== 'archived');
+
+  return (
+    <div className="fixed inset-0 z-50 bg-ink-900/40 flex items-center justify-center p-6">
+      <div className="w-full max-w-md bg-cream border border-ink-900/20 shadow-xl p-7" style={{ animation: 'paper-unfold 320ms ease-out both' }}>
+        <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-2">Academia</p>
+        <h3 className="font-serif text-2xl text-ink-900 mb-1">Asignar oferta</h3>
+        <p className="text-sm text-ink-600 mb-5">Otorga el acceso configurado en la oferta: cursos completos o modulos de prueba.</p>
+
+        <div className="space-y-2 max-h-72 overflow-y-auto border border-ink-900/15 p-2 bg-cream-100 mb-4">
+          {available.map((offer) => (
+            <label key={offer._id} className={`flex items-start gap-3 p-3 cursor-pointer border ${selected === offer._id ? 'border-ink-900 bg-cream-200' : 'border-transparent hover:bg-cream-200/60'}`}>
+              <input type="radio" name="offer" value={offer._id} checked={selected === offer._id} onChange={() => setSelected(offer._id)} className="mt-1" />
+              <div className="flex-1 min-w-0">
+                <p className="font-serif text-lg text-ink-900">{offer.title}</p>
+                <p className="text-xs text-ink-500">{offer.type === 'trial' ? 'Prueba por modulos' : 'Oferta normal'} · {offer.content.length} producto{offer.content.length === 1 ? '' : 's'}</p>
+              </div>
+              <p className="font-serif text-lg text-ink-900">${offer.price}</p>
+            </label>
+          ))}
+          {available.length === 0 && <p className="p-5 text-center text-sm text-ink-500">Aun no hay ofertas creadas.</p>}
+        </div>
+
+        <div className="flex gap-2">
+          <button onClick={onClose} className="flex-1 text-[10px] uppercase tracking-[0.3em] border border-ink-900/20 hover:border-ink-900 py-2.5 cursor-pointer">Cancelar</button>
+          <button
+            onClick={() => selected && assign.mutate({ offerId: selected, userIds: [userId] }, { onSuccess: onClose })}
+            disabled={!selected || assign.isPending}
+            className="btn-broadsheet flex-1 disabled:opacity-50"
+          >
+            {assign.isPending ? 'Asignando...' : 'Asignar'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -287,22 +335,50 @@ function PurchasesTab({ orders }: { orders: any[] }) {
   );
 }
 
-function ProductsTab({ courseIds }: { courseIds: string[] }) {
-  if (!courseIds?.length) return <p className="text-sm text-ink-500 p-8 text-center border border-dashed border-ink-900/15">Sin productos otorgados.</p>;
+function ProductsTab({ courses, offers }: { courses: Array<string | Course>; offers: Offer[] }) {
+  if (!courses?.length && !offers?.length) return <p className="text-sm text-ink-500 p-8 text-center border border-dashed border-ink-900/15">Sin productos otorgados.</p>;
   return (
-    <ul className="border border-ink-900/15 bg-cream-100 divide-y divide-ink-900/10">
-      {courseIds.map((c) => (
-        <li key={c} className="px-5 py-4 flex items-center gap-4">
+    <div className="space-y-5">
+      {offers.length > 0 && (
+        <section>
+          <p className="text-[10px] uppercase tracking-[0.32em] text-ink-500 mb-3">Ofertas asignadas</p>
+          <ul className="border border-ink-900/15 bg-cream-100 divide-y divide-ink-900/10">
+            {offers.map((offer) => (
+              <li key={offer._id} className="px-5 py-4 flex items-center gap-4">
+                <div className="w-14 h-14 bg-ink-900 text-cream border border-ink-900/15 flex items-center justify-center text-[10px] uppercase tracking-[0.28em]">
+                  {offer.type === 'trial' ? 'Test' : 'Oferta'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-ink-900 truncate">{offer.title}</p>
+                  <p className="text-[10px] uppercase tracking-[0.28em] text-ink-500">{offer.content.length} producto{offer.content.length === 1 ? '' : 's'}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section>
+        <p className="text-[10px] uppercase tracking-[0.32em] text-ink-500 mb-3">Cursos disponibles</p>
+        <ul className="border border-ink-900/15 bg-cream-100 divide-y divide-ink-900/10">
+      {courses.map((course) => {
+        const courseId = typeof course === 'string' ? course : course._id || course.id || course.slug;
+        const title = typeof course === 'string' ? course : course.title;
+        return (
+        <li key={courseId} className="px-5 py-4 flex items-center gap-4">
           <div className="w-14 h-14 bg-cream-200 border border-ink-900/15 flex items-center justify-center text-[10px] uppercase tracking-[0.28em] text-ink-500">
             Curso
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-ink-900 truncate">{c}</p>
+            <p className="text-sm font-semibold text-ink-900 truncate">{title}</p>
             <p className="text-[10px] uppercase tracking-[0.28em] text-ink-500">Acceso completo</p>
           </div>
         </li>
-      ))}
-    </ul>
+        );
+      })}
+        </ul>
+      </section>
+    </div>
   );
 }
 

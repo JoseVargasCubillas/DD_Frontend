@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 
-// Registro público desactivado — solo el admin crea cuentas y envía credenciales por email.
+// El registro público está deshabilitado: solo el administrador crea cuentas.
 export default function Register() {
   return <Navigate to="/iniciar-sesion" replace />;
 }

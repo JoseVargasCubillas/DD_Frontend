@@ -10,9 +10,13 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
   const { _retry, headers: extraHeaders, ...fetchOptions } = options;
 
   const token = useAuthStore.getState().accessToken;
+  const refreshToken = useAuthStore.getState().refreshToken;
+  const isAuthRequest = path.startsWith('/auth/login') || path.startsWith('/auth/register') || path.startsWith('/auth/refresh');
+
+  const isFormData = fetchOptions.body instanceof FormData;
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(extraHeaders as Record<string, string>),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
@@ -23,9 +27,8 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
     credentials: 'include',
   });
 
-  if (res.status === 401 && !_retry) {
+  if (res.status === 401 && !_retry && refreshToken && !isAuthRequest) {
     try {
-      const refreshToken = useAuthStore.getState().refreshToken;
       const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -66,13 +69,37 @@ export const client = {
     request<T>(buildUrl(path, params)),
 
   post: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: 'POST', body: body !== undefined ? JSON.stringify(body) : undefined }),
+    request<T>(path, {
+      method: 'POST',
+      body:
+        body instanceof FormData
+          ? body
+          : body !== undefined
+            ? JSON.stringify(body)
+            : undefined,
+    }),
 
   put: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: 'PUT', body: body !== undefined ? JSON.stringify(body) : undefined }),
+    request<T>(path, {
+      method: 'PUT',
+      body:
+        body instanceof FormData
+          ? body
+          : body !== undefined
+            ? JSON.stringify(body)
+            : undefined,
+    }),
 
   patch: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: 'PATCH', body: body !== undefined ? JSON.stringify(body) : undefined }),
+    request<T>(path, {
+      method: 'PATCH',
+      body:
+        body instanceof FormData
+          ? body
+          : body !== undefined
+            ? JSON.stringify(body)
+            : undefined,
+    }),
 
   delete: <T>(path: string) =>
     request<T>(path, { method: 'DELETE' }),

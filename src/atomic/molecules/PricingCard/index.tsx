@@ -12,7 +12,7 @@ interface PricingCardProps {
 
 export default function PricingCard({ plan, price, currency = 'MXN', period = '/mes', features, highlighted = false, onSelect }: PricingCardProps) {
   return (
-    <div className={`card p-6 flex flex-col gap-5 ${highlighted ? 'border-brand-500 relative' : ''}`}>
+    <div className="card card-lift relative p-6 flex flex-col gap-5 transition-colors hover:border-brand-500 focus-within:border-brand-500">
       {highlighted && (
         <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-500 text-white text-xs font-bold px-4 py-1 rounded-full">
           Más popular

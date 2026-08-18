@@ -13,16 +13,12 @@ export const useAuth = () => {
     onSuccess: (data) => {
       setAuth(data);
       toast.success(`Bienvenido, ${data.user.name}`);
-      navigate(data.user.role === 'admin' ? '/admin' : '/mi-cuenta', { replace: true });
+      navigate(data.user.role === 'admin' ? '/admin' : '/mi-cuenta');
     },
     onError: () => toast.error('Credenciales incorrectas'),
   });
 
-  const logout = () => {
-    storeLogout();
-    toast.success('Sesión cerrada');
-    navigate('/iniciar-sesion', { replace: true });
-  };
+  const logout = () => { storeLogout(); toast.success('Sesión cerrada'); navigate('/'); };
 
   return {
     user,

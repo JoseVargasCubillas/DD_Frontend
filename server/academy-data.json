@@ -1,0 +1,237 @@
+{
+  "users": [
+    {
+      "_id": "usr_admin",
+      "id": "usr_admin",
+      "name": "Admin Academia",
+      "email": "admin@diegodiaz.mx",
+      "password": "admin123",
+      "role": "admin",
+      "avatar": "",
+      "phone": "",
+      "bio": "",
+      "plan": "enterprise",
+      "enrolledCourses": [
+        "crs_fiscal_2026"
+      ],
+      "tagIds": [],
+      "notes": "",
+      "contactStatus": "customer",
+      "marketingStatus": "subscribed",
+      "signInCount": 2,
+      "isActive": true,
+      "isEmailVerified": true,
+      "createdAt": "2026-07-03T22:07:46.806Z",
+      "lastLogin": "2026-07-03T22:17:09.741Z"
+    },
+    {
+      "_id": "usr_demo",
+      "id": "usr_demo",
+      "name": "Alumno Demo",
+      "email": "alumno@diegodiaz.mx",
+      "password": "demo123",
+      "role": "user",
+      "avatar": "",
+      "phone": "",
+      "bio": "",
+      "plan": "pro",
+      "enrolledCourses": [
+        "crs_fiscal_2026"
+      ],
+      "tagIds": [],
+      "notes": "",
+      "contactStatus": "customer",
+      "marketingStatus": "subscribed",
+      "signInCount": 0,
+      "isActive": true,
+      "isEmailVerified": true,
+      "createdAt": "2026-07-03T22:07:46.806Z"
+    }
+  ],
+  "courses": [
+    {
+      "_id": "crs_fiscal_2026",
+      "id": "crs_fiscal_2026",
+      "title": "Estrategia Fiscal 2026",
+      "slug": "estrategia-fiscal-2026",
+      "description": "Programa base de Academia para aprender estrategia fiscal mexicana con criterio empresarial.",
+      "shortDescription": "Estrategia fiscal aplicada para empresarios y contadores.",
+      "thumbnail": "",
+      "previewVideo": "",
+      "price": 2499,
+      "salePrice": 1999,
+      "currency": "MXN",
+      "category": "Academia",
+      "tags": [
+        "fiscal",
+        "empresa"
+      ],
+      "level": "advanced",
+      "status": "published",
+      "instructor": "usr_admin",
+      "totalDuration": 42,
+      "totalLessons": 1,
+      "enrolledCount": 2,
+      "rating": 5,
+      "isFeatured": true,
+      "requirements": [],
+      "whatYouLearn": [
+        "Diseñar estructuras fiscales sanas",
+        "Identificar riesgos comunes",
+        "Crear una ruta de optimización"
+      ],
+      "createdAt": "2026-07-03T22:07:46.806Z",
+      "courseType": "evergreen",
+      "primaryColor": "#171717",
+      "accentColor": "#78562a"
+    }
+  ],
+  "modules": [
+    {
+      "_id": "mod_intro",
+      "id": "mod_intro",
+      "courseId": "crs_fiscal_2026",
+      "title": "Bienvenida",
+      "slug": "bienvenida",
+      "description": "Primeros pasos dentro de la Academia.",
+      "order": 1,
+      "lessonIds": [
+        "les_bienvenida"
+      ],
+      "isPublished": true,
+      "createdAt": "2026-07-03T22:07:46.806Z"
+    }
+  ],
+  "lessons": [
+    {
+      "_id": "les_bienvenida",
+      "id": "les_bienvenida",
+      "title": "Cómo usar la Academia",
+      "slug": "como-usar-la-academia",
+      "course": "crs_fiscal_2026",
+      "moduleId": "mod_intro",
+      "order": 1,
+      "description": "Recorrido inicial por el contenido y la forma de estudiar.",
+      "videoUrl": "",
+      "duration": 42,
+      "content": "<p>Bienvenido a la Academia. Esta lección confirma que el flujo de cursos, módulos y lecciones está conectado.</p>",
+      "resources": [
+        {
+          "name": "Guía de inicio",
+          "url": "https://diegodiaz.mx"
+        }
+      ],
+      "isPreview": true,
+      "isFree": true,
+      "mediaType": "none",
+      "isPublished": true,
+      "commentsVisibility": "visible"
+    }
+  ],
+  "tags": [
+    {
+      "_id": "tag_cliente",
+      "id": "tag_cliente",
+      "name": "Cliente",
+      "slug": "cliente",
+      "color": "#78562a",
+      "description": "Cliente activo",
+      "contactsCount": 2,
+      "createdAt": "2026-07-03T22:07:46.806Z"
+    }
+  ],
+  "packages": [],
+  "promotions": [],
+  "offers": [
+    {
+      "_id": "off_academia_entrepreneur",
+      "id": "off_academia_entrepreneur",
+      "title": "Academia Entrepreneur",
+      "slug": "academia-entrepreneur",
+      "description": "Plan mensual Entrepreneur de la Academia.",
+      "type": "standard",
+      "status": "published",
+      "price": 4997,
+      "currency": "MXN",
+      "paymentType": "subscription",
+      "stripePriceId": "",
+      "plan": "entrepreneur",
+      "content": [
+        {
+          "courseId": "crs_fiscal_2026",
+          "access": "full",
+          "moduleIds": []
+        }
+      ],
+      "assignedUserIds": [
+        "usr_admin",
+        "usr_demo"
+      ],
+      "startsAt": null,
+      "expiresAt": null,
+      "createdAt": "2026-07-03T22:07:46.806Z"
+    },
+    {
+      "_id": "off_academia_plus",
+      "id": "off_academia_plus",
+      "title": "Academia +",
+      "slug": "academia-plus",
+      "description": "Plan mensual Academia +.",
+      "type": "standard",
+      "status": "published",
+      "price": 14997,
+      "currency": "MXN",
+      "paymentType": "subscription",
+      "stripePriceId": "",
+      "plan": "plus",
+      "content": [
+        {
+          "courseId": "crs_fiscal_2026",
+          "access": "full",
+          "moduleIds": []
+        }
+      ],
+      "assignedUserIds": [
+        "usr_admin",
+        "usr_demo"
+      ],
+      "startsAt": null,
+      "expiresAt": null,
+      "createdAt": "2026-07-03T22:07:46.806Z"
+    },
+    {
+      "_id": "off_academia_master",
+      "id": "off_academia_master",
+      "title": "Academia Master",
+      "slug": "academia-master",
+      "description": "Plan mensual Master de la Academia.",
+      "type": "standard",
+      "status": "published",
+      "price": 49997,
+      "currency": "MXN",
+      "paymentType": "subscription",
+      "stripePriceId": "",
+      "plan": "master",
+      "content": [
+        {
+          "courseId": "crs_fiscal_2026",
+          "access": "full",
+          "moduleIds": []
+        }
+      ],
+      "assignedUserIds": [
+        "usr_admin",
+        "usr_demo"
+      ],
+      "startsAt": null,
+      "expiresAt": null,
+      "createdAt": "2026-07-03T22:07:46.806Z"
+    }
+  ],
+  "blog": [],
+  "orders": [],
+  "subscriptions": [],
+  "comments": [],
+  "emailLogs": [],
+  "webhookEvents": []
+}

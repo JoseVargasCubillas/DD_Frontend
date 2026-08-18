@@ -1,57 +1,49 @@
 import { Link } from 'react-router-dom';
 import { useHeroReveal, useReveal } from '@hooks/useReveal';
 
-const columns = [
+const mono = 'font-mono text-[11px] uppercase tracking-[0.18em] text-ink-900/45';
+const border = 'border-ink-900/10';
+
+const ideas = [
   {
-    num: '01',
+    n: '01',
     title: 'Aquí aprendes.',
-    description:
-      'En diegodiaz.mx encuentras contenido gratuito, eventos, academia y la voz pública de Diego. Es la puerta de entrada del ecosistema.',
+    body: 'En diegodiaz.mx encuentras contenido gratuito, eventos, academia y la voz pública de Diego. Es quien te enseña acerca del mundo contable, jurídico y financiero.',
   },
   {
-    num: '02',
+    n: '02',
     title: 'Allá te atienden.',
-    description:
-      'En diazlara.mx opera el despacho. Es donde se contratan los servicios profesionales: defensa, dictamen, estructuras y patrimonio.',
+    body: 'En diazlara.mx opera la firma. Es donde se contratan los servicios profesionales: defensa, dictamen, estructuras y patrimonial.',
   },
   {
-    num: '03',
+    n: '03',
     title: 'Mismo estándar.',
-    description:
-      'Diego Díaz lidera la firma. Lo que escuches aquí es lo mismo que aplica el despacho en cada caso. Sólo cambia el canal.',
+    body: 'Diego Díaz lidera la firma. Lo que escuchas aquí es aplicado y respaldado por metodologías en cada caso. Solo cambia el canal.',
   },
 ];
 
-const stayHere = [
-  'Quieres aprender fiscal sin asesor todavía',
-  'Te interesa la academia o un evento',
-  'Quieres leer casos y artículos',
-  'Necesitas un diagnóstico inicial gratuito',
-  'Eres contador y quieres especializarte',
+const here = [
+  'Quieres tener bases fiscales, contables y jurídicas',
+  'Te interesa ser parte de la academia o un evento',
+  'Quieres leer y mantenerte actualizado',
+  'Necesitas un diagnóstico inicial',
+  'Eres un profesional que quieres especializarte',
 ];
 
-const goToDespacho = [
-  'Has recibido cartas o requerimientos del SAT',
+const there = [
+  'Recibiste cartas o requerimientos del SAT',
   'Necesitas diseñar una estructura legal',
   'Vas a hacer una operación corporativa',
   'Quieres una opinión legal por escrito',
-  'Buscas defensa o litigio fiscal',
+  'Buscas blindar tu patrimonio',
 ];
 
 export default function DiazLara() {
-  const heroRef   = useHeroReveal();
-  const cardRef   = useReveal<HTMLDivElement>(0.05);
-  const bridgeRef = useHeroReveal();
-  const colsRef   = useReveal();
-  const gateRef   = useReveal();
-  const panelsRef = useReveal();
-  const bioRef    = useReveal();
-  const ctaRef    = useHeroReveal();
+  const heroRef = useHeroReveal();
+  const cardRef = useReveal<HTMLDivElement>(0.05);
 
   return (
     <div className="bg-cream-50 text-ink-900">
-
-      {/* ── 01 HERO ─────────────────────────────────── */}
       <section className="border-b border-cream-400 bg-cream-100">
         <div className="mx-auto max-w-[1184px] px-5 pb-20 pt-16 sm:px-8 lg:px-0 lg:pb-[88px] lg:pt-[80px]">
           <div className="flex items-center justify-between border-b border-cream-400 pb-7 text-[10px] uppercase tracking-[0.24em] text-ink-400">
@@ -95,38 +87,28 @@ export default function DiazLara() {
               </div>
             </div>
 
-            {/* Website preview card */}
             <div
               ref={cardRef}
               className="fade-up lg:pt-16"
               style={{ transitionDelay: '500ms' }}
             >
-              {/* Float wrapper — bobs up/down after card fades in */}
               <div className="dl-card-float">
-                {/* Window wrapper — perspective tilt on hover */}
                 <div className="dl-card-window shadow-[0_32px_80px_-12px_rgba(10,10,10,0.13)]">
-
-                  {/* Browser chrome — macOS traffic lights */}
                   <div className="group flex cursor-default items-center gap-2 border border-b-0 border-cream-400 bg-cream-200 px-5 py-3.5">
-                    {/* Red · close */}
                     <span className="relative h-3 w-3 rounded-full bg-cream-400 transition-colors duration-200 group-hover:bg-[#FF5F57]">
-                      <span className="absolute inset-0 flex items-center justify-center text-[6px] font-bold leading-none text-[#930000] opacity-0 transition-opacity duration-200 group-hover:opacity-100">✕</span>
+                      <span className="absolute inset-0 flex items-center justify-center text-[6px] font-bold leading-none text-[#930000] opacity-0 transition-opacity duration-200 group-hover:opacity-100">x</span>
                     </span>
-                    {/* Yellow · minimize */}
                     <span className="relative h-3 w-3 rounded-full bg-cream-400 transition-colors duration-200 group-hover:bg-[#FFBD2E]">
-                      <span className="absolute inset-0 flex items-center justify-center text-[6px] font-bold leading-none text-[#875800] opacity-0 transition-opacity duration-200 group-hover:opacity-100">−</span>
+                      <span className="absolute inset-0 flex items-center justify-center text-[6px] font-bold leading-none text-[#875800] opacity-0 transition-opacity duration-200 group-hover:opacity-100">-</span>
                     </span>
-                    {/* Green · maximize */}
                     <span className="relative h-3 w-3 rounded-full bg-cream-400 transition-colors duration-200 group-hover:bg-[#28C840]">
                       <span className="absolute inset-0 flex items-center justify-center text-[6px] font-bold leading-none text-[#006d14] opacity-0 transition-opacity duration-200 group-hover:opacity-100">+</span>
                     </span>
-                    {/* URL bar */}
                     <span className="ml-4 flex-1 rounded border border-cream-400 bg-cream-50 px-3 py-1 text-[10px] tracking-[0.06em] text-ink-400">
                       diazlara.mx
                     </span>
                   </div>
 
-                  {/* Page content preview */}
                   <div className="border border-cream-400 bg-cream-50 p-8 lg:p-10">
                     <p className="text-[9px] uppercase tracking-[0.28em] text-ink-400">
                       Fiscal · Patrimonial · Legal
@@ -149,7 +131,6 @@ export default function DiazLara() {
                       </a>
                     </div>
 
-                    {/* Stats bar */}
                     <div className="mt-7 grid grid-cols-3 border-t border-cream-400 pt-6">
                       {[
                         ['Defensa', 'Fiscal'],
@@ -165,7 +146,6 @@ export default function DiazLara() {
                   </div>
                 </div>
 
-                {/* Tag — moves with the float */}
                 <div className="mt-5 flex items-center gap-3">
                   <span className="h-px flex-1 bg-cream-400" />
                   <p className="text-[9px] uppercase tracking-[0.24em] text-ink-400">Sitio independiente · diazlara.mx</p>
@@ -177,161 +157,98 @@ export default function DiazLara() {
         </div>
       </section>
 
-      {/* ── 02 BRIDGE ───────────────────────────────── */}
-      <section id="bridge" className="border-b border-cream-400 bg-cream-50">
-        <div className="mx-auto max-w-[1184px] px-5 pb-20 pt-16 sm:px-8 lg:px-0 lg:pb-[92px] lg:pt-[88px]">
-          <div ref={bridgeRef} className="hero-reveal">
-            <h2 className="dl-bridge-title max-w-[780px] font-normal leading-[0.92] tracking-[-0.05em]">
-              <span className="line-mask"><span>Dos sitios.</span></span>
-              <span className="line-mask italic-late font-serif italic tracking-[-0.065em]">
-                <span>Un mismo equipo.</span>
-              </span>
-              <span className="line-mask follow-late"><span>Cero confusión.</span></span>
-            </h2>
-          </div>
+      <section id="bridge" className="container-app py-24">
+        <div className={`${mono} flex justify-between border-b ${border} pb-8`}>
+          <span>- 02 / Cómo funciona</span>
+          <span>El ecosistema en tres ideas</span>
+        </div>
+        <h2 className="mt-10 max-w-[1050px] text-[clamp(54px,8vw,104px)] font-light leading-[0.95] tracking-[-0.06em]">
+          Dos sitios. Un mismo equipo. Cero confusión.
+        </h2>
+        <div className={`mt-14 grid border-t ${border} lg:grid-cols-3`}>
+          {ideas.map((item) => (
+            <div key={item.n} className={`border-b ${border} py-12 lg:border-b-0 lg:border-r lg:last:border-r-0 lg:px-10`}>
+              <p className={mono}>— {item.n}</p>
+              <h3 className="mt-6 text-[34px] tracking-[-0.04em]">{item.title}</h3>
+              <p className="mt-5 text-[17px] leading-relaxed text-ink-900/65">{item.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-          <div ref={colsRef} className="stagger-grid mt-14 grid border-l border-t border-cream-400 lg:grid-cols-3">
-            {columns.map((col, i) => (
-              <div
-                key={col.title}
-                data-s={String(i)}
-                className="border-b border-r border-cream-400 p-10 lg:p-12"
-              >
-                <p className="text-[10px] uppercase tracking-[0.28em] text-ink-400">{col.num} /</p>
-                <h3 className="mt-6 font-serif text-[26px] font-normal leading-[1.08] tracking-[-0.04em]">
-                  {col.title}
-                </h3>
-                <p className="mt-5 text-[14px] leading-[1.65] text-ink-500">{col.description}</p>
+      <section className="bg-cream-100 py-24">
+        <div className="container-app">
+          <div className={`${mono} flex justify-between border-b ${border} pb-8`}>
+            <span>- 03 / Diferencias</span>
+            <span>Qué resuelve cada uno</span>
+          </div>
+          <h2 className="mt-10 max-w-[860px] text-[clamp(48px,7vw,96px)] font-light leading-[0.95] tracking-[-0.06em]">
+            ¿En qué momento <span className="font-serif italic text-[#6b4f2a]">necesitas de una firma fiscal</span>?
+          </h2>
+          <div className="mt-16 grid gap-10 lg:grid-cols-2">
+            {[
+              ['— Aquí · diegodiaz.mx', 'Quédate aquí si...', 'Buscas formación, comunidad y entender tu situación antes de contratar a nadie.', here, 'Ver academia', '/academia'],
+              ['— Allá · diazlara.mx', 'Pasa a nuestra oficina si...', 'Ya tienes claro que necesitas un equipo profesional ejecutando contigo.', there, 'Ir a diazlara.mx ↗', 'https://diazlara.mx'],
+            ].map(([eyebrow, title, body, items, cta, href]) => (
+              <div key={title as string} className={`border ${border} bg-white p-9 lg:p-12`}>
+                <p className={mono}>{eyebrow as string}</p>
+                <h3 className="mt-4 font-serif text-[44px] leading-tight tracking-[-0.05em]">{title as string}</h3>
+                <p className="mt-4 max-w-[480px] text-[18px] leading-relaxed text-ink-900/65">{body as string}</p>
+                <ul className="mt-8 space-y-4 text-[17px] text-ink-900/75">
+                  {(items as string[]).map((item) => (
+                    <li key={item}>→ {item}</li>
+                  ))}
+                </ul>
+                {(href as string).startsWith('http') ? (
+                  <a className="mt-10 inline-block border-b border-ink-900 pb-1 text-sm font-medium" href={href as string} target="_blank" rel="noreferrer">
+                    {cta as string}
+                  </a>
+                ) : (
+                  <Link className="mt-10 inline-block border-b border-ink-900 pb-1 text-sm font-medium" to={href as string}>
+                    {cta as string}
+                  </Link>
+                )}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── 03 DECISION GATE ────────────────────────── */}
-      <section className="border-b border-cream-400 bg-cream-100">
-        <div className="mx-auto max-w-[1184px] px-5 pb-20 pt-16 sm:px-8 lg:px-0 lg:pb-[92px] lg:pt-[88px]">
-          <div ref={gateRef} className="fade-up">
-            <h2 className="dl-decision-title max-w-[700px] font-normal leading-[0.94] tracking-[-0.048em]">
-              ¿En qué momento
-              <span className="block font-serif italic tracking-[-0.062em]">cruzas el puente?</span>
-            </h2>
-          </div>
-
-          <div
-            ref={panelsRef}
-            className="stagger-grid mt-12 grid gap-px bg-cream-400 lg:grid-cols-2"
-          >
-            {/* Left — Quédate aquí */}
-            <div data-s="0" className="bg-cream-50 p-10 lg:p-14">
-              <h3 className="dl-panel-title font-serif font-normal leading-[1.06] tracking-[-0.04em]">
-                Quédate aquí si...
-              </h3>
-              <ul className="mt-9 space-y-5">
-                {stayHere.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-start gap-4 text-[14px] leading-[1.55] text-ink-600"
-                  >
-                    <span className="mt-0.5 shrink-0 text-[10px] text-ink-300">—</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Right — Pasa al despacho */}
-            <div data-s="1" className="bg-ink-900 p-10 lg:p-14">
-              <h3 className="dl-panel-title font-serif font-normal leading-[1.06] tracking-[-0.04em] text-white">
-                Pasa al despacho si...
-              </h3>
-              <ul className="mt-9 space-y-5">
-                {goToDespacho.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-start gap-4 text-[14px] leading-[1.55] text-white/65"
-                  >
-                    <span className="mt-0.5 shrink-0 text-[10px] text-white/28">—</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <a
-                href="https://diazlara.mx/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-10 inline-flex min-h-[48px] items-center bg-[#f3f0ea] px-7 text-[11px] uppercase tracking-[0.18em] text-ink-900 transition-colors hover:bg-white"
-              >
-                Ir al despacho ↗
-              </a>
-            </div>
-          </div>
+      <section className="container-app grid gap-16 py-24 lg:grid-cols-[0.9fr_1.1fr]">
+        <div>
+          <p className={mono}>— 04 / Identidad</p>
+          <h2 className="mt-8 max-w-[520px] font-serif text-[72px] leading-[0.95] tracking-[-0.06em]">
+            ¿Es el mismo Diego Díaz?
+          </h2>
+        </div>
+        <div className="max-w-[560px] text-[20px] leading-relaxed text-ink-900/68">
+          <p>
+            <strong className="text-ink-900">Sí.</strong> Esa separación nos permite cuidar dos cosas. Por un lado, mantener un espacio de divulgación abierto y honesto, sin que parezca un escaparate.
+          </p>
+          <p className="mt-6">
+            Por el otro, ofrecer un servicio profesional con la formalidad y los procesos que un despacho serio exige. Cuando contratas a Díaz Lara, el criterio que se aplica a tu caso es exactamente el mismo del que escuchas hablar a Diego aquí.
+          </p>
         </div>
       </section>
 
-      {/* ── 04 IDENTITY ─────────────────────────────── */}
-      <section className="border-b border-cream-400 bg-cream-50">
-        <div className="mx-auto max-w-[1184px] px-5 pb-20 pt-16 sm:px-8 lg:px-0 lg:pb-[92px] lg:pt-[88px]">
-          <div
-            ref={bioRef}
-            className="stagger-grid grid gap-12 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-[100px]"
-          >
-            <div data-s="0">
-              <h2 className="dl-bio-title font-normal leading-[0.96] tracking-[-0.05em]">
-                ¿Es el{' '}
-                <span className="font-serif italic tracking-[-0.065em]">mismo</span>
-                <span className="block">Diego Díaz?</span>
-              </h2>
-            </div>
-
-            <div data-s="1" className="flex flex-col justify-center">
-              <p className="text-[16px] leading-[1.72] text-ink-600">
-                Sí. Diego Díaz es el fundador y socio director del despacho Díaz Lara. La firma se llama así por una decisión de marca: separar la figura pública del Diego que da contenido, de la firma profesional que atiende clientes.
-              </p>
-              <p className="mt-6 text-[16px] leading-[1.72] text-ink-600">
-                Esa separación nos permite cuidar dos cosas. Por un lado, mantener un espacio de divulgación abierto y honesto, sin que parezca un escaparate. Por el otro, ofrecer un servicio profesional con la formalidad y los procesos que un despacho serio exige.
-              </p>
-              <p className="mt-6 text-[16px] leading-[1.72] text-ink-600">
-                Cuando contratas a Díaz Lara, el criterio que se aplica a tu caso es exactamente el mismo del que escuchas hablar a Diego aquí.
-              </p>
-            </div>
+      <section className="bg-ink-900 py-28 text-white">
+        <div className="container-app text-center">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/45">— 05 / Visita el despacho · diazlara.mx</p>
+          <h2 className="mt-8 font-serif text-[clamp(72px,12vw,160px)] italic leading-none tracking-[-0.08em]">Cruza el puente.</h2>
+          <p className="mx-auto mt-8 max-w-[620px] text-[20px] leading-relaxed text-white/70">
+            Te llevamos al sitio del despacho. Ahí podrás conocer los servicios, ver casos y agendar una llamada con el equipo.
+          </p>
+          <div className="mt-10 flex justify-center gap-4">
+            <a href="https://diazlara.mx" target="_blank" rel="noreferrer" className="bg-white px-7 py-4 text-sm font-medium text-ink-900">
+              Ir a diazlara.mx ↗
+            </a>
+            <Link to="/contacto" className="border border-white/25 px-7 py-4 text-sm font-medium">
+              Mejor agendar con Diego
+            </Link>
           </div>
+          <p className="mt-8 font-mono text-[11px] uppercase tracking-[0.18em] text-white/40">— Se abrirá en una pestaña nueva · https://diazlara.mx</p>
         </div>
       </section>
-
-      {/* ── 05 CTA ──────────────────────────────────── */}
-      <section className="bg-[#080808] text-white">
-        <div className="mx-auto flex min-h-[440px] max-w-[1184px] flex-col items-center justify-center px-5 py-20 sm:px-8 lg:min-h-[660px] lg:px-0 lg:py-[120px]">
-          <div ref={ctaRef} className="hero-reveal flex w-full flex-col items-center text-center">
-            <h2 className="dl-cta-title max-w-[860px] font-serif font-normal leading-[0.88] tracking-[-0.06em] text-[#f3f0ea]">
-              <span className="line-mask"><span>Cruza</span></span>
-              <span className="line-mask italic-late italic tracking-[-0.075em]">
-                <span>el puente.</span>
-              </span>
-            </h2>
-            <p className="hero-lede mx-auto mt-8 max-w-[520px] text-[17px] leading-[1.6] tracking-[-0.01em] text-white/60">
-              Te llevamos al sitio del despacho. Ahí podrás conocer los servicios, ver casos y agendar una llamada con el equipo.
-            </p>
-            <div className="hero-lede mt-10 flex w-full flex-col justify-center gap-4 sm:w-auto sm:flex-row">
-              <a
-                href="https://diazlara.mx/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-[58px] items-center justify-center bg-[#f3f0ea] px-9 text-[11px] uppercase tracking-[0.18em] text-ink-900 transition-colors hover:bg-white"
-              >
-                Ir a diazlara.mx ↗
-              </a>
-              <Link
-                to="/"
-                className="inline-flex min-h-[58px] items-center justify-center border border-white/25 px-9 text-[11px] uppercase tracking-[0.18em] text-white/70 transition-colors hover:border-white/60 hover:text-white"
-              >
-                Seguir aprendiendo con Diego →
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
     </div>
   );
 }

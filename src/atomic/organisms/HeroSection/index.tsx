@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import heroImage from '../../../../assets/001_home_foto_DD.png';
+import heroImage from '../../../../assets/home/001_home_foto_DD.png';
 import { useInView } from '@hooks/useInView';
 
 const EASE_OUT = 'cubic-bezier(.2,.8,.2,1)';
@@ -27,13 +27,6 @@ function WordMask({ children, delay, visible }: { children: ReactNode; delay: nu
 export default function HeroSection() {
   const { ref: heroRef, inView } = useInView(0.1);
 
-  const today = new Date();
-  const formattedDate = today.toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-
   const bodyStyle = (delay: number) => ({
     opacity: inView ? 1 : 0,
     transform: inView ? 'none' : 'translateY(32px)',
@@ -45,22 +38,11 @@ export default function HeroSection() {
   return (
     <section className="bg-cream-200">
       <div ref={heroRef} className="container-app">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-5 border-b border-cream-400 text-[11px] text-ink-400 tracking-[0.05em]">
-          <div className="flex flex-wrap items-center gap-3">
-            <span>&mdash; Estrategia fiscal</span>
-            <span className="text-ink-300">&middot;</span>
-            <span>Conferencista</span>
-            <span className="text-ink-300">&middot;</span>
-            <span>Autor</span>
-          </div>
-          <span>&mdash; {formattedDate}</span>
-        </div>
-
-        <div className="pt-14 md:pt-[72px] pb-12 lg:pb-9">
+        <div className="relative pt-10 md:pt-12 pb-12 lg:min-h-[1120px] lg:pb-0">
           {/* Demo 01 — word-by-word mask reveal, replays on scroll */}
           <h1
-            className="max-w-[1120px] leading-[0.98] tracking-[-0.03em] text-ink-900"
-            style={{ fontSize: 'clamp(52px, 8.2vw, 108px)' }}
+            className="max-w-[1240px] leading-[0.96] tracking-[-0.035em] text-ink-900"
+            style={{ fontSize: 'clamp(64px, 8.15vw, 118px)' }}
           >
             <WordMask delay={0}   visible={inView}><span className="font-normal">La</span></WordMask>
             {' '}
@@ -75,17 +57,22 @@ export default function HeroSection() {
             <WordMask delay={440} visible={inView}><span className="font-light">contador</span></WordMask>
             <br />
             <WordMask delay={580} visible={inView}>
-              <span className="font-serif font-normal tracking-normal">no se atreve a darte.</span>
+              <span
+                className="inline-block font-serif font-normal tracking-normal"
+                style={{ fontSize: 'clamp(68px, 7.8vw, 112px)', lineHeight: 0.94 }}
+              >
+                no se atreve a darte.
+              </span>
             </WordMask>
           </h1>
 
-          <div className="mt-10 grid lg:grid-cols-[minmax(0,520px)_minmax(360px,420px)] gap-10 lg:gap-16 items-start justify-between">
+          <div className="mt-10 grid items-start gap-12 lg:block">
             {/* Body text */}
-            <div style={bodyStyle(200)} className="space-y-8">
+            <div style={bodyStyle(200)} className="space-y-8 lg:ml-0 lg:max-w-[520px]">
               <p className="text-[15px] text-ink-500 leading-relaxed max-w-sm">
-                Diego D&iacute;az capacita, ayuda y apoya empresarios a tomar el control
-                de su carga fiscal. M&aacute;s de 25 a&ntilde;os, 3 libros publicados y
-                +10,000 directivos formados.
+                Diego D&iacute;az capacita, ayuda y apoya empresarios a tomar
+                el control de su carga fiscal. M&aacute;s de 20 a&ntilde;os, 3 libros
+                publicados y +10,000 directivos formados.
               </p>
 
               {/* Actions */}
@@ -107,12 +94,12 @@ export default function HeroSection() {
                   ? `opacity 1100ms ${EASE_CURTAIN} 100ms`
                   : 'opacity 0ms',
               }}
-              className="flex items-start justify-center lg:justify-end"
+              className="flex items-start justify-center lg:absolute lg:left-[66.3%] lg:top-[430px] lg:block lg:w-[420px]"
             >
               <img
                 src={heroImage}
-                alt="Diego Diaz"
-                className="w-full max-w-[380px] lg:w-[clamp(360px,32vw,420px)] lg:max-w-full h-auto object-contain mx-auto lg:mx-0"
+                alt="Diego Diaz, estratega fiscal"
+                className="aspect-[420/630] w-full max-w-[420px] object-cover object-[50%_48%] mx-auto lg:mx-0"
               />
             </div>
           </div>

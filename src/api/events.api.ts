@@ -13,5 +13,18 @@ export const createEvent = (data: Partial<Event>): Promise<Event> =>
 export const updateEvent = (id: string, data: Partial<Event>): Promise<Event> =>
   client.put<ApiResponse<Event>>(`/events/${id}`, data).then((r) => r.data);
 
+export const uploadEventImage = (
+  file: File,
+): Promise<{ url: string; filename: string; size: number; mimeType: string }> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return client
+    .post<ApiResponse<{ url: string; filename: string; size: number; mimeType: string }>>(
+      '/uploads/events',
+      formData,
+    )
+    .then((r) => r.data);
+};
+
 export const registerToEvent = (id: string): Promise<Event> =>
   client.post<ApiResponse<Event>>(`/events/${id}/register`).then((r) => r.data);

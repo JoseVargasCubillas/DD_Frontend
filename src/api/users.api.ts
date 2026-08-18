@@ -1,7 +1,7 @@
 import { client } from './client';
 import type { User, Tag, Order, ApiResponse, PaginatedResponse } from '@t/index';
 
-interface ListParams { page?: number; limit?: number; search?: string; tagId?: string; role?: string }
+interface ListParams { page?: number; limit?: number; search?: string; tagId?: string; role?: string; sort?: string; segment?: string }
 
 export const listUsers = (params?: ListParams): Promise<PaginatedResponse<User>> =>
   client.get<PaginatedResponse<User>>('/users', params as Record<string, unknown>);
@@ -38,7 +38,14 @@ export const updateNotes = (userId: string, notes: string): Promise<User> =>
 export const sendPasswordReset = (userId: string): Promise<{ tempPassword?: string }> =>
   client.post<ApiResponse<{ tempPassword?: string }>>(`/users/${userId}/send-password`).then((r) => r.data);
 
-interface AdminCreateUserInput { name: string; email: string; role?: 'user' | 'admin' }
+interface AdminCreateUserInput {
+  name: string;
+  email: string;
+  role?: 'user' | 'admin';
+  tagIds?: string[];
+  courseIds?: string[];
+  marketingStatus?: 'never_subscribed' | 'subscribed' | 'unsubscribed';
+}
 interface AdminCreateUserResult {
   user: Pick<User, 'name' | 'email' | 'role'> & { _id: string };
   tempPassword?: string;
@@ -46,4 +53,46 @@ interface AdminCreateUserResult {
 
 export const adminCreateUser = (input: AdminCreateUserInput): Promise<AdminCreateUserResult> =>
   client.post<ApiResponse<AdminCreateUserResult>>('/auth/admin/users', input).then((r) => r.data);
+
+export interface ImportContactInput {
+  name: string;
+  email: string;
+  phone?: string;
+  products: string[];
+  tags?: string[];
+  createdAt?: string;
+  signInCount?: number;
+  lastLogin?: string;
+  sourceId?: string;
+}
+
+export interface ImportContactsInput {
+  contacts: ImportContactInput[];
+  productMappings: Record<string, string[]>;
+}
+
+export interface ImportContactsResult {
+  summary: {
+    total: number;
+    created: number;
+    updated: number;
+    skipped: number;
+    products: number;
+    unmatchedProducts: string[];
+  };
+  results: Array<{
+    email: string;
+    name: string;
+    status: 'created' | 'updated' | 'skipped';
+    userId?: string;
+    tempPassword?: string;
+    products: string[];
+    courseIds: string[];
+    unmatchedProducts: string[];
+    reason?: string;
+  }>;
+}
+
+export const importContacts = (input: ImportContactsInput): Promise<ImportContactsResult> =>
+  client.post<ApiResponse<ImportContactsResult>>('/users/import', input).then((r) => r.data);
 

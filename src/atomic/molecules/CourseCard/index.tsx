@@ -7,7 +7,7 @@ interface CourseCardProps { course: Course }
 
 export default function CourseCard({ course }: CourseCardProps) {
   return (
-    <Link to={`/cursos/${course.slug}`} className="card group hover:border-brand-500 transition-all duration-300 block">
+    <Link to={`/cursos/${course.slug}`} className="card card-lift group block transition-colors duration-300 hover:border-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50">
       <div className="relative overflow-hidden aspect-video">
         <img
           src={course.thumbnail || '/placeholder-course.jpg'}
