@@ -81,16 +81,16 @@ export default function Footer() {
           </div>
 
           <div className="space-y-4">
-            <h5 className="text-[11px] uppercase tracking-[0.3em] text-ink-400 font-normal">
-              <Link to="/contacto" className="transition-colors hover:text-white">
-                Contacto
+            <h5 className="text-[11px] uppercase tracking-[0.3em] text-ink-400 font-normal">Contacto</h5>
+            <p className="max-w-[190px] text-[14px] leading-relaxed text-ink-300">
+              ¿Tienes alguna duda?{' '}
+              <Link
+                to="/contacto#contacto"
+                className="font-bold text-white underline decoration-[#d8c19a] decoration-1 underline-offset-4 transition-colors hover:text-[#d8c19a]"
+              >
+                Contáctanos
               </Link>
-            </h5>
-            <ul className="space-y-3">
-              {[['WhatsApp','#'],['Email','#'],['Oficina','#'],['IG','#'],['LI','#'],['YT','#'],['TT','#']].map(([label, href]) => (
-                <li key={label}><a href={href} className="text-[13px] text-ink-300 hover:text-white transition-colors">{label}</a></li>
-              ))}
-            </ul>
+            </p>
           </div>
         </div>
       </div>

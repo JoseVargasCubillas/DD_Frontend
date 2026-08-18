@@ -45,7 +45,7 @@ export default function Contact() {
 
   return (
     <div className="bg-cream-50 text-ink-900">
-      <section className="container-app grid min-h-[470px] gap-10 py-16 md:py-20 lg:grid-cols-[120px_1fr] lg:items-start lg:py-[72px]">
+      <section id="contacto" className="container-app grid min-h-[470px] scroll-mt-24 gap-10 py-16 md:py-20 lg:grid-cols-[120px_1fr] lg:items-start lg:py-[72px]">
         <p className={`${mono} pt-2`}>— 00</p>
         <div className="max-w-[900px]">
           <h1 className="font-serif text-[clamp(58px,9.4vw,100px)] font-normal leading-[0.96] tracking-normal">

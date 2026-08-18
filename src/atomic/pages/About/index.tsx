@@ -1,13 +1,31 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { useHeroReveal, useReveal } from '@hooks/useReveal';
 import diegoHero from '../../../../assets/ddweb/figma-diego-hero.png';
 import equipoDiazLara from '../../../../assets/ddweb/equipo-diaz-lara-escaleras.jpg';
+import logoLider from '../../../../assets/home/008_home_logo1_DD.png';
+import logoExcelsior from '../../../../assets/home/009_home_logo2_DD.png';
+import logoTeleformula from '../../../../assets/home/010_home_logo3_DD.png';
+import logoMilenio from '../../../../assets/home/010_home_logo4_DD.png';
+import logoSemana from '../../../../assets/home/010_home_logo5_DD.png';
+import logoFeedspot from '../../../../assets/home/010_home_logo6_DD.png';
+import logoForbes from '../../../../assets/home/010_home_logo8_DD.png';
+import logoMundoEjecutivo from '../../../../assets/home/010_home_logo9_DD.png';
+import logoElPais from '../../../../assets/home/010_home_logo10_DD.png';
+import logoDiarioLasAmericas from '../../../../assets/home/010_home_logo11_DD.png';
+import logoPersono from '../../../../assets/home/010_home_logo14_DD.png';
+import logoAztecaJalisco from '../../../../assets/home/010_home_logo15_DD.png';
+import logoCronica from '../../../../assets/home/010_home_logo16_DD.png';
+import logoDineroEnImagen from '../../../../assets/home/010_home_logo17_DD.png';
+import logoYoutube from '../../../../assets/home/logo-youtube.svg';
+import logoQualityMagazine from '../../../../assets/home/logo-quality-magazine.svg';
+import logoDiarioQueretaro from '../../../../assets/home/logo-diario-queretaro.svg';
 
 const mono = 'font-mono text-[11px] uppercase tracking-[0.18em] text-ink-900/45';
 const border = 'border-ink-900/10';
 
 const milestones = [
-  ['1999', 'Inicio profesional como contador junior en despacho local.', 'Querétaro'],
+  ['2006', 'Inicio profesional como contador junior en despacho local.', 'Querétaro'],
   ['2014', 'Primer acuerdo conclusivo en defensa de un cliente — agencia de viajes.', 'Hito histórico'],
   ['2018', 'Publica su primer libro: "Los 7 secretos que el SAT no quiere que conozcas".', 'Best seller'],
   ['2022', 'Díaz Lara recibe la Cruz de Malta por Latin American Quality Awards.', 'Galardón continental'],
@@ -16,19 +34,153 @@ const milestones = [
 ];
 
 const stats = [
-  ['25', 'Años de trayectoria profesional'],
+  ['20', 'Años de trayectoria profesional'],
   ['10K+', 'Empresarios capacitados en eventos y Academia'],
   ['03', 'Libros publicados sobre estrategia fiscal mexicana'],
   ['18+', 'Medios de prensa nacional e internacional'],
 ];
 
 const press = [
-  ['Forbes', '"Top 20 power minds: líderes que impulsaron 2025."', '04 / 2026'],
-  ['Milenio', '"Diego Díaz: éxito empresarial volátil y sustentable."', '03 / 2026'],
-  ['Excélsior', '"Diego Díaz cuestiona el crecimiento acelerado."', '02 / 2026'],
-  ['Radio Fórmula', '"La obsesión por crecer rápido y quebrar empresas en todo el mundo."', '04 / 2026'],
-  ['El País', '"Crecer no siempre es la parte difícil."', '03 / 2026'],
-  ['Semana', '"La etapa clave del crecimiento empresarial que no se puede dejar de lado."', '02 / 2026'],
+  {
+    source: 'Líder Empresarial',
+    title: 'Estrategia fiscal: clave para hacer negocio en México',
+    summary: 'Una lectura sobre la estrategia fiscal como ventaja para empresas mexicanas que buscan crecer con orden y estructura.',
+    href: 'https://www.liderempresarial.com/estrategia-fiscal-clave-negocio-mexico/',
+    logo: logoLider,
+  },
+  {
+    source: 'Líder Empresarial',
+    title: 'Diego Díaz: arquitectura fiscal inteligente',
+    summary: 'Perfil sobre la metodología de Diego: capacitación, asesoría estratégica y estructuras fiscales diseñadas para proteger el crecimiento.',
+    href: 'https://www.liderempresarial.com/diego-diaz-arquitectura-fiscal-inteligente/',
+    logo: logoLider,
+  },
+  {
+    source: 'Líder Empresarial',
+    title: 'Estrategias fiscales que transforman empresas',
+    summary: 'Artículo enfocado en cómo la estrategia fiscal deja de ser trámite y se convierte en una herramienta de transformación empresarial.',
+    href: 'https://www.liderempresarial.com/diego-diaz-estrategias-fiscales-que-transforman-empresas/',
+    logo: logoLider,
+  },
+  {
+    source: 'Diario de Querétaro',
+    title: 'Las siete claves para cobrar a tu empresa',
+    summary: 'Reseña del libro que traduce decisiones fiscales complejas en una guía práctica para emprendedores y empresarios.',
+    href: 'https://oem.com.mx/diariodequeretaro/cultura/las-siete-claves-para-cobrar-a-tu-empresa-una-guia-para-emprendedores-y-empresarios-23230197',
+    logo: logoDiarioQueretaro,
+  },
+  {
+    source: 'PERSONO',
+    title: 'Estrategias fiscales efectivas de Diego Díaz',
+    summary: 'Entrevista sobre optimización fiscal, ética, tecnología y planeación tributaria sostenible para empresas en crecimiento.',
+    href: 'https://persono.mx/blog/finanzas/diego-diaz/',
+    logo: logoPersono,
+  },
+  {
+    source: 'Forbes Argentina',
+    title: 'Top 20 power minds: líderes que impulsaron 2025',
+    summary: 'Mención editorial dentro de una conversación regional sobre liderazgo, innovación y mentes que impulsan nuevas formas de construir empresa.',
+    href: 'https://www.forbesargentina.com/innovacion/top-20-power-minds-lideres-impulsaron-2025-disruptivo-n43409',
+    logo: logoForbes,
+  },
+  {
+    source: 'YouTube',
+    title: 'Inversiones inmobiliarias',
+    summary: 'Participación en video donde Diego comparte criterios fiscales y empresariales aplicados a decisiones patrimoniales e inmobiliarias.',
+    href: 'https://youtu.be/S3iv-kwg59E?si=paSB-jghjY5349Wm',
+    logo: logoYoutube,
+  },
+  {
+    source: 'Líder Empresarial',
+    title: 'Nearshoring con fricción',
+    summary: 'Análisis del contexto económico de México y las condiciones que las empresas deberán considerar para sostener oportunidades de crecimiento.',
+    href: 'https://www.liderempresarial.com/nearshoring-con-friccion-lo-que-mexico-gano-en-2025-y-lo-que-se-juega-en-2026/',
+    logo: logoLider,
+  },
+  {
+    source: 'Mundo Ejecutivo',
+    title: 'Estructura, protección y visión',
+    summary: 'Cobertura sobre la visión fiscal de Diego: diseñar estructuras que protejan patrimonio, ordenen decisiones y sostengan expansión.',
+    href: 'https://mundoejecutivocdmx.com/uncategorized/estructura-proteccion-y-vision-la-estrategia-fiscal-de-diego-diaz/',
+    logo: logoMundoEjecutivo,
+  },
+  {
+    source: 'La Crónica de Hoy',
+    title: 'Sostener el crecimiento empresarial sin riesgos fiscales',
+    summary: 'Artículo sobre por qué crecer no basta: la permanencia requiere arquitectura legal, financiera y fiscal antes de acelerar.',
+    href: 'https://www.cronica.com.mx/nacional/2026/02/06/diego-diaz-y-la-clave-para-sostener-el-crecimiento-empresarial-sin-riesgos-fiscales/',
+    logo: logoCronica,
+  },
+  {
+    source: 'TV Azteca Jalisco',
+    title: 'Crecimiento empresarial y estabilidad en los negocios',
+    summary: 'Nota sobre el papel de la estrategia fiscal para convertir crecimiento en estabilidad empresarial de largo plazo.',
+    href: 'https://www.aztecajalisco.com/social-y/diego-diaz-estratega-fiscal-jalisco-crecimiento-empresarial-estabilidad-negocios/',
+    logo: logoAztecaJalisco,
+  },
+  {
+    source: 'Dinero en Imagen',
+    title: 'Diego Díaz cuestiona el crecimiento acelerado',
+    summary: 'Cobertura sobre liderazgo empresarial más humano y estructuras que priorizan permanencia sobre velocidad.',
+    href: 'https://www.dineroenimagen.com/empresas/diego-diaz-cuestiona-el-crecimiento-acelerado-y-apuesta-por-un-liderazgo-empresarial-mas',
+    logo: logoDineroEnImagen,
+  },
+  {
+    source: 'Quality Magazine',
+    title: 'Edición 296',
+    summary: 'Aparición editorial asociada a trayectoria, liderazgo y visión empresarial desde la estrategia fiscal.',
+    href: 'https://qualitymagazine.org/edicion-296/',
+    logo: logoQualityMagazine,
+  },
+  {
+    source: 'Excélsior',
+    title: 'Dinero · edición impresa',
+    summary: 'Referencia en la edición impresa de Dinero, sección económica de Excélsior.',
+    href: 'https://impreso.excelsior.com.mx/Periodico/flip-dinero/18-02-2026/portada.pdf',
+    logo: logoExcelsior,
+  },
+  {
+    source: 'Milenio',
+    title: 'El éxito empresarial no es volátil, es sustentable',
+    summary: 'Artículo sobre pasar del crecimiento reactivo a un modelo sustentable, medible y protegido desde la estructura.',
+    href: 'https://www.milenio.com/estilo/diego-diaz-exito-empresarial-volatil-sustentable',
+    logo: logoMilenio,
+  },
+  {
+    source: 'Semana',
+    title: 'La etapa clave del crecimiento empresarial',
+    summary: 'Cobertura regional sobre la etapa donde las empresas deben ordenar estructura, liderazgo y visión para crecer sin fragilidad.',
+    href: 'https://www.semana.com/economia/emprendimiento/articulo/esta-es-la-etapa-clave-del-crecimiento-empresarial-que-no-se-puede-dejar-de-lado/202645/',
+    logo: logoSemana,
+  },
+  {
+    source: 'El País',
+    title: 'Crecer no siempre es la parte difícil',
+    summary: 'Mirada empresarial sobre el verdadero reto posterior al crecimiento: sostenerlo con decisiones, estructura y disciplina.',
+    href: 'https://www.elpais.com.co/economia/crecer-no-siempre-es-la-parte-dificil-una-mirada-empresarial-1524.html',
+    logo: logoElPais,
+  },
+  {
+    source: 'Radio Fórmula',
+    title: 'La obsesión por crecer rápido quiebra empresas',
+    summary: 'Nota sobre la importancia de diseñar el crecimiento con claridad interna antes de perseguir velocidad de expansión.',
+    href: 'https://www.radioformula.com.mx/estilo-de-vida/diego-diaz-la-obsesion-por-crecer-rapido-y-quiebra-empresas-en-todo-el-mundo-20260406-0010.html',
+    logo: logoTeleformula,
+  },
+  {
+    source: 'Diario Las Américas',
+    title: 'El estratega que está cambiando la forma de hacer empresa en México',
+    summary: 'Perfil internacional sobre Diego y su enfoque para convertir estrategia fiscal en una forma distinta de construir empresa.',
+    href: 'https://www.diariolasamericas.com/el-estratega-que-esta-cambiando-la-forma-hacer-empresa-mexico-diego-diaz-n5390319',
+    logo: logoDiarioLasAmericas,
+  },
+  {
+    source: 'Feedspot',
+    title: 'Podcasts de finanzas en México',
+    summary: 'Referencia en directorio de podcasts financieros, útil para ubicar conversaciones y apariciones de educación empresarial.',
+    href: 'https://podcast.feedspot.com/podcasts_finanzas_mexico/',
+    logo: logoFeedspot,
+  },
 ];
 
 export default function About() {
@@ -40,6 +192,8 @@ export default function About() {
   const firmRef = useReveal<HTMLDivElement>(0.12);
   const pressRef = useReveal<HTMLDivElement>(0.08);
   const speakerRef = useReveal<HTMLDivElement>(0.12);
+  const [showAllPress, setShowAllPress] = useState(false);
+  const visiblePress = showAllPress ? press : press.slice(0, 8);
 
   return (
     <div className="bg-cream-50 text-ink-900">
@@ -51,9 +205,9 @@ export default function About() {
         <div className="mt-10 grid gap-10 xl:grid-cols-[minmax(0,680px)_minmax(420px,1fr)] xl:items-center xl:gap-16">
           <div ref={heroRef} className="hero-reveal self-start xl:pt-6">
             <p className={mono}>— El estratega fiscal</p>
-            <h1 className="mt-6 max-w-[620px] font-sans text-[clamp(68px,9vw,128px)] font-light leading-[0.86] tracking-[-0.06em]">
-              <span className="line-mask"><span>Diego</span></span>
-              <span className="line-mask font-serif italic tracking-[-0.07em]"><span>Díaz.</span></span>
+            <h1 className="mt-6 max-w-[720px] font-sans text-[clamp(92px,12vw,168px)] font-light leading-[0.86] tracking-[-0.065em] [font-family:Helvetica,Arial,sans-serif]">
+              <span className="line-mask font-bold"><span>Diego</span></span>
+              <span className="line-mask"><span>Díaz.</span></span>
             </h1>
             <p className="hero-lede mt-8 max-w-[540px] border-l border-[#6b4f2a]/55 pl-6 font-serif text-[clamp(21px,2.4vw,28px)] italic leading-snug text-ink-900/68">
               "El arquitecto de soluciones donde otros ven sólo problemas tributarios."
@@ -112,9 +266,9 @@ export default function About() {
         <div className="container-app">
           <div className={`${mono} flex justify-between border-b ${border} pb-8`}>
             <span>02 / Hitos</span>
-            <span>1999 · 2026</span>
+            <span>2006 · 2026</span>
           </div>
-          <h2 className="mt-10 font-serif text-[clamp(54px,8vw,104px)] leading-[0.95] tracking-[-0.06em]">Veinticinco años, seis momentos.</h2>
+          <h2 className="mt-10 font-serif text-[clamp(54px,8vw,104px)] leading-[0.95] tracking-[-0.06em]">Veinte años, seis momentos.</h2>
           <div ref={milestonesRef} className={`stagger-grid mt-16 grid border ${border} bg-white md:grid-cols-2 lg:grid-cols-6`}>
             {milestones.map(([year, body, tag], i) => {
               const isFeatured = year === '2022';
@@ -168,23 +322,57 @@ export default function About() {
         </div>
       </section>
 
-      <section className="container-app py-24">
+      <section id="prensa" className="container-app py-24">
         <div className={`${mono} flex justify-between border-b ${border} pb-8`}>
           <span>06 / Prensa</span>
-          <span>Última cobertura</span>
+          <span>{press.length} apariciones verificadas</span>
         </div>
         <h2 className="mt-10 font-serif text-[clamp(54px,8vw,104px)] leading-[0.95] tracking-[-0.06em]">Diego en medios.</h2>
-        <div ref={pressRef} className={`stagger-grid mt-14 grid border ${border} bg-white md:grid-cols-2 lg:grid-cols-3`}>
-          {press.map(([source, title, date], i) => (
-            <article key={`${source}-${date}`} data-s={String(i)} className={`group min-h-[240px] cursor-pointer border-b ${border} p-8 transition-colors duration-300 hover:bg-cream-100 md:border-r`}>
-              <p className={mono}>— {source}</p>
-              <h3 className="mt-8 font-serif text-[28px] leading-tight tracking-[-0.04em]">{title}</h3>
-              <div className={`mt-8 flex justify-between border-t ${border} pt-4 ${mono}`}>
-                <span>{date}</span>
-                <span className="transition-transform duration-200 group-hover:translate-x-1">Leer ↗</span>
+        <div ref={pressRef} className={`stagger-grid mt-14 grid border-l border-t ${border} bg-white md:grid-cols-2 lg:grid-cols-4`}>
+          {visiblePress.map((item, i) => (
+            <article key={`${item.source}-${item.title}`} data-s={String(i % 8)} className={`group flex min-h-[300px] flex-col justify-between border-b border-r ${border} p-8 transition-colors duration-300 hover:bg-cream-100`}>
+              <div>
+                <p className={mono}>
+                  {String(i + 1).padStart(2, '0')} / {press.length}
+                </p>
+                <div className="mt-7 flex h-14 items-center">
+                  <img
+                    src={item.logo}
+                    alt={item.source}
+                    className="max-h-10 max-w-[150px] object-contain grayscale transition duration-300 group-hover:grayscale-0"
+                    loading="lazy"
+                  />
+                </div>
+                <h3 className="mt-8 font-serif text-[26px] leading-[1.08] tracking-[-0.04em] text-ink-900">
+                  {item.title}
+                </h3>
+                <p className="mt-5 text-[14px] leading-[1.65] tracking-[-0.01em] text-ink-900/58">
+                  {item.summary}
+                </p>
+              </div>
+              <div className={`mt-8 flex items-center justify-between border-t ${border} pt-5 ${mono}`}>
+                <span>{item.source}</span>
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-ink-900 transition-transform duration-200 group-hover:translate-x-1"
+                >
+                  {item.source === 'YouTube' ? 'Ver video ↗' : 'Leer artículo ↗'}
+                </a>
               </div>
             </article>
           ))}
+        </div>
+        <div className="mt-12 text-center">
+          <button
+            type="button"
+            onClick={() => setShowAllPress((current) => !current)}
+            className="inline-flex min-h-12 cursor-pointer items-center justify-center border border-ink-900 px-8 font-mono text-[11px] font-bold uppercase tracking-[0.18em] transition-colors duration-200 hover:bg-ink-900 hover:text-white"
+            aria-expanded={showAllPress}
+          >
+            {showAllPress ? 'Ver menos ↑' : `Ver más cobertura (${press.length - visiblePress.length}) ↓`}
+          </button>
         </div>
       </section>
 
