@@ -44,6 +44,7 @@ const ManageBlog = lazy(() => import("@pages/Admin/ManageBlog"));
 const SalesPayments = lazy(() => import("@pages/Admin/SalesPayments"));
 const SalesPricing = lazy(() => import("@pages/Admin/SalesPricing"));
 const SalesCart = lazy(() => import("@pages/Admin/SalesCart"));
+const ManagePackages = lazy(() => import("@pages/Admin/ManagePackages"));
 const DiazLara = lazy(() => import("@pages/DiazLara"));
 const ManageEmail = lazy(() => import("@pages/Admin/ManageEmail"));
 const BookCheckout = lazy(() => import("@pages/Books/BookCheckout"));
@@ -73,14 +74,7 @@ export const router = createBrowserRouter([
       { path: "/recursos", element: <Resources /> },
       { path: "/contacto", element: <Contact /> },
       { path: "/libros", element: <Books /> },
-      {
-        path: "/checkout",
-        element: (
-          <ProtectedRoute>
-            <Checkout />
-          </ProtectedRoute>
-        ),
-      },
+      { path: "/checkout", element: <Checkout /> },
       {
         path: "/libros/:slug/checkout",
         element: (
@@ -141,6 +135,7 @@ export const router = createBrowserRouter([
       { path: "/admin/ventas/pagos", element: <SalesPayments /> },
       { path: "/admin/ventas/precios", element: <SalesPricing /> },
       { path: "/admin/ventas/carrito", element: <SalesCart /> },
+      { path: "/admin/ventas/paquetes", element: <ManagePackages /> },
       { path: "/admin/email", element: <ManageEmail /> },
     ],
   },

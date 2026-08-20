@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -13,17 +13,91 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as 
 
 type CheckoutMode = 'subscription' | 'one_time';
 
+interface GuestCustomer {
+  name: string;
+  email: string;
+  phone: string;
+}
+
 function detectMode(items: { type?: string }[]): CheckoutMode {
   return items.some((i) => i.type === 'subscription') ? 'subscription' : 'one_time';
+}
+
+const guestInputClass =
+  'min-h-12 border-0 border-b border-white/45 bg-transparent px-0 font-serif text-[18px] leading-tight text-cream-50 outline-none transition-colors placeholder:text-white/45 focus:border-cream-50';
+const guestLabelClass = 'grid gap-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/35';
+
+interface GuestDataFormProps {
+  customer: GuestCustomer;
+  onChange: (customer: GuestCustomer) => void;
+  onSubmit: (e: FormEvent) => void;
+  loading: boolean;
+  total: number;
+}
+
+function GuestDataForm({ customer, onChange, onSubmit, loading, total }: GuestDataFormProps) {
+  return (
+    <form onSubmit={onSubmit} className="mt-8 flex flex-col gap-6">
+      <p className="text-[13px] leading-[1.7] text-white/60">
+        Con estos datos creamos tu perfil de Academia. Te llegará la confirmación y tu acceso a este correo.
+      </p>
+      <div className="grid gap-6 sm:grid-cols-2">
+        <label className={`${guestLabelClass} sm:col-span-2`}>
+          Nombre completo
+          <input
+            className={guestInputClass}
+            type="text"
+            placeholder="Tu nombre"
+            required
+            value={customer.name}
+            onChange={(e) => onChange({ ...customer, name: e.target.value })}
+          />
+        </label>
+        <label className={guestLabelClass}>
+          Correo electrónico
+          <input
+            className={guestInputClass}
+            type="email"
+            placeholder="tu@correo.com"
+            required
+            value={customer.email}
+            onChange={(e) => onChange({ ...customer, email: e.target.value })}
+          />
+        </label>
+        <label className={guestLabelClass}>
+          Teléfono
+          <input
+            className={guestInputClass}
+            type="tel"
+            placeholder="+52 · 55 · 0000 · 0000"
+            required
+            value={customer.phone}
+            onChange={(e) => onChange({ ...customer, phone: e.target.value })}
+          />
+        </label>
+      </div>
+      <button
+        type="submit"
+        disabled={loading}
+        className="mt-2 flex w-full items-center justify-between bg-cream-50 px-7 py-5 text-ink-900 transition-opacity disabled:opacity-50"
+      >
+        <span className="text-[11px] font-bold uppercase tracking-[0.18em]">
+          {loading ? 'Guardando…' : 'Continuar al pago →'}
+        </span>
+        <span className="font-serif text-[15px] italic">{formatCurrency(total)}</span>
+      </button>
+    </form>
+  );
 }
 
 interface PaymentFormProps {
   mode: CheckoutMode;
   total: number;
+  billingDetails?: GuestCustomer;
   onSuccess: () => void;
 }
 
-function PaymentForm({ mode, total, onSuccess }: PaymentFormProps) {
+function PaymentForm({ mode, total, billingDetails, onSuccess }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [paying, setPaying] = useState(false);
@@ -39,6 +113,17 @@ function PaymentForm({ mode, total, onSuccess }: PaymentFormProps) {
       elements,
       confirmParams: {
         return_url: window.location.origin + '/mi-cuenta?pago=exitoso',
+        ...(billingDetails
+          ? {
+              payment_method_data: {
+                billing_details: {
+                  name: billingDetails.name,
+                  email: billingDetails.email,
+                  phone: billingDetails.phone,
+                },
+              },
+            }
+          : {}),
       },
       redirect: 'if_required',
     });
@@ -205,38 +290,67 @@ export default function Checkout() {
   const [initError, setInitError] = useState('' as string);
   const [success, setSuccess] = useState(false);
   const [order, setOrder] = useState<OrderSummary | null>(null);
+  const [customer, setCustomer] = useState<GuestCustomer>({ name: '', email: '', phone: '' });
+  const [dataConfirmed, setDataConfirmed] = useState(false);
 
   const mode = detectMode(items);
+  // La suscripción a Academia admite checkout de invitado: sus datos crean el
+  // perfil desde el backend. Las compras de un solo pago (cursos) sí requieren cuenta.
+  const requiresAuth = mode === 'one_time';
+  const needsGuestData = mode === 'subscription' && !isAuthenticated;
 
-  if (!isAuthenticated) {
-    navigate('/iniciar-sesion?redirect=/checkout');
-    return null;
-  }
+  useEffect(() => {
+    if (requiresAuth && !isAuthenticated) {
+      navigate('/iniciar-sesion?redirect=/checkout');
+    }
+  }, [requiresAuth, isAuthenticated, navigate]);
+
+  if (requiresAuth && !isAuthenticated) return null;
+
+  const runSubscribe = async () => {
+    const subscriptionItem = items.find((item) => item.type === 'subscription') ?? items[0];
+    const result = await subscribe({
+      plan: subscriptionItem?.refId?.replace('off_academia_', '') || 'plus',
+      item: {
+        type: 'offer',
+        refId: subscriptionItem?.refId,
+        quantity: subscriptionItem?.quantity ?? 1,
+      },
+      customer: needsGuestData ? customer : undefined,
+    });
+    setClientSecret(result.clientSecret ?? '');
+    const subscription = result.subscription;
+    setOrder({ mode, items, total: total(), orderId: subscription?._id ?? subscription?.id ?? '' });
+  };
+
+  const handleGuestDataSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setInitError('');
+    setLoading(true);
+    try {
+      setDataConfirmed(true);
+      await runSubscribe();
+    } catch (err) {
+      setDataConfirmed(false);
+      setInitError(err instanceof Error ? err.message : 'No se pudo guardar tus datos. Intenta de nuevo.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInitPayment = async () => {
     setInitError('');
     setLoading(true);
     try {
       if (mode === 'subscription') {
-        const subscriptionItem = items.find((item) => item.type === 'subscription') ?? items[0];
-        const result = await subscribe({
-          plan: subscriptionItem?.refId?.replace('off_academia_', '') || 'plus',
-          item: {
-            type: 'offer',
-            refId: subscriptionItem?.refId,
-            quantity: subscriptionItem?.quantity ?? 1,
-          },
-        });
-        setClientSecret(result.clientSecret ?? '');
-        const subscription = result.subscription;
-        setOrder({ mode, items, total: total(), orderId: subscription?._id ?? subscription?.id ?? '' });
+        await runSubscribe();
       } else {
         const result = await createPaymentIntent(items);
         setClientSecret(result.clientSecret ?? '');
         setOrder({ mode, items, total: result.total ?? total(), orderId: result.orderId ?? '' });
       }
-    } catch {
-      setInitError('No se pudo iniciar el pago. Intenta de nuevo.');
+    } catch (err) {
+      setInitError(err instanceof Error ? err.message : 'No se pudo iniciar el pago. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -377,7 +491,15 @@ export default function Checkout() {
                 <p className="mt-4 border border-red-700 bg-red-950/40 px-4 py-3 text-[13px] text-red-300">{initError}</p>
               )}
 
-              {!clientSecret || !elementsOptions ? (
+              {needsGuestData && !dataConfirmed ? (
+                <GuestDataForm
+                  customer={customer}
+                  onChange={setCustomer}
+                  onSubmit={handleGuestDataSubmit}
+                  loading={loading}
+                  total={total()}
+                />
+              ) : !clientSecret || !elementsOptions ? (
                 <div className="mt-8 flex flex-col gap-5">
                   <p className="text-[13px] leading-[1.7] text-white/60">
                     Haz clic en continuar para ingresar los datos de tu tarjeta de forma segura a través de Stripe.
@@ -412,7 +534,12 @@ export default function Checkout() {
                 </div>
               ) : (
                 <Elements stripe={stripePromise} options={elementsOptions}>
-                  <PaymentForm mode={mode} total={total()} onSuccess={handleSuccess} />
+                  <PaymentForm
+                    mode={mode}
+                    total={total()}
+                    billingDetails={needsGuestData ? customer : undefined}
+                    onSuccess={handleSuccess}
+                  />
                 </Elements>
               )}
             </div>

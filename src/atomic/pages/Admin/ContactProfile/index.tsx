@@ -168,7 +168,7 @@ function AssignPackageModal({ userId, packages, onClose }: { userId: string; pac
 
         {packages.length === 0 ? (
           <div className="text-sm text-ink-500 border border-dashed border-ink-900/15 p-6 text-center mb-4">
-            Aún no hay paquetes. <Link to="/admin/paquetes" className="underline">Crea uno aquí</Link>.
+            Aún no hay paquetes. <Link to="/admin/ventas/paquetes" className="underline">Crea uno aquí</Link>.
           </div>
         ) : (
           <div className="space-y-2 max-h-72 overflow-y-auto border border-ink-900/15 p-2 bg-cream-100 mb-4">
