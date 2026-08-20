@@ -38,6 +38,9 @@ export const updateNotes = (userId: string, notes: string): Promise<User> =>
 export const sendPasswordReset = (userId: string): Promise<{ tempPassword?: string }> =>
   client.post<ApiResponse<{ tempPassword?: string }>>(`/users/${userId}/send-password`).then((r) => r.data);
 
+export const deleteUser = (userId: string): Promise<{ id: string }> =>
+  client.delete<ApiResponse<{ id: string }>>(`/users/${userId}`).then((r) => r.data);
+
 interface AdminCreateUserInput {
   name: string;
   email: string;
@@ -69,6 +72,7 @@ export interface ImportContactInput {
 export interface ImportContactsInput {
   contacts: ImportContactInput[];
   productMappings: Record<string, string[]>;
+  sendMigrationEmail?: boolean;
 }
 
 export interface ImportContactsResult {

@@ -28,3 +28,9 @@ export const uploadEventImage = (
 
 export const registerToEvent = (id: string): Promise<Event> =>
   client.post<ApiResponse<Event>>(`/events/${id}/register`).then((r) => r.data);
+
+export const assignUsersToEvent = (id: string, userIds: string[]): Promise<Event> =>
+  client.post<ApiResponse<Event>>(`/events/${id}/assign`, { userIds }).then((r) => r.data);
+
+export const deregisterUsersFromEvent = (id: string, userIds: string[]): Promise<Event> =>
+  client.post<ApiResponse<Event>>(`/events/${id}/deregister`, { userIds }).then((r) => r.data);

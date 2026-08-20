@@ -108,6 +108,48 @@ export const useRemoveTag = () => {
   });
 };
 
+export const useBulkAssignTag = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userIds, tagId }: { userIds: string[]; tagId: string }) => {
+      const results = await Promise.allSettled(userIds.map((userId) => usersApi.assignTag(userId, tagId)));
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      return { applied: userIds.length - failed, failed };
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ['users'] });
+      qc.invalidateQueries({ queryKey: ['tags'] });
+      toast.success(
+        result.failed > 0
+          ? `Etiqueta asignada a ${result.applied}, ${result.failed} fallaron`
+          : `Etiqueta asignada a ${result.applied} contactos`,
+      );
+    },
+    onError: (e: Error) => toast.error(e.message || 'No se pudo asignar la etiqueta'),
+  });
+};
+
+export const useBulkRemoveTag = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userIds, tagId }: { userIds: string[]; tagId: string }) => {
+      const results = await Promise.allSettled(userIds.map((userId) => usersApi.removeTag(userId, tagId)));
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      return { applied: userIds.length - failed, failed };
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ['users'] });
+      qc.invalidateQueries({ queryKey: ['tags'] });
+      toast.success(
+        result.failed > 0
+          ? `Etiqueta removida de ${result.applied}, ${result.failed} fallaron`
+          : `Etiqueta removida de ${result.applied} contactos`,
+      );
+    },
+    onError: (e: Error) => toast.error(e.message || 'No se pudo remover la etiqueta'),
+  });
+};
+
 export const useUpdateNotes = () => {
   const qc = useQueryClient();
   return useMutation({
@@ -118,6 +160,26 @@ export const useUpdateNotes = () => {
       toast.success('Notas guardadas');
     },
     onError: (e: Error) => toast.error(e.message || 'No se pudo guardar'),
+  });
+};
+
+export const useDeleteUsers = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userIds: string[]) => {
+      const results = await Promise.allSettled(userIds.map((id) => usersApi.deleteUser(id)));
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      return { deleted: userIds.length - failed, failed };
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ['users'] });
+      if (result.failed > 0) {
+        toast.error(`${result.deleted} contactos eliminados, ${result.failed} no se pudieron eliminar`);
+      } else {
+        toast.success(`${result.deleted} contactos eliminados`);
+      }
+    },
+    onError: (e: Error) => toast.error(e.message || 'No se pudieron eliminar los contactos'),
   });
 };
 

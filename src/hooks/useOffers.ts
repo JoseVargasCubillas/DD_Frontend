@@ -68,3 +68,24 @@ export const useRevokeOffer = () => {
     onError: (e: Error) => toast.error(e.message || 'No se pudo remover la oferta'),
   });
 };
+
+export const useBulkRevokeOffer = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ offerId, userIds }: { offerId: string; userIds: string[] }) => {
+      const results = await Promise.allSettled(userIds.map((userId) => api.revokeOffer(offerId, userId)));
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      return { removed: userIds.length - failed, failed };
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ['offers'] });
+      qc.invalidateQueries({ queryKey: ['users'] });
+      toast.success(
+        result.failed > 0
+          ? `Oferta removida de ${result.removed}, ${result.failed} fallaron`
+          : `Oferta removida de ${result.removed} contactos`,
+      );
+    },
+    onError: (e: Error) => toast.error(e.message || 'No se pudo remover la oferta'),
+  });
+};

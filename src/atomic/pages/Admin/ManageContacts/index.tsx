@@ -1,11 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useUsers, useAdminCreateUser, useAssignTag, useRemoveTag, useSendPassword, useImportContacts } from '@hooks/useUsers';
+import {
+  useUsers,
+  useAdminCreateUser,
+  useAssignTag,
+  useRemoveTag,
+  useSendPassword,
+  useImportContacts,
+  useBulkAssignTag,
+  useBulkRemoveTag,
+  useDeleteUsers,
+} from '@hooks/useUsers';
 import { useCreateTag, useDeleteTag, useTags, useUpdateTag } from '@hooks/useTags';
 import { useCourses } from '@hooks/useCourses';
-import { useEvents } from '@hooks/useEvents';
+import { useEvents, useAssignUsersToEvent, useDeregisterUsersFromEvent } from '@hooks/useEvents';
+import { useOffers, useAssignOffer, useBulkRevokeOffer } from '@hooks/useOffers';
 import type { ImportContactInput, ImportContactsResult } from '@api/users.api';
-import type { User, Tag, Course } from '@t/index';
+import type { User, Tag, Course, Offer, Event as EventType } from '@t/index';
 
 export default function ManageContacts() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -21,6 +32,7 @@ export default function ManageContacts() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showMigrate, setShowMigrate] = useState(false);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -104,6 +116,13 @@ export default function ManageContacts() {
                 >
                   Add Single Contact
                 </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowMigrate(true); setAddMenuOpen(false); }}
+                  className="block min-h-11 w-full cursor-pointer px-6 text-left text-ink-900 hover:bg-ink-50"
+                >
+                  Migrate Clients
+                </button>
               </div>
             )}
           </div>
@@ -176,7 +195,13 @@ export default function ManageContacts() {
               ? `Selected ${selectedCount} contacts`
               : `Displaying ${contacts.length ? ((page - 1) * pageSize) + 1 : 0}-${Math.min(page * pageSize, pagination?.total ?? contacts.length)} of ${pagination?.total ?? 0} contacts`}
           </label>
-          {selectedCount > 0 && <BulkActionsDropdown />}
+          {selectedCount > 0 && (
+            <BulkActionsDropdown
+              selectedIds={allSelected ? visibleIds : selectedIds}
+              tags={tags}
+              onDone={() => { setSelectedIds([]); setAllSelected(false); }}
+            />
+          )}
           <div className="flex items-center gap-5">
             <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="h-10 w-10 cursor-pointer rounded-lg border border-ink-900/15 text-lg text-ink-500 hover:border-ink-900 disabled:cursor-default disabled:opacity-40">←</button>
             <button disabled={Boolean(pagination && page >= pagination.pages)} onClick={() => setPage((p) => p + 1)} className="h-10 w-10 cursor-pointer rounded-lg border border-ink-900/20 text-lg text-ink-700 hover:border-ink-900 disabled:cursor-default disabled:opacity-40">→</button>
@@ -274,7 +299,8 @@ export default function ManageContacts() {
       )}
 
       {showAdd && <AddContactModal onClose={() => setShowAdd(false)} />}
-      {showImport && <ImportContactsModal onClose={() => setShowImport(false)} />}
+      {showImport && <ImportContactsModal mode="import" onClose={() => setShowImport(false)} />}
+      {showMigrate && <ImportContactsModal mode="migrate" onClose={() => setShowMigrate(false)} />}
     </div>
   );
 }
@@ -541,28 +567,67 @@ function MenuSelect({
   );
 }
 
-function BulkActionsDropdown() {
+type BulkModal = 'grant-offer' | 'revoke-offer' | 'register-event' | 'deregister-event' | 'add-tag' | 'remove-tag' | 'delete' | null;
+
+function BulkActionsDropdown({
+  selectedIds,
+  tags,
+  onDone,
+}: {
+  selectedIds: string[];
+  tags: Tag[];
+  onDone: () => void;
+}) {
   const [open, setOpen] = useState(false);
-  const sections = [
+  const [modal, setModal] = useState<BulkModal>(null);
+
+  const bulkAssignTag = useBulkAssignTag();
+  const bulkRemoveTag = useBulkRemoveTag();
+  const assignOffer = useAssignOffer();
+  const bulkRevokeOffer = useBulkRevokeOffer();
+  const assignEvent = useAssignUsersToEvent();
+  const deregisterEvent = useDeregisterUsersFromEvent();
+  const deleteUsers = useDeleteUsers();
+
+  const { data: offers = [] } = useOffers();
+  const { data: eventsData } = useEvents({ limit: 200 });
+  const events = eventsData?.data ?? [];
+
+  const closeModal = () => setModal(null);
+  const finish = () => { closeModal(); onDone(); };
+
+  const sections: Array<{ title: string; items: Array<{ label: string; onClick?: () => void; disabled?: boolean }> }> = [
     {
       title: 'OFFERS',
-      items: ['Grant offer', 'Revoke offer'],
+      items: [
+        { label: 'Grant offer', onClick: () => setModal('grant-offer') },
+        { label: 'Revoke offer', onClick: () => setModal('revoke-offer') },
+      ],
     },
     {
       title: 'EMAILS',
-      items: ['Subscribe to Email Sequence', 'Unsubscribe from Email Sequence'],
+      items: [
+        { label: 'Subscribe to Email Sequence', disabled: true },
+        { label: 'Unsubscribe from Email Sequence', disabled: true },
+      ],
     },
     {
       title: 'EMAIL MARKETING CONSENT',
-      items: ['Unsubscribe from all Email Marketing'],
+      items: [{ label: 'Unsubscribe from all Email Marketing', disabled: true }],
     },
     {
       title: 'EVENTS',
-      items: ['Register to Event', 'Deregister from Event'],
+      items: [
+        { label: 'Register to Event', onClick: () => setModal('register-event') },
+        { label: 'Deregister from Event', onClick: () => setModal('deregister-event') },
+      ],
     },
     {
       title: 'TAGS',
-      items: ['Add tag', 'Remove tag'],
+      items: [
+        { label: 'Add tag', onClick: () => setModal('add-tag') },
+        { label: 'Remove tag', onClick: () => setModal('remove-tag') },
+      ],
     },
   ];
 
@@ -582,21 +647,197 @@ function BulkActionsDropdown() {
             <div key={section.title} className="px-3 pb-3">
               <p className="px-2 pb-2 text-[11px] font-bold text-ink-400">{section.title}</p>
               {section.items.map((item) => (
-                <button key={item} type="button" className="block min-h-9 w-full cursor-pointer rounded-md px-3 text-left text-sm text-ink-900 hover:bg-[#eeeeee]">
-                  {item}
+                <button
+                  key={item.label}
+                  type="button"
+                  disabled={item.disabled}
+                  onClick={() => { item.onClick?.(); setOpen(false); }}
+                  className="block min-h-9 w-full cursor-pointer rounded-md px-3 text-left text-sm text-ink-900 hover:bg-[#eeeeee] disabled:cursor-not-allowed disabled:text-ink-400 disabled:hover:bg-transparent"
+                  title={item.disabled ? 'Próximamente' : undefined}
+                >
+                  {item.label}
                 </button>
               ))}
             </div>
           ))}
           <div className="border-t border-ink-900/10 px-3 py-2">
-            <button type="button" className="block min-h-9 w-full cursor-pointer rounded-md px-3 text-left text-sm text-ink-900 hover:bg-[#eeeeee]">Export</button>
+            <button type="button" disabled className="block min-h-9 w-full cursor-not-allowed rounded-md px-3 text-left text-sm text-ink-400" title="Próximamente">Export</button>
             <button type="button" disabled className="block min-h-9 w-full cursor-not-allowed rounded-md px-3 text-left text-sm text-ink-400">Merge contacts</button>
           </div>
           <div className="border-t border-ink-900/10 px-3 pt-2">
-            <button type="button" className="block min-h-9 w-full cursor-pointer rounded-md px-3 text-left text-sm text-red-600 hover:bg-red-50">Delete</button>
+            <button
+              type="button"
+              onClick={() => { setModal('delete'); setOpen(false); }}
+              className="block min-h-9 w-full cursor-pointer rounded-md px-3 text-left text-sm text-red-600 hover:bg-red-50"
+            >
+              Delete
+            </button>
           </div>
         </div>
       )}
+
+      {modal === 'add-tag' && (
+        <BulkPickerModal
+          title="Add tag"
+          options={tags.map((t) => ({ id: t._id, label: t.name }))}
+          confirmLabel="Add tag"
+          isPending={bulkAssignTag.isPending}
+          onClose={closeModal}
+          onConfirm={(tagId) => bulkAssignTag.mutate({ userIds: selectedIds, tagId }, { onSuccess: finish })}
+        />
+      )}
+      {modal === 'remove-tag' && (
+        <BulkPickerModal
+          title="Remove tag"
+          options={tags.map((t) => ({ id: t._id, label: t.name }))}
+          confirmLabel="Remove tag"
+          isPending={bulkRemoveTag.isPending}
+          onClose={closeModal}
+          onConfirm={(tagId) => bulkRemoveTag.mutate({ userIds: selectedIds, tagId }, { onSuccess: finish })}
+        />
+      )}
+      {modal === 'grant-offer' && (
+        <BulkPickerModal
+          title="Grant offer"
+          options={offers.map((o: Offer) => ({ id: o._id, label: o.title }))}
+          confirmLabel="Grant offer"
+          isPending={assignOffer.isPending}
+          onClose={closeModal}
+          onConfirm={(offerId) => assignOffer.mutate({ offerId, userIds: selectedIds }, { onSuccess: finish })}
+        />
+      )}
+      {modal === 'revoke-offer' && (
+        <BulkPickerModal
+          title="Revoke offer"
+          options={offers.map((o: Offer) => ({ id: o._id, label: o.title }))}
+          confirmLabel="Revoke offer"
+          isPending={bulkRevokeOffer.isPending}
+          onClose={closeModal}
+          onConfirm={(offerId) => bulkRevokeOffer.mutate({ offerId, userIds: selectedIds }, { onSuccess: finish })}
+        />
+      )}
+      {modal === 'register-event' && (
+        <BulkPickerModal
+          title="Register to Event"
+          options={events.map((e: EventType) => ({ id: String(e._id || e.id), label: e.title }))}
+          confirmLabel="Register"
+          isPending={assignEvent.isPending}
+          onClose={closeModal}
+          onConfirm={(eventId) => assignEvent.mutate({ eventId, userIds: selectedIds }, { onSuccess: finish })}
+        />
+      )}
+      {modal === 'deregister-event' && (
+        <BulkPickerModal
+          title="Deregister from Event"
+          options={events.map((e: EventType) => ({ id: String(e._id || e.id), label: e.title }))}
+          confirmLabel="Deregister"
+          isPending={deregisterEvent.isPending}
+          onClose={closeModal}
+          onConfirm={(eventId) => deregisterEvent.mutate({ eventId, userIds: selectedIds }, { onSuccess: finish })}
+        />
+      )}
+      {modal === 'delete' && (
+        <BulkConfirmModal
+          title="Delete contacts"
+          message={`¿Eliminar ${selectedIds.length} contacto${selectedIds.length === 1 ? '' : 's'}? Esta acción no se puede deshacer.`}
+          confirmLabel="Delete"
+          isPending={deleteUsers.isPending}
+          onClose={closeModal}
+          onConfirm={() => deleteUsers.mutate(selectedIds, { onSuccess: finish })}
+        />
+      )}
+    </div>
+  );
+}
+
+function BulkPickerModal({
+  title,
+  options,
+  confirmLabel,
+  isPending,
+  onClose,
+  onConfirm,
+}: {
+  title: string;
+  options: Array<{ id: string; label: string }>;
+  confirmLabel: string;
+  isPending: boolean;
+  onClose: () => void;
+  onConfirm: (id: string) => void;
+}) {
+  const [selected, setSelected] = useState('');
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-6" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-ink-900">{title}</h3>
+          <button type="button" onClick={onClose} className="min-h-9 min-w-9 cursor-pointer text-xl text-ink-500 hover:text-ink-900" aria-label="Cerrar">×</button>
+        </div>
+        {options.length === 0 ? (
+          <p className="text-sm text-ink-500">No hay opciones disponibles.</p>
+        ) : (
+          <select
+            value={selected}
+            onChange={(e) => setSelected(e.target.value)}
+            className="h-10 w-full rounded-lg border border-ink-900/20 bg-white px-3 text-sm text-ink-900 outline-none focus:border-[#8b8cf6]"
+            autoFocus
+          >
+            <option value="">Seleccionar...</option>
+            {options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+          </select>
+        )}
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="min-h-10 cursor-pointer rounded-full border border-[#d6d6d6] px-5 text-sm font-medium text-[#555]">Cancel</button>
+          <button
+            type="button"
+            disabled={!selected || isPending}
+            onClick={() => onConfirm(selected)}
+            className="min-h-10 cursor-pointer rounded-full bg-[#2f2f2f] px-5 text-sm font-semibold text-white disabled:cursor-default disabled:bg-[#eeeeee] disabled:text-[#aaa]"
+          >
+            {isPending ? 'Procesando...' : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BulkConfirmModal({
+  title,
+  message,
+  confirmLabel,
+  isPending,
+  onClose,
+  onConfirm,
+}: {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  isPending: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-6" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-ink-900">{title}</h3>
+          <button type="button" onClick={onClose} className="min-h-9 min-w-9 cursor-pointer text-xl text-ink-500 hover:text-ink-900" aria-label="Cerrar">×</button>
+        </div>
+        <p className="text-sm text-ink-700">{message}</p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="min-h-10 cursor-pointer rounded-full border border-[#d6d6d6] px-5 text-sm font-medium text-[#555]">Cancel</button>
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={onConfirm}
+            className="min-h-10 cursor-pointer rounded-full bg-red-600 px-5 text-sm font-semibold text-white disabled:cursor-default disabled:bg-red-300"
+          >
+            {isPending ? 'Procesando...' : confirmLabel}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1024,7 +1265,8 @@ function ContactDrawer({ contact, tags, onClose }: { contact: User; tags: Tag[];
 }
 
 // ───────────────────────────────────────────────────────────────
-function ImportContactsModal({ onClose }: { onClose: () => void }) {
+function ImportContactsModal({ mode, onClose }: { mode: 'import' | 'migrate'; onClose: () => void }) {
+  const isMigrate = mode === 'migrate';
   const { data: coursesData } = useCourses({ includeAll: true, limit: 200 } as any);
   const courses = coursesData?.data ?? [];
   const importMutation = useImportContacts();
@@ -1075,7 +1317,7 @@ function ImportContactsModal({ onClose }: { onClose: () => void }) {
     );
 
     importMutation.mutate(
-      { contacts, productMappings },
+      { contacts, productMappings, sendMigrationEmail: isMigrate },
       { onSuccess: (data) => setResult(data) },
     );
   };
@@ -1085,10 +1327,12 @@ function ImportContactsModal({ onClose }: { onClose: () => void }) {
       <div className="w-full max-w-5xl max-h-[92vh] overflow-y-auto bg-cream border border-ink-900/20 shadow-xl" style={{ animation: 'paper-unfold 320ms ease-out both' }}>
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-ink-900/15 bg-cream px-6 py-5">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-2">Importación Kajabi</p>
-            <h3 className="font-serif text-3xl text-ink-900 leading-none">Importar contactos</h3>
+            <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-2">{isMigrate ? 'Migración de clientes' : 'Importación Kajabi'}</p>
+            <h3 className="font-serif text-3xl text-ink-900 leading-none">{isMigrate ? 'Migrar clientes' : 'Importar contactos'}</h3>
             <p className="mt-2 max-w-2xl text-sm text-ink-600">
-              Sube tu archivo CSV, XLS o XLSX. Los productos de Kajabi se usarán para segmentar y otorgar acceso a cursos.
+              {isMigrate
+                ? 'Sube el CSV, XLS o XLSX de tus clientes suscritos en la plataforma anterior. Se creará su cuenta y les enviaremos un correo avisando de la migración con su acceso a la nueva Academia.'
+                : 'Sube tu archivo CSV, XLS o XLSX. Los productos de Kajabi se usarán para segmentar y otorgar acceso a cursos.'}
             </p>
           </div>
           <button onClick={onClose} className="min-h-11 min-w-11 cursor-pointer text-2xl text-ink-500 hover:text-ink-900" aria-label="Cerrar importación">×</button>
@@ -1183,9 +1427,10 @@ function ImportContactsModal({ onClose }: { onClose: () => void }) {
 
             {result && (
               <div className="border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-                <p className="font-semibold">Importación completada</p>
+                <p className="font-semibold">{isMigrate ? 'Migración completada' : 'Importación completada'}</p>
                 <p className="mt-1">
                   {result.summary.created} creados, {result.summary.updated} actualizados, {result.summary.skipped} omitidos.
+                  {isMigrate && result.summary.created > 0 && ' El correo de aviso de migración se encoló y se enviará gradualmente en segundo plano a los contactos nuevos.'}
                 </p>
                 {result.results.some((row) => row.tempPassword) && (
                   <button
@@ -1209,7 +1454,9 @@ function ImportContactsModal({ onClose }: { onClose: () => void }) {
                 disabled={contacts.length === 0 || importMutation.isPending}
                 className="btn-broadsheet disabled:opacity-50"
               >
-                {importMutation.isPending ? 'Importando...' : 'Importar contactos'}
+                {importMutation.isPending
+                  ? (isMigrate ? 'Migrando...' : 'Importando...')
+                  : (isMigrate ? 'Migrar clientes' : 'Importar contactos')}
               </button>
             </div>
           </section>
@@ -1495,7 +1742,7 @@ function mapKajabiRow(row: ContactRow): ImportContactInput | null {
     name,
     email,
     phone: valueOf(row, ['Teléfono (phone_number)', 'Mobile Phone Number (mobile_phone_number)', 'phone']),
-    products: splitList(valueOf(row, ['Products', 'Producto', 'Productos'])),
+    products: splitProducts(valueOf(row, ['Products', 'Producto', 'Productos'])),
     tags: splitList(valueOf(row, ['Tags', 'Etiquetas'])),
     createdAt: parseKajabiDate(valueOf(row, ['Created At', 'Member Created At'])),
     lastLogin: parseKajabiDate(valueOf(row, ['Last Sign In At', 'Last Activity'])),
@@ -1521,6 +1768,13 @@ function splitList(value: string): string[] {
         .filter(Boolean),
     ),
   );
+}
+
+// Kajabi incluye ofertas canceladas en el mismo campo "Products", marcadas con
+// un sufijo " archived <timestamp>". Se excluyen para no otorgar acceso a
+// membresías que el cliente ya no tiene activas ni crear tags basura con el timestamp.
+function splitProducts(value: string): string[] {
+  return splitList(value).filter((item) => !/\barchived\b\s*\d*\s*$/i.test(item));
 }
 
 function parseKajabiDate(value: string): string | undefined {
