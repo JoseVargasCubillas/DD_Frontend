@@ -317,7 +317,7 @@ export default function MyCourses() {
                   >
                     <div className="aspect-video overflow-hidden rounded-[16px] bg-ink-900">
                       {getCourseCover(course) ? (
-                        <img src={getCourseCover(course)} alt={`Portada ${course.title}`} className="h-full w-full object-cover" loading="lazy" onError={onDriveThumbnailError} referrerPolicy="no-referrer" />
+                        <img src={getCourseCover(course)} alt={`Portada ${course.title}`} className="h-full w-full object-contain" loading="lazy" onError={onDriveThumbnailError} referrerPolicy="no-referrer" />
                       ) : (
                         <div className="grid h-full place-items-center bg-gradient-to-br from-ink-900 to-[#2d211a]">
                           <span className="font-serif text-[22px] leading-none text-white/40">
@@ -348,7 +348,7 @@ export default function MyCourses() {
                   <img
                     src={selectedCourseCover}
                     alt={`Portada del curso ${selectedCourse.title}`}
-                    className="absolute inset-0 h-full w-full object-cover opacity-90"
+                    className="absolute inset-0 h-full w-full object-contain"
                     onError={onDriveThumbnailError}
                     referrerPolicy="no-referrer"
                   />
@@ -374,7 +374,7 @@ export default function MyCourses() {
                 )}
                 {selectedCourseCover && (
                   <>
-                    <div className="absolute inset-0 bg-gradient-to-t from-ink-900/85 via-ink-900/20 to-transparent" />
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-ink-900/80 to-transparent" />
                     <div className="absolute inset-x-0 bottom-0 p-6">
                       <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-white/70">
                         {getSectionLabel(selectedCourse)}
