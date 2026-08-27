@@ -298,6 +298,24 @@ export const getNextUpcomingCalendarEvent = (
     .filter((event) => isUpcomingCalendarEvent(event, now))
     .sort((first, second) => getCalendarEventTime(first) - getCalendarEventTime(second))[0];
 
+export const isEstrategiaFiscalEvent = (
+  event: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl">,
+) => {
+  const slug = (event.slug || "").toLowerCase();
+  const title = (event.title || "").toLowerCase();
+  const onlineUrl = (event.onlineUrl || "").toLowerCase();
+  return (
+    slug.includes("estrategia-fiscal") ||
+    title.includes("estrategia fiscal") ||
+    onlineUrl.includes("/estrategia-fiscal")
+  );
+};
+
+export const getNextEstrategiaFiscalEvent = (
+  events: CalendarEventSummary[],
+  now = Date.now(),
+) => getNextUpcomingCalendarEvent(events.filter(isEstrategiaFiscalEvent), now);
+
 export const getCalendarEventPath = (
   event?: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl"> | null,
 ) => {

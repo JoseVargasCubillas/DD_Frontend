@@ -7,6 +7,7 @@ import AdminLayout from "@templates/AdminLayout";
 import Events from "@pages/Events";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
+import RouterErrorBoundary from "./RouterErrorBoundary";
 
 
 const Home = lazy(() => import("@pages/Home"));
@@ -55,6 +56,7 @@ const Books = lazy(() => import("@pages/Books"));
 export const router = createBrowserRouter([
   {
     element: <MainLayout />,
+    errorElement: <RouterErrorBoundary />,
     children: [
       { path: "/", element: <Home /> },
       { path: "/acerca", element: <About /> },
@@ -101,6 +103,7 @@ export const router = createBrowserRouter([
   },
   {
     element: <AuthLayout />,
+    errorElement: <RouterErrorBoundary />,
     children: [
       { path: "/iniciar-sesion", element: <Login /> },
       { path: "/registro", element: <Register /> },
@@ -112,6 +115,7 @@ export const router = createBrowserRouter([
         <DashboardLayout />
       </ProtectedRoute>
     ),
+    errorElement: <RouterErrorBoundary />,
     children: [
       { path: "/mi-cuenta", element: <MyCourses /> },
       { path: "/mi-cuenta/cursos", element: <MyCourses /> },
@@ -124,6 +128,7 @@ export const router = createBrowserRouter([
         <AdminLayout />
       </AdminRoute>
     ),
+    errorElement: <RouterErrorBoundary />,
     children: [
       { path: "/admin", element: <AdminDashboard /> },
       { path: "/admin/productos", element: <ManageCourses /> },

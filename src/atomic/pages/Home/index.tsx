@@ -7,7 +7,7 @@ import { useInView } from "@hooks/useInView";
 import {
   FALLBACK_CALENDAR_EVENTS,
   getCalendarEventPath,
-  getNextUpcomingCalendarEvent,
+  getNextEstrategiaFiscalEvent,
   loadStoredCalendarEvents,
   mergeCalendarEventSources,
   type CalendarEventSummary,
@@ -334,7 +334,15 @@ export default function Home() {
       eventsData?.data ?? [],
       storedEvents,
     );
-    return getNextUpcomingCalendarEvent(candidates) ?? FALLBACK_CALENDAR_EVENTS[0];
+    // Home siempre destaca el próximo taller de Estrategia Fiscal — es la landing
+    // ancla del negocio. Si por algo no hay próximos, cae al primer EF del fallback.
+    return (
+      getNextEstrategiaFiscalEvent(candidates) ??
+      FALLBACK_CALENDAR_EVENTS.find((event) =>
+        event.slug.includes("taller-estrategia-fiscal"),
+      ) ??
+      FALLBACK_CALENDAR_EVENTS[0]
+    );
   }, [eventsData?.data, storedEvents]);
   const [nextEventTitle, nextEventSerifTitle] = splitHomeEventTitle(nextEvent.title);
   const nextEventHref = getCalendarEventPath(nextEvent);
