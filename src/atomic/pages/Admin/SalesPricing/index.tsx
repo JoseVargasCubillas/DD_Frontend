@@ -557,7 +557,7 @@ function NewOfferModal({ courses, packages, onClose }: { courses: Course[]; pack
                           <span className="min-w-0">
                             <span className="block font-semibold">{pkg.name}</span>
                             <span className={`mt-1 block text-xs ${checked ? "text-white/60" : "text-ink-500"}`}>
-                              {pkg.courseIds.length} cursos · {pkg.durationDays > 0 ? `${pkg.durationDays} días desde la compra` : "365 días desde la compra"}
+                              {Math.min(pkg.courseIds.length, courses.length || Number.MAX_SAFE_INTEGER)} cursos · {pkg.durationDays > 0 ? `${pkg.durationDays} días desde la compra` : "365 días desde la compra"}
                             </span>
                           </span>
                         </label>

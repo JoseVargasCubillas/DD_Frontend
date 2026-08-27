@@ -231,7 +231,9 @@ function TierCard({
         <span>
           Cursos incluidos:{' '}
           <b className="text-ink-900">
-            {pkg?.benefits?.allCourses ? 'Todos' : `${pkg?.courseIds.length ?? 0}`}
+            {pkg?.benefits?.allCourses
+              ? 'Todos'
+              : `${Math.min(pkg?.courseIds.length ?? 0, courses.length || Number.MAX_SAFE_INTEGER)}`}
           </b>
         </span>
         <span

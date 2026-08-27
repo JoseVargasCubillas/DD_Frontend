@@ -4,6 +4,7 @@ import { useUser, useUpdateUser, useSendPassword, useUpdateNotes, useAssignTag, 
 import { useTags } from '@hooks/useTags';
 import { usePackages, useAssignPackage } from '@hooks/usePackages';
 import { useCourses } from '@hooks/useCourses';
+import { upsertManualSubscription } from '@utils/manualSubscriptions';
 import type { Course, Offer, Package, Tag } from '@t/index';
 
 type TabKey = 'lifecycle' | 'info' | 'purchases' | 'products' | 'notes';
@@ -105,7 +106,13 @@ export default function ContactProfile() {
 
       {editing && <EditModal id={id} contact={contact} onClose={() => setEditing(false)} />}
       {showAssignSubscription && (
-        <AssignSubscriptionModal userId={id} packages={allPackages} onClose={() => setShowAssignSubscription(false)} />
+        <AssignSubscriptionModal
+          userId={id}
+          userName={contact.name}
+          userEmail={contact.email}
+          packages={allPackages}
+          onClose={() => setShowAssignSubscription(false)}
+        />
       )}
     </div>
   );
@@ -119,10 +126,14 @@ const DURATION_OPTIONS: { days: number; label: string; sub: string }[] = [
 
 function AssignSubscriptionModal({
   userId,
+  userName,
+  userEmail,
   packages,
   onClose,
 }: {
   userId: string;
+  userName?: string;
+  userEmail?: string;
   packages: Package[];
   onClose: () => void;
 }) {
@@ -140,9 +151,33 @@ function AssignSubscriptionModal({
 
   const submit = () => {
     if (!packageId) return;
+    const pkg = activePackages.find((p) => p._id === packageId);
     assign.mutate(
       { userId, packageId, durationDays },
-      { onSuccess: onClose },
+      {
+        onSuccess: () => {
+          if (pkg) {
+            const start = new Date();
+            const end = new Date(start.getTime() + durationDays * 86400000);
+            upsertManualSubscription({
+              userId,
+              userName,
+              userEmail,
+              packageId: pkg._id,
+              packageName: pkg.name,
+              packageTier: pkg.tier,
+              price: pkg.price,
+              currency: pkg.currency,
+              durationDays,
+              startDate: start.toISOString(),
+              currentPeriodEnd: end.toISOString(),
+              status: 'active',
+              source: 'manual_admin',
+            });
+          }
+          onClose();
+        },
+      },
     );
   };
 

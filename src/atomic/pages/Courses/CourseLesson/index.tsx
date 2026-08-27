@@ -413,13 +413,19 @@ export default function CourseLesson() {
 
           <aside className="space-y-5">
             <section className="border border-cream-400 bg-[#e8e1d6]">
-              <div className="relative aspect-[1/1.12] overflow-hidden bg-[radial-gradient(circle_at_55%_35%,#5b4938_0,#2d211a_34%,#090807_80%)]">
-                {instructorAvatar && (
+              <div className="relative aspect-[4/3] overflow-hidden bg-[radial-gradient(circle_at_55%_35%,#5b4938_0,#2d211a_34%,#090807_80%)]">
+                {instructorAvatar ? (
                   <img src={instructorAvatar} alt={instructorName} className="h-full w-full object-cover opacity-90" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="font-serif text-[64px] leading-none tracking-tight text-white/25">DD</span>
+                  </div>
                 )}
-                <p className="absolute bottom-4 left-4 text-[8px] uppercase tracking-[0.24em] text-white/55">
-                  - {instructorName} - Sesion en vivo
-                </p>
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-8">
+                  <p className="text-[8px] uppercase tracking-[0.24em] text-white/70">
+                    - {instructorName} - Sesion en vivo
+                  </p>
+                </div>
               </div>
               <div className="p-5">
                 <p className="text-[9px] uppercase tracking-[0.25em] text-ink-400">- Expositor - Masterclass completa</p>

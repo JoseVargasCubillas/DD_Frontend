@@ -1,8 +1,12 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { listAllSubscriptions } from '@api/subscriptions.api';
 import { listAllOrders } from '@api/payments.api';
 import ManagePackages from '@pages/Admin/ManagePackages';
+import {
+  mergeManualIntoSubscriptions,
+  MANUAL_SUBS_UPDATED_EVENT,
+} from '@utils/manualSubscriptions';
 
 function fmtDate(iso?: string) {
   if (!iso) return '—';
@@ -40,10 +44,32 @@ function daysUntil(iso?: string) {
  * Se otorgan desde el perfil del contacto ("Asignar paquete").
  */
 export default function ManageSubscriptions() {
-  const { data: subs = [], isLoading, error } = useQuery({
+  const { data: remoteSubs = [], isLoading, error } = useQuery({
     queryKey: ['subscriptions', 'admin', 'all'],
     queryFn: listAllSubscriptions,
   });
+
+  // Fallback local: mientras el backend expone /subscriptions/admin/all o
+  // registra las asignaciones manuales, mostramos también las guardadas en
+  // localStorage por el modal de "Asignar suscripción" (dedup por user+pkg).
+  const [manualTick, setManualTick] = useState(0);
+  useEffect(() => {
+    const refresh = () => setManualTick((t) => t + 1);
+    window.addEventListener(MANUAL_SUBS_UPDATED_EVENT, refresh);
+    window.addEventListener('storage', refresh);
+    window.addEventListener('focus', refresh);
+    return () => {
+      window.removeEventListener(MANUAL_SUBS_UPDATED_EVENT, refresh);
+      window.removeEventListener('storage', refresh);
+      window.removeEventListener('focus', refresh);
+    };
+  }, []);
+  const subs = useMemo(
+    () => mergeManualIntoSubscriptions(remoteSubs),
+    // manualTick fuerza recomputo cuando el modal guarda en localStorage
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [remoteSubs, manualTick],
+  );
   const { data: orders = [] } = useQuery({
     queryKey: ['orders', 'admin', 'all'],
     queryFn: listAllOrders,
