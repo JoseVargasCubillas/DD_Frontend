@@ -5,6 +5,7 @@ import AnimateIn from "@atoms/AnimateIn";
 import { useAutoUnmuteOnGesture } from "@hooks/useAutoUnmuteOnGesture";
 import { useEvents } from "@hooks/useEvents";
 import { useInView } from "@hooks/useInView";
+import { useNowTick } from "@hooks/useNowTick";
 import {
   FALLBACK_CALENDAR_EVENTS,
   getCalendarEventPath,
@@ -333,6 +334,9 @@ export default function Home() {
   const [storedEvents, setStoredEvents] = useState<CalendarEventSummary[]>(
     loadStoredCalendarEvents,
   );
+  // Tick del reloj: hace que el "próximo evento" se recompute con el tiempo,
+  // así al pasar la fecha del actual, salta automáticamente al siguiente EF.
+  const nowTick = useNowTick(30_000);
   const nextEvent = useMemo(() => {
     const candidates = mergeCalendarEventSources(
       FALLBACK_CALENDAR_EVENTS,
@@ -342,13 +346,13 @@ export default function Home() {
     // Home siempre destaca el próximo taller de Estrategia Fiscal — es la landing
     // ancla del negocio. Si por algo no hay próximos, cae al primer EF del fallback.
     return (
-      getNextEstrategiaFiscalEvent(candidates) ??
+      getNextEstrategiaFiscalEvent(candidates, nowTick) ??
       FALLBACK_CALENDAR_EVENTS.find((event) =>
         event.slug.includes("taller-estrategia-fiscal"),
       ) ??
       FALLBACK_CALENDAR_EVENTS[0]
     );
-  }, [eventsData?.data, storedEvents]);
+  }, [eventsData?.data, storedEvents, nowTick]);
   const [nextEventTitle, nextEventSerifTitle] = splitHomeEventTitle(nextEvent.title);
   const nextEventHref = getCalendarEventPath(nextEvent);
   const nextEventDescription =

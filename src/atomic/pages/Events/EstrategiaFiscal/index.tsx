@@ -1,7 +1,14 @@
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import * as eventsApi from '@api/events.api';
 import { useAutoUnmuteOnGesture } from '@hooks/useAutoUnmuteOnGesture';
+import { useEvents } from '@hooks/useEvents';
+import { useNowTick } from '@hooks/useNowTick';
+import {
+  FALLBACK_CALENDAR_EVENTS,
+  getNextEstrategiaFiscalEvent,
+  loadStoredCalendarEvents,
+  mergeCalendarEventSources,
+  type CalendarEventSummary,
+} from '@utils/eventCalendar';
 import heroDiego from '../../../../../assets/home/007_home_bios_DD.png';
 // Video hospedado en el GitHub Release `media-v1` (mismo esquema que Academia).
 // Sobrevive a cualquier deploy destructivo del VPS y tiene CDN de GitHub.
@@ -14,9 +21,6 @@ import azucenaPortrait from '../../../../../assets/eventos/LEF_img 003.png';
 import jessicaPortrait from '../../../../../assets/eventos/LEF_img_004.png';
 import type { Event as SiteEvent } from '@t/index';
 
-const EVENT_SLUG = 'estrategia-fiscal';
-const EVENT_STORAGE_KEY = 'dd-admin-events';
-const EVENT_DATE = '2026-06-15T09:00:00-06:00';
 const ENABLE_EVENT_API_SYNC = import.meta.env.VITE_EVENTS_API_SYNC !== 'false';
 const dossierUrl = new URL('../../../../../assets/eventos/Seminario Estrategia Fiscal (2).pdf', import.meta.url).href;
 const stripeCheckoutUrls = {
@@ -31,31 +35,10 @@ const countdownLabels = [
   ['seconds', 'Seg'],
 ] as const;
 
-const FALLBACK_EVENT: Pick<SiteEvent, 'title' | 'slug' | 'shortDescription' | 'description' | 'location' | 'startDate' | 'endDate' | 'modality' | 'capacity' | 'registeredCount'> = {
-  title: 'Estrategia Fiscal Edición CDMX',
-  slug: EVENT_SLUG,
-  shortDescription:
-    'Un día intensivo para empresarios que quieren rediseñar la estrategia fiscal de su empresa antes del cierre de año. Sólo 80 cupos por edición.',
-  description:
-    'Un día intensivo para empresarios que quieren rediseñar la estrategia fiscal de su empresa antes del cierre de año. Sólo 80 cupos por edición.',
-  location: 'WTC CDMX',
-  startDate: EVENT_DATE,
-  endDate: '2026-06-15T18:00:00-06:00',
-  modality: 'in-person',
-  capacity: 80,
-  registeredCount: 57,
-};
-
-const loadStoredEvent = () => {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.localStorage.getItem(EVENT_STORAGE_KEY);
-    const events = raw ? (JSON.parse(raw) as SiteEvent[]) : [];
-    return events.find((event) => event.slug === EVENT_SLUG) ?? null;
-  } catch {
-    return null;
-  }
-};
+const FALLBACK_ESTRATEGIA_FISCAL: CalendarEventSummary =
+  FALLBACK_CALENDAR_EVENTS.find((event) =>
+    event.slug.includes('taller-estrategia-fiscal'),
+  ) ?? FALLBACK_CALENDAR_EVENTS[0];
 
 const formatLandingDate = (value: string) => {
   const date = new Date(value);
@@ -89,7 +72,7 @@ const formatLandingTime = (value: string) => {
   }).format(date);
 };
 
-const formatModality = (modality: SiteEvent['modality']) => {
+const formatModality = (modality: SiteEvent['modality'] | undefined) => {
   if (modality === 'online') return 'Online';
   if (modality === 'hybrid') return 'Híbrido';
   return 'Presencial';
@@ -374,32 +357,50 @@ const FaqSection = memo(function FaqSection() {
 export default function EstrategiaFiscalLanding() {
   const videoRef = useRef<HTMLVideoElement>(null);
   useAutoUnmuteOnGesture(videoRef);
-  const [syncedEvent, setSyncedEvent] = useState<SiteEvent | null>(() => loadStoredEvent());
-  const { data: apiEvent } = useQuery({
-    queryKey: ['event', EVENT_SLUG],
-    queryFn: () => eventsApi.getEventBySlug(EVENT_SLUG),
-    enabled: ENABLE_EVENT_API_SYNC,
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
+  const nowTick = useNowTick(30_000);
+  const [storedEvents, setStoredEvents] = useState<CalendarEventSummary[]>(
+    loadStoredCalendarEvents,
+  );
+  const { data: eventsData } = useEvents(
+    ENABLE_EVENT_API_SYNC
+      ? { limit: 100, status: 'upcoming' }
+      : { limit: 0, status: 'upcoming' },
+  );
 
   useEffect(() => {
-    const refreshEvent = () => setSyncedEvent(loadStoredEvent());
-    window.addEventListener('storage', refreshEvent);
-    window.addEventListener('dd-events-updated', refreshEvent);
-    window.addEventListener('focus', refreshEvent);
+    const refresh = () => setStoredEvents(loadStoredCalendarEvents());
+    window.addEventListener('storage', refresh);
+    window.addEventListener('dd-events-updated', refresh);
+    window.addEventListener('focus', refresh);
     return () => {
-      window.removeEventListener('storage', refreshEvent);
-      window.removeEventListener('dd-events-updated', refreshEvent);
-      window.removeEventListener('focus', refreshEvent);
+      window.removeEventListener('storage', refresh);
+      window.removeEventListener('dd-events-updated', refresh);
+      window.removeEventListener('focus', refresh);
     };
   }, []);
 
-  const currentEvent = apiEvent ?? syncedEvent ?? FALLBACK_EVENT;
-  const currentEventDate = currentEvent.startDate || EVENT_DATE;
-  const currentEventLocation = currentEvent.location || FALLBACK_EVENT.location;
+  // Próximo taller de Estrategia Fiscal (online, CDMX, Monterrey — cualquier variante).
+  // Se recomputa cada 30s con nowTick: cuando la fecha del actual pasa, salta
+  // automáticamente al siguiente de la lista.
+  const currentEvent = useMemo<CalendarEventSummary>(() => {
+    const candidates = mergeCalendarEventSources(
+      FALLBACK_CALENDAR_EVENTS,
+      (eventsData?.data as CalendarEventSummary[] | undefined) ?? [],
+      storedEvents,
+    );
+    return (
+      getNextEstrategiaFiscalEvent(candidates, nowTick) ??
+      FALLBACK_ESTRATEGIA_FISCAL
+    );
+  }, [eventsData?.data, storedEvents, nowTick]);
+
+  const currentEventDate = currentEvent.startDate || FALLBACK_ESTRATEGIA_FISCAL.startDate;
+  const currentEventLocation = currentEvent.location || FALLBACK_ESTRATEGIA_FISCAL.location;
   const currentEventDescription =
-    currentEvent.shortDescription || currentEvent.description || FALLBACK_EVENT.description;
+    currentEvent.shortDescription ||
+    currentEvent.description ||
+    FALLBACK_ESTRATEGIA_FISCAL.shortDescription ||
+    '';
   const currentEventModality = formatModality(currentEvent.modality);
   const currentEventTime = formatLandingTime(currentEventDate);
   const currentEventEndTime =
