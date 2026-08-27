@@ -7,9 +7,10 @@ import diegoPortrait from '../../../../assets/eventos/LEF_img_001.png';
 import imarPortrait from '../../../../assets/eventos/LEF_img 002.png';
 import jazminPortrait from '../../../../assets/eventos/LEF_img 003.png';
 import jessicaPortrait from '../../../../assets/eventos/LEF_img_004.png';
-// Video subido manualmente al VPS dentro de la carpeta assets/ del sitio.
+// Video subido manualmente al VPS en /public_html/media/.
+// Esta carpeta NO se toca en ningún build ni deploy, así que sobrevive a todos los pushes.
 // El nombre tiene un espacio, lo codificamos como %20 en la URL.
-const academyVideoUrl = '/assets/video%20academia.mp4';
+const academyVideoUrl = '/media/video%20academia.mp4';
 
 const cream = 'bg-[#f5f2ec]';
 const pearl = 'bg-[#efebe2]';
