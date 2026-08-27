@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '@store/cartStore';
 import { useSubscription } from '@hooks/useSubscription';
@@ -322,8 +322,10 @@ export default function Academy() {
     return sorted.map(packageToPlan);
   }, [packages]);
 
+  const [videoMuted, setVideoMuted] = useState(true);
+
   // El navegador bloquea autoplay con sonido: arrancamos muted, y al primer
-  // gesto del usuario (click, tap, scroll o tecla) quitamos el mute.
+  // gesto del usuario (click, tap, scroll o tecla) quitamos el mute automáticamente.
   useEffect(() => {
     const video = academyVideoRef.current;
     if (!video) return;
@@ -331,10 +333,12 @@ export default function Academy() {
     void video.play().catch(() => {});
 
     const unmute = () => {
-      if (!academyVideoRef.current) return;
-      academyVideoRef.current.muted = false;
-      academyVideoRef.current.volume = 1;
-      void academyVideoRef.current.play().catch(() => {});
+      const v = academyVideoRef.current;
+      if (!v) return;
+      v.muted = false;
+      v.volume = 1;
+      setVideoMuted(false);
+      void v.play().catch(() => {});
     };
 
     const events: (keyof WindowEventMap)[] = ['click', 'touchstart', 'keydown', 'scroll'];
@@ -346,6 +350,16 @@ export default function Academy() {
 
     return () => events.forEach((e) => window.removeEventListener(e, handler));
   }, []);
+
+  const toggleVideoMute = () => {
+    const v = academyVideoRef.current;
+    if (!v) return;
+    const next = !v.muted;
+    v.muted = next;
+    if (!next) v.volume = 1;
+    setVideoMuted(next);
+    void v.play().catch(() => {});
+  };
 
   const startAcademyCheckout = (plan: PlanCard = plans[1] ?? plans[0]) => {
     if (hasAcademyAccess) {
@@ -419,7 +433,41 @@ export default function Academy() {
               playsInline
               preload="auto"
               aria-label="Video de Academia Diego Díaz"
+              onClick={toggleVideoMute}
             />
+
+            {/* Aviso persistente mientras el video está muted */}
+            {videoMuted && (
+              <button
+                type="button"
+                onClick={toggleVideoMute}
+                aria-label="Activar sonido del video"
+                className="absolute bottom-4 right-4 z-10 flex cursor-pointer items-center gap-2 bg-white/95 px-3 py-2 text-[10px] uppercase tracking-[0.28em] text-[#0a0a0a] shadow-lg transition hover:bg-white"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <line x1="23" y1="9" x2="17" y2="15" />
+                  <line x1="17" y1="9" x2="23" y2="15" />
+                </svg>
+                <span>Activar sonido</span>
+              </button>
+            )}
+
+            {/* Toggle discreto siempre visible cuando ya tiene sonido */}
+            {!videoMuted && (
+              <button
+                type="button"
+                onClick={toggleVideoMute}
+                aria-label="Silenciar video"
+                className="absolute bottom-4 right-4 z-10 flex h-9 w-9 cursor-pointer items-center justify-center bg-black/60 text-white shadow-lg transition hover:bg-black/80"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
       </section>
