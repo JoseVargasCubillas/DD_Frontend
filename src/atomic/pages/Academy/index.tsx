@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '@store/cartStore';
 import { useSubscription } from '@hooks/useSubscription';
@@ -7,7 +7,7 @@ import diegoPortrait from '../../../../assets/eventos/LEF_img_001.png';
 import imarPortrait from '../../../../assets/eventos/LEF_img 002.png';
 import jazminPortrait from '../../../../assets/eventos/LEF_img 003.png';
 import jessicaPortrait from '../../../../assets/eventos/LEF_img_004.png';
-const academyVideo = '/videos/academia.mp4';
+const academyVideoDriveId = '1m2OAl2aFDzbjT1e9uu-C3ZAp3wBOdYXR';
 
 const cream = 'bg-[#f5f2ec]';
 const pearl = 'bg-[#efebe2]';
@@ -306,7 +306,6 @@ export default function Academy() {
   const clearCart = useCartStore((state) => state.clear);
   const { subscription } = useSubscription();
   const { data: packages } = usePackages();
-  const academyVideoRef = useRef<HTMLVideoElement>(null);
   const hasAcademyAccess = subscription?.status === 'active' || subscription?.status === 'trialing';
 
   const plans = useMemo<PlanCard[]>(() => {
@@ -319,18 +318,6 @@ export default function Academy() {
     );
     return sorted.map(packageToPlan);
   }, [packages]);
-
-  useEffect(() => {
-    const video = academyVideoRef.current;
-    if (!video) return;
-
-    video.muted = false;
-    video.defaultMuted = false;
-    video.volume = 1;
-    void video.play().catch(() => {
-      // Browsers can block autoplay with audio until the first user interaction.
-    });
-  }, []);
 
   const startAcademyCheckout = (plan: PlanCard = plans[1] ?? plans[0]) => {
     if (hasAcademyAccess) {
@@ -394,20 +381,15 @@ export default function Academy() {
           </div>
 
           <div className="relative mx-auto aspect-[420/582] w-full max-w-[420px] overflow-hidden border border-[#0a0a0a]/20 bg-[#0a0a0a] shadow-[0_28px_70px_rgba(10,10,10,0.16)] lg:mx-0 lg:justify-self-end">
-            <video
-              ref={academyVideoRef}
-              className="h-full w-full object-cover"
-              autoPlay
-              loop
-              muted
-              playsInline
-              controls
-              preload="metadata"
-              aria-label="Video de Academia Diego Díaz"
-            >
-              <source src={academyVideo} type="video/mp4" />
-              Tu navegador no soporta el elemento de video.
-            </video>
+            <iframe
+              src={`https://drive.google.com/file/d/${academyVideoDriveId}/preview`}
+              className="absolute inset-0 h-full w-full border-0"
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+              title="Video de Academia Diego Díaz"
+            />
+            {/* Enmascara la barra superior de Drive (logo/menu) sin bloquear controles */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-14 bg-[#0a0a0a]" aria-hidden="true" />
           </div>
         </div>
       </section>
