@@ -41,8 +41,16 @@ const getCourseCover = (course?: Course) => {
   return resolveThumbnailUrl(raw);
 };
 
+const naturalCompare = (a?: string, b?: string) =>
+  (a ?? '').localeCompare(b ?? '', 'es', { numeric: true, sensitivity: 'base' });
+
 const sortLessons = (lessons: Lesson[] = []) =>
-  [...lessons].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  [...lessons].sort((a, b) => {
+    const oa = a.order ?? 0;
+    const ob = b.order ?? 0;
+    if (oa !== ob) return oa - ob;
+    return naturalCompare(a.title, b.title);
+  });
 
 const getModuleId = (module?: ModuleInput) => module?._id ?? module?.id;
 
@@ -52,7 +60,12 @@ const getCourseModules = (course?: Course): ModuleLike[] => {
   const modules = (course as ProgressShape).modules;
   if (Array.isArray(modules) && modules.length > 0) {
     return [...modules]
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .sort((a, b) => {
+        const oa = a.order ?? 0;
+        const ob = b.order ?? 0;
+        if (oa !== ob) return oa - ob;
+        return naturalCompare(a.title, b.title);
+      })
       .map((module, index) => {
         const moduleId = getModuleId(module);
         const embeddedLessons = sortLessons(module.lessons ?? []);
@@ -152,20 +165,23 @@ export default function MyCourses() {
         if (!id) return;
         map.set(id, { ...(map.get(id) ?? {}), ...course } as Course);
       });
-      return Array.from(map.values());
+    } else {
+      directCourses.forEach((course) => {
+        const id = getCourseId(course);
+        if (id) map.set(id, course);
+      });
+      catalogCourses.forEach((course) => {
+        const ids = [course.id, course._id, course.slug].filter(Boolean);
+        if (!ids.some((id) => assignedIds.has(id!))) return;
+        const id = getCourseId(course);
+        if (id) map.set(id, course);
+      });
     }
-
-    directCourses.forEach((course) => {
-      const id = getCourseId(course);
-      if (id) map.set(id, course);
-    });
-    catalogCourses.forEach((course) => {
-      const ids = [course.id, course._id, course.slug].filter(Boolean);
-      if (!ids.some((id) => assignedIds.has(id!))) return;
-      const id = getCourseId(course);
-      if (id) map.set(id, course);
-    });
-    return Array.from(map.values());
+    // Ocultamos cursos "vacíos" (0 o negativas lecciones) — corresponden a cursos
+    // de prueba que quedaron creados en la base pero sin contenido de Drive.
+    return Array.from(map.values())
+      .filter((course) => getLessonCount(course) > 0)
+      .sort((a, b) => naturalCompare(a.title, b.title));
   }, [catalogCourses, directCourses, assignedIds, hasAcademyAccess]);
 
   const filteredCourses = useMemo(() => {
@@ -269,11 +285,15 @@ export default function MyCourses() {
                       isSelected ? 'bg-ink-900 text-white' : 'hover:bg-cream-100'
                     }`}
                   >
-                    <div className="aspect-video overflow-hidden rounded-[16px] bg-ink-900/90">
+                    <div className="aspect-video overflow-hidden rounded-[16px] bg-ink-900">
                       {getCourseCover(course) ? (
-                        <img src={getCourseCover(course)} alt={`Portada ${course.title}`} className="h-full w-full object-contain" loading="lazy" onError={onDriveThumbnailError} referrerPolicy="no-referrer" />
+                        <img src={getCourseCover(course)} alt={`Portada ${course.title}`} className="h-full w-full object-cover" loading="lazy" onError={onDriveThumbnailError} referrerPolicy="no-referrer" />
                       ) : (
-                        <div className="grid h-full place-items-center font-mono text-[8px] uppercase tracking-[0.18em] text-white/50">DD</div>
+                        <div className="grid h-full place-items-center bg-gradient-to-br from-ink-900 to-[#2d211a]">
+                          <span className="font-serif text-[22px] leading-none text-white/40">
+                            {(course.title || 'DD').slice(0, 2).toUpperCase()}
+                          </span>
+                        </div>
                       )}
                     </div>
                     <div className="min-w-0 py-1">
@@ -292,46 +312,61 @@ export default function MyCourses() {
           </aside>
 
           <section className="overflow-hidden rounded-[34px] border border-ink-900/10 bg-white shadow-[0_24px_70px_rgba(10,10,10,0.07)]">
-            <div className="grid lg:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="relative grid min-h-[300px] place-items-center bg-ink-900 p-4 lg:min-h-[420px]">
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_340px]">
+              <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-ink-900 to-[#2d211a] lg:aspect-auto">
                 {selectedCourseCover ? (
-                  <img src={selectedCourseCover} alt={`Portada del curso ${selectedCourse.title}`} className="max-h-full w-full object-contain" onError={onDriveThumbnailError} referrerPolicy="no-referrer" />
+                  <img
+                    src={selectedCourseCover}
+                    alt={`Portada del curso ${selectedCourse.title}`}
+                    className="absolute inset-0 h-full w-full object-cover"
+                    onError={onDriveThumbnailError}
+                    referrerPolicy="no-referrer"
+                  />
                 ) : (
-                  <div className="grid h-full place-items-center">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/55">Portada pendiente</span>
+                  <div className="absolute inset-0 grid place-items-center">
+                    <span className="font-serif text-[96px] leading-none tracking-[-0.05em] text-white/15">
+                      {(selectedCourse.title || 'DD').slice(0, 2).toUpperCase()}
+                    </span>
                   </div>
                 )}
+                <div className="absolute inset-0 bg-gradient-to-t from-ink-900/70 via-transparent to-transparent" />
+                <div className="absolute bottom-5 left-5 right-5">
+                  <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-white/70">
+                    {getSectionLabel(selectedCourse)}
+                  </p>
+                  <p className="mt-2 line-clamp-2 font-serif text-[22px] leading-tight text-white sm:text-[28px]">
+                    {selectedCourse.title}
+                  </p>
+                </div>
               </div>
 
               <div className="flex flex-col border-t border-ink-900/10 p-6 lg:border-l lg:border-t-0">
-                <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-ink-400">{getSectionLabel(selectedCourse)}</p>
-                <h2 className="mt-3 font-serif text-[clamp(30px,4vw,44px)] leading-[0.95] tracking-[-0.045em] text-ink-900">
-                  {selectedCourse.title}
-                </h2>
-                <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.24em] text-ink-400">Tu avance</p>
-                <div className="mt-5 grid place-items-center rounded-[28px] border border-ink-900/10 bg-cream-50 p-8 text-center">
-                  <p className="font-serif text-[72px] leading-none tracking-[-0.06em]">{progress}%</p>
-                  <p className="mt-2 text-sm text-ink-500">{completedLessons} de {getLessonCount(selectedCourse)} lecciones completadas</p>
-                  <div className="mt-5 h-2 w-full rounded-full bg-ink-900/10">
-                    <div className="h-full rounded-full bg-[#6b4f2a]" style={{ width: `${progress}%` }} />
+                <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-ink-400">Tu avance</p>
+                <div className="mt-4 rounded-[24px] border border-ink-900/10 bg-cream-50 p-6 text-center">
+                  <p className="font-serif text-[64px] leading-none tracking-[-0.06em]">{progress}%</p>
+                  <p className="mt-2 text-sm text-ink-500">
+                    {completedLessons} de {getLessonCount(selectedCourse)} lecciones
+                  </p>
+                  <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-ink-900/10">
+                    <div className="h-full rounded-full bg-[#6b4f2a] transition-[width] duration-300" style={{ width: `${progress}%` }} />
                   </div>
                 </div>
-                <div className="mt-6 grid grid-cols-2 gap-3 text-center">
-                  <div className="rounded-[20px] border border-ink-900/10 p-4">
-                    <p className="font-serif text-[34px] leading-none">{getLessonCount(selectedCourse)}</p>
+                <div className="mt-4 grid grid-cols-2 gap-3 text-center">
+                  <div className="rounded-[18px] border border-ink-900/10 p-4">
+                    <p className="font-serif text-[28px] leading-none">{getLessonCount(selectedCourse)}</p>
                     <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.16em] text-ink-400">Lecciones</p>
                   </div>
-                  <div className="rounded-[20px] border border-ink-900/10 p-4">
-                    <p className="font-serif text-[34px] leading-none">{formatDuration(selectedCourse.totalDuration)}</p>
-                    <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.16em] text-ink-400">Duración</p>
+                  <div className="rounded-[18px] border border-ink-900/10 p-4">
+                    <p className="font-serif text-[15px] leading-tight">{formatDuration(selectedCourse.totalDuration)}</p>
+                    <p className="mt-2 font-mono text-[8px] uppercase tracking-[0.16em] text-ink-400">Duración</p>
                   </div>
                 </div>
                 {firstLesson && firstLessonId && (
                   <Link
                     to={`/cursos/${selectedCourse.slug}/leccion/${firstLessonId}`}
-                    className="mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-ink-900 px-6 font-mono text-[10px] uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#6b4f2a]"
+                    className="mt-5 inline-flex min-h-12 cursor-pointer items-center justify-center rounded-full bg-ink-900 px-6 font-mono text-[10px] uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#6b4f2a]"
                   >
-                    Entrar al curso →
+                    {progress > 0 ? 'Continuar curso' : 'Empezar curso'} →
                   </Link>
                 )}
               </div>
@@ -404,9 +439,9 @@ export default function MyCourses() {
                             <Link
                               key={lessonId ?? `${module.title}-${lessonIndex}`}
                               to={lessonId ? `/cursos/${selectedCourse.slug}/leccion/${lessonId}` : `/cursos/${selectedCourse.slug}`}
-                              className="grid min-h-[76px] grid-cols-[42px_minmax(0,1fr)] items-center gap-4 px-5 py-3 transition-colors hover:bg-white md:grid-cols-[42px_minmax(0,1fr)_auto]"
+                              className="group grid min-h-[68px] cursor-pointer grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-4 px-5 py-3 transition-colors hover:bg-white"
                             >
-                              <span className="grid size-9 place-items-center rounded-full border border-ink-900/10 bg-white font-mono text-[10px] text-ink-500">
+                              <span className="grid size-9 place-items-center rounded-full border border-ink-900/10 bg-white font-mono text-[10px] text-ink-500 transition-colors group-hover:border-ink-900 group-hover:text-ink-900">
                                 {String(lessonIndex + 1).padStart(2, '0')}
                               </span>
                               <div className="min-w-0">
@@ -415,8 +450,9 @@ export default function MyCourses() {
                                   {lesson.mediaType || 'video'} · {formatDuration(lesson.duration)}
                                 </p>
                               </div>
-                              <span className="col-span-2 inline-flex w-fit rounded-full bg-ink-900 px-4 py-2 font-mono text-[9px] uppercase tracking-[0.16em] text-white md:col-span-1">
-                                Reproducir video
+                              <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-ink-900 px-4 py-2 font-mono text-[9px] uppercase tracking-[0.16em] text-white transition-colors group-hover:bg-[#6b4f2a]">
+                                <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true"><path d="M2 1l7 4-7 4V1z" /></svg>
+                                Reproducir
                               </span>
                             </Link>
                           );
