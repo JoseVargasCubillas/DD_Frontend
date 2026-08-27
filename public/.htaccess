@@ -1,3 +1,17 @@
+<IfModule mod_mime.c>
+  AddType video/mp4 .mp4
+  AddType video/webm .webm
+</IfModule>
+
+<IfModule mod_headers.c>
+  # Permitir range requests (streaming del video) y CORS
+  <FilesMatch "\.(mp4|webm|mov)$">
+    Header set Accept-Ranges "bytes"
+    Header set Access-Control-Allow-Origin "*"
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+</IfModule>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
