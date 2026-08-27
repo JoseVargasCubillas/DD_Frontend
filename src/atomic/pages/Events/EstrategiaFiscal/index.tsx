@@ -1,6 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import * as eventsApi from '@api/events.api';
+import { useAutoUnmuteOnGesture } from '@hooks/useAutoUnmuteOnGesture';
 import heroDiego from '../../../../../assets/home/007_home_bios_DD.png';
 // Video hospedado en el GitHub Release `media-v1` (mismo esquema que Academia).
 // Sobrevive a cualquier deploy destructivo del VPS y tiene CDN de GitHub.
@@ -372,7 +373,7 @@ const FaqSection = memo(function FaqSection() {
 
 export default function EstrategiaFiscalLanding() {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const unlockedRef = useRef(false);
+  useAutoUnmuteOnGesture(videoRef);
   const [syncedEvent, setSyncedEvent] = useState<SiteEvent | null>(() => loadStoredEvent());
   const { data: apiEvent } = useQuery({
     queryKey: ['event', EVENT_SLUG],
@@ -381,22 +382,6 @@ export default function EstrategiaFiscalLanding() {
     retry: false,
     refetchOnWindowFocus: false,
   });
-
-  // En el primer gesto del usuario, quita el mute directamente (el video ya está corriendo)
-  useEffect(() => {
-    const unlock = () => {
-      if (unlockedRef.current) return;
-      unlockedRef.current = true;
-      const video = videoRef.current;
-      if (video) {
-        video.muted = false;
-        video.volume = 1;
-      }
-      window.removeEventListener('pointerdown', unlock);
-    };
-    window.addEventListener('pointerdown', unlock, { passive: true });
-    return () => window.removeEventListener('pointerdown', unlock);
-  }, []);
 
   useEffect(() => {
     const refreshEvent = () => setSyncedEvent(loadStoredEvent());

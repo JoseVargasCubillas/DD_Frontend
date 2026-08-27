@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import HeroSection from "@organisms/HeroSection";
 import AnimateIn from "@atoms/AnimateIn";
+import { useAutoUnmuteOnGesture } from "@hooks/useAutoUnmuteOnGesture";
 import { useEvents } from "@hooks/useEvents";
 import { useInView } from "@hooks/useInView";
 import {
@@ -390,9 +391,7 @@ export default function Home() {
   const c18 = useCountUp(18, statsInView);
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const videoInViewRef = useRef(false);
-  const videoHasGestureRef = useRef(false);
-  const [playing, setPlaying] = useState(false);
+  const [videoMuted, toggleVideoMute] = useAutoUnmuteOnGesture(videoRef);
   const [testimonialIdx, setTestimonialIdx] = useState(0);
   const [testimonialFading, setTestimonialFading] = useState(false);
 
@@ -404,97 +403,10 @@ export default function Home() {
     }, 200);
   }, []);
 
-  const playVideoWithSound = useCallback((fallbackToMuted = false) => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    video.muted = false;
-    video.defaultMuted = false;
-    video.volume = 1;
-
-    video
-      .play()
-      .then(() => setPlaying(true))
-      .catch(() => {
-        if (!fallbackToMuted) {
-          setPlaying(!video.paused);
-          return;
-        }
-
-        video.muted = true;
-        video
-          .play()
-          .then(() => setPlaying(true))
-          .catch(() => setPlaying(false));
-      });
-  }, []);
-
+  // Click en el propio video: toggle manual del mute (útil para pausar el sonido).
   const toggleVideo = () => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    videoHasGestureRef.current = true;
-
-    if (playing && !video.paused && !video.muted) {
-      video.pause();
-      video.muted = true;
-      setPlaying(false);
-      return;
-    }
-
-    playVideoWithSound(false);
+    toggleVideoMute();
   };
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry) return;
-
-        const isVideoInView =
-          entry.isIntersecting && entry.intersectionRatio >= 0.55;
-        videoInViewRef.current = isVideoInView;
-
-        if (isVideoInView) {
-          playVideoWithSound(!videoHasGestureRef.current);
-        } else {
-          video.pause();
-          video.muted = true;
-          setPlaying(false);
-        }
-      },
-      { threshold: [0, 0.55, 0.8] },
-    );
-
-    observer.observe(video);
-    return () => observer.disconnect();
-  }, [playVideoWithSound]);
-
-  useEffect(() => {
-    const unlockVideoAudio = (event: Event) => {
-      const videoBox = videoRef.current?.parentElement;
-      const target = event.target;
-
-      videoHasGestureRef.current = true;
-      if (target && videoBox?.contains(target as Node)) return;
-
-      if (videoInViewRef.current) playVideoWithSound(false);
-    };
-
-    window.addEventListener("pointerdown", unlockVideoAudio, { passive: true });
-    window.addEventListener("touchstart", unlockVideoAudio, { passive: true });
-    window.addEventListener("wheel", unlockVideoAudio, { passive: true });
-    window.addEventListener("keydown", unlockVideoAudio);
-
-    return () => {
-      window.removeEventListener("pointerdown", unlockVideoAudio);
-      window.removeEventListener("touchstart", unlockVideoAudio);
-      window.removeEventListener("wheel", unlockVideoAudio);
-      window.removeEventListener("keydown", unlockVideoAudio);
-    };
-  }, [playVideoWithSound]);
 
   const featured = STATIC_EVENTS[0];
   const smallCards = STATIC_EVENTS.slice(1);
@@ -522,11 +434,9 @@ export default function Home() {
                   muted
                   playsInline
                   loop
-                  onPlay={() => setPlaying(true)}
-                  onPause={() => setPlaying(false)}
                 />
-                {/* Overlay */}
-                {!playing && (
+                {/* Overlay: solo mientras el video aún está en mute (antes del primer gesto) */}
+                {videoMuted && (
                   <div className="absolute inset-0 flex flex-col justify-between p-6">
                     <p className="text-white text-[15px] font-light leading-snug max-w-[200px]">
                       Lo primero que te enseñamos es cómo

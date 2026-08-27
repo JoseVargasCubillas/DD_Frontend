@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '@store/cartStore';
 import { useSubscription } from '@hooks/useSubscription';
 import { usePackages } from '@hooks/usePackages';
+import { useAutoUnmuteOnGesture } from '@hooks/useAutoUnmuteOnGesture';
 import diegoPortrait from '../../../../assets/eventos/LEF_img_001.png';
 import imarPortrait from '../../../../assets/eventos/LEF_img 002.png';
 import jazminPortrait from '../../../../assets/eventos/LEF_img 003.png';
@@ -314,6 +315,7 @@ export default function Academy() {
   const { subscription } = useSubscription();
   const { data: packages } = usePackages();
   const academyVideoRef = useRef<HTMLVideoElement>(null);
+  const [videoMuted, toggleVideoMute] = useAutoUnmuteOnGesture(academyVideoRef);
   const hasAcademyAccess = subscription?.status === 'active' || subscription?.status === 'trialing';
 
   const plans = useMemo<PlanCard[]>(() => {
@@ -326,45 +328,6 @@ export default function Academy() {
     );
     return sorted.map(packageToPlan);
   }, [packages]);
-
-  const [videoMuted, setVideoMuted] = useState(true);
-
-  // El navegador bloquea autoplay con sonido: arrancamos muted, y al primer
-  // gesto del usuario (click, tap, scroll o tecla) quitamos el mute automáticamente.
-  useEffect(() => {
-    const video = academyVideoRef.current;
-    if (!video) return;
-
-    void video.play().catch(() => {});
-
-    const unmute = () => {
-      const v = academyVideoRef.current;
-      if (!v) return;
-      v.muted = false;
-      v.volume = 1;
-      setVideoMuted(false);
-      void v.play().catch(() => {});
-    };
-
-    const events: (keyof WindowEventMap)[] = ['click', 'touchstart', 'keydown', 'scroll'];
-    const handler = () => {
-      unmute();
-      events.forEach((e) => window.removeEventListener(e, handler));
-    };
-    events.forEach((e) => window.addEventListener(e, handler, { once: false, passive: true }));
-
-    return () => events.forEach((e) => window.removeEventListener(e, handler));
-  }, []);
-
-  const toggleVideoMute = () => {
-    const v = academyVideoRef.current;
-    if (!v) return;
-    const next = !v.muted;
-    v.muted = next;
-    if (!next) v.volume = 1;
-    setVideoMuted(next);
-    void v.play().catch(() => {});
-  };
 
   const startAcademyCheckout = (plan: PlanCard = plans[1] ?? plans[0]) => {
     if (hasAcademyAccess) {
