@@ -7,10 +7,14 @@ import diegoPortrait from '../../../../assets/eventos/LEF_img_001.png';
 import imarPortrait from '../../../../assets/eventos/LEF_img 002.png';
 import jazminPortrait from '../../../../assets/eventos/LEF_img 003.png';
 import jessicaPortrait from '../../../../assets/eventos/LEF_img_004.png';
-// Video subido manualmente al VPS en /public_html/media/.
-// Esta carpeta NO se toca en ningún build ni deploy, así que sobrevive a todos los pushes.
-// El nombre tiene un espacio, lo codificamos como %20 en la URL.
-const academyVideoUrl = '/media/video%20academia.mp4';
+// Video hospedado en un GitHub Release del propio repo (tag `media-v1`).
+// Ventajas: es permanente, sobrevive a cualquier deploy del VPS (no vive en public_html),
+// tiene CDN de GitHub y no cuenta contra el bundle de Vite (307 MB).
+// NOTA: al subir a un release, GitHub reemplaza espacios por puntos en el nombre.
+// Si el archivo se re-sube, mantener EXACTAMENTE `video academia.mp4` como nombre
+// del archivo local (GitHub lo guardará como `video.academia.mp4` automáticamente).
+const academyVideoUrl =
+  'https://github.com/JoseVargasCubillas/DD_Frontend/releases/download/media-v1/video.academia.mp4';
 
 const cream = 'bg-[#f5f2ec]';
 const pearl = 'bg-[#efebe2]';

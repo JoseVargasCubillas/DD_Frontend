@@ -37,8 +37,7 @@ import logoPrensa14 from "../../../../assets/home/010_home_logo14_DD.png";
 import logoPrensa15 from "../../../../assets/home/010_home_logo15_DD.png";
 import logoPrensa16 from "../../../../assets/home/010_home_logo16_DD.png";
 import logoPrensa17 from "../../../../assets/home/010_home_logo17_DD.png";
-// Video subido manualmente al VPS en /public_html/media/ (deploy-safe, no lo pisa `npm run build`).
-const videoSEF = "/media/VIDEO%20SEF%20vertical%20web.mp4";
+import videoSEF from "../../../../assets/eventos/VIDEO SEF vertical web.mp4";
 
 const formatHomeEventDate = (value: string) => {
   const date = new Date(value);
