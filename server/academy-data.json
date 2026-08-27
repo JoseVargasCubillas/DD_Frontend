@@ -1,4 +1,4 @@
-{
+﻿{
   "users": [
     {
       "_id": "usr_admin",
@@ -140,7 +140,70 @@
       "createdAt": "2026-07-03T22:07:46.806Z"
     }
   ],
-  "packages": [],
+  "packages": [
+    {
+      "_id": "pkg_entrepreneur",
+      "slug": "entrepreneur",
+      "tier": "entrepreneur",
+      "name": "Entrepreneur",
+      "description": "Acceso completo al catálogo de la Academia. +33 cursos con estrategias fiscales para emprendedores.",
+      "price": 4997,
+      "currency": "MXN",
+      "paymentType": "subscription",
+      "billingInterval": "year",
+      "durationDays": 365,
+      "courseIds": [],
+      "isActive": true,
+      "isFeatured": false,
+      "benefits": {
+        "allCourses": true,
+        "masterclassEveryTwoMonths": false
+      },
+      "createdAt": "2026-08-27T11:04:06.908Z"
+    },
+    {
+      "_id": "pkg_business",
+      "slug": "business",
+      "tier": "business",
+      "name": "Business",
+      "description": "Todo lo del plan Entrepreneur + masterclass bimestral en vivo + grupo de WhatsApp con nuestros asesores y consultores.",
+      "price": 14997,
+      "currency": "MXN",
+      "paymentType": "subscription",
+      "billingInterval": "year",
+      "durationDays": 365,
+      "courseIds": [],
+      "isActive": true,
+      "isFeatured": true,
+      "benefits": {
+        "allCourses": true,
+        "masterclassEveryTwoMonths": true,
+        "whatsappGroupAdvisors": { "enabled": true, "url": "" }
+      },
+      "createdAt": "2026-08-27T11:04:06.908Z"
+    },
+    {
+      "_id": "pkg_master",
+      "slug": "master",
+      "tier": "master",
+      "name": "Master",
+      "description": "Todo lo del plan Business + acompañamiento directo por WhatsApp con Diego Díaz.",
+      "price": 49997,
+      "currency": "MXN",
+      "paymentType": "subscription",
+      "billingInterval": "year",
+      "durationDays": 365,
+      "courseIds": [],
+      "isActive": true,
+      "isFeatured": false,
+      "benefits": {
+        "allCourses": true,
+        "masterclassEveryTwoMonths": true,
+        "whatsappDirectCEO": { "enabled": true, "url": "" }
+      },
+      "createdAt": "2026-08-27T11:04:06.908Z"
+    }
+  ],
   "promotions": [],
   "offers": [
     {

@@ -1,5 +1,8 @@
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '@store/cartStore';
+import { usePackages } from '@hooks/usePackages';
+import type { Package, PackageTier } from '@t/index';
 import diegoPortrait from '../../../../assets/eventos/LEF_img_001.png';
 import imarPortrait from '../../../../assets/eventos/LEF_img 002.png';
 import jazminPortrait from '../../../../assets/eventos/LEF_img 003.png';
@@ -50,7 +53,7 @@ const speakers = [
 
 const speakerLoop = [...speakers, ...speakers];
 
-const plans = [
+const plansFallback = [
   {
     id: 'off_academia_entrepreneur',
     name: 'Entrepreneur',
@@ -65,15 +68,19 @@ const plans = [
     cta: 'Aplicar',
   },
   {
-    id: 'off_academia_plus',
-    name: 'Academia +',
+    id: 'off_academia_business',
+    name: 'Business',
     eyebrow: 'Más demandado',
     price: '14,997',
     amount: 14997,
-    plan: 'plus',
-    suffix: 'Anual',
+    plan: 'business',
+    suffix: '/ año',
     note: '',
-    items: ['Todo lo anterior incluido', 'Mastermind mensual en vivo', 'Material descargable exclusivo'],
+    items: [
+      'Todo lo anterior incluido',
+      'Masterclass gratis cada 2 meses',
+      'Grupo de WhatsApp con asesores',
+    ],
     featured: true,
     cta: 'Aplicar',
   },
@@ -84,13 +91,65 @@ const plans = [
     price: '49,997',
     amount: 49997,
     plan: 'master',
-    suffix: '/ Anual',
+    suffix: '/ año',
     note: 'Plazas limitadas',
-    items: ['Todo lo anterior incluido', 'Grupo directo con Diego', 'Acceso a eventos VIP'],
+    items: [
+      'Todo lo anterior incluido',
+      'WhatsApp directo con Diego Díaz',
+      'Acceso a eventos VIP',
+    ],
     dark: true,
     cta: 'Aplicar a Master',
   },
-];
+] as const;
+
+type AcademyPlan = {
+  id: string;
+  name: string;
+  eyebrow: string;
+  price: string;
+  amount: number;
+  plan: string;
+  suffix: string;
+  note: string;
+  items: string[];
+  dark?: boolean;
+  featured?: boolean;
+  cta: string;
+};
+
+const tierOrder: Record<PackageTier, number> = { entrepreneur: 0, business: 1, master: 2 };
+
+function packageToPlan(pkg: Package, fallback: AcademyPlan): AcademyPlan {
+  const items: string[] = [];
+  if (pkg.benefits?.allCourses) items.push('Acceso a los 33 cursos');
+  if (pkg.benefits?.masterclassEveryTwoMonths) items.push('Masterclass gratis cada 2 meses');
+  if (pkg.benefits?.whatsappGroupAdvisors?.enabled) items.push('Grupo de WhatsApp con asesores');
+  if (pkg.benefits?.whatsappDirectCEO?.enabled) items.push('WhatsApp directo con Diego Díaz');
+  if (items.length === 0) items.push(...fallback.items);
+
+  const suffix =
+    pkg.billingInterval === 'month'
+      ? '/ mes'
+      : pkg.billingInterval === 'lifetime'
+        ? '/ único pago'
+        : '/ año';
+
+  return {
+    id: pkg._id,
+    name: pkg.name,
+    eyebrow: pkg.tier === 'business' ? 'Más demandado' : fallback.eyebrow,
+    price: pkg.price.toLocaleString('es-MX'),
+    amount: pkg.price,
+    plan: pkg.tier ?? fallback.plan,
+    suffix,
+    note: fallback.note,
+    items,
+    dark: pkg.tier !== 'business',
+    featured: pkg.tier === 'business' || !!pkg.isFeatured,
+    cta: pkg.tier === 'master' ? 'Aplicar a Master' : 'Aplicar',
+  };
+}
 
 const faqs = [
   {
@@ -201,7 +260,22 @@ export default function Academy() {
   const addItem = useCartStore((state) => state.addItem);
   const clearCart = useCartStore((state) => state.clear);
 
-  const startAcademyCheckout = (plan = plans[1]) => {
+  const { data: packages = [] } = usePackages();
+  const plans = useMemo<AcademyPlan[]>(() => {
+    const active = packages.filter((p) => p.isActive && p.tier);
+    if (active.length === 0) return plansFallback as unknown as AcademyPlan[];
+    const sorted = [...active].sort(
+      (a, b) => (tierOrder[a.tier!] ?? 99) - (tierOrder[b.tier!] ?? 99),
+    );
+    return sorted.map((pkg) => {
+      const fb =
+        (plansFallback.find((p) => p.plan === pkg.tier) as unknown as AcademyPlan) ??
+        (plansFallback[0] as unknown as AcademyPlan);
+      return packageToPlan(pkg, fb);
+    });
+  }, [packages]);
+
+  const startAcademyCheckout = (plan: AcademyPlan = plans[1] ?? plans[0]) => {
     clearCart();
     addItem({
       id: `subscription-${plan.id}`,

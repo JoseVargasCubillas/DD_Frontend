@@ -45,6 +45,9 @@ const SalesPayments = lazy(() => import("@pages/Admin/SalesPayments"));
 const SalesPricing = lazy(() => import("@pages/Admin/SalesPricing"));
 const SalesCart = lazy(() => import("@pages/Admin/SalesCart"));
 const ManagePackages = lazy(() => import("@pages/Admin/ManagePackages"));
+const ManageOffers = lazy(() => import("@pages/Admin/ManageOffers"));
+const ManagePromotions = lazy(() => import("@pages/Admin/ManagePromotions"));
+const ManageSubscriptions = lazy(() => import("@pages/Admin/ManageSubscriptions"));
 const DiazLara = lazy(() => import("@pages/DiazLara"));
 const ManageEmail = lazy(() => import("@pages/Admin/ManageEmail"));
 const BookCheckout = lazy(() => import("@pages/Books/BookCheckout"));
@@ -135,6 +138,10 @@ export const router = createBrowserRouter([
       { path: "/admin/ventas/pagos", element: <SalesPayments /> },
       { path: "/admin/ventas/precios", element: <SalesPricing /> },
       { path: "/admin/ventas/carrito", element: <SalesCart /> },
+      { path: "/admin/paquetes", element: <ManagePackages /> },
+      { path: "/admin/ofertas", element: <ManageOffers /> },
+      { path: "/admin/promociones", element: <ManagePromotions /> },
+      { path: "/admin/suscripciones", element: <ManageSubscriptions /> },
       { path: "/admin/ventas/paquetes", element: <ManagePackages /> },
       { path: "/admin/email", element: <ManageEmail /> },
     ],

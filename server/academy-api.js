@@ -1180,6 +1180,31 @@ export function installAcademyApi(app, API_BASE, rootDir, options = {}) {
     res.json({ success: true, data: subscription });
   });
 
+  app.get(`${API_BASE}/subscriptions/admin/all`, (req, res) => {
+    const session = requireUser(store, req, res);
+    if (!session) return;
+    if (session.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Solo admin" });
+    }
+    const users = session.state.users || [];
+    const packages = session.state.packages || [];
+    const offers = session.state.offers || [];
+    const rows = (session.state.subscriptions || []).map((s) => {
+      const user = users.find((u) => u._id === s.user);
+      const pkg = s.package ? packages.find((p) => p._id === s.package) : null;
+      const off = s.offer ? offers.find((o) => o._id === s.offer) : null;
+      return {
+        ...s,
+        userName: user ? [user.firstName, user.lastName].filter(Boolean).join(" ") : "",
+        userEmail: user ? user.email : "",
+        packageName: pkg ? pkg.name : null,
+        packageTier: pkg ? pkg.tier || null : null,
+        offerTitle: off ? off.title : null,
+      };
+    });
+    res.json({ success: true, data: rows });
+  });
+
   app.post(`${API_BASE}/subscriptions`, async (req, res, next) => {
     const session = checkoutSession(store, req);
     try {

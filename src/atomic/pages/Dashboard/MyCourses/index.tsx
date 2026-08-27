@@ -1,6 +1,10 @@
 import { Link } from 'react-router-dom';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import * as usersApi from '@api/users.api';
+import { getActiveSubscription } from '@api/subscriptions.api';
+import { usePackages } from '@hooks/usePackages';
+import { useCourses } from '@hooks/useCourses';
 import type { Course } from '@t/index';
 
 type EnrolledCourse = Course | string;
@@ -13,7 +17,36 @@ export default function MyCourses() {
     queryKey: ['profile'],
     queryFn: usersApi.getProfile,
   });
-  const courses = ((profile?.enrolledCourses ?? []) as EnrolledCourse[]).filter(isCourse);
+  const { data: subscription } = useQuery({
+    queryKey: ['subscription', 'active'],
+    queryFn: getActiveSubscription,
+  });
+  const { data: packages = [] } = usePackages();
+  const { data: coursesData } = useCourses({ includeAll: true, limit: 200 } as any);
+  const allCourses = coursesData?.data ?? [];
+
+  // Paquete activo del cliente (si tiene suscripción vigente)
+  const activePackage = useMemo(() => {
+    if (!subscription || subscription.status !== 'active') return null;
+    if (!subscription.package) return null;
+    return packages.find((p) => p._id === subscription.package) ?? null;
+  }, [subscription, packages]);
+
+  const enrolled = ((profile?.enrolledCourses ?? []) as EnrolledCourse[]).filter(isCourse);
+
+  const courses: Course[] = useMemo(() => {
+    // Si el paquete incluye todos los cursos, mostramos el catálogo completo.
+    if (activePackage?.benefits?.allCourses) return allCourses;
+    // Si el paquete tiene courseIds explícitos, mostramos esos + los enrolled.
+    if (activePackage && activePackage.courseIds.length > 0) {
+      const ids = new Set(activePackage.courseIds);
+      const fromPkg = allCourses.filter((c) => ids.has(String(c._id || c.id)));
+      const merged = new Map<string, Course>();
+      [...fromPkg, ...enrolled].forEach((c) => merged.set(String(c._id || c.id), c));
+      return [...merged.values()];
+    }
+    return enrolled;
+  }, [activePackage, allCourses, enrolled]);
 
   return (
     <div className="space-y-10">
@@ -26,6 +59,12 @@ export default function MyCourses() {
         <p className="mt-5 text-[16px] leading-[1.6] text-ink-500">
           {courses.length} {courses.length === 1 ? 'curso disponible' : 'cursos disponibles'} en tu cuenta.
         </p>
+        {activePackage && (
+          <p className="mt-2 text-[11px] uppercase tracking-[0.28em] text-ink-500">
+            — Paquete activo: <b className="text-ink-900">{activePackage.name}</b>
+            {activePackage.benefits?.allCourses ? ' · Acceso a todos los cursos' : ''}
+          </p>
+        )}
       </header>
 
       {isLoading && <p className="font-serif italic text-ink-600">Cargando...</p>}

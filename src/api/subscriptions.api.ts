@@ -31,3 +31,14 @@ export const subscribe = (data: {
 
 export const cancelSubscription = (): Promise<Subscription> =>
   client.post<ApiResponse<Subscription>>('/subscriptions/cancel').then((r) => r.data);
+
+export interface AdminSubscriptionRow extends Subscription {
+  userName?: string;
+  userEmail?: string;
+  packageName?: string | null;
+  packageTier?: string | null;
+  offerTitle?: string | null;
+}
+
+export const listAllSubscriptions = (): Promise<AdminSubscriptionRow[]> =>
+  client.get<ApiResponse<AdminSubscriptionRow[]>>('/subscriptions/admin/all').then((r) => r.data);

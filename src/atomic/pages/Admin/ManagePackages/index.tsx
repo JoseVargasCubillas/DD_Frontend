@@ -1,17 +1,81 @@
-import { useState } from 'react';
-import { usePackages, useCreatePackage, useDeletePackage, useUpdatePackage } from '@hooks/usePackages';
+import { useMemo, useState } from 'react';
+import { usePackages, useCreatePackage, useUpdatePackage } from '@hooks/usePackages';
 import { useCourses } from '@hooks/useCourses';
-import type { Package, Course } from '@t/index';
+import type { BillingInterval, Course, Package, PackageBenefits, PackageTier } from '@t/index';
+
+/**
+ * Página Paquetes.
+ *
+ * Modelo:
+ *  - Entrepreneur → acceso a todos los cursos.
+ *  - Business     → Entrepreneur + masterclass bimestral + WhatsApp asesores.
+ *  - Master       → Business - grupo asesores + WhatsApp directo con Diego Díaz.
+ *
+ * Los 3 paquetes son un catálogo fijo. Se crean automáticamente si faltan
+ * y sólo se editan (precio, beneficios, cursos incluidos, URLs de WhatsApp).
+ */
+
+type TierDef = {
+  tier: PackageTier;
+  name: string;
+  slug: string;
+  eyebrow: string;
+  suggestedPrice: number;
+  defaultBenefits: PackageBenefits;
+  copy: string;
+};
+
+const TIERS: TierDef[] = [
+  {
+    tier: 'entrepreneur',
+    name: 'Entrepreneur',
+    slug: 'entrepreneur',
+    eyebrow: 'Plan de entrada',
+    suggestedPrice: 4997,
+    defaultBenefits: { allCourses: true, masterclassEveryTwoMonths: false },
+    copy: 'Acceso completo al catálogo de la Academia (33 cursos).',
+  },
+  {
+    tier: 'business',
+    name: 'Business',
+    slug: 'business',
+    eyebrow: 'Más demandado',
+    suggestedPrice: 14997,
+    defaultBenefits: {
+      allCourses: true,
+      masterclassEveryTwoMonths: true,
+      whatsappGroupAdvisors: { enabled: true, url: '' },
+    },
+    copy: 'Entrepreneur + masterclass bimestral + grupo de WhatsApp con asesores y consultores.',
+  },
+  {
+    tier: 'master',
+    name: 'Master',
+    slug: 'master',
+    eyebrow: 'Acompañamiento con Diego',
+    suggestedPrice: 49997,
+    defaultBenefits: {
+      allCourses: true,
+      masterclassEveryTwoMonths: true,
+      whatsappDirectCEO: { enabled: true, url: '' },
+    },
+    copy: 'Business + acompañamiento directo por WhatsApp con Diego Díaz.',
+  },
+];
 
 export default function ManagePackages() {
   const { data: packages = [], isLoading } = usePackages();
-  const { data: coursesData } = useCourses({ includeAll: true, limit: 100 } as any);
+  const { data: coursesData } = useCourses({ includeAll: true, limit: 200 } as any);
   const courses = coursesData?.data ?? [];
   const create = useCreatePackage();
-  const del = useDeletePackage();
-  const upd = useUpdatePackage();
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [showNew, setShowNew] = useState(false);
+  const update = useUpdatePackage();
+
+  // Índice paquete por tier (si ya existe en BD)
+  const byTier = useMemo(() => {
+    const map: Partial<Record<PackageTier, Package>> = {};
+    for (const p of packages) if (p.tier) map[p.tier] = p;
+    return map;
+  }, [packages]);
 
   return (
     <div>
@@ -20,154 +84,434 @@ export default function ManagePackages() {
         <div className="flex items-end justify-between gap-6 flex-wrap">
           <div>
             <h1 className="font-serif text-4xl md:text-5xl text-ink-900 leading-none">Paquetes</h1>
-            <p className="text-sm text-ink-600 mt-3">
-              Agrupa cursos en paquetes con precio y duración. Luego asígnalos a tus clientes desde su perfil.
+            <p className="text-sm text-ink-600 mt-3 max-w-2xl">
+              Los tres productos de la Academia. Precio, cursos incluidos y beneficios (masterclass y grupos
+              de WhatsApp) se controlan aquí. Estos paquetes son los que aparecen públicamente en{' '}
+              <span className="font-mono text-[11px] px-1.5 py-0.5 bg-cream-200 border border-ink-900/10">
+                /academia
+              </span>{' '}
+              y los que asignas manualmente a un cliente desde su perfil.
             </p>
           </div>
-          <button onClick={() => setShowNew(true)} className="btn-broadsheet">+ Nuevo paquete</button>
         </div>
       </header>
 
-      <div className="border border-ink-900/15 bg-cream-100">
-        <div className="grid grid-cols-[1.5fr_0.8fr_0.8fr_0.6fr_120px] gap-4 px-5 py-3 border-b border-ink-900/15 text-[10px] uppercase tracking-[0.32em] text-ink-500">
-          <span>Paquete</span>
-          <span>Precio</span>
-          <span>Duración</span>
-          <span>Cursos</span>
-          <span />
+      {isLoading ? (
+        <p className="p-8 text-sm text-ink-500">Cargando…</p>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {TIERS.map((def) => {
+            const pkg = byTier[def.tier];
+            return (
+              <TierCard
+                key={def.tier}
+                def={def}
+                pkg={pkg}
+                courses={courses}
+                onCreate={(data) => create.mutate(data as any)}
+                onUpdate={(id, data) => update.mutate({ id, data })}
+              />
+            );
+          })}
         </div>
+      )}
+    </div>
+  );
+}
 
-        {isLoading ? (
-          <p className="p-8 text-sm text-ink-500">Cargando…</p>
-        ) : packages.length === 0 ? (
-          <p className="p-12 text-center text-sm text-ink-500">Aún no hay paquetes.</p>
+function TierCard({
+  def,
+  pkg,
+  courses,
+  onCreate,
+  onUpdate,
+}: {
+  def: TierDef;
+  pkg?: Package;
+  courses: Course[];
+  onCreate: (data: Partial<Package>) => void;
+  onUpdate: (id: string, data: Partial<Package>) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const exists = !!pkg;
+
+  return (
+    <article className="bg-cream-100 border border-ink-900/15 p-6 flex flex-col gap-5">
+      <header>
+        <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500">{def.eyebrow}</p>
+        <h2 className="font-serif text-3xl text-ink-900 mt-1">{def.name}</h2>
+        <p className="text-sm text-ink-600 mt-2">{pkg?.description || def.copy}</p>
+      </header>
+
+      <div className="border-t border-ink-900/10 pt-5">
+        <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-1">Precio</p>
+        <p className="font-serif text-3xl text-ink-900">
+          ${(pkg?.price ?? def.suggestedPrice).toLocaleString('es-MX')}{' '}
+          <span className="text-xs text-ink-500 tracking-wide">
+            {pkg?.currency ?? 'MXN'} · {intervalLabel(pkg?.billingInterval ?? 'year')}
+          </span>
+        </p>
+      </div>
+
+      <BenefitsSummary benefits={pkg?.benefits ?? def.defaultBenefits} />
+
+      <div className="border-t border-ink-900/10 pt-4 text-xs text-ink-600 flex items-center justify-between">
+        <span>
+          Cursos incluidos:{' '}
+          <b className="text-ink-900">
+            {pkg?.benefits?.allCourses ? 'Todos' : `${pkg?.courseIds.length ?? 0}`}
+          </b>
+        </span>
+        <span
+          className={
+            'text-[10px] uppercase tracking-[0.28em] px-2 py-1 border ' +
+            (pkg?.isActive
+              ? 'border-emerald-700 text-emerald-700'
+              : 'border-ink-400 text-ink-500')
+          }
+        >
+          {exists ? (pkg!.isActive ? 'Activo' : 'Pausado') : 'Sin crear'}
+        </span>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setEditing((v) => !v)}
+        className="btn-broadsheet"
+      >
+        {editing ? 'Cerrar' : exists ? 'Editar paquete' : 'Crear paquete'}
+      </button>
+
+      {editing && (
+        <TierEditor
+          def={def}
+          pkg={pkg}
+          courses={courses}
+          onSave={(data) => {
+            if (exists) onUpdate(pkg!._id, data);
+            else onCreate(data);
+            setEditing(false);
+          }}
+        />
+      )}
+    </article>
+  );
+}
+
+function BenefitsSummary({ benefits }: { benefits: PackageBenefits }) {
+  const rows = [
+    { on: benefits.allCourses, label: 'Acceso a los 33 cursos' },
+    { on: benefits.masterclassEveryTwoMonths, label: 'Masterclass gratis cada 2 meses' },
+    { on: !!benefits.whatsappGroupAdvisors?.enabled, label: 'Grupo WhatsApp con asesores' },
+    { on: !!benefits.whatsappDirectCEO?.enabled, label: 'WhatsApp directo con Diego Díaz' },
+  ];
+  return (
+    <ul className="text-sm text-ink-700 space-y-1.5">
+      {rows.map((r) => (
+        <li key={r.label} className="flex items-start gap-2">
+          <span
+            className={
+              'mt-0.5 h-4 w-4 shrink-0 border ' +
+              (r.on ? 'bg-ink-900 border-ink-900' : 'bg-transparent border-ink-400')
+            }
+            aria-hidden
+          >
+            {r.on && (
+              <svg viewBox="0 0 20 20" fill="none" stroke="white" strokeWidth="2.5" className="w-full h-full">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m5 10 3 3 7-7" />
+              </svg>
+            )}
+          </span>
+          <span className={r.on ? '' : 'text-ink-400 line-through'}>{r.label}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function TierEditor({
+  def,
+  pkg,
+  courses,
+  onSave,
+}: {
+  def: TierDef;
+  pkg?: Package;
+  courses: Course[];
+  onSave: (data: Partial<Package>) => void;
+}) {
+  const [form, setForm] = useState<{
+    name: string;
+    description: string;
+    price: number;
+    currency: string;
+    billingInterval: BillingInterval;
+    isActive: boolean;
+    isFeatured: boolean;
+    courseIds: string[];
+    benefits: PackageBenefits;
+  }>({
+    name: pkg?.name ?? def.name,
+    description: pkg?.description ?? def.copy,
+    price: pkg?.price ?? def.suggestedPrice,
+    currency: pkg?.currency ?? 'MXN',
+    billingInterval: pkg?.billingInterval ?? 'year',
+    isActive: pkg?.isActive ?? true,
+    isFeatured: pkg?.isFeatured ?? def.tier === 'business',
+    courseIds: pkg?.courseIds ? [...pkg.courseIds] : [],
+    benefits: { ...(pkg?.benefits ?? def.defaultBenefits) },
+  });
+
+  const toggleCourse = (cid: string) =>
+    setForm((f) => ({
+      ...f,
+      courseIds: f.courseIds.includes(cid)
+        ? f.courseIds.filter((x) => x !== cid)
+        : [...f.courseIds, cid],
+    }));
+
+  const selectAllCourses = () =>
+    setForm((f) => ({
+      ...f,
+      benefits: { ...f.benefits, allCourses: true },
+      courseIds: courses.map((c) => String(c._id || c.id)),
+    }));
+
+  const clearCourses = () =>
+    setForm((f) => ({ ...f, benefits: { ...f.benefits, allCourses: false }, courseIds: [] }));
+
+  return (
+    <div className="border-t border-ink-900/10 pt-5 space-y-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="ink-label">Nombre público</label>
+          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="ink-input" />
+        </div>
+        <div>
+          <label className="ink-label">Precio</label>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              min={0}
+              value={form.price}
+              onChange={(e) => setForm({ ...form, price: +e.target.value })}
+              className="ink-input flex-1"
+            />
+            <input
+              value={form.currency}
+              onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })}
+              className="ink-input w-20 text-center uppercase"
+            />
+          </div>
+        </div>
+        <div className="md:col-span-2">
+          <label className="ink-label">Descripción</label>
+          <textarea
+            rows={2}
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            className="ink-input font-serif"
+          />
+        </div>
+        <div>
+          <label className="ink-label">Ciclo de cobro</label>
+          <select
+            value={form.billingInterval}
+            onChange={(e) => setForm({ ...form, billingInterval: e.target.value as BillingInterval })}
+            className="ink-input cursor-pointer"
+          >
+            <option value="year">Anual</option>
+            <option value="month">Mensual</option>
+            <option value="lifetime">De por vida</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-4 pt-6">
+          <label className="flex items-center gap-2 cursor-pointer text-sm text-ink-700">
+            <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
+            Activo
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-sm text-ink-700">
+            <input type="checkbox" checked={form.isFeatured} onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })} />
+            Destacar
+          </label>
+        </div>
+      </div>
+
+      {/* Beneficios */}
+      <div className="border-t border-ink-900/10 pt-5">
+        <p className="ink-label mb-3">Beneficios</p>
+        <div className="space-y-3">
+          <label className="flex items-center gap-2 text-sm text-ink-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.benefits.masterclassEveryTwoMonths}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  benefits: { ...form.benefits, masterclassEveryTwoMonths: e.target.checked },
+                })
+              }
+            />
+            Masterclass gratis cada 2 meses
+          </label>
+
+          <div className="border border-ink-900/10 p-3 bg-cream-200/40">
+            <label className="flex items-center gap-2 text-sm text-ink-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!form.benefits.whatsappGroupAdvisors?.enabled}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    benefits: {
+                      ...form.benefits,
+                      whatsappGroupAdvisors: {
+                        enabled: e.target.checked,
+                        url: form.benefits.whatsappGroupAdvisors?.url ?? '',
+                      },
+                    },
+                  })
+                }
+              />
+              Grupo de WhatsApp con asesores y consultores
+            </label>
+            {form.benefits.whatsappGroupAdvisors?.enabled && (
+              <input
+                placeholder="Enlace de invitación (https://chat.whatsapp.com/…)"
+                value={form.benefits.whatsappGroupAdvisors.url ?? ''}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    benefits: {
+                      ...form.benefits,
+                      whatsappGroupAdvisors: { enabled: true, url: e.target.value },
+                    },
+                  })
+                }
+                className="ink-input mt-2 text-xs"
+              />
+            )}
+          </div>
+
+          <div className="border border-ink-900/10 p-3 bg-cream-200/40">
+            <label className="flex items-center gap-2 text-sm text-ink-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!form.benefits.whatsappDirectCEO?.enabled}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    benefits: {
+                      ...form.benefits,
+                      whatsappDirectCEO: {
+                        enabled: e.target.checked,
+                        url: form.benefits.whatsappDirectCEO?.url ?? '',
+                      },
+                    },
+                  })
+                }
+              />
+              WhatsApp directo con Diego Díaz (CEO)
+            </label>
+            {form.benefits.whatsappDirectCEO?.enabled && (
+              <input
+                placeholder="Enlace o número (https://wa.me/52…)"
+                value={form.benefits.whatsappDirectCEO.url ?? ''}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    benefits: {
+                      ...form.benefits,
+                      whatsappDirectCEO: { enabled: true, url: e.target.value },
+                    },
+                  })
+                }
+                className="ink-input mt-2 text-xs"
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Cursos incluidos */}
+      <div className="border-t border-ink-900/10 pt-5">
+        <div className="flex items-center justify-between mb-2">
+          <p className="ink-label !mb-0">Cursos incluidos</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={selectAllCourses}
+              className="text-[10px] uppercase tracking-[0.28em] text-ink-700 hover:text-ink-900 cursor-pointer"
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              onClick={clearCourses}
+              className="text-[10px] uppercase tracking-[0.28em] text-ink-500 hover:text-red-700 cursor-pointer"
+            >
+              Ninguno
+            </button>
+          </div>
+        </div>
+        {form.benefits.allCourses ? (
+          <p className="text-xs text-ink-600 bg-cream-200/40 border border-ink-900/10 p-3">
+            Este paquete incluye <b>todos los cursos activos</b>. Los cursos nuevos se agregan automáticamente.
+          </p>
         ) : (
-          packages.map((p: Package) => (
-            <div key={p._id} className="border-b border-ink-900/10 last:border-0">
-              <div className="grid grid-cols-[1.5fr_0.8fr_0.8fr_0.6fr_120px] gap-4 px-5 py-4 items-center text-sm">
-                <div>
-                  <p className="font-serif text-lg text-ink-900">{p.name}</p>
-                  <p className="text-xs text-ink-500">{p.description || '—'}</p>
-                </div>
-                <p className="font-serif text-lg text-ink-900">${p.price} <span className="text-xs text-ink-500">{p.currency}</span></p>
-                <p className="text-ink-700">{p.durationDays > 0 ? `${p.durationDays} días` : 'De por vida'}</p>
-                <p className="text-ink-700">{p.courseIds.length}</p>
-                <div className="flex gap-2 justify-end">
-                  <button onClick={() => setEditingId(editingId === p._id ? null : p._id)} className="text-[10px] uppercase tracking-[0.28em] text-ink-700 hover:text-ink-900 cursor-pointer">
-                    {editingId === p._id ? 'Cerrar' : 'Editar'}
-                  </button>
-                  <button
-                    onClick={() => { if (confirm(`¿Eliminar el paquete "${p.name}"?`)) del.mutate(p._id); }}
-                    className="text-[10px] uppercase tracking-[0.28em] text-ink-500 hover:text-red-700 cursor-pointer"
-                  >
-                    Borrar
-                  </button>
-                </div>
-              </div>
-
-              {editingId === p._id && (
-                <EditPackagePanel pkg={p} courses={courses} onSave={(data) => upd.mutate({ id: p._id, data })} />
-              )}
-            </div>
-          ))
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-1 max-h-48 overflow-y-auto border border-ink-900/10 p-2 bg-cream text-sm">
+            {courses.map((c) => {
+              const cid = String(c._id || c.id);
+              const checked = form.courseIds.includes(cid);
+              return (
+                <label
+                  key={cid}
+                  className="flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-cream-200"
+                >
+                  <input type="checkbox" checked={checked} onChange={() => toggleCourse(cid)} />
+                  <span className="font-serif text-ink-900 truncate">{c.title}</span>
+                </label>
+              );
+            })}
+            {courses.length === 0 && (
+              <p className="text-xs text-ink-500 p-2 col-span-2">Crea cursos primero.</p>
+            )}
+          </div>
         )}
       </div>
 
-      {showNew && <NewPackageModal courses={courses} onClose={() => setShowNew(false)} onCreate={(data) => create.mutate(data as any, { onSuccess: () => setShowNew(false) })} />}
+      <button
+        type="button"
+        onClick={() =>
+          onSave({
+            name: form.name,
+            slug: def.slug,
+            tier: def.tier,
+            description: form.description,
+            price: form.price,
+            currency: form.currency,
+            paymentType: 'subscription',
+            billingInterval: form.billingInterval,
+            durationDays:
+              form.billingInterval === 'year' ? 365 : form.billingInterval === 'month' ? 30 : 0,
+            isActive: form.isActive,
+            isFeatured: form.isFeatured,
+            benefits: form.benefits,
+            courseIds: form.benefits.allCourses
+              ? courses.map((c) => String(c._id || c.id))
+              : form.courseIds,
+          })
+        }
+        className="btn-broadsheet w-full"
+      >
+        Guardar {def.name}
+      </button>
     </div>
   );
 }
 
-function EditPackagePanel({ pkg, courses, onSave }: { pkg: Package; courses: Course[]; onSave: (data: Partial<Package>) => void }) {
-  const [form, setForm] = useState({
-    name: pkg.name,
-    description: pkg.description,
-    price: pkg.price,
-    currency: pkg.currency,
-    durationDays: pkg.durationDays,
-    isActive: pkg.isActive,
-    isFeatured: pkg.isFeatured,
-    courseIds: [...pkg.courseIds],
-  });
-
-  const toggle = (cid: string) => {
-    setForm((f) => ({ ...f, courseIds: f.courseIds.includes(cid) ? f.courseIds.filter((x) => x !== cid) : [...f.courseIds, cid] }));
-  };
-
-  return (
-    <div className="bg-cream-200/40 border-t border-ink-900/10 p-5 space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div><label className="ink-label">Nombre</label><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="ink-input" /></div>
-        <div><label className="ink-label">Precio</label><input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} className="ink-input" /></div>
-        <div className="md:col-span-2"><label className="ink-label">Descripción</label><textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="ink-input font-serif" /></div>
-        <div><label className="ink-label">Duración (días, 0=de por vida)</label><input type="number" min={0} value={form.durationDays} onChange={(e) => setForm({ ...form, durationDays: +e.target.value })} className="ink-input" /></div>
-        <div><label className="ink-label">Moneda</label><input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} className="ink-input" /></div>
-      </div>
-
-      <div>
-        <p className="ink-label mb-2">Cursos incluidos</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto border border-ink-900/10 p-2 bg-cream">
-          {courses.map((c) => {
-            const cid = String(c._id || c.id);
-            const checked = form.courseIds.includes(cid);
-            return (
-              <label key={cid} className="flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-cream-200 text-sm">
-                <input type="checkbox" checked={checked} onChange={() => toggle(cid)} />
-                <span className="font-serif text-ink-900 truncate">{c.title}</span>
-              </label>
-            );
-          })}
-          {courses.length === 0 && <p className="text-xs text-ink-500 p-2">Crea cursos primero.</p>}
-        </div>
-      </div>
-
-      <div className="flex gap-4 text-sm text-ink-700">
-        <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} /> Activo</label>
-        <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.isFeatured} onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })} /> Destacado</label>
-      </div>
-
-      <button onClick={() => onSave(form)} className="btn-broadsheet">Guardar paquete</button>
-    </div>
-  );
-}
-
-function NewPackageModal({ courses, onClose, onCreate }: { courses: Course[]; onClose: () => void; onCreate: (data: any) => void }) {
-  const [form, setForm] = useState({ name: '', description: '', price: 0, currency: 'MXN', durationDays: 0, courseIds: [] as string[] });
-
-  return (
-    <div className="fixed inset-0 z-50 bg-ink-900/40 flex items-center justify-center p-6">
-      <div className="w-full max-w-lg bg-cream border border-ink-900/20 shadow-xl p-7 max-h-[90vh] overflow-y-auto" style={{ animation: 'paper-unfold 320ms ease-out both' }}>
-        <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-2">Academia</p>
-        <h3 className="font-serif text-2xl text-ink-900 mb-5">Nuevo paquete</h3>
-        <form onSubmit={(e) => { e.preventDefault(); onCreate(form); }} className="space-y-4">
-          <div><label className="ink-label">Nombre</label><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="ink-input" /></div>
-          <div><label className="ink-label">Descripción</label><textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="ink-input font-serif" /></div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="ink-label">Precio</label><input type="number" min={0} value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} className="ink-input" /></div>
-            <div><label className="ink-label">Duración (días)</label><input type="number" min={0} value={form.durationDays} onChange={(e) => setForm({ ...form, durationDays: +e.target.value })} className="ink-input" /></div>
-          </div>
-          <div>
-            <p className="ink-label mb-2">Cursos</p>
-            <div className="border border-ink-900/15 max-h-40 overflow-y-auto p-2 bg-cream-100">
-              {courses.map((c) => {
-                const cid = String(c._id || c.id);
-                const checked = form.courseIds.includes(cid);
-                return (
-                  <label key={cid} className="flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-cream-200 text-sm">
-                    <input type="checkbox" checked={checked} onChange={() => setForm((f) => ({ ...f, courseIds: checked ? f.courseIds.filter((x) => x !== cid) : [...f.courseIds, cid] }))} />
-                    <span className="font-serif text-ink-900 truncate">{c.title}</span>
-                  </label>
-                );
-              })}
-              {courses.length === 0 && <p className="text-xs text-ink-500 p-2">Aún no hay cursos.</p>}
-            </div>
-          </div>
-          <div className="flex gap-2 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 text-[10px] uppercase tracking-[0.3em] border border-ink-900/20 hover:border-ink-900 py-2.5 cursor-pointer">Cancelar</button>
-            <button type="submit" className="btn-broadsheet flex-1">Crear paquete</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+function intervalLabel(interval: BillingInterval) {
+  if (interval === 'year') return '/ año';
+  if (interval === 'month') return '/ mes';
+  return '/ único pago';
 }

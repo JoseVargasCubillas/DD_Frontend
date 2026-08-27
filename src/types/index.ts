@@ -60,6 +60,17 @@ export interface Module {
   createdAt?: string;
 }
 
+export type PackageTier = "entrepreneur" | "business" | "master";
+export type BillingInterval = "year" | "month" | "lifetime";
+
+export interface PackageBenefits {
+  allCourses: boolean;
+  masterclassEveryTwoMonths: boolean;
+  whatsappGroupAdvisors?: { enabled: boolean; url?: string };
+  whatsappDirectCEO?: { enabled: boolean; url?: string };
+  extras?: string[];
+}
+
 export interface Package {
   id?: string;
   _id: string;
@@ -74,6 +85,9 @@ export interface Package {
   durationDays: number;
   isActive: boolean;
   isFeatured: boolean;
+  tier?: PackageTier;
+  billingInterval?: BillingInterval;
+  benefits?: PackageBenefits;
   createdAt?: string;
 }
 
@@ -84,7 +98,7 @@ export interface Promotion {
   description: string;
   type: "percentage" | "fixed";
   value: number;
-  scope: "all" | "course" | "package";
+  scope: "all" | "course" | "package" | "offer";
   targetId: string;
   expiresAt: string | null;
   maxUses: number;
@@ -241,6 +255,9 @@ export interface Subscription {
   status: SubscriptionStatus;
   currentPeriodEnd: string;
   cancelAtPeriodEnd: boolean;
+  package?: string | null;
+  offer?: string | null;
+  startDate?: string;
 }
 
 export interface OrderItem {

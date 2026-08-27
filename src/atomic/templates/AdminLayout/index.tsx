@@ -17,13 +17,18 @@ const PRODUCT_ITEMS = [
   { label: "Podcasts" },
 ] as const;
 
+const ACADEMIA_ITEMS = [
+  { label: "Paquetes", to: "/admin/paquetes" },
+  { label: "Ofertas", to: "/admin/ofertas" },
+  { label: "Promociones", to: "/admin/promociones" },
+  { label: "Suscripciones", to: "/admin/suscripciones" },
+] as const;
+
 const SALES_ITEMS = [
   { label: "Pagos", to: "/admin/ventas/pagos" },
   { label: "Precios", to: "/admin/ventas/precios" },
-  { label: "Paquetes", to: "/admin/ventas/paquetes" },
   { label: "Carrito", to: "/admin/ventas/carrito" },
   { label: "Facturas" },
-  { label: "Cupones" },
   { label: "Afiliados" },
 ] as const;
 
@@ -65,6 +70,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [productsOpen, setProductsOpen] = useState(true);
+  const [academiaOpen, setAcademiaOpen] = useState(true);
   const [salesOpen, setSalesOpen] = useState(true);
   const [marketingOpen, setMarketingOpen] = useState(true);
 
@@ -73,6 +79,11 @@ export default function AdminLayout() {
     location.pathname.startsWith("/admin/cursos") ||
     location.pathname.startsWith("/admin/eventos") ||
     location.pathname.startsWith("/admin/blog");
+  const isAcademiaRoute =
+    location.pathname.startsWith("/admin/paquetes") ||
+    location.pathname.startsWith("/admin/ofertas") ||
+    location.pathname.startsWith("/admin/promociones") ||
+    location.pathname.startsWith("/admin/suscripciones");
   const isSalesRoute = location.pathname.startsWith("/admin/ventas");
   const isMarketingRoute = location.pathname.startsWith("/admin/email");
 
@@ -158,6 +169,35 @@ export default function AdminLayout() {
                         {item.label}
                       </span>
                     )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Academia */}
+          <div className="mb-6">
+            <button
+              type="button"
+              onClick={() => setAcademiaOpen((o) => !o)}
+              aria-expanded={academiaOpen}
+              aria-controls="admin-academia-menu"
+              className={sectionBtnClass(isAcademiaRoute)}
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4 shrink-0">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M22 10 12 5 2 10l10 5 10-5Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12v5c0 1 3 3 6 3s6-2 6-3v-5" />
+              </svg>
+              <span className="flex-1">Academia</span>
+              <Chevron open={academiaOpen} />
+            </button>
+            {academiaOpen && (
+              <ul id="admin-academia-menu" className="mt-1 space-y-0.5 pl-7">
+                {ACADEMIA_ITEMS.map((item) => (
+                  <li key={item.label}>
+                    <NavLink to={item.to} className={({ isActive }) => subLinkClass(isActive)}>
+                      {item.label}
+                    </NavLink>
                   </li>
                 ))}
               </ul>
