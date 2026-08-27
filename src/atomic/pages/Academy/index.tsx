@@ -380,19 +380,16 @@ export default function Academy() {
             </div>
           </div>
 
-          <div className="relative mx-auto aspect-[9/16] w-full max-w-[460px] overflow-hidden border border-[#0a0a0a]/20 bg-[#0a0a0a] shadow-[0_28px_70px_rgba(10,10,10,0.16)] lg:mx-0 lg:justify-self-end">
-            {/* Escalamos el iframe para que el video llene el frame sin dejar barras negras
-                (Drive añade márgenes internos alrededor del video). */}
+          <div className="relative mx-auto aspect-[420/582] w-full max-w-[420px] overflow-hidden border border-[#0a0a0a]/20 bg-[#0a0a0a] shadow-[0_28px_70px_rgba(10,10,10,0.16)] lg:mx-0 lg:justify-self-end">
             <iframe
-              src={`https://drive.google.com/file/d/${academyVideoDriveId}/preview?autoplay=1`}
-              className="absolute left-1/2 top-1/2 h-[130%] w-[130%] -translate-x-1/2 -translate-y-1/2 border-0"
+              src={`https://drive.google.com/file/d/${academyVideoDriveId}/preview`}
+              className="absolute inset-0 h-full w-full border-0"
               allow="autoplay; encrypted-media; fullscreen"
               allowFullScreen
               title="Video de Academia Diego Díaz"
             />
-            {/* Tapa el chrome de Drive (título arriba, barra "abrir en" abajo) */}
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-[#0a0a0a]" aria-hidden="true" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-[#0a0a0a]" aria-hidden="true" />
+            {/* Tapa el título/logo superior de Drive */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-12 bg-[#0a0a0a]" aria-hidden="true" />
           </div>
         </div>
       </section>
