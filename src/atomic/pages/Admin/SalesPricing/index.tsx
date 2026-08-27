@@ -311,11 +311,25 @@ export default function SalesPricing() {
 function NewOfferModal({ courses, onClose }: { courses: Course[]; onClose: () => void }) {
   const create = useCreateOffer();
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [relation, setRelation] = useState<"courses" | "package">("courses");
   const [type, setType] = useState<"standard" | "trial">("standard");
   const [status, setStatus] = useState<"draft" | "published">("published");
+  const [billing, setBilling] = useState<"month" | "year" | "lifetime">("year");
+  const [durationValue, setDurationValue] = useState(1);
   const [price, setPrice] = useState(0);
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
   const [selectedModulesByCourse, setSelectedModulesByCourse] = useState<Record<string, string[]>>({});
+
+  const totalDays =
+    billing === "lifetime" ? 0 : billing === "month" ? durationValue * 30 : durationValue * 365;
+
+  const cobroLabel =
+    billing === "lifetime"
+      ? "Pago único, acceso de por vida"
+      : billing === "month"
+        ? `Suscripción mensual · ${durationValue} ${durationValue === 1 ? "mes" : "meses"} de acceso`
+        : `Suscripción anual · ${durationValue} ${durationValue === 1 ? "año" : "años"} de acceso`;
 
   const toggleCourse = (courseId: string) =>
     setSelectedCourseIds((current) =>
@@ -334,6 +348,11 @@ function NewOfferModal({ courses, onClose }: { courses: Course[]; onClose: () =>
       return next;
     });
 
+  const selectedCount =
+    type === "standard"
+      ? selectedCourseIds.length
+      : Object.values(selectedModulesByCourse).reduce((sum, ids) => sum + ids.length, 0);
+
   const submit = () => {
     const content =
       type === "standard"
@@ -345,97 +364,313 @@ function NewOfferModal({ courses, onClose }: { courses: Course[]; onClose: () =>
           }));
 
     create.mutate(
-      { title, type, status, price, currency: "MXN", content },
+      { title, description, type, status, price, currency: "MXN", content } as Partial<Offer>,
       { onSuccess: onClose },
     );
   };
 
+  const priceLabel = new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+    maximumFractionDigits: 0,
+  }).format(price || 0);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-6">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-ink-900/15 bg-white p-7 shadow-xl">
-        <p className="mb-2 text-[10px] uppercase tracking-[0.36em] text-ink-500">Oferta</p>
-        <h3 className="font-serif text-3xl text-ink-900">Nueva oferta</h3>
-        <div className="mt-6 grid gap-4">
-          <label className="grid gap-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-ink-500">Titulo</span>
-            <input value={title} onChange={(event) => setTitle(event.target.value)} className="min-h-11 rounded-lg border border-ink-900/20 px-3 text-sm outline-none focus:border-ink-900" />
-          </label>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <label className="grid gap-2">
-              <span className="text-xs font-semibold uppercase tracking-[0.24em] text-ink-500">Tipo</span>
-              <select value={type} onChange={(event) => setType(event.target.value as "standard" | "trial")} className="min-h-11 rounded-lg border border-ink-900/20 px-3 text-sm">
-                <option value="standard">Normal</option>
-                <option value="trial">Prueba</option>
-              </select>
-            </label>
-            <label className="grid gap-2">
-              <span className="text-xs font-semibold uppercase tracking-[0.24em] text-ink-500">Estado</span>
-              <select value={status} onChange={(event) => setStatus(event.target.value as "draft" | "published")} className="min-h-11 rounded-lg border border-ink-900/20 px-3 text-sm">
-                <option value="published">Publicada</option>
-                <option value="draft">Borrador</option>
-              </select>
-            </label>
-            <label className="grid gap-2">
-              <span className="text-xs font-semibold uppercase tracking-[0.24em] text-ink-500">Precio</span>
-              <input type="number" min="0" value={price} onChange={(event) => setPrice(Number(event.target.value || 0))} className="min-h-11 rounded-lg border border-ink-900/20 px-3 text-sm outline-none focus:border-ink-900" />
-            </label>
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-ink-900/50 p-4 pt-10 overflow-y-auto">
+      <div className="w-full max-w-5xl bg-cream-100 border border-ink-900/15 rounded-2xl shadow-xl">
+        {/* Encabezado */}
+        <header className="flex items-start justify-between gap-6 border-b border-ink-900/10 p-7">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.36em] text-ink-500">Oferta</p>
+            <h3 className="mt-1 font-serif text-3xl text-ink-900">Nueva oferta</h3>
+            <p className="mt-2 text-sm text-ink-600 max-w-lg">
+              Define qué se vende, cómo se cobra y qué cursos desbloquea al cliente.
+            </p>
           </div>
-          {type === "standard" ? (
-            <section className="rounded-xl border border-ink-900/10 p-4">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-ink-500">Cursos incluidos</p>
-              <div className="grid max-h-72 gap-2 overflow-y-auto sm:grid-cols-2">
-                {courses.map((course) => {
-                  const courseId = course._id || course.id || "";
-                  return (
-                    <label key={courseId} className="flex cursor-pointer items-center gap-3 rounded-lg border border-ink-900/10 p-3 text-sm hover:bg-cream-100">
-                      <input type="checkbox" checked={selectedCourseIds.includes(courseId)} onChange={() => toggleCourse(courseId)} />
-                      <span className="min-w-0 truncate">{course.title}</span>
-                    </label>
-                  );
-                })}
+          <div className="text-right border border-ink-900/15 bg-cream px-4 py-3 min-w-[110px]">
+            <p className="text-[10px] uppercase tracking-[0.28em] text-ink-500">Selección</p>
+            <p className="font-serif text-3xl text-ink-900 leading-none mt-1">{selectedCount}</p>
+          </div>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0">
+          {/* Columna principal */}
+          <div className="p-7 space-y-5">
+            {/* 01 Datos */}
+            <Section number="01" title="Datos de la oferta">
+              <label className="grid gap-1.5">
+                <span className="text-[11px] font-medium text-ink-600">Título</span>
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Ej. Mastermind 2026"
+                  className="min-h-11 rounded-lg border border-ink-900/20 bg-white px-3 text-sm outline-none focus:border-ink-900"
+                />
+              </label>
+              <label className="grid gap-1.5">
+                <span className="text-[11px] font-medium text-ink-600">Descripción</span>
+                <textarea
+                  rows={2}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Qué contiene la oferta y a quién va dirigida."
+                  className="rounded-lg border border-ink-900/20 bg-white px-3 py-2 text-sm outline-none focus:border-ink-900 font-serif"
+                />
+              </label>
+            </Section>
+
+            {/* 02 Configuración comercial */}
+            <Section number="02" title="Configuración comercial">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <Field label="Relacionado a">
+                  <select
+                    value={relation}
+                    onChange={(e) => setRelation(e.target.value as any)}
+                    className="min-h-11 rounded-lg border border-ink-900/20 bg-white px-3 text-sm outline-none focus:border-ink-900"
+                  >
+                    <option value="courses">Cursos / productos</option>
+                    <option value="package">Paquete Academia</option>
+                  </select>
+                </Field>
+                <Field label="Tipo">
+                  <select
+                    value={type}
+                    onChange={(e) => setType(e.target.value as "standard" | "trial")}
+                    className="min-h-11 rounded-lg border border-ink-900/20 bg-white px-3 text-sm outline-none focus:border-ink-900"
+                  >
+                    <option value="standard">Normal</option>
+                    <option value="trial">Prueba</option>
+                  </select>
+                </Field>
+                <Field label="Estado">
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as "draft" | "published")}
+                    className="min-h-11 rounded-lg border border-ink-900/20 bg-white px-3 text-sm outline-none focus:border-ink-900"
+                  >
+                    <option value="published">Publicada</option>
+                    <option value="draft">Borrador</option>
+                  </select>
+                </Field>
+                <Field label="Cobro">
+                  <select
+                    value={billing}
+                    onChange={(e) => {
+                      const v = e.target.value as "month" | "year" | "lifetime";
+                      setBilling(v);
+                      if (v === "lifetime") setDurationValue(0);
+                      else if (v === "month") setDurationValue(1);
+                      else setDurationValue(1);
+                    }}
+                    className="min-h-11 rounded-lg border border-ink-900/20 bg-white px-3 text-sm outline-none focus:border-ink-900"
+                  >
+                    <option value="month">Mensual</option>
+                    <option value="year">Anual</option>
+                    <option value="lifetime">De por vida</option>
+                  </select>
+                </Field>
               </div>
-            </section>
-          ) : (
-            <section className="rounded-xl border border-ink-900/10 p-4">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-ink-500">Modulos de prueba</p>
-                <span className="text-xs text-ink-500">
-                  {Object.values(selectedModulesByCourse).reduce((sum, ids) => sum + ids.length, 0)} seleccionados
-                </span>
-              </div>
-              <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
-                {courses.map((course) => {
-                  const courseId = course._id || course.id || "";
-                  return (
-                    <TrialCourseModules
-                      key={courseId}
-                      course={course}
-                      selectedModuleIds={selectedModulesByCourse[courseId] ?? []}
-                      onToggleModule={(moduleId) => toggleTrialModule(courseId, moduleId)}
-                      onSetModules={(moduleIds) =>
-                        setSelectedModulesByCourse((current) => {
-                          const next = { ...current };
-                          if (moduleIds.length) next[courseId] = moduleIds;
-                          else delete next[courseId];
-                          return next;
-                        })
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                <Field label={`Precio (MXN)`}>
+                  <input
+                    type="number"
+                    min={0}
+                    value={price}
+                    onChange={(e) => setPrice(Number(e.target.value || 0))}
+                    className="min-h-11 rounded-lg border border-ink-900/20 bg-white px-3 text-sm outline-none focus:border-ink-900 text-right pr-3"
+                  />
+                </Field>
+
+                {billing !== "lifetime" && (
+                  <Field label={billing === "month" ? "Duración (meses)" : "Duración (años)"}>
+                    <input
+                      type="number"
+                      min={1}
+                      value={durationValue}
+                      onChange={(e) =>
+                        setDurationValue(Math.max(1, Number(e.target.value || 1)))
                       }
+                      className="min-h-11 rounded-lg border border-ink-900/20 bg-white px-3 text-sm outline-none focus:border-ink-900"
                     />
-                  );
-                })}
+                  </Field>
+                )}
+
+                <div className="col-span-2 border border-ink-900/10 bg-cream-200/50 px-3 py-2 rounded-lg text-xs text-ink-600 leading-snug flex flex-col justify-center">
+                  <span className="text-[10px] uppercase tracking-[0.28em] text-ink-500">
+                    Vigencia de acceso
+                  </span>
+                  <span className="mt-1 font-serif text-sm text-ink-900">{cobroLabel}</span>
+                  {billing !== "lifetime" && (
+                    <span className="text-[11px] text-ink-500 mt-0.5">
+                      Se activa el día de compra y finaliza automáticamente {totalDays} días después.
+                    </span>
+                  )}
+                </div>
               </div>
-            </section>
-          )}
+            </Section>
+
+            {/* 03 Cursos incluidos */}
+            <Section number="03" title="Cursos incluidos">
+              {type === "standard" ? (
+                <div className="grid gap-1.5 max-h-72 overflow-y-auto sm:grid-cols-2 border border-ink-900/10 rounded-lg p-2 bg-white">
+                  {courses.map((course) => {
+                    const courseId = course._id || course.id || "";
+                    const checked = selectedCourseIds.includes(courseId);
+                    return (
+                      <label
+                        key={courseId}
+                        className={
+                          "flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2 text-sm transition-colors " +
+                          (checked
+                            ? "border-ink-900 bg-cream-200"
+                            : "border-ink-900/10 hover:bg-cream-100")
+                        }
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleCourse(courseId)}
+                        />
+                        <span className="min-w-0 truncate font-serif text-ink-900">
+                          {course.title}
+                        </span>
+                      </label>
+                    );
+                  })}
+                  {courses.length === 0 && (
+                    <p className="p-4 text-sm text-ink-500 col-span-2">
+                      Crea cursos primero para asignarlos aquí.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
+                  {courses.map((course) => {
+                    const courseId = course._id || course.id || "";
+                    return (
+                      <TrialCourseModules
+                        key={courseId}
+                        course={course}
+                        selectedModuleIds={selectedModulesByCourse[courseId] ?? []}
+                        onToggleModule={(moduleId) => toggleTrialModule(courseId, moduleId)}
+                        onSetModules={(moduleIds) =>
+                          setSelectedModulesByCourse((current) => {
+                            const next = { ...current };
+                            if (moduleIds.length) next[courseId] = moduleIds;
+                            else delete next[courseId];
+                            return next;
+                          })
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </Section>
+          </div>
+
+          {/* Columna derecha: Resumen */}
+          <aside className="border-t lg:border-t-0 lg:border-l border-ink-900/10 bg-cream p-7 space-y-6">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.36em] text-ink-500">Resumen</p>
+              <h4 className="mt-1 font-serif text-2xl text-ink-900 leading-tight">
+                {title.trim() || "Oferta sin título"}
+              </h4>
+              {description && (
+                <p className="mt-2 text-sm text-ink-600 font-serif">{description}</p>
+              )}
+            </div>
+
+            <dl className="text-sm">
+              <SummaryRow label="Estado" value={status === "published" ? "Publicada" : "Borrador"} />
+              <SummaryRow label="Cobro" value={billing === "month" ? "Mensual" : billing === "year" ? "Anual" : "De por vida"} />
+              {billing !== "lifetime" && (
+                <SummaryRow
+                  label="Duración"
+                  value={`${durationValue} ${
+                    billing === "month"
+                      ? durationValue === 1
+                        ? "mes"
+                        : "meses"
+                      : durationValue === 1
+                        ? "año"
+                        : "años"
+                  }`}
+                />
+              )}
+              <SummaryRow label="Precio" value={priceLabel} strong />
+              <SummaryRow label="Contenido" value={`${selectedCount}`} />
+            </dl>
+
+            <div className="border-t border-ink-900/10 pt-4">
+              <p className="text-[10px] uppercase tracking-[0.32em] text-ink-500 mb-1">Orden recomendado</p>
+              <p className="text-xs text-ink-600 leading-relaxed">
+                Primero define el título, luego el cobro y al final selecciona los cursos incluidos.
+              </p>
+            </div>
+          </aside>
         </div>
-        <div className="mt-6 flex gap-2">
-          <button type="button" onClick={onClose} className="min-h-11 flex-1 rounded-full border border-ink-900/20 px-4 text-sm font-semibold hover:border-ink-900">
+
+        {/* Footer */}
+        <footer className="flex justify-end gap-3 border-t border-ink-900/10 p-5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-11 rounded-full border border-ink-900/20 px-5 text-sm font-medium hover:border-ink-900 cursor-pointer"
+          >
             Cancelar
           </button>
-          <button type="button" onClick={submit} disabled={create.isPending || !title.trim()} className="min-h-11 flex-1 rounded-full bg-ink-900 px-4 text-sm font-semibold text-white disabled:opacity-50">
-            {create.isPending ? "Creando..." : "Crear oferta"}
+          <button
+            type="button"
+            onClick={submit}
+            disabled={create.isPending || !title.trim()}
+            className="min-h-11 rounded-full bg-ink-900 px-6 text-sm font-medium text-cream disabled:opacity-40 hover:bg-black cursor-pointer"
+          >
+            {create.isPending ? "Creando…" : "Crear oferta"}
           </button>
-        </div>
+        </footer>
       </div>
+    </div>
+  );
+}
+
+function Section({
+  number,
+  title,
+  children,
+}: {
+  number: string;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="border border-ink-900/10 rounded-xl bg-white p-5">
+      <header className="flex items-center gap-3 mb-4">
+        <span className="grid place-items-center w-7 h-7 rounded-full bg-ink-900 text-cream text-[10px] font-mono">
+          {number}
+        </span>
+        <h4 className="font-serif text-ink-900 text-lg">{title}</h4>
+      </header>
+      <div className="grid gap-3">{children}</div>
+    </section>
+  );
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="grid gap-1.5">
+      <span className="text-[11px] font-medium text-ink-600">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function SummaryRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between py-1.5 border-b border-ink-900/5 last:border-0">
+      <dt className="text-ink-500 text-xs">{label}</dt>
+      <dd className={"text-ink-900 " + (strong ? "font-serif text-lg" : "text-sm")}>{value}</dd>
     </div>
   );
 }

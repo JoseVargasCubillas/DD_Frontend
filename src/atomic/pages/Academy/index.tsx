@@ -55,20 +55,23 @@ const speakerLoop = [...speakers, ...speakers];
 
 const plansFallback = [
   {
-    id: 'off_academia_entrepreneur',
+    id: 'pkg_entrepreneur',
     name: 'Entrepreneur',
-    eyebrow: 'Plan básico',
+    eyebrow: 'Plan de entrada',
     price: '4,997',
     amount: 4997,
     plan: 'entrepreneur',
     suffix: '/ año',
-    note: '7 días gratis · Cancela cuando quieras',
-    items: ['Acceso ilimitado al catálogo', '+120 hrs de contenido'],
+    note: '',
+    items: [
+      'Acceso a los 33 cursos de la Academia',
+      'Actualizaciones ilimitadas durante tu suscripción',
+    ],
     dark: true,
     cta: 'Aplicar',
   },
   {
-    id: 'off_academia_business',
+    id: 'pkg_business',
     name: 'Business',
     eyebrow: 'Más demandado',
     price: '14,997',
@@ -77,26 +80,25 @@ const plansFallback = [
     suffix: '/ año',
     note: '',
     items: [
-      'Todo lo anterior incluido',
+      'Todo lo del plan Entrepreneur',
       'Masterclass gratis cada 2 meses',
-      'Grupo de WhatsApp con asesores',
+      'Grupo de WhatsApp con asesores y consultores',
     ],
     featured: true,
     cta: 'Aplicar',
   },
   {
-    id: 'off_academia_master',
+    id: 'pkg_master',
     name: 'Master',
-    eyebrow: 'Acceso total',
+    eyebrow: 'Acompañamiento con Diego',
     price: '49,997',
     amount: 49997,
     plan: 'master',
     suffix: '/ año',
     note: 'Plazas limitadas',
     items: [
-      'Todo lo anterior incluido',
-      'WhatsApp directo con Diego Díaz',
-      'Acceso a eventos VIP',
+      'Todo lo del plan Business',
+      'WhatsApp directo con Diego Díaz (CEO)',
     ],
     dark: true,
     cta: 'Aplicar a Master',
@@ -122,11 +124,31 @@ const tierOrder: Record<PackageTier, number> = { entrepreneur: 0, business: 1, m
 
 function packageToPlan(pkg: Package, fallback: AcademyPlan): AcademyPlan {
   const items: string[] = [];
-  if (pkg.benefits?.allCourses) items.push('Acceso a los 33 cursos');
-  if (pkg.benefits?.masterclassEveryTwoMonths) items.push('Masterclass gratis cada 2 meses');
-  if (pkg.benefits?.whatsappGroupAdvisors?.enabled) items.push('Grupo de WhatsApp con asesores');
-  if (pkg.benefits?.whatsappDirectCEO?.enabled) items.push('WhatsApp directo con Diego Díaz');
-  if (items.length === 0) items.push(...fallback.items);
+  const b = pkg.benefits;
+
+  // Beneficios explícitos del paquete
+  if (b?.allCourses) items.push('Acceso a los 33 cursos');
+  if (b?.masterclassEveryTwoMonths) items.push('Masterclass gratis cada 2 meses');
+  if (b?.whatsappGroupAdvisors?.enabled) items.push('Grupo de WhatsApp con asesores y consultores');
+  if (b?.whatsappDirectCEO?.enabled) items.push('WhatsApp directo con Diego Díaz (CEO)');
+  if (b?.extras?.length) items.push(...b.extras);
+
+  // Fallback por tier — cuando el paquete aún no tiene `benefits` configurados
+  if (items.length === 0) {
+    if (pkg.tier === 'entrepreneur') {
+      items.push('Acceso a los 33 cursos de la Academia');
+      items.push('Actualizaciones ilimitadas durante tu suscripción');
+    } else if (pkg.tier === 'business') {
+      items.push('Todo lo del plan Entrepreneur');
+      items.push('Masterclass gratis cada 2 meses');
+      items.push('Grupo de WhatsApp con asesores y consultores');
+    } else if (pkg.tier === 'master') {
+      items.push('Todo lo del plan Business');
+      items.push('WhatsApp directo con Diego Díaz (CEO)');
+    } else {
+      items.push(...fallback.items);
+    }
+  }
 
   const suffix =
     pkg.billingInterval === 'month'
@@ -135,15 +157,24 @@ function packageToPlan(pkg: Package, fallback: AcademyPlan): AcademyPlan {
         ? '/ único pago'
         : '/ año';
 
+  const eyebrow =
+    pkg.tier === 'entrepreneur'
+      ? 'Plan de entrada'
+      : pkg.tier === 'business'
+        ? 'Más demandado'
+        : pkg.tier === 'master'
+          ? 'Acompañamiento con Diego'
+          : fallback.eyebrow;
+
   return {
     id: pkg._id,
     name: pkg.name,
-    eyebrow: pkg.tier === 'business' ? 'Más demandado' : fallback.eyebrow,
+    eyebrow,
     price: pkg.price.toLocaleString('es-MX'),
     amount: pkg.price,
     plan: pkg.tier ?? fallback.plan,
     suffix,
-    note: fallback.note,
+    note: pkg.tier === 'master' ? 'Plazas limitadas' : fallback.note,
     items,
     dark: pkg.tier !== 'business',
     featured: pkg.tier === 'business' || !!pkg.isFeatured,
