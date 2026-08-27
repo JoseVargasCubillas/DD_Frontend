@@ -1,10 +1,16 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { listAllSubscriptions } from '@api/subscriptions.api';
+import { listAllOrders } from '@api/payments.api';
 import ManagePackages from '@pages/Admin/ManagePackages';
 
 function fmtDate(iso?: string) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function fmtMoney(n: number) {
+  return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n || 0);
 }
 
 function statusStyle(status: string) {
@@ -38,6 +44,31 @@ export default function ManageSubscriptions() {
     queryKey: ['subscriptions', 'admin', 'all'],
     queryFn: listAllSubscriptions,
   });
+  const { data: orders = [] } = useQuery({
+    queryKey: ['orders', 'admin', 'all'],
+    queryFn: listAllOrders,
+    staleTime: 30 * 1000,
+  });
+
+  const metrics = useMemo(() => {
+    const active = subs.filter((s) => s.status === 'active' || s.status === 'trialing').length;
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const paidOrders = orders.filter((o) => o.status === 'completed');
+    const monthRevenue = paidOrders
+      .filter((o) => new Date(o.createdAt || 0).getTime() >= monthStart)
+      .reduce((sum, o) => sum + (o.total ?? 0), 0);
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + (o.total ?? 0), 0);
+    return { active, monthRevenue, totalRevenue, paidCount: paidOrders.length };
+  }, [subs, orders]);
+
+  const recentOrders = useMemo(
+    () =>
+      [...orders]
+        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+        .slice(0, 10),
+    [orders],
+  );
 
   return (
     <div>
@@ -45,14 +76,74 @@ export default function ManageSubscriptions() {
         <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-3">Academia</p>
         <h1 className="font-serif text-4xl md:text-5xl text-ink-900 leading-none">Suscripciones</h1>
         <p className="text-sm text-ink-600 mt-3 max-w-3xl">
-          Los tres planes de la Academia. Edita precio, tiempo, cursos incluidos y beneficios. Cada uno
-          genera un link de pago con Stripe (envíaselo al cliente) y puedes también otorgarlo manualmente
-          por email. La tabla de abajo lista todas las suscripciones activas.
+          Todo lo relacionado a los planes de la Academia en un solo lugar: precios, ventas por Stripe,
+          asignación manual con tiempo limitado, pagos que llegan de la web y suscripciones activas.
         </p>
       </header>
 
+      {/* Métricas */}
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-12">
+        <MetricCard label="Suscripciones activas" value={String(metrics.active)} hint="active + trialing" />
+        <MetricCard label="Ingresos este mes" value={fmtMoney(metrics.monthRevenue)} hint="pagos confirmados" />
+        <MetricCard label="Ingresos totales" value={fmtMoney(metrics.totalRevenue)} hint="histórico" />
+        <MetricCard label="Pagos totales" value={String(metrics.paidCount)} hint="órdenes pagadas" />
+      </section>
+
       {/* Config de los 3 tiers + venta / asignación */}
       <ManagePackages hideHeader />
+
+      {/* Pagos recientes */}
+      <section className="mt-16">
+        <header className="mb-4">
+          <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-2">Ingresos</p>
+          <h2 className="font-serif text-2xl md:text-3xl text-ink-900 leading-none">Pagos recientes desde la web</h2>
+          <p className="text-sm text-ink-600 mt-2">Se actualizan automáticamente cuando el cliente completa el checkout de Stripe.</p>
+        </header>
+        <div className="bg-cream-100 border border-ink-900/15 overflow-hidden overflow-x-auto mb-12">
+          <table className="w-full text-sm min-w-[800px]">
+            <thead className="bg-cream-200 border-b border-ink-900/15">
+              <tr>
+                {['Fecha', 'Cliente', 'Concepto', 'Estado', 'Total'].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 text-[10px] uppercase tracking-[0.28em] text-ink-500 font-semibold">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink-900/10">
+              {recentOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-10 text-ink-500 italic font-serif">
+                    Aún no hay pagos registrados.
+                  </td>
+                </tr>
+              ) : (
+                recentOrders.map((o) => {
+                  const firstItem = o.items?.[0];
+                  return (
+                    <tr key={o._id || o.id} className="hover:bg-cream-50">
+                      <td className="px-4 py-3 text-ink-600">{fmtDate(o.createdAt as any)}</td>
+                      <td className="px-4 py-3">
+                        <p className="font-serif text-ink-900">
+                          {(o as any).customerName || (typeof o.customer === 'object' ? (o.customer as any)?.name : '') || '—'}
+                        </p>
+                        <p className="text-xs text-ink-500 mt-0.5">
+                          {(o as any).customerEmail || (typeof o.customer === 'object' ? (o.customer as any)?.email : '') || ''}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 text-ink-700">{firstItem?.title || (o.items?.length ? `${o.items.length} items` : '—')}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-[10px] uppercase tracking-[0.28em] px-2 py-1 ${statusStyle(o.status)}`}>{o.status}</span>
+                      </td>
+                      <td className="px-4 py-3 font-serif text-ink-900">{fmtMoney(o.total)}</td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <section className="mt-16">
         <header className="mb-4">
@@ -151,6 +242,16 @@ export default function ManageSubscriptions() {
         </table>
       </div>
       </section>
+    </div>
+  );
+}
+
+function MetricCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="bg-cream-100 border border-ink-900/15 p-5">
+      <p className="text-[10px] uppercase tracking-[0.28em] text-ink-500">{label}</p>
+      <p className="font-serif text-3xl text-ink-900 mt-3 leading-none">{value}</p>
+      {hint && <p className="text-xs text-ink-500 mt-2">{hint}</p>}
     </div>
   );
 }

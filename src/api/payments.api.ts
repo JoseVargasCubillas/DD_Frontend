@@ -26,3 +26,9 @@ export const createPaymentIntent = (items: OrderItem[], shipping?: ShippingAddre
 
 export const getOrders = (): Promise<Order[]> =>
   client.get<ApiResponse<Order[]>>('/payments/orders').then((r) => r.data);
+
+export const listAllOrders = (): Promise<Order[]> =>
+  client
+    .get<ApiResponse<Order[]>>('/payments/admin/orders')
+    .then((r) => r.data)
+    .catch(() => []);

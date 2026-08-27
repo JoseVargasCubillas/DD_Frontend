@@ -133,7 +133,9 @@ export default function ManagePackages({ hideHeader = false }: { hideHeader?: bo
                   promotions={activePromotions}
                   onCreate={(data) => create.mutate(data as any)}
                   onUpdate={(id, data) => update.mutate({ id, data })}
-                  onAssign={(userId, packageId) => assign.mutate({ userId, packageId })}
+                  onAssign={(userId, packageId, durationDays) =>
+                    assign.mutate({ userId, packageId, durationDays })
+                  }
                 />
               );
             })}
@@ -199,7 +201,7 @@ function TierCard({
   promotions: { _id?: string; id?: string; code: string; name?: string }[];
   onCreate: (data: Partial<Package>) => void;
   onUpdate: (id: string, data: Partial<Package>) => void;
-  onAssign: (userId: string, packageId: string) => void;
+  onAssign: (userId: string, packageId: string, durationDays?: number | null) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [selling, setSelling] = useState(false);
@@ -606,11 +608,15 @@ function SellPanel({
 }: {
   pkg: Package;
   promotions: { _id?: string; id?: string; code: string; name?: string }[];
-  onAssign: (userId: string, packageId: string) => void;
+  onAssign: (userId: string, packageId: string, durationDays?: number | null) => void;
 }) {
   const [email, setEmail] = useState('');
   const [promoCode, setPromoCode] = useState('');
   const [assigning, setAssigning] = useState(false);
+  const [durationMode, setDurationMode] = useState<'default' | 'custom'>('default');
+  const [customDays, setCustomDays] = useState<number>(365);
+
+  const defaultDays = pkg.durationDays ?? (pkg.billingInterval === 'year' ? 365 : pkg.billingInterval === 'month' ? 30 : 365);
 
   const buildStripeLink = () => {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -642,7 +648,8 @@ function SellPanel({
         toast.error(`No hay un usuario con email ${email}`);
         return;
       }
-      onAssign(String(found._id || found.id), String(pkg._id || pkg.id));
+      const days = durationMode === 'default' ? defaultDays : customDays;
+      onAssign(String(found._id || found.id), String(pkg._id || pkg.id), days);
       setEmail('');
     } catch (err: any) {
       toast.error(err?.message || 'Error buscando usuario');
@@ -656,7 +663,7 @@ function SellPanel({
       <div>
         <p className="ink-label mb-2">Link de checkout (Stripe)</p>
         <p className="text-xs text-ink-500 mb-3">
-          Envía este link al cliente. Al abrirlo entra al checkout con el paquete y la promoción aplicada.
+          Envía este link al cliente. Al pagar se le crea la suscripción automáticamente con la duración del paquete.
         </p>
         {promotions.length > 0 && (
           <select
@@ -679,7 +686,7 @@ function SellPanel({
           <button
             type="button"
             onClick={copyLink}
-            className="text-[10px] uppercase tracking-[0.28em] border border-ink-900 text-ink-900 px-3 py-2 hover:bg-ink-900 hover:text-cream transition-colors"
+            className="cursor-pointer text-[10px] uppercase tracking-[0.28em] border border-ink-900 text-ink-900 px-3 py-2 hover:bg-ink-900 hover:text-cream transition-colors"
           >
             Copiar
           </button>
@@ -689,8 +696,37 @@ function SellPanel({
       <div className="border-t border-ink-900/10 pt-5">
         <p className="ink-label mb-2">Asignar manualmente</p>
         <p className="text-xs text-ink-500 mb-3">
-          El cliente ya tiene cuenta y no pasará por Stripe. Se le otorga acceso inmediato.
+          El cliente ya tiene cuenta y no pasará por Stripe. Se le otorga acceso inmediato por el tiempo elegido.
         </p>
+
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto] mb-3">
+          <label className="block">
+            <span className="text-[10px] uppercase tracking-[0.28em] text-ink-500 block mb-1">Duración</span>
+            <select
+              value={durationMode === 'default' ? 'default' : String(customDays)}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === 'default') {
+                  setDurationMode('default');
+                } else {
+                  setDurationMode('custom');
+                  setCustomDays(Number(v));
+                }
+              }}
+              className="ink-input cursor-pointer"
+            >
+              <option value="default">Duración del paquete ({defaultDays} días)</option>
+              <option value="30">1 mes</option>
+              <option value="60">2 meses</option>
+              <option value="90">3 meses</option>
+              <option value="180">6 meses</option>
+              <option value="270">9 meses</option>
+              <option value="365">1 año</option>
+              <option value="730">2 años</option>
+            </select>
+          </label>
+        </div>
+
         <div className="flex items-center gap-2">
           <input
             type="email"
@@ -703,7 +739,7 @@ function SellPanel({
             type="button"
             disabled={assigning}
             onClick={assignByEmail}
-            className="text-[10px] uppercase tracking-[0.28em] bg-ink-900 text-cream px-3 py-2 hover:bg-ink-700 transition-colors disabled:opacity-50"
+            className="cursor-pointer text-[10px] uppercase tracking-[0.28em] bg-ink-900 text-cream px-3 py-2 hover:bg-ink-700 transition-colors disabled:opacity-50"
           >
             {assigning ? 'Asignando…' : 'Asignar'}
           </button>

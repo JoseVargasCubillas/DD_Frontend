@@ -16,5 +16,11 @@ export const updatePackage = (id: string, data: Partial<Package>): Promise<Packa
 export const deletePackage = (id: string): Promise<void> =>
   client.delete<void>(`/packages/${id}`);
 
-export const assignPackageToUser = (userId: string, packageId: string): Promise<any> =>
-  client.post<ApiResponse<any>>(`/packages/assign/${userId}`, { packageId }).then((r) => r.data);
+export const assignPackageToUser = (
+  userId: string,
+  packageId: string,
+  options?: { durationDays?: number | null },
+): Promise<any> =>
+  client
+    .post<ApiResponse<any>>(`/packages/assign/${userId}`, { packageId, ...(options ?? {}) })
+    .then((r) => r.data);

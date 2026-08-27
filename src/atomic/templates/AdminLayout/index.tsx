@@ -24,7 +24,6 @@ const ACADEMIA_ITEMS = [
 
 const SALES_ITEMS = [
   { label: "Pagos", to: "/admin/ventas/pagos" },
-  { label: "Precios", to: "/admin/ventas/precios" },
   { label: "Carrito", to: "/admin/ventas/carrito" },
   { label: "Facturas" },
   { label: "Afiliados" },

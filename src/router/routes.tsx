@@ -42,7 +42,6 @@ const ManageTags = lazy(() => import("@pages/Admin/ManageTags"));
 const ManageEvents = lazy(() => import("@pages/Admin/ManageEvents"));
 const ManageBlog = lazy(() => import("@pages/Admin/ManageBlog"));
 const SalesPayments = lazy(() => import("@pages/Admin/SalesPayments"));
-const SalesPricing = lazy(() => import("@pages/Admin/SalesPricing"));
 const SalesCart = lazy(() => import("@pages/Admin/SalesCart"));
 const ManagePackages = lazy(() => import("@pages/Admin/ManagePackages"));
 const ManageOffers = lazy(() => import("@pages/Admin/ManageOffers"));
@@ -141,7 +140,7 @@ export const router = createBrowserRouter([
       { path: "/admin/blog", element: <ManageBlog /> },
       { path: "/admin/ventas", element: <SalesPayments /> },
       { path: "/admin/ventas/pagos", element: <SalesPayments /> },
-      { path: "/admin/ventas/precios", element: <SalesPricing /> },
+      { path: "/admin/ventas/precios", element: <Navigate to="/admin/suscripciones" replace /> },
       { path: "/admin/ventas/carrito", element: <SalesCart /> },
       { path: "/admin/suscripciones", element: <ManageSubscriptions /> },
       { path: "/admin/paquetes", element: <Navigate to="/admin/suscripciones" replace /> },

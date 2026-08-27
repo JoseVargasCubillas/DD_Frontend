@@ -48,12 +48,21 @@ export const useDeletePackage = () => {
 export const useAssignPackage = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ userId, packageId }: { userId: string; packageId: string }) => api.assignPackageToUser(userId, packageId),
+    mutationFn: ({
+      userId,
+      packageId,
+      durationDays,
+    }: {
+      userId: string;
+      packageId: string;
+      durationDays?: number | null;
+    }) => api.assignPackageToUser(userId, packageId, { durationDays: durationDays ?? null }),
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ['user', vars.userId] });
       qc.invalidateQueries({ queryKey: ['users'] });
       qc.invalidateQueries({ queryKey: ['profile'] });
       qc.invalidateQueries({ queryKey: ['subscription'] });
+      qc.invalidateQueries({ queryKey: ['subscriptions', 'admin', 'all'] });
       toast.success('Paquete asignado');
     },
     onError: (e: Error) => toast.error(e.message),
