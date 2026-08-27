@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useCourseAdmin } from '@hooks/useCourses';
 import { useModules } from '@hooks/useModules';
+import { resolveThumbnailUrl, onDriveThumbnailError } from '@utils/driveThumbnail';
 
 export default function CourseProgress() {
   const { id = '' } = useParams<{ id: string }>();
@@ -32,12 +33,12 @@ export default function CourseProgress() {
           <div className="rounded-xl bg-white p-6">
             <h3 className="font-serif text-xl text-ink-900">{course.title}</h3>
             <div className="mt-5 flex items-center gap-4">
-              <div className="flex aspect-video w-28 items-center justify-center overflow-hidden rounded-lg bg-cream-200">{course.thumbnail ? <img src={course.thumbnail} alt="" className="h-full w-full object-cover" /> : <ImageIcon />}</div>
+              <div className="flex aspect-video w-28 items-center justify-center overflow-hidden rounded-lg bg-cream-200">{course.thumbnail ? <img src={resolveThumbnailUrl(course.thumbnail, 400)} onError={onDriveThumbnailError} referrerPolicy="no-referrer" loading="lazy" alt="" className="h-full w-full object-cover" /> : <ImageIcon />}</div>
               <p className="text-sm font-semibold text-ink-900">{course.shortDescription || course.title}</p>
             </div>
           </div>
           <aside className="overflow-hidden rounded-xl bg-white">
-            <div className="aspect-video bg-cream-200">{course.thumbnail && <img src={course.thumbnail} alt="" className="h-full w-full object-cover" />}</div>
+            <div className="aspect-video bg-cream-200">{course.thumbnail && <img src={resolveThumbnailUrl(course.thumbnail, 400)} onError={onDriveThumbnailError} referrerPolicy="no-referrer" loading="lazy" alt="" className="h-full w-full object-cover" />}</div>
             <div className="p-5"><p className="text-sm font-semibold text-ink-900">0 de {totalLessons} lecciones completadas</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-ink-900/10"><div className="h-full w-0 bg-ink-900" /></div><p className="mt-4 text-xs text-ink-500">{course.enrolledCount ?? 0} miembro{course.enrolledCount === 1 ? '' : 's'} inscrito{course.enrolledCount === 1 ? '' : 's'}</p></div>
           </aside>
         </div>

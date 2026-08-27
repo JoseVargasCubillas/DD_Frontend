@@ -5,6 +5,7 @@ import * as usersApi from '@api/users.api';
 import { useCourse, useCourses } from '@hooks/useCourses';
 import { useSubscription } from '@hooks/useSubscription';
 import type { Course, Lesson } from '@t/index';
+import { resolveThumbnailUrl, onDriveThumbnailError } from '@utils/driveThumbnail';
 
 type EnrolledCourse = Course | string;
 type ModuleLike = { title: string; order?: number; lessons: Lesson[] };
@@ -36,7 +37,8 @@ const getEnrollmentId = (course: EnrolledCourse) =>
 const getCourseCover = (course?: Course) => {
   if (!course) return '';
   const media = course as CourseMediaShape;
-  return media.thumbnail || media.thumbnailUrl || media.coverImage || media.cover || media.image || '';
+  const raw = media.thumbnail || media.thumbnailUrl || media.coverImage || media.cover || media.image || '';
+  return resolveThumbnailUrl(raw);
 };
 
 const sortLessons = (lessons: Lesson[] = []) =>
@@ -269,7 +271,7 @@ export default function MyCourses() {
                   >
                     <div className="aspect-video overflow-hidden rounded-[16px] bg-ink-900/90">
                       {getCourseCover(course) ? (
-                        <img src={getCourseCover(course)} alt={`Portada ${course.title}`} className="h-full w-full object-contain" loading="lazy" />
+                        <img src={getCourseCover(course)} alt={`Portada ${course.title}`} className="h-full w-full object-contain" loading="lazy" onError={onDriveThumbnailError} referrerPolicy="no-referrer" />
                       ) : (
                         <div className="grid h-full place-items-center font-mono text-[8px] uppercase tracking-[0.18em] text-white/50">DD</div>
                       )}
@@ -293,7 +295,7 @@ export default function MyCourses() {
             <div className="grid lg:grid-cols-[minmax(0,1fr)_320px]">
               <div className="relative grid min-h-[300px] place-items-center bg-ink-900 p-4 lg:min-h-[420px]">
                 {selectedCourseCover ? (
-                  <img src={selectedCourseCover} alt={`Portada del curso ${selectedCourse.title}`} className="max-h-full w-full object-contain" />
+                  <img src={selectedCourseCover} alt={`Portada del curso ${selectedCourse.title}`} className="max-h-full w-full object-contain" onError={onDriveThumbnailError} referrerPolicy="no-referrer" />
                 ) : (
                   <div className="grid h-full place-items-center">
                     <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/55">Portada pendiente</span>

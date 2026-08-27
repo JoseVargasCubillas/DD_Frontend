@@ -26,6 +26,7 @@ import {
   useUpdateModule,
 } from "@hooks/useModules";
 import type { Course, Lesson, Module } from "@t/index";
+import { resolveThumbnailUrl, onDriveThumbnailError } from "@utils/driveThumbnail";
 import {
   getMediaFile,
   localMediaId,
@@ -148,7 +149,7 @@ export default function CourseDetail() {
           <div className="flex aspect-square h-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-ink-900/15 bg-cream-100 text-ink-300">
             {course.thumbnail ? (
               <img
-                src={course.thumbnail}
+                src={resolveThumbnailUrl(course.thumbnail)} onError={onDriveThumbnailError} referrerPolicy="no-referrer" loading="lazy"
                 alt=""
                 className="h-full w-full object-cover"
               />
@@ -1157,7 +1158,7 @@ function LessonEditor({
             <div className="mt-5 flex aspect-video items-center justify-center overflow-hidden rounded-xl border border-ink-900/15 bg-cream-100 text-ink-300">
               {form.thumbnail ? (
                 <img
-                  src={form.thumbnail}
+                  src={resolveThumbnailUrl(form.thumbnail)} onError={onDriveThumbnailError} referrerPolicy="no-referrer" loading="lazy"
                   alt="Vista previa"
                   className="h-full w-full object-cover"
                 />
@@ -1645,7 +1646,7 @@ function OffersSection({ course }: { course: Course }) {
               <span className="flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-cream-200 text-ink-300">
                 {offer.thumbnail ? (
                   <img
-                    src={offer.thumbnail}
+                    src={resolveThumbnailUrl(offer.thumbnail)} onError={onDriveThumbnailError} referrerPolicy="no-referrer" loading="lazy"
                     alt=""
                     className="h-full w-full object-cover"
                   />
@@ -1826,7 +1827,7 @@ function OfferEditor({
                 <span className="flex h-14 w-20 items-center justify-center overflow-hidden rounded-lg bg-cream-200">
                   {course.thumbnail ? (
                     <img
-                      src={course.thumbnail}
+                      src={resolveThumbnailUrl(course.thumbnail)} onError={onDriveThumbnailError} referrerPolicy="no-referrer" loading="lazy"
                       alt=""
                       className="h-full w-full object-cover"
                     />
@@ -1910,7 +1911,7 @@ function OfferEditor({
               <div className="mt-5 flex aspect-video items-center justify-center overflow-hidden rounded-xl bg-cream-200 text-ink-300">
                 {form.thumbnail ? (
                   <img
-                    src={form.thumbnail}
+                    src={resolveThumbnailUrl(form.thumbnail)} onError={onDriveThumbnailError} referrerPolicy="no-referrer" loading="lazy"
                     alt="Vista previa de la oferta"
                     className="h-full w-full object-cover"
                   />
@@ -2746,7 +2747,7 @@ function CheckoutBuilder({
                       <div className="m-3 flex aspect-[16/8] items-center justify-center bg-blue-50 text-brand-300">
                         {offer.thumbnail ? (
                           <img
-                            src={offer.thumbnail}
+                            src={resolveThumbnailUrl(offer.thumbnail)} onError={onDriveThumbnailError} referrerPolicy="no-referrer" loading="lazy"
                             alt=""
                             className="h-full w-full object-cover"
                           />
@@ -4063,7 +4064,7 @@ function SettingsSection({
               <div className="flex aspect-video w-44 items-center justify-center overflow-hidden rounded-lg bg-cream-200">
                 {form.thumbnail ? (
                   <img
-                    src={form.thumbnail}
+                    src={resolveThumbnailUrl(form.thumbnail)} onError={onDriveThumbnailError} referrerPolicy="no-referrer" loading="lazy"
                     alt=""
                     className="h-full w-full object-cover"
                   />

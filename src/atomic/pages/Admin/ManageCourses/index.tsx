@@ -11,6 +11,7 @@ import {
   type DrivePreviewResult,
 } from "@api/courses.api";
 import type { Course, CourseType } from "@t/index";
+import { resolveThumbnailUrl, onDriveThumbnailError } from "@utils/driveThumbnail";
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 
@@ -326,9 +327,12 @@ export default function ManageCourses() {
                   <div className="flex aspect-video w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-ink-900/15 bg-cream-200">
                     {course.thumbnail ? (
                       <img
-                        src={course.thumbnail}
+                        src={resolveThumbnailUrl(course.thumbnail, 400)}
                         alt=""
                         className="h-full w-full object-cover"
+                        onError={onDriveThumbnailError}
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
                       />
                     ) : (
                       <ImageIcon />
@@ -603,9 +607,12 @@ function AllProductsView({
                 <div className="flex aspect-video w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-ink-900/15 bg-cream-200">
                   {row.thumbnail ? (
                     <img
-                      src={row.thumbnail}
+                      src={resolveThumbnailUrl(row.thumbnail, 400)}
                       alt=""
                       className="h-full w-full object-cover"
+                      onError={onDriveThumbnailError}
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
                     />
                   ) : (
                     <ImageIcon />
@@ -961,9 +968,12 @@ function ProductBundleDialog({
                       <span className="flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-cream-200">
                         {course.thumbnail ? (
                           <img
-                            src={course.thumbnail}
+                            src={resolveThumbnailUrl(course.thumbnail, 200)}
                             alt=""
                             className="h-full w-full object-cover"
+                            onError={onDriveThumbnailError}
+                            referrerPolicy="no-referrer"
+                            loading="lazy"
                           />
                         ) : (
                           <ImageIcon />

@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useUser, useUpdateUser, useSendPassword, useUpdateNotes, useAssignTag, useRemoveTag, useToggleUserActive } from '@hooks/useUsers';
 import { useTags } from '@hooks/useTags';
 import { usePackages, useAssignPackage } from '@hooks/usePackages';
+import { useCourses } from '@hooks/useCourses';
 import type { Course, Offer, Package, Tag } from '@t/index';
 
 type TabKey = 'lifecycle' | 'info' | 'purchases' | 'products' | 'notes';
@@ -126,6 +127,13 @@ function AssignSubscriptionModal({
   onClose: () => void;
 }) {
   const assign = useAssignPackage();
+  const { data: coursesData } = useCourses({ limit: 500, includeAll: true });
+  const totalAcademyCourses = useMemo(() => {
+    const raw = (coursesData as any)?.data ?? coursesData ?? [];
+    const list: Course[] = Array.isArray(raw) ? raw : [];
+    return list.filter((c) => (c as any).isPublished !== false && (c as any).isActive !== false).length;
+  }, [coursesData]);
+
   const activePackages = useMemo(() => packages.filter((p) => p.isActive), [packages]);
   const [packageId, setPackageId] = useState<string>(() => activePackages[0]?._id ?? '');
   const [durationDays, setDurationDays] = useState<number>(365);
@@ -139,6 +147,12 @@ function AssignSubscriptionModal({
   };
 
   const selectedPkg = activePackages.find((p) => p._id === packageId);
+  // Muestra el conteo real de cursos existentes en vez de p.courseIds.length,
+  // que puede quedar desfasado (IDs viejos que ya no existen).
+  const courseCountForPackage = (p: Package) => {
+    if (totalAcademyCourses > 0) return Math.min(p.courseIds.length, totalAcademyCourses);
+    return p.courseIds.length;
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-ink-900/40 flex items-center justify-center p-6">
@@ -182,7 +196,7 @@ function AssignSubscriptionModal({
                   <div className="flex-1 min-w-0">
                     <p className="font-serif text-lg text-ink-900 leading-tight">{p.name}</p>
                     <p className="text-xs text-ink-500 mt-0.5">
-                      {p.courseIds.length} cursos
+                      {courseCountForPackage(p)} cursos
                       {p.tier ? ` · ${p.tier}` : ''}
                     </p>
                   </div>

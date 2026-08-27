@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Course } from '@t/index';
+import { resolveThumbnailUrl, onDriveThumbnailError } from '@utils/driveThumbnail';
 
 interface CourseCardProps {
   course: Course;
@@ -25,7 +26,8 @@ const getLevelLabel = (level?: Course['level']) => {
 
 export default function CourseCard({ course, compact = false }: CourseCardProps) {
   const lessonCount = getLessonCount(course);
-  const hasThumbnail = Boolean(course.thumbnail);
+  const thumbnailSrc = resolveThumbnailUrl(course.thumbnail);
+  const hasThumbnail = Boolean(thumbnailSrc);
 
   return (
     <Link
@@ -35,10 +37,12 @@ export default function CourseCard({ course, compact = false }: CourseCardProps)
       <div className="relative aspect-video overflow-hidden bg-[linear-gradient(135deg,#e8e1d6,#111)]">
         {hasThumbnail ? (
           <img
-            src={course.thumbnail}
+            src={thumbnailSrc}
             alt={`Portada del curso ${course.title}`}
             className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
             loading="lazy"
+            onError={onDriveThumbnailError}
+            referrerPolicy="no-referrer"
           />
         ) : (
           <div className="grid h-full place-items-center px-6 text-center">

@@ -4,6 +4,7 @@ import CourseCard from '@molecules/CourseCard';
 import Spinner from '@atoms/Spinner';
 import { useCourses } from '@hooks/useCourses';
 import type { Course } from '@t/index';
+import { resolveThumbnailUrl, onDriveThumbnailError } from '@utils/driveThumbnail';
 
 const getCourseId = (course: Course) => course.id ?? course._id ?? course.slug;
 
@@ -159,9 +160,12 @@ export default function CourseList() {
                 <div className="relative min-h-[320px] overflow-hidden bg-ink-900">
                   {featuredCourse.thumbnail ? (
                     <img
-                      src={featuredCourse.thumbnail}
+                      src={resolveThumbnailUrl(featuredCourse.thumbnail)}
                       alt={`Portada del curso ${featuredCourse.title}`}
                       className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.035]"
+                      onError={onDriveThumbnailError}
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="grid h-full place-items-center text-white/55">
