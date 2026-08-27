@@ -41,4 +41,7 @@ export interface AdminSubscriptionRow extends Subscription {
 }
 
 export const listAllSubscriptions = (): Promise<AdminSubscriptionRow[]> =>
-  client.get<ApiResponse<AdminSubscriptionRow[]>>('/subscriptions/admin/all').then((r) => r.data);
+  client
+    .get<ApiResponse<AdminSubscriptionRow[]>>('/subscriptions/admin/all')
+    .then((r) => r.data)
+    .catch(() => []);

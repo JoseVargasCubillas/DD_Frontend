@@ -155,7 +155,7 @@ export default function ManageSubscriptions() {
         <table className="w-full text-sm min-w-[900px]">
           <thead className="bg-cream-200 border-b border-ink-900/15">
             <tr>
-              {['Cliente', 'Paquete / Oferta', 'Inicio', 'Vence', 'Restante', 'Estado'].map((h) => (
+              {['Cliente', 'Paquete / Oferta', 'Origen', 'Inicio', 'Vence', 'Restante', 'Estado'].map((h) => (
                 <th key={h} className="text-left px-4 py-3 text-[10px] uppercase tracking-[0.28em] text-ink-500 font-semibold">
                   {h}
                 </th>
@@ -165,13 +165,13 @@ export default function ManageSubscriptions() {
           <tbody className="divide-y divide-ink-900/10">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="text-center py-10 text-ink-500">
+                <td colSpan={7} className="text-center py-10 text-ink-500">
                   Cargando…
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={6} className="text-center py-10 text-red-700 text-sm">
+                <td colSpan={7} className="text-center py-10 text-red-700 text-sm">
                   <p className="font-serif text-base mb-1">No pude cargar la lista de suscripciones.</p>
                   <p className="text-xs opacity-80">
                     {(error as Error)?.message || 'Error desconocido'}
@@ -180,13 +180,14 @@ export default function ManageSubscriptions() {
               </tr>
             ) : subs.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-14 text-ink-500 italic font-serif">
+                <td colSpan={7} className="text-center py-14 text-ink-500 italic font-serif">
                   Aún no hay suscripciones. Asigna un paquete a un contacto desde su perfil.
                 </td>
               </tr>
             ) : (
               subs.map((s) => {
                 const rem = daysUntil(s.currentPeriodEnd);
+                const isManual = s.source === 'manual_admin';
                 return (
                   <tr key={s._id ?? s.id} className="hover:bg-cream-50">
                     <td className="px-4 py-3">
@@ -211,6 +212,17 @@ export default function ManageSubscriptions() {
                         </>
                       )}
                       {!s.packageName && !s.offerTitle && <span className="text-ink-500">—</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`text-[10px] uppercase tracking-[0.28em] px-2 py-1 border ${
+                          isManual
+                            ? 'border-amber-500 text-amber-800 bg-amber-50'
+                            : 'border-ink-900/30 text-ink-700 bg-cream'
+                        }`}
+                      >
+                        {isManual ? 'Manual' : 'Web · Stripe'}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-ink-600">{fmtDate(s.startDate)}</td>
                     <td className="px-4 py-3 text-ink-600">{fmtDate(s.currentPeriodEnd)}</td>

@@ -263,6 +263,7 @@ export interface Subscription {
   package?: string | null;
   offer?: string | null;
   startDate?: string;
+  source?: 'stripe' | 'manual_admin' | string;
 }
 
 export interface OrderItem {

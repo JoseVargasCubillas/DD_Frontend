@@ -116,15 +116,6 @@ const DURATION_OPTIONS: { days: number; label: string; sub: string }[] = [
   { days: 365, label: '1 año',   sub: '365 días de acceso' },
 ];
 
-function pickCanonicalPackage(packages: Package[]): Package | null {
-  const active = packages.filter((p) => p.isActive);
-  if (active.length === 0) return null;
-  const tierRank: Record<string, number> = { master: 0, business: 1, entrepreneur: 2 };
-  return [...active].sort(
-    (a, b) => (tierRank[a.tier ?? ''] ?? 99) - (tierRank[b.tier ?? ''] ?? 99),
-  )[0];
-}
-
 function AssignSubscriptionModal({
   userId,
   packages,
@@ -135,42 +126,69 @@ function AssignSubscriptionModal({
   onClose: () => void;
 }) {
   const assign = useAssignPackage();
+  const activePackages = useMemo(() => packages.filter((p) => p.isActive), [packages]);
+  const [packageId, setPackageId] = useState<string>(() => activePackages[0]?._id ?? '');
   const [durationDays, setDurationDays] = useState<number>(365);
-  const canonical = useMemo(() => pickCanonicalPackage(packages), [packages]);
 
   const submit = () => {
-    if (!canonical) return;
+    if (!packageId) return;
     assign.mutate(
-      { userId, packageId: canonical._id, durationDays },
+      { userId, packageId, durationDays },
       { onSuccess: onClose },
     );
   };
 
+  const selectedPkg = activePackages.find((p) => p._id === packageId);
+
   return (
     <div className="fixed inset-0 z-50 bg-ink-900/40 flex items-center justify-center p-6">
       <div
-        className="w-full max-w-md bg-cream border border-ink-900/20 shadow-xl p-7"
+        className="w-full max-w-lg bg-cream border border-ink-900/20 shadow-xl p-7 max-h-[92vh] overflow-y-auto"
         style={{ animation: 'paper-unfold 320ms ease-out both' }}
       >
         <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-2">Academia</p>
         <h3 className="font-serif text-2xl text-ink-900 mb-1">Asignar suscripción</h3>
         <p className="text-sm text-ink-600 mb-5">
-          Otorga acceso a todos los cursos de la academia por el tiempo que elijas.
+          Otorga acceso a la Academia igual que si el cliente hubiera comprado. La asignación queda
+          registrada como venta manual en Pagos.
         </p>
 
-        {!canonical ? (
+        {activePackages.length === 0 ? (
           <div className="text-sm text-ink-500 border border-dashed border-ink-900/15 p-6 text-center mb-4">
-            No hay un paquete de suscripción activo.{' '}
+            No hay paquetes activos.{' '}
             <Link to="/admin/ventas/paquetes" className="underline">Crea uno aquí</Link>.
           </div>
         ) : (
           <>
-            <div className="border border-ink-900/15 bg-cream-100 p-4 mb-5">
-              <p className="text-[10px] uppercase tracking-[0.32em] text-ink-500 mb-1">Paquete</p>
-              <p className="font-serif text-lg text-ink-900">{canonical.name}</p>
-              <p className="text-xs text-ink-500 mt-0.5">
-                {canonical.courseIds.length} cursos incluidos
-              </p>
+            <p className="text-[10px] uppercase tracking-[0.32em] text-ink-500 mb-2">Paquete</p>
+            <div className="space-y-2 max-h-56 overflow-y-auto border border-ink-900/15 p-2 bg-cream-100 mb-5">
+              {activePackages.map((p) => (
+                <label
+                  key={p._id}
+                  className={`flex items-start gap-3 p-3 cursor-pointer border transition-colors ${
+                    packageId === p._id
+                      ? 'border-ink-900 bg-cream-200'
+                      : 'border-transparent hover:bg-cream-200/60'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="pkg"
+                    value={p._id}
+                    checked={packageId === p._id}
+                    onChange={() => setPackageId(p._id)}
+                    className="mt-1 shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-serif text-lg text-ink-900 leading-tight">{p.name}</p>
+                    <p className="text-xs text-ink-500 mt-0.5">
+                      {p.courseIds.length} cursos
+                      {p.tier ? ` · ${p.tier}` : ''}
+                    </p>
+                  </div>
+                  <p className="font-serif text-lg text-ink-900 shrink-0">${p.price}</p>
+                </label>
+              ))}
             </div>
 
             <p className="text-[10px] uppercase tracking-[0.32em] text-ink-500 mb-2">Duración</p>
@@ -200,6 +218,14 @@ function AssignSubscriptionModal({
                 </label>
               ))}
             </div>
+
+            {selectedPkg && (
+              <p className="text-xs text-ink-500 mb-4 border-t border-ink-900/10 pt-3">
+                Se registrará como venta manual de{' '}
+                <span className="text-ink-900">{selectedPkg.name}</span> por{' '}
+                <span className="text-ink-900">${selectedPkg.price}</span> con {durationDays} días de vigencia.
+              </p>
+            )}
           </>
         )}
 
@@ -212,7 +238,7 @@ function AssignSubscriptionModal({
           </button>
           <button
             onClick={submit}
-            disabled={!canonical || assign.isPending}
+            disabled={!packageId || assign.isPending}
             className="btn-broadsheet flex-1 disabled:opacity-50"
           >
             {assign.isPending ? 'Asignando…' : 'Asignar'}
