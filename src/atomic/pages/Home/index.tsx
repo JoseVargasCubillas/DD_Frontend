@@ -37,7 +37,11 @@ import logoPrensa14 from "../../../../assets/home/010_home_logo14_DD.png";
 import logoPrensa15 from "../../../../assets/home/010_home_logo15_DD.png";
 import logoPrensa16 from "../../../../assets/home/010_home_logo16_DD.png";
 import logoPrensa17 from "../../../../assets/home/010_home_logo17_DD.png";
-import videoSEF from "../../../../assets/eventos/VIDEO SEF vertical web.mp4";
+// Video hospedado en el GitHub Release `media-v1` (mismo esquema que Academia).
+// Sobrevive a cualquier deploy destructivo del VPS y tiene CDN de GitHub.
+// GitHub convierte espacios en puntos al subir → nombre real: VIDEO.SEF.vertical.web.mp4
+const videoSEF =
+  "https://github.com/JoseVargasCubillas/DD_Frontend/releases/download/media-v1/VIDEO.SEF.vertical.web.mp4";
 
 const formatHomeEventDate = (value: string) => {
   const date = new Date(value);

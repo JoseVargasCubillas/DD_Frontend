@@ -2,7 +2,11 @@ import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'reac
 import { useQuery } from '@tanstack/react-query';
 import * as eventsApi from '@api/events.api';
 import heroDiego from '../../../../../assets/home/007_home_bios_DD.png';
-import heroVideo from '../../../../../assets/eventos/VIDEO SEF vertical web.mp4';
+// Video hospedado en el GitHub Release `media-v1` (mismo esquema que Academia).
+// Sobrevive a cualquier deploy destructivo del VPS y tiene CDN de GitHub.
+// GitHub convierte espacios en puntos al subir → nombre real: VIDEO.SEF.vertical.web.mp4
+const heroVideo =
+  'https://github.com/JoseVargasCubillas/DD_Frontend/releases/download/media-v1/VIDEO.SEF.vertical.web.mp4';
 import diegoPortrait from '../../../../../assets/eventos/LEF_img_001.png';
 import irmaPortrait from '../../../../../assets/eventos/LEF_img 002.png';
 import azucenaPortrait from '../../../../../assets/eventos/LEF_img 003.png';
