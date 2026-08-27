@@ -3,7 +3,13 @@ import toast from 'react-hot-toast';
 import * as api from '@api/packages.api';
 
 export const usePackages = () =>
-  useQuery({ queryKey: ['packages'], queryFn: api.listPackages });
+  useQuery({
+    queryKey: ['packages'],
+    queryFn: api.listPackages,
+    staleTime: 30 * 1000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  });
 
 export const usePackage = (id: string | undefined) =>
   useQuery({
@@ -46,6 +52,8 @@ export const useAssignPackage = () => {
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ['user', vars.userId] });
       qc.invalidateQueries({ queryKey: ['users'] });
+      qc.invalidateQueries({ queryKey: ['profile'] });
+      qc.invalidateQueries({ queryKey: ['subscription'] });
       toast.success('Paquete asignado');
     },
     onError: (e: Error) => toast.error(e.message),

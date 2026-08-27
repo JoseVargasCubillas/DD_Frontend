@@ -18,10 +18,8 @@ const PRODUCT_ITEMS = [
 ] as const;
 
 const ACADEMIA_ITEMS = [
-  { label: "Paquetes", to: "/admin/paquetes" },
-  { label: "Ofertas", to: "/admin/ofertas" },
-  { label: "Promociones", to: "/admin/promociones" },
   { label: "Suscripciones", to: "/admin/suscripciones" },
+  { label: "Promociones", to: "/admin/promociones" },
 ] as const;
 
 const SALES_ITEMS = [

@@ -365,7 +365,7 @@ export default function UserDashboard() {
           italic="especializados."
           copy="Cursos en video estructurados por expertos invitados al programa."
         />
-        {isLoading && <p className="mt-5 font-serif italic text-ink-600">Cargando ediciones...</p>}
+        {isLoading && <p className="mt-5 font-serif italic text-ink-600">Cargando cursos...</p>}
         <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
           {visibleCourses.map((item) => (
             <AcademyCard key={item.title} item={item} />

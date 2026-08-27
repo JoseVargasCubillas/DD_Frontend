@@ -4,12 +4,19 @@ import { useReveal, useHeroReveal } from "@hooks/useReveal";
 import { useCountUp } from "@hooks/useCountUp";
 import { useEvents } from "@hooks/useEvents";
 import type { Event as SiteEvent } from "@t/index";
-import equipoUnido from "../../../../assets/ddweb/equipo-unido.jpg";
-import equipoDiazLara from "../../../../assets/ddweb/equipo-diaz-lara-escaleras.jpg";
-import reformaFiscal from "../../../../assets/ddweb/reforma-fiscal-2026.jpg";
-import satDigital from "../../../../assets/ddweb/sat-cumplimiento-digital.jpg";
-import inmobiliarioConstruccion from "../../../../assets/ddweb/inmobiliario-construccion.jpg";
-import diegoPasarela from "../../../../assets/ddweb/diego-pasarela.jpg";
+import eventPersonaFisicaMoral from "../../../../assets/eventos/evento-persona-fisica-moral.png";
+import eventMentalidadEmpresarial from "../../../../assets/eventos/evento-mentalidad-empresarial.png";
+import eventSistemaProspeccion from "../../../../assets/eventos/evento-sistema-prospeccion-digital.png";
+import eventTallerFiscal from "../../../../assets/eventos/evento-taller-estrategia-fiscal.png";
+import eventMastermindPanama from "../../../../assets/eventos/evento-mastermind-panama.png";
+import eventHolding from "../../../../assets/eventos/evento-holding.png";
+import eventFiscalCdmx from "../../../../assets/eventos/evento-estrategia-fiscal-cdmx.png";
+import eventCoaching from "../../../../assets/eventos/evento-coaching-liderazgo.png";
+import eventFiscalMonterrey from "../../../../assets/eventos/evento-estrategia-fiscal-monterrey.png";
+import eventRockefeller from "../../../../assets/eventos/evento-rockefeller.png";
+import eventMaestriaEscenica from "../../../../assets/eventos/evento-maestria-escenica.png";
+import eventBeneficiosRegimen from "../../../../assets/eventos/evento-beneficios-regimen-fiscal.png";
+import eventRevisionEstrategica from "../../../../assets/eventos/evento-revision-estrategica-cdmx.png";
 
 type EventTone = "cream" | "dark";
 
@@ -32,12 +39,12 @@ interface EventCard {
 }
 
 const featuredCountdown = [
-  ["07", "Eventos\nen 2026"],
+  ["15", "Eventos\nen 2026"],
   ["05", "Ciudades\nsede"],
-  ["580", "Cupos\ntotales"],
+  ["1,450", "Cupos\ntotales"],
 ];
 
-const NEXT_EVENT_DATE = new Date("2026-09-04T09:00:00-06:00");
+const NEXT_EVENT_DATE = new Date("2026-08-28T09:07:00-06:00");
 
 function getCountdown(target: Date) {
   const diff = Math.max(0, target.getTime() - Date.now());
@@ -49,9 +56,9 @@ function getCountdown(target: Date) {
   };
 }
 
-const formatFilters = ["Todos", "Cumbre", "Seminario", "Workshop"];
-const monthFilters = ["Todo el año", "May", "Jun", "Sep", "Oct", "Nov"];
-const cityFilters = ["Todas", "CDMX", "Guadalajara", "Monterrey", "Querétaro"];
+const formatFilters = ["Todos", "Cumbre", "Seminario", "Workshop", "Webinar"];
+const monthFilters = ["Todo el año", "Ago", "Sep", "Oct", "Nov", "Dic"];
+const cityFilters = ["Todas", "CDMX", "Monterrey", "Panamá", "Zoom", "Online"];
 
 const EVENT_CTA_SETTINGS_KEY = "dd-event-cta-settings";
 const EVENT_STORAGE_KEY = "dd-admin-events";
@@ -61,6 +68,14 @@ const DEFAULT_CTA_SETTINGS = {
   salesPhone: "5210000000000",
   waitlistPhone: "5210000000000",
 };
+const DEPRECATED_EVENT_SLUGS = new Set([
+  "formacion-equipos",
+  "revision-estrategica",
+  "estrategia-fiscal",
+  "equipos-creativos",
+  "blindaje-patrimonial",
+  "estrategia-rockefeller",
+]);
 
 const loadCtaSettings = () => {
   if (typeof window === "undefined") return DEFAULT_CTA_SETTINGS;
@@ -108,7 +123,8 @@ const loadStoredEvents = (): SiteEvent[] => {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(EVENT_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as SiteEvent[]) : [];
+    const events = raw ? (JSON.parse(raw) as SiteEvent[]) : [];
+    return events.filter((event) => !DEPRECATED_EVENT_SLUGS.has(event.slug));
   } catch {
     return [];
   }
@@ -158,6 +174,13 @@ const splitTitle = (title: string) => {
   };
 };
 
+const isHoldingEvent = (event: Pick<SiteEvent, "slug" | "title">) =>
+  event.slug.startsWith("holding") || event.title.trim().toLowerCase() === "holding";
+
+const isTallerEstrategiaFiscalEvent = (event: Pick<SiteEvent, "slug" | "title">) =>
+  event.slug.includes("taller-estrategia-fiscal") ||
+  event.title.trim().toLowerCase().includes("taller de estrategia fiscal");
+
 const cardFromApiEvent = (event: SiteEvent): EventCard => {
   const titleParts = splitTitle(event.title);
   const price = event.salePrice ?? event.price ?? 0;
@@ -175,9 +198,13 @@ const cardFromApiEvent = (event: SiteEvent): EventCard => {
         ? "Online"
         : event.location ||
           (event.modality === "hybrid" ? "Híbrido" : "Por definir"),
-    to: event.onlineUrl || `/eventos/${event.slug}`,
+    to: isTallerEstrategiaFiscalEvent(event)
+      ? "/eventos/estrategia-fiscal"
+      : isHoldingEvent(event)
+        ? "/eventos/holding"
+        : event.onlineUrl || `/eventos/${event.slug}`,
     image: event.thumbnail,
-    cta: event.status === "ongoing" ? "Entrar ahora" : "Reservar",
+    cta: event.status === "ongoing" ? "Entrar ahora" : "¡Estoy listo!",
     isFeatured: event.isFeatured,
     slug: event.slug,
   };
@@ -190,9 +217,15 @@ const getEventCardSlug = (event: EventCard) =>
     return parts[parts.length - 1] ?? "";
   })();
 
+const isUpcomingEventCard = (event: EventCard) => {
+  if (!event.rawDate) return true;
+  const time = new Date(event.rawDate).getTime();
+  return !Number.isNaN(time) && time >= Date.now();
+};
+
 const groupApiEvents = (events: SiteEvent[]) => {
   const visible = events
-    .filter((event) => event.status !== "canceled")
+    .filter((event) => event.status !== "canceled" && !DEPRECATED_EVENT_SLUGS.has(event.slug))
     .sort(
       (a, b) =>
         new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
@@ -249,55 +282,23 @@ const mergeCalendarGroups = (
 
 const eventGroups: Array<{ month: string; events: EventCard[] }> = [
   {
-    month: "Mayo 2026",
+    month: "Agosto 2026",
     events: [
       {
-        eyebrow: "Online",
-        title: "Formación de",
-        titleSerif: "Equipos de Alto Impacto",
+        eyebrow: "Webinar",
+        title: "De persona física",
+        titleSerif: "a moral",
         description:
-          "Un evento por mes durante todo 2026. Solo presencial, solo en español, solo para empresarios que decidieron dejar de pagar más impuestos de los necesarios.",
-        price: "$24,800 MXN",
-        date: "28 Mayo 2026",
-        rawDate: "2026-05-28T09:07:00-06:00",
-        location: "Online",
-        image: equipoUnido,
-        to: "/eventos/formacion-equipos",
-        cta: "Cupo limitado",
-      },
-    ],
-  },
-  {
-    month: "Junio 2026",
-    events: [
-      {
-        eyebrow: "Seminario",
-        title: "Revisión Estratégica",
-        titleSerif: "de Cierre Semestral",
-        description:
-          "Diagnóstico fiscal con foco en decisiones críticas antes del segundo semestre.",
-        price: "$4,900 MXN",
-        date: "5 Junio 2026",
-        rawDate: "2026-06-05T09:07:00-06:00",
-        location: "CDMX",
-        image: reformaFiscal,
-        to: "/eventos/revision-estrategica",
-      },
-      {
-        eyebrow: "Seminario",
-        title: "Estrategia Fiscal",
-        titleSerif: "Edición CDMX",
-        description:
-          "El evento emblema de Diego. Un día intensivo en CDMX con cierre de alto fiscal en mente.",
-        price: "$12,400 MXN",
+          "Entrenamiento para decidir cuándo conviene migrar de persona física a persona moral y evitar errores fiscales desde la estructura.",
+        price: "$0 MXN",
         date: "28 Agosto 2026",
-        rawDate: "2026-08-28T09:00:00-06:00",
-        location: "WTC CDMX",
-        image: satDigital,
-        slug: "estrategia-fiscal",
+        rawDate: "2026-08-28T09:07:00-06:00",
+        location: "Zoom",
+        image: eventPersonaFisicaMoral,
+        slug: "de-persona-fisica-a-moral",
         isFeatured: true,
-        to: "/eventos/estrategia-fiscal",
-        cta: "Más información",
+        to: "/eventos/de-persona-fisica-a-moral",
+        cta: "¡Estoy listo!",
       },
     ],
   },
@@ -305,17 +306,94 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
     month: "Septiembre 2026",
     events: [
       {
-        eyebrow: "Cumbre",
-        title: "Equipos",
-        titleSerif: "Creativos Cumbre Bajío",
+        eyebrow: "Seminario",
+        title: "Mentalidad",
+        titleSerif: "Empresarial",
         description:
-          "Liderazgo, cultura y construcción de talento para equipos que necesitan dejar de resolver desde urgencias.",
-        price: "$18,900 MXN",
-        date: "4 Sep 2026",
+          "Sesión presencial para empresarios que quieren ordenar sus decisiones, números y dirección con una mentalidad más estratégica.",
+        price: "$0 MXN",
+        date: "3 Septiembre 2026",
+        rawDate: "2026-09-03T09:07:00-06:00",
+        location: "CDMX",
+        image: eventMentalidadEmpresarial,
+        slug: "mentalidad-empresarial",
+        to: "/eventos/mentalidad-empresarial",
+        cta: "¡Estoy listo!",
+      },
+      {
+        eyebrow: "Cumbre",
+        title: "Sistema de",
+        titleSerif: "Prospección Digital",
+        description:
+          "Cumbre de dos días para diseñar un sistema de atracción y conversión de prospectos de alto valor.",
+        price: "$0 MXN",
+        date: "4 y 5 Septiembre 2026",
         rawDate: "2026-09-04T09:07:00-06:00",
-        location: "Querétaro",
-        image: equipoDiazLara,
-        to: "/eventos/equipos-creativos",
+        location: "CDMX",
+        image: eventSistemaProspeccion,
+        slug: "cumbre-sistema-prospeccion-digital",
+        to: "/eventos/cumbre-sistema-prospeccion-digital",
+        cta: "¡Estoy listo!",
+      },
+      {
+        eyebrow: "Workshop",
+        title: "Taller de",
+        titleSerif: "Estrategia Fiscal",
+        description:
+          "Taller online para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
+        price: "$0 MXN",
+        date: "11 Septiembre 2026",
+        rawDate: "2026-09-11T09:07:00-06:00",
+        location: "Online",
+        image: eventTallerFiscal,
+        slug: "taller-estrategia-fiscal-online-septiembre",
+        to: "/eventos/estrategia-fiscal",
+        cta: "¡Estoy listo!",
+      },
+      {
+        eyebrow: "Mastermind",
+        title: "Mastermind",
+        titleSerif: "Panamá",
+        description:
+          "Encuentro intensivo en Panamá para empresarios que buscan estrategia, estructura y visión internacional.",
+        price: "$0 MXN",
+        date: "15 al 18 Septiembre 2026",
+        rawDate: "2026-09-15T09:07:00-06:00",
+        location: "Panamá",
+        image: eventMastermindPanama,
+        slug: "mastermind-panama",
+        to: "/eventos/mastermind-panama",
+        cta: "¡Estoy listo!",
+      },
+      {
+        eyebrow: "Webinar",
+        title: "Holding",
+        titleSerif: undefined,
+        description:
+          "Sesión online sobre estructura holding, patrimonio y orden empresarial para proteger decisiones de largo plazo.",
+        price: "$0 MXN",
+        date: "22 Septiembre 2026",
+        rawDate: "2026-09-22T09:07:00-06:00",
+        location: "Zoom",
+        image: eventHolding,
+        slug: "holding-septiembre",
+        to: "/eventos/holding",
+        cta: "¡Estoy listo!",
+      },
+      {
+        eyebrow: "Workshop",
+        title: "Taller de",
+        titleSerif: "Estrategia Fiscal",
+        description:
+          "Taller presencial en CDMX para ajustar tu estrategia fiscal con claridad antes del cierre del año.",
+        price: "$0 MXN",
+        date: "25 Septiembre 2026",
+        rawDate: "2026-09-25T09:07:00-06:00",
+        location: "CDMX",
+        image: eventFiscalCdmx,
+        slug: "taller-estrategia-fiscal-cdmx-septiembre",
+        to: "/eventos/estrategia-fiscal",
+        cta: "¡Estoy listo!",
       },
     ],
   },
@@ -324,16 +402,48 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
     events: [
       {
         eyebrow: "Workshop",
-        title: "Blindaje Patrimonial",
-        titleSerif: "Edición Norte",
+        title: "Taller de",
+        titleSerif: "Estrategia Fiscal",
         description:
-          "Riesgos, estructura y protección patrimonial para empresarios.",
-        price: "$32,500 MXN",
-        date: "16 Oct 2026",
-        rawDate: "2026-10-16T09:07:00-06:00",
-        location: "Monterrey",
-        image: inmobiliarioConstruccion,
-        to: "/eventos/blindaje-patrimonial",
+          "Edición CDMX del taller de estrategia fiscal para empresarios que quieren cerrar el año con estructura.",
+        price: "$0 MXN",
+        date: "22 Octubre 2026",
+        rawDate: "2026-10-22T09:07:00-06:00",
+        location: "CDMX",
+        image: eventFiscalCdmx,
+        slug: "taller-estrategia-fiscal-cdmx-octubre",
+        to: "/eventos/estrategia-fiscal",
+        cta: "¡Estoy listo!",
+      },
+      {
+        eyebrow: "Seminario",
+        title: "Coaching para",
+        titleSerif: "el Liderazgo",
+        description:
+          "Dos días para fortalecer dirección, criterio y liderazgo empresarial con herramientas de ejecución.",
+        price: "$0 MXN",
+        date: "23 y 24 Octubre 2026",
+        rawDate: "2026-10-23T09:07:00-06:00",
+        location: "CDMX",
+        image: eventCoaching,
+        slug: "coaching-para-el-liderazgo",
+        to: "/eventos/coaching-para-el-liderazgo",
+        cta: "¡Estoy listo!",
+      },
+      {
+        eyebrow: "Webinar",
+        title: "Holding",
+        titleSerif: undefined,
+        description:
+          "Entrenamiento online para entender cuándo una holding sí suma y cuándo sólo complica la estructura.",
+        price: "$0 MXN",
+        date: "27 Octubre 2026",
+        rawDate: "2026-10-27T09:07:00-06:00",
+        location: "Zoom",
+        image: eventHolding,
+        slug: "holding-octubre",
+        to: "/eventos/holding",
+        cta: "¡Estoy listo!",
       },
     ],
   },
@@ -341,22 +451,90 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
     month: "Noviembre 2026",
     events: [
       {
-        eyebrow: "Cumbre",
-        title: "Estrategia Rockefeller",
-        titleSerif: "Cumbre Anual 2026",
+        eyebrow: "Workshop",
+        title: "Taller de",
+        titleSerif: "Estrategia Fiscal",
         description:
-          "Tres días en CDMX. El evento más completo del año: estrategia fiscal + scalers + liderazgo + holding.",
-        price: "$48,000 MXN",
-        date: "20 Nov 2026",
+          "Edición Monterrey del taller para empresarios que quieren claridad fiscal y decisiones accionables.",
+        price: "$0 MXN",
+        date: "6 Noviembre 2026",
+        rawDate: "2026-11-06T09:07:00-06:00",
+        location: "Monterrey",
+        image: eventFiscalMonterrey,
+        slug: "taller-estrategia-fiscal-monterrey",
+        to: "/eventos/estrategia-fiscal",
+        cta: "¡Estoy listo!",
+      },
+      {
+        eyebrow: "Entrenamiento",
+        title: "4E Código",
+        titleSerif: "Rockefeller",
+        description:
+          "Entrenamiento de tres días para ordenar estrategia, ejecución y crecimiento con método.",
+        price: "$0 MXN",
+        date: "20 al 22 Noviembre 2026",
         rawDate: "2026-11-20T09:07:00-06:00",
         location: "CDMX",
-        image: diegoPasarela,
-        to: "/eventos/estrategia-rockefeller",
-        cta: "Early price ends in 20h",
+        image: eventRockefeller,
+        slug: "4e-codigo-rockefeller",
+        to: "/eventos/4e-codigo-rockefeller",
+        cta: "¡Estoy listo!",
+      },
+      {
+        eyebrow: "Webinar",
+        title: "Holding",
+        titleSerif: undefined,
+        description:
+          "Nueva sesión online para revisar holding, partes relacionadas y decisiones patrimoniales.",
+        price: "$0 MXN",
+        date: "24 Noviembre 2026",
+        rawDate: "2026-11-24T09:07:00-06:00",
+        location: "Zoom",
+        image: eventHolding,
+        slug: "holding-noviembre",
+        to: "/eventos/holding",
+        cta: "¡Estoy listo!",
+      },
+    ],
+  },
+  {
+    month: "Diciembre 2026",
+    events: [
+      {
+        eyebrow: "Seminario",
+        title: "Maestría",
+        titleSerif: "Escénica",
+        description:
+          "Tres días para fortalecer comunicación, presencia y estructura de mensaje frente a audiencias empresariales.",
+        price: "$0 MXN",
+        date: "4 al 6 Diciembre 2026",
+        rawDate: "2026-12-04T09:07:00-06:00",
+        location: "CDMX",
+        image: eventMaestriaEscenica,
+        slug: "maestria-escenica",
+        to: "/eventos/maestria-escenica",
+        cta: "¡Estoy listo!",
+      },
+      {
+        eyebrow: "Workshop",
+        title: "Taller de",
+        titleSerif: "Estrategia Fiscal",
+        description:
+          "Último taller online del año para cerrar decisiones fiscales y preparar la estructura del siguiente ciclo.",
+        price: "$0 MXN",
+        date: "10 Diciembre 2026",
+        rawDate: "2026-12-10T09:07:00-06:00",
+        location: "Online",
+        image: eventTallerFiscal,
+        slug: "taller-estrategia-fiscal-online-diciembre",
+        to: "/eventos/estrategia-fiscal",
+        cta: "¡Estoy listo!",
       },
     ],
   },
 ];
+
+const SHOW_PAST_EDITIONS_SECTION = false;
 
 const pastStats = [
   ["23", "Ediciones"],
@@ -368,7 +546,7 @@ const faqs = [
   {
     question: "¿Los eventos son presenciales u online?",
     answer:
-      "Todos los eventos del calendario 2026 son 100% presenciales en las ciudades indicadas, salvo el workshop del 5 de junio, que es online en vivo. Los eventos presenciales no se transmiten en directo, pero los asistentes reciben la grabación editada 14 días después.",
+      "El calendario combina eventos presenciales y sesiones online. Cada card indica su sede: CDMX, Monterrey, Panamá, Zoom u Online.",
   },
   {
     question: "¿Qué incluye el costo del boleto?",
@@ -411,19 +589,21 @@ function Placeholder({
   className = "",
   src,
   alt,
-  fit = "cover",
+  fit = "contain",
 }: {
   className?: string;
   src?: string;
   alt?: string;
   fit?: "cover" | "contain";
 }) {
-  const resolvedSrc = src || satDigital;
+  const resolvedSrc = src || eventTallerFiscal;
 
   return (
     <img
       src={resolvedSrc}
       alt={alt ?? ""}
+      loading="lazy"
+      decoding="async"
       className={`${fit === "contain" ? "object-contain" : "object-cover"} ${className}`}
     />
   );
@@ -437,15 +617,15 @@ function AgendaCard({
   compact?: boolean;
 }) {
   return (
-    <article className="card-lift group flex w-[280px] flex-none flex-col border border-cream-400 bg-cream-50 transition-colors duration-200 hover:border-ink-900 sm:w-[304px] lg:w-[calc((100%-3.5rem)/3)]">
+    <article className="card-lift group flex w-full min-w-0 flex-col border border-cream-400 bg-cream-50 transition-colors duration-200 hover:border-ink-900">
       <div className="p-4 pb-0">
         <Placeholder
           src={event.image}
           alt={event.title}
           className={
             compact
-              ? "mx-auto h-[250px] w-full"
-              : "mx-auto h-[290px] w-full"
+              ? "mx-auto aspect-square w-full bg-[#101010]"
+              : "mx-auto aspect-square w-full bg-[#101010]"
           }
         />
       </div>
@@ -508,15 +688,17 @@ function AgendaFeature({
   return (
     <article
       className={`card-lift group grid min-h-[340px] border border-cream-400 bg-cream-50 transition-colors duration-200 hover:border-ink-900 ${
-        imageSide === "right" ? "md:grid-cols-[1fr_340px]" : ""
+        imageSide === "right" ? "md:grid-cols-[minmax(0,1fr)_minmax(280px,390px)]" : ""
       }`}
     >
       {imageSide === "top" ? (
-        <Placeholder
-          src={event.image}
-          alt={event.title}
-          className="m-6 mb-0 aspect-[3/4] min-h-[360px] w-[min(360px,calc(100%-3rem))]"
-        />
+        <div className="m-5 mb-0 flex justify-center bg-[#101010] sm:m-6 sm:mb-0">
+          <Placeholder
+            src={event.image}
+            alt={event.title}
+            className="aspect-square w-full max-w-[460px]"
+          />
+        </div>
       ) : null}
       <div className="flex flex-col p-7">
         <div className="flex items-center justify-between gap-5 border-b border-cream-300 pb-3 text-[11px] uppercase tracking-[0.16em] text-ink-400">
@@ -551,11 +733,13 @@ function AgendaFeature({
         </div>
       </div>
       {imageSide === "right" ? (
-        <Placeholder
-          src={event.image}
-          alt={event.title}
-          className="m-6 min-h-[350px] w-[calc(100%-3rem)]"
-        />
+        <div className="m-5 mt-0 flex items-center justify-center bg-[#101010] md:m-6 md:ml-0">
+          <Placeholder
+            src={event.image}
+            alt={event.title}
+            className="aspect-square w-full max-w-[390px]"
+          />
+        </div>
       ) : null}
     </article>
   );
@@ -563,7 +747,7 @@ function AgendaFeature({
 
 function AgendaPanel({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-[392px] flex-col justify-center border border-cream-400 bg-cream-200 p-10 md:p-14">
+    <div className="flex flex-col justify-center border border-cream-400 bg-cream-200 p-6 sm:p-8 md:min-h-[392px] md:p-14">
       {children}
     </div>
   );
@@ -585,7 +769,13 @@ export default function Events() {
   }, [eventsData?.data, storedEvents]);
   const dynamicGroups = useMemo(() => groupApiEvents(apiEvents), [apiEvents]);
   const calendarGroups = useMemo(
-    () => mergeCalendarGroups(eventGroups, dynamicGroups),
+    () =>
+      mergeCalendarGroups(eventGroups, dynamicGroups)
+        .map((group) => ({
+          ...group,
+          events: group.events.filter(isUpcomingEventCard),
+        }))
+        .filter((group) => group.events.length > 0),
     [dynamicGroups],
   );
   const allCalendarEvents = calendarGroups.flatMap((group) => group.events);
@@ -596,11 +786,11 @@ export default function Events() {
     allCalendarEvents.find((event) => event.isFeatured) ??
     null;
   const nextEvent =
-    featuredEvent ??
     allCalendarEvents.find((event) => {
       if (!event.rawDate) return true;
       return new Date(event.rawDate).getTime() >= Date.now();
     }) ??
+    featuredEvent ??
     allCalendarEvents[0] ??
     eventGroups[0]?.events[0];
   const nextEventTimestamp = nextEvent?.rawDate
@@ -635,6 +825,18 @@ export default function Events() {
   }, []);
 
   useEffect(() => {
+    if (window.location.hash !== "#evento-principal") return;
+
+    const id = window.setTimeout(() => {
+      document
+        .getElementById("evento-principal")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+
+    return () => window.clearTimeout(id);
+  }, []);
+
+  useEffect(() => {
     setCountdown(getCountdown(new Date(nextEventTimestamp)));
     const id = setInterval(
       () => setCountdown(getCountdown(new Date(nextEventTimestamp))),
@@ -652,9 +854,7 @@ export default function Events() {
     new Set(allCalendarEvents.map((event) => event.location).filter(Boolean))
       .size || 5,
   );
-  const countSpots = useCountUp(
-    apiEvents.reduce((total, event) => total + (event.capacity || 0), 0) || 580,
-  );
+  const countSpots = useCountUp(1450);
 
   const filteredGroups = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -719,8 +919,8 @@ export default function Events() {
 
           <div className="grid gap-10 pt-16 lg:grid-cols-[420px_minmax(0,540px)] lg:items-end lg:justify-between">
             <p className="max-w-[430px] text-[17px] leading-[1.5] tracking-[-0.01em] text-ink-600">
-              Siete eventos presenciales a lo largo del año, en cinco ciudades.
-              Cumbres, seminarios y formaciones intensivas para empresarios
+              Quince eventos a lo largo del año, en formato presencial y online.
+              Cumbres, talleres y formaciones intensivas para empresarios
               mexicanos que deciden tomar el control de su estrategia fiscal.
             </p>
 
@@ -753,13 +953,15 @@ export default function Events() {
         </div>
       </section>
 
-      <section className="bg-[#080808] text-white">
-        <div className="mx-auto grid max-w-[1184px] items-center gap-16 px-5 py-[84px] sm:px-8 lg:grid-cols-[510px_minmax(0,610px)] lg:px-0 lg:py-[112px]">
-          <Placeholder
-            src={nextEvent?.image}
-            alt={nextEvent?.title}
-            className="aspect-[1.52/1] w-full bg-[#080808] object-center text-white/28"
-          />
+      <section id="evento-principal" className="scroll-mt-[98px] bg-[#080808] text-white">
+        <div className="mx-auto grid max-w-[1184px] items-center gap-12 px-5 py-[84px] sm:px-8 lg:grid-cols-[minmax(360px,480px)_minmax(0,610px)] lg:gap-20 lg:px-0 lg:py-[112px]">
+          <div className="mx-auto flex w-full max-w-[480px] items-center justify-center border border-white/10 bg-[#101010] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.34)] sm:p-4 lg:mx-0">
+            <Placeholder
+              src={nextEvent?.image}
+              alt={nextEvent?.title}
+              className="aspect-square w-full object-center text-white/28"
+            />
+          </div>
           <div className="flex flex-col justify-center lg:pt-4">
             <p className="text-[10px] uppercase tracking-[0.24em] text-white/45">
               - {featuredEvent ? "Evento principal" : "Próximo evento"} · 01 de {String(totalEvents).padStart(2, "0")}
@@ -935,8 +1137,8 @@ export default function Events() {
       </section>
 
       <section className="bg-cream-50">
-        <div className="mx-auto max-w-[1280px] px-5 py-20 sm:px-8 lg:px-0">
-          <div className="grid items-start border-b border-cream-400 pb-10 md:grid-cols-[120px_minmax(0,1fr)_230px]">
+        <div className="mx-auto max-w-[1280px] px-5 py-10 sm:px-8 sm:py-14 lg:px-0 lg:py-20">
+          <div className="grid items-start gap-5 border-b border-cream-400 pb-7 md:grid-cols-[120px_minmax(0,1fr)_230px] md:gap-0 md:pb-10">
             <p className="text-[12px] uppercase leading-[1.35] tracking-[0.22em] text-ink-400">
               02 /<br />
               Calendario
@@ -964,19 +1166,19 @@ export default function Events() {
                 return (
                   <div
                     key={group.month}
-                    className="grid gap-8 py-12 lg:grid-cols-[190px_minmax(0,1fr)] lg:gap-10"
+                    className="grid gap-5 py-8 sm:gap-7 sm:py-10 lg:grid-cols-[190px_minmax(0,1fr)] lg:gap-10 lg:py-12"
                   >
-                    <div className="flex items-start justify-between gap-8 lg:block">
+                    <div className="flex items-start justify-between gap-5 lg:block">
                       <p className="text-[11px] uppercase tracking-[0.22em] text-ink-300">
                         Mes / 2026
                       </p>
-                      <h3 className="events-agenda-month mt-5 whitespace-pre-line font-serif italic leading-[1.04] tracking-[-0.042em]">
+                      <h3 className="events-agenda-month mt-0 whitespace-pre-line text-right font-serif italic leading-[1.04] tracking-[-0.042em] lg:mt-5 lg:text-left">
                         {group.month.replace(" ", "\n")}
                       </h3>
                     </div>
 
-                    <div className="-mx-5 overflow-x-auto px-5 pb-4 [scrollbar-gutter:stable] sm:-mx-8 sm:px-8 lg:mx-0 lg:px-0">
-                      <div className="flex w-max min-w-full gap-7">
+                    <div className="min-w-0">
+                      <div className="grid gap-5 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3">
                         {group.events.map((event) => (
                           <AgendaCard
                             key={`${group.month}-${event.title}`}
@@ -997,7 +1199,7 @@ export default function Events() {
             )}
           </div>
 
-          <div className="grid gap-9 border-t border-cream-400 py-16 lg:grid-cols-2 lg:gap-12">
+          <div className="hidden gap-9 border-t border-cream-400 py-16 lg:grid lg:grid-cols-2 lg:gap-12">
             <AgendaPanel>
               <p className="text-[12px] uppercase tracking-[0.2em] text-ink-400">
                 25 Sep · Workshop
@@ -1050,73 +1252,76 @@ export default function Events() {
         </div>
       </section>
 
-      <section className="border-t border-cream-400 bg-cream-100">
-        <div className="mx-auto grid max-w-[1360px] gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[0.86fr_1fr] lg:px-10">
-          <div className="grid grid-cols-2 border border-cream-400">
-            {[equipoDiazLara, equipoUnido, diegoPasarela, satDigital].map((image, index) => (
-              <Placeholder
-                key={index}
-                src={image}
-                alt={`Edición pasada ${index + 1} de eventos Diego Díaz`}
-                className="aspect-square border border-cream-400"
-              />
-            ))}
-          </div>
-          <div className="flex flex-col justify-center">
-            <p className="text-[10px] uppercase tracking-[0.24em] text-ink-400">
-              03 / Ediciones pasadas
-            </p>
-            <h2 className="events-past-title mt-8 max-w-[590px] font-normal leading-[0.96] tracking-[-0.055em]">
-              23 ediciones.
-              <span className="block">
-                +5,800{" "}
-                <span className="font-serif italic tracking-[-0.07em]">
-                  empresarios
-                </span>
-              </span>
-              <span className="block">en la sala.</span>
-            </h2>
-            <p className="mt-7 max-w-[560px] text-[14px] leading-[1.55] text-ink-500">
-              Desde 2020, Diego ha formado empresarios en fiscalidad, liderazgo,
-              cultura y dirección. Eventos con criterio, comunidad y resultados
-              medibles.
-            </p>
-            <div
-              ref={pastStatsRef}
-              className="stagger-grid mt-9 grid max-w-[560px] grid-cols-3 border border-cream-400 bg-cream-50"
-            >
-              {pastStats.map(([value, label], i) => (
-                <div
-                  key={label}
-                  data-s={String(i)}
-                  className="border-r border-cream-400 px-5 py-5 last:border-r-0"
-                >
-                  <p className="text-[28px] leading-none tracking-[-0.04em]">
-                    {value}
-                  </p>
-                  <p className="mt-3 text-[10px] uppercase tracking-[0.2em] text-ink-400">
-                    {label}
-                  </p>
+      {SHOW_PAST_EDITIONS_SECTION ? (
+        <section className="border-t border-cream-400 bg-cream-100">
+          <div className="mx-auto grid max-w-[1360px] gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[0.86fr_1fr] lg:px-10">
+            <div className="grid grid-cols-2 border border-cream-400">
+              {[eventPersonaFisicaMoral, eventTallerFiscal, eventBeneficiosRegimen, eventRevisionEstrategica].map((image, index) => (
+                <div key={index} className="border border-cream-400 bg-[#101010] p-2">
+                  <Placeholder
+                    src={image}
+                    alt={`Edición pasada ${index + 1} de eventos Diego Díaz`}
+                    className="aspect-square w-full"
+                  />
                 </div>
               ))}
             </div>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                to="/eventos/estrategia-fiscal"
-                className="inline-flex min-h-[44px] items-center border border-ink-900 px-6 text-[10px] uppercase tracking-[0.2em]"
+            <div className="flex flex-col justify-center">
+              <p className="text-[10px] uppercase tracking-[0.24em] text-ink-400">
+                03 / Ediciones pasadas
+              </p>
+              <h2 className="events-past-title mt-8 max-w-[590px] font-normal leading-[0.96] tracking-[-0.055em]">
+                23 ediciones.
+                <span className="block">
+                  +5,800{" "}
+                  <span className="font-serif italic tracking-[-0.07em]">
+                    empresarios
+                  </span>
+                </span>
+                <span className="block">en la sala.</span>
+              </h2>
+              <p className="mt-7 max-w-[560px] text-[14px] leading-[1.55] text-ink-500">
+                Desde 2020, Diego ha formado empresarios en fiscalidad, liderazgo,
+                cultura y dirección. Eventos con criterio, comunidad y resultados
+                medibles.
+              </p>
+              <div
+                ref={pastStatsRef}
+                className="stagger-grid mt-9 grid max-w-[560px] grid-cols-3 border border-cream-400 bg-cream-50"
               >
-                Ver siguiente
-              </Link>
-              <Link
-                to="/contacto"
-                className="inline-flex min-h-[44px] items-center border border-cream-400 px-6 text-[10px] uppercase tracking-[0.2em] text-ink-500"
-              >
-                Ser notificado
-              </Link>
+                {pastStats.map(([value, label], i) => (
+                  <div
+                    key={label}
+                    data-s={String(i)}
+                    className="border-r border-cream-400 px-5 py-5 last:border-r-0"
+                  >
+                    <p className="text-[28px] leading-none tracking-[-0.04em]">
+                      {value}
+                    </p>
+                    <p className="mt-3 text-[10px] uppercase tracking-[0.2em] text-ink-400">
+                      {label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-8 flex flex-wrap gap-4">
+                <Link
+                  to="/eventos/estrategia-fiscal"
+                  className="inline-flex min-h-[44px] items-center border border-ink-900 px-6 text-[10px] uppercase tracking-[0.2em]"
+                >
+                  Ver siguiente
+                </Link>
+                <Link
+                  to="/contacto"
+                  className="inline-flex min-h-[44px] items-center border border-cream-400 px-6 text-[10px] uppercase tracking-[0.2em] text-ink-500"
+                >
+                  Ser notificado
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="bg-[#0b0b0b] text-white">
         <div className="mx-auto flex min-h-[440px] max-w-[1320px] flex-col items-center justify-center px-5 py-20 text-center sm:px-8 lg:min-h-[780px] lg:py-24 lg:px-10">

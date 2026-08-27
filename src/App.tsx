@@ -13,7 +13,7 @@ function PageLoader() {
 export default function App() {
   return (
     <Suspense fallback={<PageLoader />}>
-      <RouterProvider router={router} />
+      <RouterProvider router={router} future={{ v7_startTransition: true }} />
     </Suspense>
   );
 }

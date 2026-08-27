@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import MainLayout from "@templates/MainLayout";
 import AuthLayout from "@templates/AuthLayout";
 import DashboardLayout from "@templates/DashboardLayout";
@@ -17,6 +17,7 @@ const CourseLesson = lazy(() => import("@pages/Courses/CourseLesson"));
 const EstrategiaFiscalLanding = lazy(
   () => import("@pages/Events/EstrategiaFiscal"),
 );
+const HoldingLanding = lazy(() => import("@pages/Events/Holding"));
 
 const EventDetail = lazy(() => import("@pages/Events/EventDetail"));
 const BlogList = lazy(() => import("@pages/Blog/BlogList"));
@@ -26,7 +27,6 @@ const Resources = lazy(() => import("@pages/Resources"));
 const Contact = lazy(() => import("@pages/Contact"));
 const Login = lazy(() => import("@pages/Auth/Login"));
 const Register = lazy(() => import("@pages/Auth/Register"));
-const UserDashboard = lazy(() => import("@pages/Dashboard/UserDashboard"));
 const MyCourses = lazy(() => import("@pages/Dashboard/MyCourses"));
 const Profile = lazy(() => import("@pages/Dashboard/Profile"));
 const Checkout = lazy(() => import("@pages/Checkout"));
@@ -68,6 +68,10 @@ export const router = createBrowserRouter([
         path: "/eventos/estrategia-fiscal",
         element: <EstrategiaFiscalLanding />,
       },
+      { path: "/eventos/holding", element: <HoldingLanding /> },
+      { path: "/eventos/holding-septiembre", element: <HoldingLanding /> },
+      { path: "/eventos/holding-octubre", element: <HoldingLanding /> },
+      { path: "/eventos/holding-noviembre", element: <HoldingLanding /> },
       { path: "/eventos/:slug", element: <EventDetail /> },
       { path: "/blog", element: <BlogList /> },
       { path: "/blog/:slug", element: <BlogPost /> },
@@ -110,7 +114,7 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { path: "/mi-cuenta", element: <UserDashboard /> },
+      { path: "/mi-cuenta", element: <MyCourses /> },
       { path: "/mi-cuenta/cursos", element: <MyCourses /> },
       { path: "/mi-cuenta/perfil", element: <Profile /> },
     ],
@@ -131,6 +135,7 @@ export const router = createBrowserRouter([
       { path: "/admin/contactos", element: <ManageContacts /> },
       { path: "/admin/contactos/:id", element: <ContactProfile /> },
       { path: "/admin/etiquetas", element: <ManageTags /> },
+      { path: "/admin/promociones", element: <ManagePromotions /> },
       { path: "/admin/usuarios", element: <ManageUsers /> },
       { path: "/admin/eventos", element: <ManageEvents /> },
       { path: "/admin/blog", element: <ManageBlog /> },
@@ -138,11 +143,10 @@ export const router = createBrowserRouter([
       { path: "/admin/ventas/pagos", element: <SalesPayments /> },
       { path: "/admin/ventas/precios", element: <SalesPricing /> },
       { path: "/admin/ventas/carrito", element: <SalesCart /> },
-      { path: "/admin/paquetes", element: <ManagePackages /> },
-      { path: "/admin/ofertas", element: <ManageOffers /> },
-      { path: "/admin/promociones", element: <ManagePromotions /> },
       { path: "/admin/suscripciones", element: <ManageSubscriptions /> },
-      { path: "/admin/ventas/paquetes", element: <ManagePackages /> },
+      { path: "/admin/paquetes", element: <Navigate to="/admin/suscripciones" replace /> },
+      { path: "/admin/ofertas", element: <Navigate to="/admin/suscripciones" replace /> },
+      { path: "/admin/ventas/paquetes", element: <Navigate to="/admin/suscripciones" replace /> },
       { path: "/admin/email", element: <ManageEmail /> },
     ],
   },

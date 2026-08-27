@@ -36,6 +36,16 @@
   to   { transform: translateX(-50%); }
 }
 
+.nav-event-marquee {
+  animation: marquee 16s linear infinite;
+  will-change: transform;
+}
+
+.nav-event-marquee:hover,
+.group:hover .nav-event-marquee {
+  animation-play-state: paused;
+}
+
 @keyframes dl-float {
   0%, 100% { transform: translateY(0px); }
   50%       { transform: translateY(-10px); }
@@ -189,7 +199,8 @@
 
   .auth-paper-l, .auth-paper-r,
   .headline-stagger > span,
-  .ink-rule, .ink-blot, .col-fade {
+  .ink-rule, .ink-blot, .col-fade,
+  .nav-event-marquee {
     animation: none !important;
   }
   .ink-rule { transform: scaleX(1); }

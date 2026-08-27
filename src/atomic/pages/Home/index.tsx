@@ -4,6 +4,14 @@ import HeroSection from "@organisms/HeroSection";
 import AnimateIn from "@atoms/AnimateIn";
 import { useEvents } from "@hooks/useEvents";
 import { useInView } from "@hooks/useInView";
+import {
+  FALLBACK_CALENDAR_EVENTS,
+  getCalendarEventPath,
+  getNextUpcomingCalendarEvent,
+  loadStoredCalendarEvents,
+  mergeCalendarEventSources,
+  type CalendarEventSummary,
+} from "@utils/eventCalendar";
 
 // Assets
 import imgEstrategia from "../../../../assets/home/002_home_Estrategia_DD.png";
@@ -30,6 +38,25 @@ import logoPrensa15 from "../../../../assets/home/010_home_logo15_DD.png";
 import logoPrensa16 from "../../../../assets/home/010_home_logo16_DD.png";
 import logoPrensa17 from "../../../../assets/home/010_home_logo17_DD.png";
 import videoSEF from "../../../../assets/eventos/VIDEO SEF vertical web.mp4";
+
+const formatHomeEventDate = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Por definir";
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
+    .format(date)
+    .replace(".", "");
+};
+
+const splitHomeEventTitle = (title: string) => {
+  const words = title.trim().split(/\s+/);
+  if (words.length <= 2) return [title, ""] as const;
+  const midpoint = Math.ceil(words.length / 2);
+  return [words.slice(0, midpoint).join(" "), words.slice(midpoint).join(" ")] as const;
+};
 
 /* ─────────────────────────────── Countdown ──── */
 function useCountdown(targetMs: number) {
@@ -297,18 +324,51 @@ const TESTIMONIALS = [
 
 /* ═══════════════════════════════════════════════ */
 export default function Home() {
-  const { data: eventsData } = useEvents({ limit: 1, status: "upcoming" });
-  const nextEvent = eventsData?.data?.[0];
+  const { data: eventsData } = useEvents({ limit: 100, status: "upcoming" });
+  const [storedEvents, setStoredEvents] = useState<CalendarEventSummary[]>(
+    loadStoredCalendarEvents,
+  );
+  const nextEvent = useMemo(() => {
+    const candidates = mergeCalendarEventSources(
+      FALLBACK_CALENDAR_EVENTS,
+      eventsData?.data ?? [],
+      storedEvents,
+    );
+    return getNextUpcomingCalendarEvent(candidates) ?? FALLBACK_CALENDAR_EVENTS[0];
+  }, [eventsData?.data, storedEvents]);
+  const [nextEventTitle, nextEventSerifTitle] = splitHomeEventTitle(nextEvent.title);
+  const nextEventHref = getCalendarEventPath(nextEvent);
+  const nextEventDescription =
+    nextEvent.shortDescription ||
+    nextEvent.description ||
+    FALLBACK_CALENDAR_EVENTS[0].description;
+  const nextEventCapacity = Math.max(Number(nextEvent.capacity || 0), 0);
+  const nextEventRegistered = Math.max(Number(nextEvent.registeredCount || 0), 0);
+  const nextEventRemaining =
+    nextEventCapacity > 0
+      ? Math.max(nextEventCapacity - nextEventRegistered, 0)
+      : null;
 
-  // Fecha objetivo del próximo evento (09 Jul 2026)
   const eventTargetMs = useMemo(
     () =>
       nextEvent?.startDate
         ? new Date(nextEvent.startDate).getTime()
-        : new Date("2026-07-09T09:00:00").getTime(),
+        : new Date(FALLBACK_CALENDAR_EVENTS[0].startDate).getTime(),
     [nextEvent?.startDate],
   );
   const countdown = useCountdown(eventTargetMs);
+
+  useEffect(() => {
+    const refreshStoredEvents = () => setStoredEvents(loadStoredCalendarEvents());
+    window.addEventListener("storage", refreshStoredEvents);
+    window.addEventListener("dd-events-updated", refreshStoredEvents);
+    window.addEventListener("focus", refreshStoredEvents);
+    return () => {
+      window.removeEventListener("storage", refreshStoredEvents);
+      window.removeEventListener("dd-events-updated", refreshStoredEvents);
+      window.removeEventListener("focus", refreshStoredEvents);
+    };
+  }, []);
 
   // Demo 07 — counter animation for bio stats
   const { ref: statsRef, inView: statsInView } = useInView(0.3);
@@ -485,17 +545,17 @@ export default function Home() {
 
                 <div>
                   <h2 className="text-[clamp(36px,5vw,52px)] font-normal text-white leading-tight">
-                    Estrategia Fiscal
+                    {nextEventTitle}
                   </h2>
-                  <h2 className="text-[clamp(36px,5vw,52px)] font-serif italic text-white leading-tight">
-                    Edición CDMX
-                  </h2>
+                  {nextEventSerifTitle ? (
+                    <h2 className="text-[clamp(36px,5vw,52px)] font-serif italic text-white leading-tight">
+                      {nextEventSerifTitle}
+                    </h2>
+                  ) : null}
                 </div>
 
                 <p className="text-[14px] text-ink-300 leading-relaxed max-w-sm">
-                  Un día intensivo para empresarios que quieren rediseñar su
-                  estrategia fiscal antes del cierre del año. Solo 80 cupos por
-                  edición.
+                  {nextEventDescription}
                 </p>
 
                 {/* Meta */}
@@ -504,21 +564,36 @@ export default function Home() {
                     <p className="text-[11px] uppercase tracking-[0.3em] text-ink-500 mb-1">
                       Fecha
                     </p>
-                    <p className="text-white text-sm">09 Jul 2026</p>
+                    <p className="text-white text-sm">
+                      {formatHomeEventDate(nextEvent.startDate)}
+                    </p>
                   </div>
                   <div className="p-4">
                     <p className="text-[11px] uppercase tracking-[0.3em] text-ink-500 mb-1">
                       Sede
                     </p>
-                    <p className="text-white text-sm">CDMX</p>
+                    <p className="text-white text-sm">
+                      {nextEvent.location || "Por definir"}
+                    </p>
                   </div>
                   <div className="p-4">
                     <p className="text-[11px] uppercase tracking-[0.3em] text-ink-500 mb-1">
                       Cupos
                     </p>
                     <p className="text-white text-sm">
-                      <span className="text-xl font-normal">23</span>
-                      <span className="text-ink-400"> /100</span>
+                      {nextEventRemaining !== null ? (
+                        <>
+                          <span className="text-xl font-normal">
+                            {nextEventRemaining}
+                          </span>
+                          <span className="text-ink-400">
+                            {" "}
+                            /{nextEventCapacity}
+                          </span>
+                        </>
+                      ) : (
+                        "Por definir"
+                      )}
                     </p>
                   </div>
                 </div>
@@ -532,12 +607,14 @@ export default function Home() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-5 pt-2">
-                  <Link to="/eventos" className="btn-primary-inv">
+                  <Link to={nextEventHref} className="btn-primary-inv">
                     Reservar mi lugar →
                   </Link>
-                  <span className="text-[11px] text-ink-400 uppercase tracking-[0.2em]">
-                    Cierra el 14-Jul
-                  </span>
+                  {nextEventRemaining !== null ? (
+                    <span className="text-[11px] text-ink-400 uppercase tracking-[0.2em]">
+                      {nextEventRemaining} cupos restantes
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </AnimateIn>

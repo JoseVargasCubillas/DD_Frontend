@@ -4,9 +4,7 @@ import Navbar from '@organisms/Navbar';
 import Footer from '@organisms/Footer';
 
 const MENU = [
-  { to: '/mi-cuenta', label: 'Edicion de hoy', end: true },
   { to: '/mi-cuenta/cursos', label: 'Mis cursos' },
-  { to: '/mi-cuenta/perfil', label: 'Perfil' },
 ];
 
 export default function DashboardLayout() {
@@ -18,13 +16,12 @@ export default function DashboardLayout() {
       <Navbar />
 
       <div className="border-b border-ink-900/15 bg-cream-100">
-        <nav className="container-app flex items-center justify-between gap-8 overflow-x-auto py-3">
+        <nav className="container-app flex items-center justify-between gap-4 overflow-x-auto py-3">
           <div className="flex items-center gap-8">
-            {MENU.map(({ to, label, end }) => (
+            {MENU.map(({ to, label }) => (
               <NavLink
                 key={to}
                 to={to}
-                end={end}
                 className={({ isActive }) =>
                   `whitespace-nowrap border-b-2 py-2 text-[11px] uppercase tracking-[0.32em] transition-colors ${
                     isActive
@@ -39,18 +36,27 @@ export default function DashboardLayout() {
           </div>
 
           {user && (
-            <div className="flex items-center gap-2.5 border-l border-ink-900/20 pl-4">
+            <div className="flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-ink-900/15 bg-white px-2 py-1 shadow-[0_14px_34px_rgba(10,10,10,0.06)]">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-ink-900 font-serif text-sm text-cream">
                 {user.name.charAt(0).toUpperCase()}
               </div>
-              <span className="hidden text-sm font-medium sm:block">{user.name.split(' ')[0]}</span>
+              <NavLink
+                to="/mi-cuenta/perfil"
+                className={({ isActive }) =>
+                  `hidden rounded-full px-3 py-2 text-[10px] uppercase tracking-[0.22em] transition-colors sm:block ${
+                    isActive ? 'bg-cream-200 text-ink-900' : 'text-ink-600 hover:bg-cream-100 hover:text-ink-900'
+                  }`
+                }
+              >
+                Perfil
+              </NavLink>
               <button
                 type="button"
                 onClick={() => {
                   logout();
                   navigate('/');
                 }}
-                className="ml-2 cursor-pointer whitespace-nowrap text-[10px] uppercase tracking-[0.28em] text-ink-600 transition-colors hover:text-ink-900"
+                className="cursor-pointer whitespace-nowrap rounded-full px-3 py-2 text-[10px] uppercase tracking-[0.22em] text-ink-600 transition-colors hover:bg-ink-900 hover:text-white"
               >
                 Salir
               </button>

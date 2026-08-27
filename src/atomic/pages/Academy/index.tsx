@@ -1,12 +1,13 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '@store/cartStore';
+import { useSubscription } from '@hooks/useSubscription';
 import { usePackages } from '@hooks/usePackages';
-import type { Package, PackageTier } from '@t/index';
 import diegoPortrait from '../../../../assets/eventos/LEF_img_001.png';
 import imarPortrait from '../../../../assets/eventos/LEF_img 002.png';
 import jazminPortrait from '../../../../assets/eventos/LEF_img 003.png';
 import jessicaPortrait from '../../../../assets/eventos/LEF_img_004.png';
+import academyVideo from '../../../../assets/Academia/video academia.mp4';
 
 const cream = 'bg-[#f5f2ec]';
 const pearl = 'bg-[#efebe2]';
@@ -14,10 +15,26 @@ const line = 'border-[#0a0a0a]/10';
 const mono = 'font-mono text-[10px] uppercase tracking-[0.18em] text-[#0a0a0a]/40';
 
 const featuredCourses = [
-  { title: 'Equipos de Alto Impacto', hours: '8 hrs' },
-  { title: 'Deducciones Inteligentes', hours: '6 hrs' },
-  { title: 'Precios de Transferencia', hours: '10 hrs' },
-  { title: 'Derechos de Autor', hours: '5 hrs' },
+  {
+    title: 'Equipos de Alto Impacto',
+    hours: '8 hrs',
+    description: 'Liderazgo, cultura y estructura operativa para equipos que necesitan ejecutar con claridad.',
+  },
+  {
+    title: 'Deducciones Inteligentes',
+    hours: '6 hrs',
+    description: 'Criterios prácticos para ordenar deducciones, riesgos y decisiones fiscales frecuentes.',
+  },
+  {
+    title: 'Precios de Transferencia',
+    hours: '10 hrs',
+    description: 'Bases para entender operaciones entre partes relacionadas y su documentación esencial.',
+  },
+  {
+    title: 'Derechos de Autor',
+    hours: '5 hrs',
+    description: 'Marco fiscal y patrimonial para aprovechar correctamente activos intangibles y autoría.',
+  },
 ];
 
 const speakers = [
@@ -53,59 +70,7 @@ const speakers = [
 
 const speakerLoop = [...speakers, ...speakers];
 
-const plansFallback = [
-  {
-    id: 'pkg_entrepreneur',
-    name: 'Entrepreneur',
-    eyebrow: 'Plan de entrada',
-    price: '4,997',
-    amount: 4997,
-    plan: 'entrepreneur',
-    suffix: '/ año',
-    note: '',
-    items: [
-      'Acceso a los 33 cursos de la Academia',
-      'Actualizaciones ilimitadas durante tu suscripción',
-    ],
-    dark: true,
-    cta: 'Aplicar',
-  },
-  {
-    id: 'pkg_business',
-    name: 'Business',
-    eyebrow: 'Más demandado',
-    price: '14,997',
-    amount: 14997,
-    plan: 'business',
-    suffix: '/ año',
-    note: '',
-    items: [
-      'Todo lo del plan Entrepreneur',
-      'Masterclass gratis cada 2 meses',
-      'Grupo de WhatsApp con asesores y consultores',
-    ],
-    featured: true,
-    cta: 'Aplicar',
-  },
-  {
-    id: 'pkg_master',
-    name: 'Master',
-    eyebrow: 'Acompañamiento con Diego',
-    price: '49,997',
-    amount: 49997,
-    plan: 'master',
-    suffix: '/ año',
-    note: 'Plazas limitadas',
-    items: [
-      'Todo lo del plan Business',
-      'WhatsApp directo con Diego Díaz (CEO)',
-    ],
-    dark: true,
-    cta: 'Aplicar a Master',
-  },
-] as const;
-
-type AcademyPlan = {
+type PlanCard = {
   id: string;
   name: string;
   eyebrow: string;
@@ -120,65 +85,114 @@ type AcademyPlan = {
   cta: string;
 };
 
-const tierOrder: Record<PackageTier, number> = { entrepreneur: 0, business: 1, master: 2 };
+const plansFallback: PlanCard[] = [
+  {
+    id: 'pkg_entrepreneur',
+    name: 'Entrepreneur',
+    eyebrow: 'Plan de entrada',
+    price: '4,997',
+    amount: 4997,
+    plan: 'entrepreneur',
+    suffix: '/ año',
+    note: 'Acceso anual a todos los cursos',
+    items: [
+      'Acceso a los 33 cursos del catálogo',
+      'Nuevos cursos incluidos al publicarse',
+      '+120 hrs de contenido',
+    ],
+    dark: true,
+    cta: 'Aplicar',
+  },
+  {
+    id: 'pkg_business',
+    name: 'Business',
+    eyebrow: 'Más demandado',
+    price: '14,997',
+    amount: 14997,
+    plan: 'business',
+    suffix: '/ año',
+    note: '',
+    items: [
+      'Todos los cursos incluidos',
+      'Masterclass gratuita cada 2 meses',
+      'Grupo de WhatsApp con asesores y consultores',
+    ],
+    featured: true,
+    cta: 'Aplicar',
+  },
+  {
+    id: 'pkg_master',
+    name: 'Master',
+    eyebrow: 'Acceso total',
+    price: '49,997',
+    amount: 49997,
+    plan: 'master',
+    suffix: '/ año',
+    note: 'Plazas limitadas',
+    items: [
+      'Todos los cursos incluidos',
+      'Masterclass gratuita cada 2 meses',
+      'Asesoramiento por WhatsApp con Diego Díaz',
+    ],
+    dark: true,
+    cta: 'Aplicar a Master',
+  },
+];
 
-function packageToPlan(pkg: Package, fallback: AcademyPlan): AcademyPlan {
-  const items: string[] = [];
-  const b = pkg.benefits;
+const tierOrder: Record<string, number> = { entrepreneur: 0, business: 1, master: 2 };
 
-  // Beneficios explícitos del paquete
-  if (b?.allCourses) items.push('Acceso a los 33 cursos');
-  if (b?.masterclassEveryTwoMonths) items.push('Masterclass gratis cada 2 meses');
-  if (b?.whatsappGroupAdvisors?.enabled) items.push('Grupo de WhatsApp con asesores y consultores');
-  if (b?.whatsappDirectCEO?.enabled) items.push('WhatsApp directo con Diego Díaz (CEO)');
-  if (b?.extras?.length) items.push(...b.extras);
-
-  // Fallback por tier — cuando el paquete aún no tiene `benefits` configurados
-  if (items.length === 0) {
-    if (pkg.tier === 'entrepreneur') {
-      items.push('Acceso a los 33 cursos de la Academia');
-      items.push('Actualizaciones ilimitadas durante tu suscripción');
-    } else if (pkg.tier === 'business') {
-      items.push('Todo lo del plan Entrepreneur');
-      items.push('Masterclass gratis cada 2 meses');
-      items.push('Grupo de WhatsApp con asesores y consultores');
-    } else if (pkg.tier === 'master') {
-      items.push('Todo lo del plan Business');
-      items.push('WhatsApp directo con Diego Díaz (CEO)');
-    } else {
-      items.push(...fallback.items);
-    }
+function benefitsForTier(tier: string): string[] {
+  if (tier === 'business') {
+    return [
+      'Todos los cursos incluidos',
+      'Masterclass gratuita cada 2 meses',
+      'Grupo de WhatsApp con asesores y consultores',
+    ];
   }
+  if (tier === 'master') {
+    return [
+      'Todos los cursos incluidos',
+      'Masterclass gratuita cada 2 meses',
+      'Asesoramiento por WhatsApp con Diego Díaz',
+    ];
+  }
+  return [
+    'Acceso a los 33 cursos del catálogo',
+    'Nuevos cursos incluidos al publicarse',
+    '+120 hrs de contenido',
+  ];
+}
 
-  const suffix =
-    pkg.billingInterval === 'month'
-      ? '/ mes'
-      : pkg.billingInterval === 'lifetime'
-        ? '/ único pago'
-        : '/ año';
-
-  const eyebrow =
-    pkg.tier === 'entrepreneur'
-      ? 'Plan de entrada'
-      : pkg.tier === 'business'
-        ? 'Más demandado'
-        : pkg.tier === 'master'
-          ? 'Acompañamiento con Diego'
-          : fallback.eyebrow;
-
+function packageToPlan(pkg: {
+  id?: string;
+  _id?: string;
+  name?: string;
+  tier?: string;
+  price?: number;
+  benefits?: { allCourses?: boolean; bimonthlyMasterclass?: boolean; whatsappAdvisorsUrl?: string; whatsappCeoUrl?: string };
+}): PlanCard {
+  const tier = (pkg.tier || 'entrepreneur').toLowerCase();
+  const name = pkg.name || (tier === 'business' ? 'Business' : tier === 'master' ? 'Master' : 'Entrepreneur');
+  const amount = typeof pkg.price === 'number' ? pkg.price : plansFallback.find((p) => p.plan === tier)?.amount ?? 4997;
+  const custom: string[] = [];
+  if (pkg.benefits?.allCourses !== false) custom.push('Todos los cursos incluidos');
+  if (pkg.benefits?.bimonthlyMasterclass) custom.push('Masterclass gratuita cada 2 meses');
+  if (pkg.benefits?.whatsappAdvisorsUrl) custom.push('Grupo de WhatsApp con asesores y consultores');
+  if (pkg.benefits?.whatsappCeoUrl) custom.push('Asesoramiento por WhatsApp con Diego Díaz');
+  const items = custom.length >= 2 ? custom : benefitsForTier(tier);
   return {
-    id: pkg._id,
-    name: pkg.name,
-    eyebrow,
-    price: pkg.price.toLocaleString('es-MX'),
-    amount: pkg.price,
-    plan: pkg.tier ?? fallback.plan,
-    suffix,
-    note: pkg.tier === 'master' ? 'Plazas limitadas' : fallback.note,
+    id: pkg.id || pkg._id || `pkg_${tier}`,
+    name,
+    eyebrow: tier === 'business' ? 'Más demandado' : tier === 'master' ? 'Acceso total' : 'Plan de entrada',
+    price: amount.toLocaleString('es-MX'),
+    amount,
+    plan: tier,
+    suffix: '/ año',
+    note: tier === 'master' ? 'Plazas limitadas' : tier === 'entrepreneur' ? 'Acceso anual a todos los cursos' : '',
     items,
-    dark: pkg.tier !== 'business',
-    featured: pkg.tier === 'business' || !!pkg.isFeatured,
-    cta: pkg.tier === 'master' ? 'Aplicar a Master' : 'Aplicar',
+    dark: tier !== 'business',
+    featured: tier === 'business',
+    cta: tier === 'master' ? 'Aplicar a Master' : 'Aplicar',
   };
 }
 
@@ -290,23 +304,40 @@ export default function Academy() {
   const navigate = useNavigate();
   const addItem = useCartStore((state) => state.addItem);
   const clearCart = useCartStore((state) => state.clear);
+  const { subscription } = useSubscription();
+  const { data: packages } = usePackages();
+  const academyVideoRef = useRef<HTMLVideoElement>(null);
+  const hasAcademyAccess = subscription?.status === 'active' || subscription?.status === 'trialing';
 
-  const { data: packages = [] } = usePackages();
-  const plans = useMemo<AcademyPlan[]>(() => {
-    const active = packages.filter((p) => p.isActive && p.tier);
-    if (active.length === 0) return plansFallback as unknown as AcademyPlan[];
-    const sorted = [...active].sort(
-      (a, b) => (tierOrder[a.tier!] ?? 99) - (tierOrder[b.tier!] ?? 99),
+  const plans = useMemo<PlanCard[]>(() => {
+    const tiered = (packages ?? []).filter((p) =>
+      ['entrepreneur', 'business', 'master'].includes(String(p.tier || '').toLowerCase()),
     );
-    return sorted.map((pkg) => {
-      const fb =
-        (plansFallback.find((p) => p.plan === pkg.tier) as unknown as AcademyPlan) ??
-        (plansFallback[0] as unknown as AcademyPlan);
-      return packageToPlan(pkg, fb);
-    });
+    if (tiered.length === 0) return plansFallback;
+    const sorted = [...tiered].sort(
+      (a, b) => (tierOrder[String(a.tier || '').toLowerCase()] ?? 99) - (tierOrder[String(b.tier || '').toLowerCase()] ?? 99),
+    );
+    return sorted.map(packageToPlan);
   }, [packages]);
 
-  const startAcademyCheckout = (plan: AcademyPlan = plans[1] ?? plans[0]) => {
+  useEffect(() => {
+    const video = academyVideoRef.current;
+    if (!video) return;
+
+    video.muted = false;
+    video.defaultMuted = false;
+    video.volume = 1;
+    void video.play().catch(() => {
+      // Browsers can block autoplay with audio until the first user interaction.
+    });
+  }, []);
+
+  const startAcademyCheckout = (plan: PlanCard = plans[1] ?? plans[0]) => {
+    if (hasAcademyAccess) {
+      navigate('/mi-cuenta/cursos');
+      return;
+    }
+
     clearCart();
     addItem({
       id: `subscription-${plan.id}`,
@@ -317,6 +348,15 @@ export default function Academy() {
       quantity: 1,
     });
     navigate('/checkout');
+  };
+
+  const goToAcademyPurchase = () => {
+    if (hasAcademyAccess) {
+      navigate('/mi-cuenta/cursos');
+      return;
+    }
+
+    scrollToPricing();
   };
 
   const scrollToPricing = () => {
@@ -343,26 +383,28 @@ export default function Academy() {
               empresario.
             </h1>
             <p className="mt-8 max-w-[580px] text-[19px] leading-[1.5] text-[#0a0a0a]/65">
-              Más de 120 horas de cursos especializados en estrategia fiscal mexicana, sesiones mastermind mensuales en vivo y contenido nuevo cada semana. Un solo pago con acceso anual
+              Más de 120 horas de cursos especializados en estrategia fiscal mexicana, masterclass gratuitas cada 2 meses y contenido nuevo cada semana. Un solo pago con acceso anual.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <ButtonLike dark onClick={() => startAcademyCheckout(plans[1])}>Comenzar</ButtonLike>
-              <ButtonLike>Ver catálogo</ButtonLike>
+              <ButtonLike onClick={goToAcademyPurchase}>
+                {hasAcademyAccess ? 'Ir a mi panel' : 'Comprar academia'}
+              </ButtonLike>
             </div>
           </div>
 
-          <div className="relative mx-auto flex aspect-[420/582] w-full max-w-[420px] items-center justify-center border border-[#0a0a0a]/20 bg-[linear-gradient(135deg,#1a1a1a,#2a2a2a)] shadow-[0_28px_70px_rgba(10,10,10,0.16)] lg:mx-0 lg:justify-self-end">
-            <button
-              type="button"
-              aria-label="Reproducir tour"
-              className="grid size-20 place-items-center rounded-full border border-[#f5f2ec] bg-white/10 text-[22px] text-[#f5f2ec]"
-            >
-              ▶
-            </button>
-            <div className="absolute bottom-5 left-6 right-6 flex justify-between font-mono text-[10px] uppercase tracking-[0.15em] text-white/50">
-              <span>— Tour 360°</span>
-              <span>02:14</span>
-            </div>
+          <div className="relative mx-auto aspect-[420/582] w-full max-w-[420px] overflow-hidden border border-[#0a0a0a]/20 bg-[#0a0a0a] shadow-[0_28px_70px_rgba(10,10,10,0.16)] lg:mx-0 lg:justify-self-end">
+            <video
+              ref={academyVideoRef}
+              src={academyVideo}
+              className="h-full w-full object-cover"
+              autoPlay
+              loop
+              playsInline
+              controls
+              preload="metadata"
+              aria-label="Video de Academia Diego Díaz"
+            />
           </div>
         </div>
       </section>
@@ -426,7 +468,7 @@ export default function Academy() {
         </SectionIntro>
 
         <div className={`mt-20 grid border ${line} bg-[#f5f2ec] md:grid-cols-5`}>
-          {['+120 horas de contenido', 'Cursos nuevos cada mes', 'Sesiones mastermind', 'Descargables exclusivos', 'Acceso 24/7'].map((benefit) => (
+          {['+120 horas de contenido', '33 cursos disponibles', 'Masterclass cada 2 meses', 'WhatsApp con asesores', 'Acceso 24/7'].map((benefit) => (
             <button
               key={benefit}
               type="button"
@@ -440,24 +482,31 @@ export default function Academy() {
       </section>
 
       <section className={`${cream} border-b ${line} px-5 py-24 md:px-10 lg:px-14 lg:py-[140px]`}>
-        <SectionIntro index="03" label="Catálogo" side="+40 cursos · 8 categorías">
+        <SectionIntro index="03" label="Catálogo" side="33 cursos · 8 categorías">
           <EditorialTitle>
             Cursos
             <span className="block"><em className="font-normal italic">destacados.</em></span>
           </EditorialTitle>
         </SectionIntro>
 
-        <div className={`mt-12 border ${line} bg-[#0a0a0a]/10 pt-8`}>
+        <div className={`mt-12 border ${line} bg-[#faf8f3]`}>
           <div className={`grid border-t ${line} bg-[#faf8f3] lg:grid-cols-4 lg:grid-rows-2`}>
             <button
               type="button"
-              onClick={scrollToPricing}
+              onClick={goToAcademyPurchase}
               className={`group flex min-h-[420px] cursor-pointer flex-col border-b ${line} p-7 text-left transition-colors duration-300 hover:bg-[#0a0a0a] hover:text-[#f5f2ec] focus-visible:bg-[#0a0a0a] focus-visible:text-[#f5f2ec] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#6b4f2a] lg:col-span-2 lg:row-span-2 lg:min-h-[560px] lg:border-r`}
             >
-              <h3 className="font-serif text-[clamp(32px,4vw,44px)] font-light uppercase leading-[1.1] tracking-[-0.015em]">
-                ¿Cómo saber si pago mucho o lo justo en impuestos? 2026
+              <p className={`${mono} transition-colors group-hover:text-[#f5f2ec]/55 group-focus-visible:text-[#f5f2ec]/55`}>— Curso insignia · 18 hrs</p>
+              <h3 className="mt-6 font-serif text-[clamp(34px,4vw,50px)] font-light leading-[1.03] tracking-[-0.025em]">
+                Estrategia <em className="font-normal italic">Fiscal</em> 2026
               </h3>
-              <div className={`mt-auto flex items-center justify-end border-t ${line} pt-5 transition-colors group-hover:border-white/25 group-focus-visible:border-white/25`}>
+              <p className="mt-5 max-w-[560px] text-[15px] leading-[1.65] text-[#0a0a0a]/65 transition-colors group-hover:text-[#f5f2ec]/70 group-focus-visible:text-[#f5f2ec]/70">
+                Curso central de la membresía para ordenar decisiones fiscales, estructura empresarial y planeación con criterio.
+              </p>
+              <div className={`mt-auto flex items-center justify-between border-t ${line} pt-5 transition-colors group-hover:border-white/25 group-focus-visible:border-white/25`}>
+                <span className="font-mono text-[9px] uppercase tracking-[0.18em]">
+                  {hasAcademyAccess ? 'Ir a mi panel' : 'Comprar academia'}
+                </span>
                 <span className="grid size-8 place-items-center rounded-full border border-[#0a0a0a] transition-colors group-hover:border-[#f5f2ec] group-focus-visible:border-[#f5f2ec]">→</span>
               </div>
             </button>
@@ -465,15 +514,20 @@ export default function Academy() {
               <button
                 key={course.title}
                 type="button"
-                onClick={scrollToPricing}
+                onClick={goToAcademyPurchase}
                 className={`group flex min-h-[280px] cursor-pointer flex-col border-b ${line} p-7 text-left transition-colors duration-300 hover:bg-[#0a0a0a] hover:text-[#f5f2ec] focus-visible:bg-[#0a0a0a] focus-visible:text-[#f5f2ec] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#6b4f2a] lg:border-r lg:[&:nth-child(3n)]:border-r-0`}
               >
                 <p className={`${mono} transition-colors group-hover:text-[#f5f2ec]/55 group-focus-visible:text-[#f5f2ec]/55`}>— {course.hours}</p>
                 <h3 className="mt-6 font-serif text-2xl font-light leading-[1.1] tracking-[-0.015em]">
-                  {course.title.split(' ').slice(0, -1).join(' ')}{' '}
-                  <em className="font-normal italic">{course.title.split(' ').slice(-1)}</em>
+                  {course.title}
                 </h3>
-                <div className={`mt-auto flex items-center justify-end border-t ${line} pt-5 transition-colors group-hover:border-white/25 group-focus-visible:border-white/25`}>
+                <p className="mt-5 max-w-[340px] text-[13px] leading-[1.6] text-[#0a0a0a]/62 transition-colors group-hover:text-[#f5f2ec]/70 group-focus-visible:text-[#f5f2ec]/70">
+                  {course.description}
+                </p>
+                <div className={`mt-auto flex items-center justify-between border-t ${line} pt-5 transition-colors group-hover:border-white/25 group-focus-visible:border-white/25`}>
+                  <span className="font-mono text-[9px] uppercase tracking-[0.18em]">
+                    {hasAcademyAccess ? 'Ir a mi panel' : 'Comprar academia'}
+                  </span>
                   <span className="grid size-8 place-items-center rounded-full border border-[#0a0a0a] transition-colors group-hover:border-[#f5f2ec] group-focus-visible:border-[#f5f2ec]">→</span>
                 </div>
               </button>
@@ -481,7 +535,9 @@ export default function Academy() {
           </div>
         </div>
         <div className="mt-10 text-center">
-          <ButtonLike onClick={scrollToPricing}>Ver catálogo completo</ButtonLike>
+          <ButtonLike onClick={goToAcademyPurchase}>
+            {hasAcademyAccess ? 'Ir a mi panel' : 'Comprar academia'}
+          </ButtonLike>
         </div>
       </section>
 
@@ -575,53 +631,9 @@ export default function Academy() {
         </div>
       </section>
 
-      <section className={`${cream} border-b ${line} px-5 py-24 md:px-10 lg:px-14 lg:py-[140px]`}>
-        <SectionIntro index="06" label="Para empresas" side="— Plan B2B">
-          <EditorialTitle>
-            Academia
-            <span className="block">para tu <em className="font-normal italic">Equipo.</em></span>
-          </EditorialTitle>
-        </SectionIntro>
-
-        <div className="mt-20 grid gap-16 lg:grid-cols-[1.3fr_1fr] lg:gap-24">
-          <div>
-            <h3 className="font-serif text-[clamp(44px,6vw,64px)] font-light leading-[0.95] tracking-[-0.03em]">
-              Capacita a tu equipo
-              <span className="block">de un <em className="font-normal italic">solo golpe.</em></span>
-            </h3>
-            <p className="mt-8 max-w-[560px] font-serif text-[19px] leading-[1.6] text-[#0a0a0a]/65">
-              Si lideras un equipo, el plan B2B te permite suscribir a todo tu equipo, acceder a reportes consolidados de avance, y compartir el mismo nivel técnico de capacitación que reciben los clientes de Diego.
-            </p>
-            <div className={`mt-8 grid border ${line} md:grid-cols-2`}>
-              {['Acceso para todo el equipo', 'Reportes de avance', 'Capacitación certificada', 'Onboarding dedicado'].map((item, index) => (
-                <div key={item} className={`min-h-[148px] border-b ${line} p-7 md:border-r md:[&:nth-child(even)]:border-r-0`}>
-                  <p className="font-serif text-[40px] font-light tracking-[-0.04em] text-[#0a0a0a]/40">{String(index + 1).padStart(2, '0')}</p>
-                  <p className="mt-2 font-serif text-[17px] leading-tight">{item}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-8">
-              <ButtonLike dark>Habla con ventas</ButtonLike>
-            </div>
-          </div>
-
-          <aside className="self-center border border-[#0a0a0a] bg-[#faf8f3] p-10 lg:p-12">
-            <p className="font-serif text-[80px] font-light italic leading-none text-[#6b4f2a]">~B2B</p>
-            <h3 className="mt-8 font-serif text-[28px] leading-[1.15]">Academia for<br /><em className="italic">Teams</em></h3>
-            <p className="mt-5 text-sm leading-[1.6] text-[#0a0a0a]/65">
-              Plan empresarial con licencias por usuario, descuentos por volumen y soporte dedicado. Ideal para equipos de +5 integrantes.
-            </p>
-            <p className={`${mono} mt-6`}>— Desde 5 usuarios · Cotización a medida</p>
-            <div className="mt-4">
-              <ButtonLike>Solicitar propuesta</ButtonLike>
-            </div>
-          </aside>
-        </div>
-      </section>
-
       <section className={`${pearl} border-b ${line} px-5 py-24 text-center md:px-10 lg:px-14 lg:py-[140px]`}>
         <div className="flex justify-between">
-          <span className={mono}>07 / Voces</span>
+          <span className={mono}>06 / Voces</span>
           <span className={mono}>01 / 12 alumnos</span>
         </div>
         <blockquote className="mx-auto mt-16 max-w-[1200px] font-serif text-[clamp(42px,6vw,72px)] font-light leading-[1.1] tracking-[-0.03em]">
@@ -655,18 +667,6 @@ export default function Academy() {
         </div>
       </section>
 
-      <section className={`${cream} px-5 py-24 text-center md:px-10 lg:px-14 lg:py-[140px]`}>
-        <p className={mono}>09 / Empieza hoy</p>
-        <h2 className="mt-8 font-serif text-[clamp(58px,8vw,96px)] font-light leading-none tracking-[-0.04em]">
-          El éxito ama la preparación.
-        </h2>
-        <p className="mx-auto mt-8 max-w-[680px] font-serif text-[28px] text-[#0a0a0a]/65">
-          "La mejor forma de prevenir una emergencia fiscal es la capacitación"
-        </p>
-        <div className="mt-8">
-          <ButtonLike dark onClick={() => startAcademyCheckout(plans[1])}>Empezar a aprender</ButtonLike>
-        </div>
-      </section>
     </div>
   );
 }

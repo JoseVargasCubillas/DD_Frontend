@@ -3,6 +3,20 @@ import toast from "react-hot-toast";
 import * as eventsApi from "@api/events.api";
 import { useCreateEvent, useEvents, useUpdateEvent } from "@hooks/useEvents";
 import type { Event } from "@t/index";
+import eventPersonaFisicaMoral from "../../../../../assets/eventos/evento-persona-fisica-moral.png";
+import eventMentalidadEmpresarial from "../../../../../assets/eventos/evento-mentalidad-empresarial.png";
+import eventSistemaProspeccion from "../../../../../assets/eventos/evento-sistema-prospeccion-digital.png";
+import eventTallerFiscal from "../../../../../assets/eventos/evento-taller-estrategia-fiscal.png";
+import eventMastermindPanama from "../../../../../assets/eventos/evento-mastermind-panama.png";
+import eventHolding from "../../../../../assets/eventos/evento-holding.png";
+import eventFiscalCdmx from "../../../../../assets/eventos/evento-estrategia-fiscal-cdmx.png";
+import eventCoaching from "../../../../../assets/eventos/evento-coaching-liderazgo.png";
+import eventFiscalMonterrey from "../../../../../assets/eventos/evento-estrategia-fiscal-monterrey.png";
+import eventRockefeller from "../../../../../assets/eventos/evento-rockefeller.png";
+import eventRockefellerAlt from "../../../../../assets/eventos/evento-rockefeller-alt.png";
+import eventMaestriaEscenica from "../../../../../assets/eventos/evento-maestria-escenica.png";
+import eventBeneficiosRegimen from "../../../../../assets/eventos/evento-beneficios-regimen-fiscal.png";
+import eventRevisionEstrategica from "../../../../../assets/eventos/evento-revision-estrategica-cdmx.png";
 
 type EventForm = {
   id?: string;
@@ -45,6 +59,14 @@ const DEFAULT_CTA_SETTINGS: EventCtaSettings = {
   salesPhone: "5210000000000",
   waitlistPhone: "5210000000000",
 };
+const DEPRECATED_EVENT_SLUGS = new Set([
+  "formacion-equipos",
+  "revision-estrategica",
+  "estrategia-fiscal",
+  "equipos-creativos",
+  "blindaje-patrimonial",
+  "estrategia-rockefeller",
+]);
 
 const DEFAULT_FORM: EventForm = {
   title: "Nuevo evento",
@@ -72,70 +94,41 @@ const DEFAULT_FORM: EventForm = {
   buttonTextColor: "#FFFFFF",
 };
 
+const EVENT_IMAGE_OPTIONS = [
+  { label: "Persona física a moral", src: eventPersonaFisicaMoral },
+  { label: "Mentalidad empresarial", src: eventMentalidadEmpresarial },
+  { label: "Prospección digital", src: eventSistemaProspeccion },
+  { label: "Taller estrategia fiscal", src: eventTallerFiscal },
+  { label: "Mastermind Panamá", src: eventMastermindPanama },
+  { label: "Holding", src: eventHolding },
+  { label: "Estrategia fiscal CDMX", src: eventFiscalCdmx },
+  { label: "Coaching liderazgo", src: eventCoaching },
+  { label: "Estrategia fiscal Monterrey", src: eventFiscalMonterrey },
+  { label: "Código Rockefeller", src: eventRockefeller },
+  { label: "Código Rockefeller alternativa", src: eventRockefellerAlt },
+  { label: "Maestría escénica", src: eventMaestriaEscenica },
+  { label: "Beneficios régimen fiscal", src: eventBeneficiosRegimen },
+  { label: "Revisión estratégica CDMX", src: eventRevisionEstrategica },
+];
+
 const SEEDED_CALENDAR_EVENTS = [
   {
-    id: "seed-formacion-equipos",
-    title: "Formación de Equipos de Alto Impacto",
-    slug: "formacion-equipos",
+    id: "seed-de-persona-fisica-a-moral",
+    title: "De Persona Física a Moral",
+    slug: "de-persona-fisica-a-moral",
     shortDescription:
-      "Un evento por mes durante todo 2026. Solo presencial, solo en español, solo para empresarios que decidieron dejar de pagar más impuestos de los necesarios.",
+      "Entrenamiento para decidir cuándo conviene migrar de persona física a persona moral.",
     description:
-      "Formación para empresarios y líderes que quieren construir equipos de alto impacto, con dirección, cultura y cadencia operativa.",
-    thumbnail: "",
-    type: "conference",
+      "Entrenamiento para decidir cuándo conviene migrar de persona física a persona moral y evitar errores fiscales desde la estructura.",
+    thumbnail: eventPersonaFisicaMoral,
+    type: "webinar",
     modality: "online",
-    location: "Online",
-    onlineUrl: "/eventos/formacion-equipos",
-    startDate: "2026-05-28T09:07:00-06:00",
-    endDate: "2026-05-28T17:00:00-06:00",
-    price: 24800,
-    capacity: 80,
-    registeredCount: 0,
-    status: "upcoming",
-    instructor: "admin",
-    isFeatured: false,
-    agenda: [],
-  },
-  {
-    id: "seed-revision-estrategica",
-    title: "Revisión Estratégica de Cierre Semestral",
-    slug: "revision-estrategica",
-    shortDescription:
-      "Diagnóstico fiscal con foco en decisiones críticas antes del segundo semestre.",
-    description:
-      "Un seminario para revisar decisiones fiscales, estructura y prioridades antes de entrar al segundo semestre.",
-    thumbnail: "",
-    type: "seminar",
-    modality: "in-person",
-    location: "CDMX",
-    onlineUrl: "/eventos/revision-estrategica",
-    startDate: "2026-06-05T09:07:00-06:00",
-    endDate: "2026-06-05T17:00:00-06:00",
-    price: 4900,
-    capacity: 80,
-    registeredCount: 0,
-    status: "upcoming",
-    instructor: "admin",
-    isFeatured: false,
-    agenda: [],
-  },
-  {
-    id: "seed-estrategia-fiscal",
-    title: "Estrategia Fiscal Edición CDMX",
-    slug: "estrategia-fiscal",
-    shortDescription:
-      "El evento emblema de Diego. Un día intensivo en CDMX con cierre de alto fiscal en mente.",
-    description:
-      "Un día intensivo para empresarios que quieren rediseñar su estrategia fiscal antes del cierre de año.",
-    thumbnail: "",
-    type: "seminar",
-    modality: "in-person",
-    location: "WTC CDMX",
-    onlineUrl: "/eventos/estrategia-fiscal",
-    startDate: "2026-08-28T09:00:00-06:00",
-    endDate: "2026-08-28T18:00:00-06:00",
-    price: 12400,
-    capacity: 80,
+    location: "Zoom",
+    onlineUrl: "/eventos/de-persona-fisica-a-moral",
+    startDate: "2026-08-28T09:07:00-06:00",
+    endDate: "2026-08-28T11:00:00-06:00",
+    price: 0,
+    capacity: 100,
     registeredCount: 0,
     status: "upcoming",
     instructor: "admin",
@@ -143,21 +136,21 @@ const SEEDED_CALENDAR_EVENTS = [
     agenda: [],
   },
   {
-    id: "seed-equipos-creativos",
-    title: "Equipos Creativos Cumbre Bajío",
-    slug: "equipos-creativos",
+    id: "seed-mentalidad-empresarial",
+    title: "Mentalidad Empresarial",
+    slug: "mentalidad-empresarial",
     shortDescription:
-      "Liderazgo, cultura y construcción de talento para equipos que necesitan dejar de resolver desde urgencias.",
+      "Sesión presencial para empresarios que quieren ordenar sus decisiones, números y dirección.",
     description:
-      "Cumbre para crear equipos más autónomos, creativos y alineados con objetivos de negocio.",
-    thumbnail: "",
-    type: "conference",
+      "Sesión presencial para empresarios que quieren ordenar sus decisiones, números y dirección con una mentalidad más estratégica.",
+    thumbnail: eventMentalidadEmpresarial,
+    type: "seminar",
     modality: "in-person",
-    location: "Querétaro",
-    onlineUrl: "/eventos/equipos-creativos",
-    startDate: "2026-09-04T09:07:00-06:00",
-    endDate: "2026-09-05T17:00:00-06:00",
-    price: 18900,
+    location: "CDMX",
+    onlineUrl: "/eventos/mentalidad-empresarial",
+    startDate: "2026-09-03T09:07:00-06:00",
+    endDate: "2026-09-03T17:00:00-06:00",
+    price: 0,
     capacity: 80,
     registeredCount: 0,
     status: "upcoming",
@@ -166,44 +159,297 @@ const SEEDED_CALENDAR_EVENTS = [
     agenda: [],
   },
   {
-    id: "seed-blindaje-patrimonial",
-    title: "Blindaje Patrimonial Edición Norte",
-    slug: "blindaje-patrimonial",
+    id: "seed-cumbre-sistema-prospeccion-digital",
+    title: "Cumbre: Sistema de Prospección Digital",
+    slug: "cumbre-sistema-prospeccion-digital",
     shortDescription:
-      "Riesgos, estructura y protección patrimonial para empresarios.",
+      "Cumbre de dos días para diseñar un sistema de atracción y conversión de prospectos.",
     description:
-      "Workshop sobre estructuras patrimoniales, riesgos y decisiones fiscales preventivas.",
-    thumbnail: "",
-    type: "workshop",
-    modality: "in-person",
-    location: "Monterrey",
-    onlineUrl: "/eventos/blindaje-patrimonial",
-    startDate: "2026-10-16T09:07:00-06:00",
-    endDate: "2026-10-16T17:00:00-06:00",
-    price: 32500,
-    capacity: 80,
-    registeredCount: 0,
-    status: "upcoming",
-    instructor: "admin",
-    isFeatured: false,
-    agenda: [],
-  },
-  {
-    id: "seed-estrategia-rockefeller",
-    title: "Estrategia Rockefeller Cumbre Anual 2026",
-    slug: "estrategia-rockefeller",
-    shortDescription:
-      "Tres días en CDMX. El evento más completo del año: estrategia fiscal, scalers, liderazgo y holding.",
-    description:
-      "La cumbre anual para revisar estrategia fiscal, dirección, liderazgo y estructura empresarial.",
-    thumbnail: "",
+      "Cumbre de dos días para diseñar un sistema de atracción y conversión de prospectos de alto valor.",
+    thumbnail: eventSistemaProspeccion,
     type: "conference",
     modality: "in-person",
     location: "CDMX",
-    onlineUrl: "/eventos/estrategia-rockefeller",
+    onlineUrl: "/eventos/cumbre-sistema-prospeccion-digital",
+    startDate: "2026-09-04T09:07:00-06:00",
+    endDate: "2026-09-05T17:00:00-06:00",
+    price: 0,
+    capacity: 80,
+    registeredCount: 0,
+    status: "upcoming",
+    instructor: "admin",
+    isFeatured: false,
+    agenda: [],
+  },
+  {
+    id: "seed-taller-estrategia-fiscal-online-septiembre",
+    title: "Taller de Estrategia Fiscal",
+    slug: "taller-estrategia-fiscal-online-septiembre",
+    shortDescription:
+      "Taller online para revisar estructura fiscal, riesgos y decisiones urgentes.",
+    description:
+      "Taller online para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
+    thumbnail: eventTallerFiscal,
+    type: "workshop",
+    modality: "online",
+    location: "Online",
+    onlineUrl: "/eventos/estrategia-fiscal",
+    startDate: "2026-09-11T09:07:00-06:00",
+    endDate: "2026-09-11T13:00:00-06:00",
+    price: 0,
+    capacity: 80,
+    registeredCount: 0,
+    status: "upcoming",
+    instructor: "admin",
+    isFeatured: false,
+    agenda: [],
+  },
+  {
+    id: "seed-mastermind-panama",
+    title: "Mastermind Panamá",
+    slug: "mastermind-panama",
+    shortDescription:
+      "Encuentro intensivo en Panamá para empresarios con visión internacional.",
+    description:
+      "Encuentro intensivo en Panamá para empresarios que buscan estrategia, estructura y visión internacional.",
+    thumbnail: eventMastermindPanama,
+    type: "conference",
+    modality: "in-person",
+    location: "Panamá",
+    onlineUrl: "/eventos/mastermind-panama",
+    startDate: "2026-09-15T09:07:00-06:00",
+    endDate: "2026-09-18T17:00:00-06:00",
+    price: 0,
+    capacity: 80,
+    registeredCount: 0,
+    status: "upcoming",
+    instructor: "admin",
+    isFeatured: false,
+    agenda: [],
+  },
+  {
+    id: "seed-holding-septiembre",
+    title: "Holding",
+    slug: "holding-septiembre",
+    shortDescription:
+      "Sesión online sobre estructura holding, patrimonio y orden empresarial.",
+    description:
+      "Sesión online sobre estructura holding, patrimonio y orden empresarial para proteger decisiones de largo plazo.",
+    thumbnail: eventHolding,
+    type: "webinar",
+    modality: "online",
+    location: "Zoom",
+    onlineUrl: "/eventos/holding",
+    startDate: "2026-09-22T09:07:00-06:00",
+    endDate: "2026-09-22T11:00:00-06:00",
+    price: 0,
+    capacity: 100,
+    registeredCount: 0,
+    status: "upcoming",
+    instructor: "admin",
+    isFeatured: false,
+    agenda: [],
+  },
+  {
+    id: "seed-taller-estrategia-fiscal-cdmx-septiembre",
+    title: "Taller de Estrategia Fiscal",
+    slug: "taller-estrategia-fiscal-cdmx-septiembre",
+    shortDescription:
+      "Taller presencial en CDMX para ajustar tu estrategia fiscal antes del cierre.",
+    description:
+      "Taller presencial en CDMX para ajustar tu estrategia fiscal con claridad antes del cierre del año.",
+    thumbnail: eventFiscalCdmx,
+    type: "workshop",
+    modality: "in-person",
+    location: "CDMX",
+    onlineUrl: "/eventos/estrategia-fiscal",
+    startDate: "2026-09-25T09:07:00-06:00",
+    endDate: "2026-09-25T17:00:00-06:00",
+    price: 0,
+    capacity: 100,
+    registeredCount: 0,
+    status: "upcoming",
+    instructor: "admin",
+    isFeatured: false,
+    agenda: [],
+  },
+  {
+    id: "seed-taller-estrategia-fiscal-cdmx-octubre",
+    title: "Taller de Estrategia Fiscal",
+    slug: "taller-estrategia-fiscal-cdmx-octubre",
+    shortDescription:
+      "Edición CDMX del taller de estrategia fiscal para cerrar el año con estructura.",
+    description:
+      "Edición CDMX del taller de estrategia fiscal para empresarios que quieren cerrar el año con estructura.",
+    thumbnail: eventFiscalCdmx,
+    type: "workshop",
+    modality: "in-person",
+    location: "CDMX",
+    onlineUrl: "/eventos/estrategia-fiscal",
+    startDate: "2026-10-22T09:07:00-06:00",
+    endDate: "2026-10-22T17:00:00-06:00",
+    price: 0,
+    capacity: 100,
+    registeredCount: 0,
+    status: "upcoming",
+    instructor: "admin",
+    isFeatured: false,
+    agenda: [],
+  },
+  {
+    id: "seed-coaching-para-el-liderazgo",
+    title: "Coaching para el Liderazgo",
+    slug: "coaching-para-el-liderazgo",
+    shortDescription:
+      "Dos días para fortalecer dirección, criterio y liderazgo empresarial.",
+    description:
+      "Dos días para fortalecer dirección, criterio y liderazgo empresarial con herramientas de ejecución.",
+    thumbnail: eventCoaching,
+    type: "seminar",
+    modality: "in-person",
+    location: "CDMX",
+    onlineUrl: "/eventos/coaching-para-el-liderazgo",
+    startDate: "2026-10-23T09:07:00-06:00",
+    endDate: "2026-10-24T17:00:00-06:00",
+    price: 0,
+    capacity: 100,
+    registeredCount: 0,
+    status: "upcoming",
+    instructor: "admin",
+    isFeatured: false,
+    agenda: [],
+  },
+  {
+    id: "seed-holding-octubre",
+    title: "Holding",
+    slug: "holding-octubre",
+    shortDescription:
+      "Entrenamiento online para entender cuándo una holding sí suma.",
+    description:
+      "Entrenamiento online para entender cuándo una holding sí suma y cuándo sólo complica la estructura.",
+    thumbnail: eventHolding,
+    type: "webinar",
+    modality: "online",
+    location: "Zoom",
+    onlineUrl: "/eventos/holding",
+    startDate: "2026-10-27T09:07:00-06:00",
+    endDate: "2026-10-27T11:00:00-06:00",
+    price: 0,
+    capacity: 100,
+    registeredCount: 0,
+    status: "upcoming",
+    instructor: "admin",
+    isFeatured: false,
+    agenda: [],
+  },
+  {
+    id: "seed-taller-estrategia-fiscal-monterrey",
+    title: "Taller de Estrategia Fiscal",
+    slug: "taller-estrategia-fiscal-monterrey",
+    shortDescription:
+      "Edición Monterrey del taller para empresarios que quieren claridad fiscal.",
+    description:
+      "Edición Monterrey del taller para empresarios que quieren claridad fiscal y decisiones accionables.",
+    thumbnail: eventFiscalMonterrey,
+    type: "workshop",
+    modality: "in-person",
+    location: "Monterrey",
+    onlineUrl: "/eventos/estrategia-fiscal",
+    startDate: "2026-11-06T09:07:00-06:00",
+    endDate: "2026-11-06T17:00:00-06:00",
+    price: 0,
+    capacity: 100,
+    registeredCount: 0,
+    status: "upcoming",
+    instructor: "admin",
+    isFeatured: false,
+    agenda: [],
+  },
+  {
+    id: "seed-4e-codigo-rockefeller",
+    title: "4E Código Rockefeller",
+    slug: "4e-codigo-rockefeller",
+    shortDescription:
+      "Entrenamiento de tres días para ordenar estrategia, ejecución y crecimiento.",
+    description:
+      "Entrenamiento de tres días para ordenar estrategia, ejecución y crecimiento con método.",
+    thumbnail: eventRockefeller,
+    type: "conference",
+    modality: "in-person",
+    location: "CDMX",
+    onlineUrl: "/eventos/4e-codigo-rockefeller",
     startDate: "2026-11-20T09:07:00-06:00",
     endDate: "2026-11-22T17:00:00-06:00",
-    price: 48000,
+    price: 0,
+    capacity: 100,
+    registeredCount: 0,
+    status: "upcoming",
+    instructor: "admin",
+    isFeatured: false,
+    agenda: [],
+  },
+  {
+    id: "seed-holding-noviembre",
+    title: "Holding",
+    slug: "holding-noviembre",
+    shortDescription:
+      "Nueva sesión online para revisar holding, partes relacionadas y patrimonio.",
+    description:
+      "Nueva sesión online para revisar holding, partes relacionadas y decisiones patrimoniales.",
+    thumbnail: eventHolding,
+    type: "webinar",
+    modality: "online",
+    location: "Zoom",
+    onlineUrl: "/eventos/holding",
+    startDate: "2026-11-24T09:07:00-06:00",
+    endDate: "2026-11-24T11:00:00-06:00",
+    price: 0,
+    capacity: 100,
+    registeredCount: 0,
+    status: "upcoming",
+    instructor: "admin",
+    isFeatured: false,
+    agenda: [],
+  },
+  {
+    id: "seed-maestria-escenica",
+    title: "Maestría Escénica",
+    slug: "maestria-escenica",
+    shortDescription:
+      "Tres días para fortalecer comunicación, presencia y estructura de mensaje.",
+    description:
+      "Tres días para fortalecer comunicación, presencia y estructura de mensaje frente a audiencias empresariales.",
+    thumbnail: eventMaestriaEscenica,
+    type: "seminar",
+    modality: "in-person",
+    location: "CDMX",
+    onlineUrl: "/eventos/maestria-escenica",
+    startDate: "2026-12-04T09:07:00-06:00",
+    endDate: "2026-12-06T17:00:00-06:00",
+    price: 0,
+    capacity: 100,
+    registeredCount: 0,
+    status: "upcoming",
+    instructor: "admin",
+    isFeatured: false,
+    agenda: [],
+  },
+  {
+    id: "seed-taller-estrategia-fiscal-online-diciembre",
+    title: "Taller de Estrategia Fiscal",
+    slug: "taller-estrategia-fiscal-online-diciembre",
+    shortDescription:
+      "Último taller online del año para preparar la estructura del siguiente ciclo.",
+    description:
+      "Último taller online del año para cerrar decisiones fiscales y preparar la estructura del siguiente ciclo.",
+    thumbnail: eventTallerFiscal,
+    type: "workshop",
+    modality: "online",
+    location: "Online",
+    onlineUrl: "/eventos/estrategia-fiscal",
+    startDate: "2026-12-10T09:07:00-06:00",
+    endDate: "2026-12-10T13:00:00-06:00",
+    price: 0,
     capacity: 100,
     registeredCount: 0,
     status: "upcoming",
@@ -250,7 +496,8 @@ const loadStoredEvents = (): Event[] => {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(EVENT_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Event[]) : [];
+    const events = raw ? (JSON.parse(raw) as Event[]) : [];
+    return events.filter((event) => !DEPRECATED_EVENT_SLUGS.has(event.slug));
   } catch {
     return [];
   }
@@ -439,7 +686,10 @@ export default function ManageEvents() {
   });
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
-  const apiEvents = useMemo(() => data?.data ?? [], [data?.data]);
+  const apiEvents = useMemo(
+    () => (data?.data ?? []).filter((event) => !DEPRECATED_EVENT_SLUGS.has(event.slug)),
+    [data?.data],
+  );
   const [localEvents, setLocalEvents] = useState<Event[]>(loadStoredEvents);
   const events = useMemo(() => {
     const bySlug = new Map<string, Event>();
@@ -823,15 +1073,15 @@ const selectedIsNew = selectedId === "new";
             </Field>
 
             <Field label="Imagen del evento">
-              <div className="overflow-hidden rounded-xl border border-ink-900/15 bg-cream-100">
+              <div className="overflow-hidden rounded-xl border border-ink-900/15 bg-[#101010] p-3">
                 {form.thumbnail ? (
                   <img
                     src={form.thumbnail}
                     alt={form.title}
-                    className="aspect-square w-full object-cover"
+                    className="aspect-square w-full object-contain"
                   />
                 ) : (
-                  <div className="flex aspect-square items-center justify-center text-sm text-ink-400">
+                  <div className="flex aspect-square items-center justify-center text-sm text-white/45">
                     Imagen pendiente
                   </div>
                 )}
@@ -849,6 +1099,38 @@ const selectedIsNew = selectedId === "new";
                   placeholder="URL de imagen"
                   className={INPUT_CLASS}
                 />
+              </div>
+              <div className="mt-4 rounded-xl border border-ink-900/10 bg-white p-3">
+                <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-400">
+                  Galería de assets
+                </p>
+                <div className="grid max-h-80 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3 xl:grid-cols-4">
+                  {EVENT_IMAGE_OPTIONS.map((option) => {
+                    const selected = form.thumbnail === option.src;
+                    return (
+                      <button
+                        key={option.label}
+                        type="button"
+                        onClick={() => update("thumbnail", option.src)}
+                        className={`group overflow-hidden rounded-lg border bg-[#101010] p-1 text-left transition ${
+                          selected
+                            ? "border-[#8B1538] ring-2 ring-[#8B1538]/20"
+                            : "border-ink-900/10 hover:border-ink-900/40"
+                        }`}
+                        title={option.label}
+                      >
+                        <img
+                          src={option.src}
+                          alt={option.label}
+                          className="aspect-square w-full object-contain transition duration-200 group-hover:scale-[1.02]"
+                        />
+                        <span className="block truncate bg-white px-2 py-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-ink-500">
+                          {option.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </Field>
 

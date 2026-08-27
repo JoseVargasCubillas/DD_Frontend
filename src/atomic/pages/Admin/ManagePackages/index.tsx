@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
-import { usePackages, useCreatePackage, useUpdatePackage } from '@hooks/usePackages';
+import toast from 'react-hot-toast';
+import { usePackages, useCreatePackage, useUpdatePackage, useDeletePackage, useAssignPackage } from '@hooks/usePackages';
 import { useCourses } from '@hooks/useCourses';
+import { usePromotions } from '@hooks/usePromotions';
+import * as usersApi from '@api/users.api';
 import type { BillingInterval, Course, Package, PackageBenefits, PackageTier } from '@t/index';
 
 /**
@@ -63,12 +66,19 @@ const TIERS: TierDef[] = [
   },
 ];
 
-export default function ManagePackages() {
+export default function ManagePackages({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const { data: packages = [], isLoading } = usePackages();
   const { data: coursesData } = useCourses({ includeAll: true, limit: 200 } as any);
   const courses = coursesData?.data ?? [];
   const create = useCreatePackage();
   const update = useUpdatePackage();
+  const remove = useDeletePackage();
+  const assign = useAssignPackage();
+  const { data: promotions = [] } = usePromotions();
+  const activePromotions = useMemo(
+    () => promotions.filter((p) => p.isActive && (!p.expiresAt || new Date(p.expiresAt) > new Date())),
+    [promotions],
+  );
 
   // Índice paquete por tier (si ya existe en BD)
   const byTier = useMemo(() => {
@@ -77,43 +87,98 @@ export default function ManagePackages() {
     return map;
   }, [packages]);
 
+  // Paquetes viejos sin tier oficial — se pueden borrar desde aquí
+  const legacyPackages = useMemo(
+    () =>
+      packages.filter(
+        (p) => !['entrepreneur', 'business', 'master'].includes(String(p.tier || '').toLowerCase()),
+      ),
+    [packages],
+  );
+
   return (
     <div>
-      <header className="mb-8">
-        <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-3">Academia</p>
-        <div className="flex items-end justify-between gap-6 flex-wrap">
-          <div>
-            <h1 className="font-serif text-4xl md:text-5xl text-ink-900 leading-none">Paquetes</h1>
-            <p className="text-sm text-ink-600 mt-3 max-w-2xl">
-              Los tres productos de la Academia. Precio, cursos incluidos y beneficios (masterclass y grupos
-              de WhatsApp) se controlan aquí. Estos paquetes son los que aparecen públicamente en{' '}
-              <span className="font-mono text-[11px] px-1.5 py-0.5 bg-cream-200 border border-ink-900/10">
-                /academia
-              </span>{' '}
-              y los que asignas manualmente a un cliente desde su perfil.
-            </p>
+      {!hideHeader && (
+        <header className="mb-8">
+          <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-3">Academia</p>
+          <div className="flex items-end justify-between gap-6 flex-wrap">
+            <div>
+              <h1 className="font-serif text-4xl md:text-5xl text-ink-900 leading-none">Paquetes</h1>
+              <p className="text-sm text-ink-600 mt-3 max-w-2xl">
+                Los tres productos de la Academia. Precio, cursos incluidos y beneficios (masterclass y grupos
+                de WhatsApp) se controlan aquí. Estos paquetes son los que aparecen públicamente en{' '}
+                <span className="font-mono text-[11px] px-1.5 py-0.5 bg-cream-200 border border-ink-900/10">
+                  /academia
+                </span>{' '}
+                y los que asignas manualmente a un cliente desde su perfil.
+              </p>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {isLoading ? (
         <p className="p-8 text-sm text-ink-500">Cargando…</p>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {TIERS.map((def) => {
-            const pkg = byTier[def.tier];
-            return (
-              <TierCard
-                key={def.tier}
-                def={def}
-                pkg={pkg}
-                courses={courses}
-                onCreate={(data) => create.mutate(data as any)}
-                onUpdate={(id, data) => update.mutate({ id, data })}
-              />
-            );
-          })}
-        </div>
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {TIERS.map((def) => {
+              const pkg = byTier[def.tier];
+              return (
+                <TierCard
+                  key={def.tier}
+                  def={def}
+                  pkg={pkg}
+                  courses={courses}
+                  promotions={activePromotions}
+                  onCreate={(data) => create.mutate(data as any)}
+                  onUpdate={(id, data) => update.mutate({ id, data })}
+                  onAssign={(userId, packageId) => assign.mutate({ userId, packageId })}
+                />
+              );
+            })}
+          </div>
+
+          {legacyPackages.length > 0 && (
+            <section className="mt-12 border border-red-400/50 bg-red-50/50 p-6">
+              <header className="mb-4">
+                <p className="text-[10px] uppercase tracking-[0.4em] text-red-700">Limpieza</p>
+                <h2 className="font-serif text-2xl text-ink-900 mt-1">Paquetes legacy sin categoría</h2>
+                <p className="text-sm text-ink-600 mt-2 max-w-2xl">
+                  Estos paquetes fueron creados antes del modelo Entrepreneur/Business/Master y aparecen
+                  en <span className="font-mono text-[11px] px-1 bg-cream-200">/academia</span> con nombres
+                  viejos. Elimínalos para que la landing use sólo los tres oficiales de arriba.
+                </p>
+              </header>
+              <ul className="space-y-2">
+                {legacyPackages.map((p) => (
+                  <li
+                    key={p._id || p.id}
+                    className="flex items-center justify-between gap-4 border border-ink-900/10 bg-white px-4 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-serif text-lg text-ink-900 truncate">{p.name || '(sin nombre)'}</p>
+                      <p className="text-xs text-ink-500">
+                        ${(p.price ?? 0).toLocaleString('es-MX')} {p.currency || 'MXN'} · id: {p._id || p.id}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm(`Eliminar "${p.name || 'paquete sin nombre'}"? Esta acción no se puede deshacer.`)) {
+                          remove.mutate(p._id || p.id!);
+                        }
+                      }}
+                      className="text-[10px] uppercase tracking-[0.28em] border border-red-700 text-red-700 px-3 py-2 hover:bg-red-700 hover:text-white transition-colors"
+                    >
+                      Eliminar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
       )}
     </div>
   );
@@ -123,16 +188,21 @@ function TierCard({
   def,
   pkg,
   courses,
+  promotions,
   onCreate,
   onUpdate,
+  onAssign,
 }: {
   def: TierDef;
   pkg?: Package;
   courses: Course[];
+  promotions: { _id?: string; id?: string; code: string; name?: string }[];
   onCreate: (data: Partial<Package>) => void;
   onUpdate: (id: string, data: Partial<Package>) => void;
+  onAssign: (userId: string, packageId: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const [selling, setSelling] = useState(false);
   const exists = !!pkg;
 
   return (
@@ -193,6 +263,19 @@ function TierCard({
             setEditing(false);
           }}
         />
+      )}
+
+      {exists && (
+        <>
+          <button
+            type="button"
+            onClick={() => setSelling((v) => !v)}
+            className="border border-ink-900 text-ink-900 py-2.5 text-[11px] uppercase tracking-[0.28em] hover:bg-ink-900 hover:text-cream transition-colors"
+          >
+            {selling ? 'Cerrar venta' : 'Vender o asignar'}
+          </button>
+          {selling && <SellPanel pkg={pkg!} promotions={promotions} onAssign={onAssign} />}
+        </>
       )}
     </article>
   );
@@ -514,4 +597,118 @@ function intervalLabel(interval: BillingInterval) {
   if (interval === 'year') return '/ año';
   if (interval === 'month') return '/ mes';
   return '/ único pago';
+}
+
+function SellPanel({
+  pkg,
+  promotions,
+  onAssign,
+}: {
+  pkg: Package;
+  promotions: { _id?: string; id?: string; code: string; name?: string }[];
+  onAssign: (userId: string, packageId: string) => void;
+}) {
+  const [email, setEmail] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const [assigning, setAssigning] = useState(false);
+
+  const buildStripeLink = () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const params = new URLSearchParams({ pkg: String(pkg._id || pkg.id) });
+    if (promoCode) params.set('promo', promoCode);
+    return `${origin}/checkout?${params.toString()}`;
+  };
+
+  const copyLink = async () => {
+    try {
+      const link = buildStripeLink();
+      await navigator.clipboard.writeText(link);
+      toast.success('Link copiado al portapapeles');
+    } catch {
+      toast.error('No se pudo copiar');
+    }
+  };
+
+  const assignByEmail = async () => {
+    if (!email.trim()) return toast.error('Escribe un email');
+    setAssigning(true);
+    try {
+      const res = await usersApi.listUsers({ search: email.trim(), limit: 5 });
+      const rows = Array.isArray(res) ? res : res.data ?? [];
+      const found = rows.find(
+        (u: any) => String(u.email || '').toLowerCase() === email.trim().toLowerCase(),
+      );
+      if (!found) {
+        toast.error(`No hay un usuario con email ${email}`);
+        return;
+      }
+      onAssign(String(found._id || found.id), String(pkg._id || pkg.id));
+      setEmail('');
+    } catch (err: any) {
+      toast.error(err?.message || 'Error buscando usuario');
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  return (
+    <div className="border-t border-ink-900/10 pt-5 space-y-5">
+      <div>
+        <p className="ink-label mb-2">Link de checkout (Stripe)</p>
+        <p className="text-xs text-ink-500 mb-3">
+          Envía este link al cliente. Al abrirlo entra al checkout con el paquete y la promoción aplicada.
+        </p>
+        {promotions.length > 0 && (
+          <select
+            value={promoCode}
+            onChange={(e) => setPromoCode(e.target.value)}
+            className="ink-input cursor-pointer mb-3"
+          >
+            <option value="">Sin promoción</option>
+            {promotions.map((p) => (
+              <option key={p._id || p.id} value={p.code}>
+                {p.code}{p.name ? ` — ${p.name}` : ''}
+              </option>
+            ))}
+          </select>
+        )}
+        <div className="flex items-center gap-2">
+          <code className="flex-1 truncate text-xs bg-cream-200 border border-ink-900/10 px-2 py-2 font-mono">
+            {buildStripeLink()}
+          </code>
+          <button
+            type="button"
+            onClick={copyLink}
+            className="text-[10px] uppercase tracking-[0.28em] border border-ink-900 text-ink-900 px-3 py-2 hover:bg-ink-900 hover:text-cream transition-colors"
+          >
+            Copiar
+          </button>
+        </div>
+      </div>
+
+      <div className="border-t border-ink-900/10 pt-5">
+        <p className="ink-label mb-2">Asignar manualmente</p>
+        <p className="text-xs text-ink-500 mb-3">
+          El cliente ya tiene cuenta y no pasará por Stripe. Se le otorga acceso inmediato.
+        </p>
+        <div className="flex items-center gap-2">
+          <input
+            type="email"
+            placeholder="email del cliente"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="ink-input flex-1"
+          />
+          <button
+            type="button"
+            disabled={assigning}
+            onClick={assignByEmail}
+            className="text-[10px] uppercase tracking-[0.28em] bg-ink-900 text-cream px-3 py-2 hover:bg-ink-700 transition-colors disabled:opacity-50"
+          >
+            {assigning ? 'Asignando…' : 'Asignar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }

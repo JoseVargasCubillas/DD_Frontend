@@ -3,9 +3,10 @@ import { Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useCourses } from "@hooks/useCourses";
 import { useModules } from "@hooks/useModules";
-import { useCreateOffer, useOffers } from "@hooks/useOffers";
+import { useCreateOffer, useDeleteOffer, useOffers, useUpdateOffer } from "@hooks/useOffers";
+import { usePackages, useUpdatePackage } from "@hooks/usePackages";
 import { useOrders } from "@hooks/usePayments";
-import type { Course, Module, Offer, Order } from "@t/index";
+import type { Course, Module, Offer, Order, Package } from "@t/index";
 
 type PricingTab = "offers" | "upsells";
 type StatusFilter = "published" | "draft" | "all";
@@ -24,14 +25,18 @@ interface UpsellRecord {
 interface OfferRecord {
   id: string;
   courseId: string;
+  targetType: "course" | "package" | "product";
+  targetId: string;
+  content: Offer["content"];
   title: string;
   status: "draft" | "published";
   products: number;
   price: number;
   currency: string;
-  paymentType: "free" | "one_time";
+  paymentType: "free" | "one_time" | "subscription";
   thumbnail: string;
   courseTitle: string;
+  expiresAt?: string | null;
   checkoutPath: string;
 }
 
@@ -64,16 +69,21 @@ export default function SalesPricing() {
   const { data: coursesResponse } = useCourses({
     status: "",
     includeAll: true,
+    limit: 200,
   });
   const { data: orders = [] } = useOrders();
   const { data: persistedOffers = [] } = useOffers();
+  const updateOffer = useUpdateOffer();
+  const deleteOffer = useDeleteOffer();
+  const { data: packages = [] } = usePackages();
   const courses = coursesResponse?.data ?? [];
   const offers = useMemo(
     () =>
       persistedOffers
-        .map((offer) => mapPersistedOffer(offer, courses))
+        .filter((offer) => offer.status !== "archived")
+        .map((offer) => mapPersistedOffer(offer, courses, packages))
         .map((offer) => (offerOverrides[offer.id] ? { ...offer, ...offerOverrides[offer.id] } : offer)),
-    [persistedOffers, courses, offerOverrides],
+    [persistedOffers, courses, packages, offerOverrides],
   );
   const selectedOffer = offers.find((offer) => offer.id === statsOfferId);
   const offerMetrics = useMemo(
@@ -97,8 +107,10 @@ export default function SalesPricing() {
       <OfferEditView
         offer={editOfferRecord}
         courses={courses}
+        packages={packages}
         onBack={() => setParams({})}
         onSave={(patch) => {
+          updateOffer.mutate({ id: editOfferRecord.id, input: patch });
           const next = {
             ...offerOverrides,
             [editOfferRecord.id]: { ...(offerOverrides[editOfferRecord.id] ?? {}), ...patch },
@@ -131,6 +143,13 @@ export default function SalesPricing() {
   };
   const saveOverride = (id: string, patch: Partial<OfferRecord>) => {
     const next = { ...offerOverrides, [id]: { ...(offerOverrides[id] ?? {}), ...patch } };
+    setOfferOverrides(next);
+    localStorage.setItem("dd-offer-overrides", JSON.stringify(next));
+  };
+
+  const clearOverride = (id: string) => {
+    const next = { ...offerOverrides };
+    delete next[id];
     setOfferOverrides(next);
     localStorage.setItem("dd-offer-overrides", JSON.stringify(next));
   };
@@ -260,6 +279,7 @@ export default function SalesPricing() {
                     <th className="py-4 font-medium">Título de oferta</th>
                     <th className="py-4 font-medium">Productos</th>
                     <th className="py-4 font-medium">Precio</th>
+                    <th className="py-4 font-medium">Vence</th>
                     <th className="py-4 font-medium">Vendidas</th>
                     <th className="py-4 font-medium">Ingresos netos</th>
                     <th className="py-4 font-medium">Estado</th>
@@ -280,10 +300,30 @@ export default function SalesPricing() {
                         onStats={() => setParams({ stats: offer.id })}
                         onEdit={() => setParams({ edit: offer.id })}
                         onToggleStatus={() =>
-                          saveOverride(offer.id, {
-                            status: offer.status === "published" ? "draft" : "published",
-                          })
+                          updateOffer.mutate(
+                            {
+                              id: offer.id,
+                              input: {
+                                status: offer.status === "published" ? "draft" : "published",
+                              },
+                            },
+                            {
+                              onSuccess: () =>
+                                saveOverride(offer.id, {
+                                  status: offer.status === "published" ? "draft" : "published",
+                                }),
+                            },
+                          )
                         }
+                        onDelete={() => {
+                          if (!window.confirm(`¿Archivar la oferta "${offer.title}"?`)) return;
+                          deleteOffer.mutate(offer.id, {
+                            onSuccess: () => {
+                              clearOverride(offer.id);
+                              setOpenMenu(null);
+                            },
+                          });
+                        }}
                       />
                     );
                   })}
@@ -299,6 +339,7 @@ export default function SalesPricing() {
           {showOfferModal && (
             <NewOfferModal
               courses={courses}
+              packages={packages}
               onClose={() => setShowOfferModal(false)}
             />
           )}
@@ -308,28 +349,17 @@ export default function SalesPricing() {
   );
 }
 
-function NewOfferModal({ courses, onClose }: { courses: Course[]; onClose: () => void }) {
+function NewOfferModal({ courses, packages, onClose }: { courses: Course[]; packages: Package[]; onClose: () => void }) {
   const create = useCreateOffer();
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [relation, setRelation] = useState<"courses" | "package">("courses");
+  const [targetType, setTargetType] = useState<"course" | "package">("course");
   const [type, setType] = useState<"standard" | "trial">("standard");
   const [status, setStatus] = useState<"draft" | "published">("published");
-  const [billing, setBilling] = useState<"month" | "year" | "lifetime">("year");
-  const [durationValue, setDurationValue] = useState(1);
+  const [paymentType, setPaymentType] = useState<"one_time" | "subscription" | "free">("subscription");
   const [price, setPrice] = useState(0);
+  const [selectedPackageId, setSelectedPackageId] = useState("");
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
   const [selectedModulesByCourse, setSelectedModulesByCourse] = useState<Record<string, string[]>>({});
-
-  const totalDays =
-    billing === "lifetime" ? 0 : billing === "month" ? durationValue * 30 : durationValue * 365;
-
-  const cobroLabel =
-    billing === "lifetime"
-      ? "Pago único, acceso de por vida"
-      : billing === "month"
-        ? `Suscripción mensual · ${durationValue} ${durationValue === 1 ? "mes" : "meses"} de acceso`
-        : `Suscripción anual · ${durationValue} ${durationValue === 1 ? "año" : "años"} de acceso`;
 
   const toggleCourse = (courseId: string) =>
     setSelectedCourseIds((current) =>
@@ -348,13 +378,16 @@ function NewOfferModal({ courses, onClose }: { courses: Course[]; onClose: () =>
       return next;
     });
 
-  const selectedCount =
-    type === "standard"
-      ? selectedCourseIds.length
-      : Object.values(selectedModulesByCourse).reduce((sum, ids) => sum + ids.length, 0);
-
   const submit = () => {
+    if (targetType === "package" && !selectedPackageId) {
+      toast.error("Selecciona el paquete relacionado a esta oferta");
+      return;
+    }
+
     const content =
+      targetType === "package"
+        ? []
+        :
       type === "standard"
         ? selectedCourseIds.map((courseId) => ({ courseId, access: "full" as const, moduleIds: [] }))
         : Object.entries(selectedModulesByCourse).map(([courseId, moduleIds]) => ({
@@ -364,270 +397,259 @@ function NewOfferModal({ courses, onClose }: { courses: Course[]; onClose: () =>
           }));
 
     create.mutate(
-      { title, description, type, status, price, currency: "MXN", content } as Partial<Offer>,
+      {
+        title,
+        type: targetType === "package" ? "standard" : type,
+        status,
+        price,
+        currency: "MXN",
+        paymentType,
+        targetType,
+        targetId: targetType === "package" ? selectedPackageId : selectedCourseIds[0] || Object.keys(selectedModulesByCourse)[0] || "",
+        startsAt: null,
+        expiresAt: null,
+        content,
+      },
       { onSuccess: onClose },
     );
   };
 
-  const priceLabel = new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "MXN",
-    maximumFractionDigits: 0,
-  }).format(price || 0);
+  const selectedContentCount =
+    targetType === "package"
+      ? selectedPackageId
+        ? packages.find((pkg) => (pkg._id || pkg.id) === selectedPackageId)?.courseIds.length ?? 0
+        : 0
+      : type === "standard"
+        ? selectedCourseIds.length
+        : Object.values(selectedModulesByCourse).reduce((sum, ids) => sum + ids.length, 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-ink-900/50 p-4 pt-10 overflow-y-auto">
-      <div className="w-full max-w-5xl bg-cream-100 border border-ink-900/15 rounded-2xl shadow-xl">
-        {/* Encabezado */}
-        <header className="flex items-start justify-between gap-6 border-b border-ink-900/10 p-7">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.36em] text-ink-500">Oferta</p>
-            <h3 className="mt-1 font-serif text-3xl text-ink-900">Nueva oferta</h3>
-            <p className="mt-2 text-sm text-ink-600 max-w-lg">
-              Define qué se vende, cómo se cobra y qué cursos desbloquea al cliente.
-            </p>
-          </div>
-          <div className="text-right border border-ink-900/15 bg-cream px-4 py-3 min-w-[110px]">
-            <p className="text-[10px] uppercase tracking-[0.28em] text-ink-500">Selección</p>
-            <p className="font-serif text-3xl text-ink-900 leading-none mt-1">{selectedCount}</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/50 p-4 sm:p-6">
+      <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[20px] border border-ink-900/15 bg-white shadow-2xl">
+        <header className="border-b border-ink-900/10 px-5 py-5 sm:px-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.36em] text-ink-500">Oferta</p>
+              <h3 className="font-serif text-3xl leading-none text-ink-900 sm:text-4xl">Nueva oferta</h3>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-600">
+                Define qué se vende, cómo se cobra y qué cursos desbloquea el cliente.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-ink-900/10 bg-cream-100 px-4 py-3 text-right">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-ink-500">Selección</p>
+              <p className="mt-1 font-serif text-2xl leading-none text-ink-900">{selectedContentCount}</p>
+            </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0">
-          {/* Columna principal */}
-          <div className="p-7 space-y-5">
-            {/* 01 Datos */}
-            <Section number="01" title="Datos de la oferta">
-              <label className="grid gap-1.5">
-                <span className="text-[11px] font-medium text-ink-600">Título</span>
-                <input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ej. Mastermind 2026"
-                  className="min-h-11 rounded-lg border border-ink-900/20 bg-white px-3 text-sm outline-none focus:border-ink-900"
-                />
-              </label>
-              <label className="grid gap-1.5">
-                <span className="text-[11px] font-medium text-ink-600">Descripción</span>
-                <textarea
-                  rows={2}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Qué contiene la oferta y a quién va dirigida."
-                  className="rounded-lg border border-ink-900/20 bg-white px-3 py-2 text-sm outline-none focus:border-ink-900 font-serif"
-                />
-              </label>
-            </Section>
-
-            {/* 02 Configuración comercial */}
-            <Section number="02" title="Configuración comercial">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <Field label="Relacionado a">
-                  <select
-                    value={relation}
-                    onChange={(e) => setRelation(e.target.value as any)}
-                    className="min-h-11 rounded-lg border border-ink-900/20 bg-white px-3 text-sm outline-none focus:border-ink-900"
-                  >
-                    <option value="courses">Cursos / productos</option>
-                    <option value="package">Paquete Academia</option>
-                  </select>
-                </Field>
-                <Field label="Tipo">
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value as "standard" | "trial")}
-                    className="min-h-11 rounded-lg border border-ink-900/20 bg-white px-3 text-sm outline-none focus:border-ink-900"
-                  >
-                    <option value="standard">Normal</option>
-                    <option value="trial">Prueba</option>
-                  </select>
-                </Field>
-                <Field label="Estado">
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as "draft" | "published")}
-                    className="min-h-11 rounded-lg border border-ink-900/20 bg-white px-3 text-sm outline-none focus:border-ink-900"
-                  >
-                    <option value="published">Publicada</option>
-                    <option value="draft">Borrador</option>
-                  </select>
-                </Field>
-                <Field label="Cobro">
-                  <select
-                    value={billing}
-                    onChange={(e) => {
-                      const v = e.target.value as "month" | "year" | "lifetime";
-                      setBilling(v);
-                      if (v === "lifetime") setDurationValue(0);
-                      else if (v === "month") setDurationValue(1);
-                      else setDurationValue(1);
-                    }}
-                    className="min-h-11 rounded-lg border border-ink-900/20 bg-white px-3 text-sm outline-none focus:border-ink-900"
-                  >
-                    <option value="month">Mensual</option>
-                    <option value="year">Anual</option>
-                    <option value="lifetime">De por vida</option>
-                  </select>
-                </Field>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-                <Field label={`Precio (MXN)`}>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-8">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <main className="space-y-5">
+              <section className="rounded-2xl border border-ink-900/10 bg-white p-5 shadow-sm">
+                <SectionHeading eyebrow="01" title="Datos de la oferta" />
+                <label className="mt-4 grid gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.24em] text-ink-500">Título</span>
                   <input
-                    type="number"
-                    min={0}
-                    value={price}
-                    onChange={(e) => setPrice(Number(e.target.value || 0))}
-                    className="min-h-11 rounded-lg border border-ink-900/20 bg-white px-3 text-sm outline-none focus:border-ink-900 text-right pr-3"
+                    value={title}
+                    onChange={(event) => setTitle(event.target.value)}
+                    placeholder="Ej. Mastermind 2026"
+                    className="min-h-12 rounded-xl border border-ink-900/20 px-4 text-base outline-none transition-colors focus:border-ink-900"
                   />
-                </Field>
+                </label>
+              </section>
 
-                {billing !== "lifetime" && (
-                  <Field label={billing === "month" ? "Duración (meses)" : "Duración (años)"}>
+              <section className="rounded-2xl border border-ink-900/10 bg-white p-5 shadow-sm">
+                <SectionHeading eyebrow="02" title="Configuración comercial" />
+                <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <label className="grid gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">Relacionado a</span>
+                    <select
+                      value={targetType}
+                      onChange={(event) => {
+                        const nextTargetType = event.target.value as "course" | "package";
+                        setTargetType(nextTargetType);
+                        if (nextTargetType === "package") {
+                          setType("standard");
+                          setPaymentType("subscription");
+                        }
+                        setSelectedCourseIds([]);
+                        setSelectedModulesByCourse({});
+                        setSelectedPackageId("");
+                      }}
+                      className="min-h-11 rounded-xl border border-ink-900/20 bg-white px-3 text-sm outline-none transition-colors focus:border-ink-900"
+                    >
+                      <option value="course">Cursos/productos</option>
+                      <option value="package">Paquete</option>
+                    </select>
+                  </label>
+                  <label className="grid gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">Tipo</span>
+                    <select
+                      value={type}
+                      disabled={targetType === "package"}
+                      onChange={(event) => setType(event.target.value as "standard" | "trial")}
+                      className="min-h-11 rounded-xl border border-ink-900/20 bg-white px-3 text-sm outline-none transition-colors focus:border-ink-900 disabled:bg-ink-900/5 disabled:text-ink-400"
+                    >
+                      <option value="standard">Normal</option>
+                      <option value="trial">Prueba</option>
+                    </select>
+                  </label>
+                  <label className="grid gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">Estado</span>
+                    <select
+                      value={status}
+                      onChange={(event) => setStatus(event.target.value as "draft" | "published")}
+                      className="min-h-11 rounded-xl border border-ink-900/20 bg-white px-3 text-sm outline-none transition-colors focus:border-ink-900"
+                    >
+                      <option value="published">Publicada</option>
+                      <option value="draft">Borrador</option>
+                    </select>
+                  </label>
+                  <label className="grid gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">Cobro</span>
+                    <select
+                      value={paymentType}
+                      onChange={(event) => setPaymentType(event.target.value as "one_time" | "subscription" | "free")}
+                      className="min-h-11 rounded-xl border border-ink-900/20 bg-white px-3 text-sm outline-none transition-colors focus:border-ink-900"
+                    >
+                      <option value="subscription">Suscripción anual</option>
+                      <option value="one_time">Pago único</option>
+                      <option value="free">Gratis</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div className="mt-4 grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
+                  <label className="grid gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">Precio</span>
                     <input
                       type="number"
-                      min={1}
-                      value={durationValue}
-                      onChange={(e) =>
-                        setDurationValue(Math.max(1, Number(e.target.value || 1)))
-                      }
-                      className="min-h-11 rounded-lg border border-ink-900/20 bg-white px-3 text-sm outline-none focus:border-ink-900"
+                      min="0"
+                      value={price}
+                      onChange={(event) => setPrice(Number(event.target.value || 0))}
+                      className="min-h-11 rounded-xl border border-ink-900/20 px-3 text-sm outline-none transition-colors focus:border-ink-900"
                     />
-                  </Field>
-                )}
-
-                <div className="col-span-2 border border-ink-900/10 bg-cream-200/50 px-3 py-2 rounded-lg text-xs text-ink-600 leading-snug flex flex-col justify-center">
-                  <span className="text-[10px] uppercase tracking-[0.28em] text-ink-500">
-                    Vigencia de acceso
-                  </span>
-                  <span className="mt-1 font-serif text-sm text-ink-900">{cobroLabel}</span>
-                  {billing !== "lifetime" && (
-                    <span className="text-[11px] text-ink-500 mt-0.5">
-                      Se activa el día de compra y finaliza automáticamente {totalDays} días después.
-                    </span>
-                  )}
-                </div>
-              </div>
-            </Section>
-
-            {/* 03 Cursos incluidos */}
-            <Section number="03" title="Cursos incluidos">
-              {type === "standard" ? (
-                <div className="grid gap-1.5 max-h-72 overflow-y-auto sm:grid-cols-2 border border-ink-900/10 rounded-lg p-2 bg-white">
-                  {courses.map((course) => {
-                    const courseId = course._id || course.id || "";
-                    const checked = selectedCourseIds.includes(courseId);
-                    return (
-                      <label
-                        key={courseId}
-                        className={
-                          "flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2 text-sm transition-colors " +
-                          (checked
-                            ? "border-ink-900 bg-cream-200"
-                            : "border-ink-900/10 hover:bg-cream-100")
-                        }
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleCourse(courseId)}
-                        />
-                        <span className="min-w-0 truncate font-serif text-ink-900">
-                          {course.title}
-                        </span>
-                      </label>
-                    );
-                  })}
-                  {courses.length === 0 && (
-                    <p className="p-4 text-sm text-ink-500 col-span-2">
-                      Crea cursos primero para asignarlos aquí.
+                  </label>
+                  <div className="rounded-xl border border-ink-900/10 bg-cream-100 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-ink-500">Vigencia de acceso</p>
+                    <p className="mt-1 text-sm leading-relaxed text-ink-700">
+                      Si es suscripción anual, se activa el día de compra y finaliza automáticamente 365 días después.
                     </p>
-                  )}
+                  </div>
                 </div>
-              ) : (
-                <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
-                  {courses.map((course) => {
-                    const courseId = course._id || course.id || "";
-                    return (
-                      <TrialCourseModules
-                        key={courseId}
-                        course={course}
-                        selectedModuleIds={selectedModulesByCourse[courseId] ?? []}
-                        onToggleModule={(moduleId) => toggleTrialModule(courseId, moduleId)}
-                        onSetModules={(moduleIds) =>
-                          setSelectedModulesByCourse((current) => {
-                            const next = { ...current };
-                            if (moduleIds.length) next[courseId] = moduleIds;
-                            else delete next[courseId];
-                            return next;
-                          })
-                        }
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </Section>
+              </section>
+
+              <section className="rounded-2xl border border-ink-900/10 bg-white p-5 shadow-sm">
+                <SectionHeading eyebrow="03" title={targetType === "package" ? "Paquete incluido" : type === "standard" ? "Cursos incluidos" : "Módulos de prueba"} />
+                {targetType === "package" ? (
+                  <div className="mt-4 grid max-h-[360px] gap-3 overflow-y-auto pr-1">
+                    {packages.map((pkg) => {
+                      const packageId = pkg._id || pkg.id || "";
+                      const checked = selectedPackageId === packageId;
+                      return (
+                        <label
+                          key={packageId}
+                          className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 text-sm transition-colors ${
+                            checked ? "border-ink-900 bg-ink-900 text-white" : "border-ink-900/10 hover:bg-cream-100"
+                          }`}
+                        >
+                          <input type="radio" checked={checked} onChange={() => setSelectedPackageId(packageId)} className="mt-1" />
+                          <span className="min-w-0">
+                            <span className="block font-semibold">{pkg.name}</span>
+                            <span className={`mt-1 block text-xs ${checked ? "text-white/60" : "text-ink-500"}`}>
+                              {pkg.courseIds.length} cursos · {pkg.durationDays > 0 ? `${pkg.durationDays} días desde la compra` : "365 días desde la compra"}
+                            </span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                    {packages.length === 0 && <p className="rounded-xl bg-cream-100 p-4 text-sm text-ink-500">Primero crea un paquete en Admin &gt; Productos &gt; Paquetes.</p>}
+                  </div>
+                ) : type === "standard" ? (
+                  <div className="mt-4 grid max-h-[360px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+                    {courses.map((course) => {
+                      const courseId = course._id || course.id || "";
+                      const checked = selectedCourseIds.includes(courseId);
+                      return (
+                        <label
+                          key={courseId}
+                          className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-3 text-sm transition-colors ${
+                            checked ? "border-ink-900 bg-ink-900 text-white" : "border-ink-900/10 hover:bg-cream-100"
+                          }`}
+                          title={course.title}
+                        >
+                          <input type="checkbox" checked={checked} onChange={() => toggleCourse(courseId)} />
+                          <span className="min-w-0 truncate">{course.title}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="mt-4 max-h-[440px] space-y-3 overflow-y-auto pr-1">
+                    {courses.map((course) => {
+                      const courseId = course._id || course.id || "";
+                      return (
+                        <TrialCourseModules
+                          key={courseId}
+                          course={course}
+                          selectedModuleIds={selectedModulesByCourse[courseId] ?? []}
+                          onToggleModule={(moduleId) => toggleTrialModule(courseId, moduleId)}
+                          onSetModules={(moduleIds) =>
+                            setSelectedModulesByCourse((current) => {
+                              const next = { ...current };
+                              if (moduleIds.length) next[courseId] = moduleIds;
+                              else delete next[courseId];
+                              return next;
+                            })
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            </main>
+
+            <aside className="space-y-4">
+              <div className="rounded-2xl border border-ink-900/10 bg-cream-100 p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-ink-500">Resumen</p>
+                <h4 className="mt-3 font-serif text-2xl leading-tight text-ink-900">
+                  {title.trim() || "Oferta sin título"}
+                </h4>
+                <dl className="mt-5 space-y-3 text-sm">
+                  <div className="flex justify-between gap-4 border-t border-ink-900/10 pt-3">
+                    <dt className="text-ink-500">Estado</dt>
+                    <dd className="font-medium text-ink-900">{status === "published" ? "Publicada" : "Borrador"}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4 border-t border-ink-900/10 pt-3">
+                    <dt className="text-ink-500">Cobro</dt>
+                    <dd className="font-medium text-ink-900">{paymentType === "subscription" ? "Anual" : paymentType === "one_time" ? "Pago único" : "Gratis"}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4 border-t border-ink-900/10 pt-3">
+                    <dt className="text-ink-500">Precio</dt>
+                    <dd className="font-medium text-ink-900">{paymentType === "free" ? "Gratis" : `$${price.toLocaleString("es-MX")} MXN`}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4 border-t border-ink-900/10 pt-3">
+                    <dt className="text-ink-500">Contenido</dt>
+                    <dd className="font-medium text-ink-900">{selectedContentCount}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div className="rounded-2xl border border-ink-900/10 bg-white p-5 text-sm leading-relaxed text-ink-600">
+                <p className="font-semibold text-ink-900">Orden recomendado</p>
+                <p className="mt-2">Primero define el título, luego el cobro y al final selecciona el paquete o cursos incluidos.</p>
+              </div>
+            </aside>
           </div>
-
-          {/* Columna derecha: Resumen */}
-          <aside className="border-t lg:border-t-0 lg:border-l border-ink-900/10 bg-cream p-7 space-y-6">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.36em] text-ink-500">Resumen</p>
-              <h4 className="mt-1 font-serif text-2xl text-ink-900 leading-tight">
-                {title.trim() || "Oferta sin título"}
-              </h4>
-              {description && (
-                <p className="mt-2 text-sm text-ink-600 font-serif">{description}</p>
-              )}
-            </div>
-
-            <dl className="text-sm">
-              <SummaryRow label="Estado" value={status === "published" ? "Publicada" : "Borrador"} />
-              <SummaryRow label="Cobro" value={billing === "month" ? "Mensual" : billing === "year" ? "Anual" : "De por vida"} />
-              {billing !== "lifetime" && (
-                <SummaryRow
-                  label="Duración"
-                  value={`${durationValue} ${
-                    billing === "month"
-                      ? durationValue === 1
-                        ? "mes"
-                        : "meses"
-                      : durationValue === 1
-                        ? "año"
-                        : "años"
-                  }`}
-                />
-              )}
-              <SummaryRow label="Precio" value={priceLabel} strong />
-              <SummaryRow label="Contenido" value={`${selectedCount}`} />
-            </dl>
-
-            <div className="border-t border-ink-900/10 pt-4">
-              <p className="text-[10px] uppercase tracking-[0.32em] text-ink-500 mb-1">Orden recomendado</p>
-              <p className="text-xs text-ink-600 leading-relaxed">
-                Primero define el título, luego el cobro y al final selecciona los cursos incluidos.
-              </p>
-            </div>
-          </aside>
         </div>
 
-        {/* Footer */}
-        <footer className="flex justify-end gap-3 border-t border-ink-900/10 p-5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-h-11 rounded-full border border-ink-900/20 px-5 text-sm font-medium hover:border-ink-900 cursor-pointer"
-          >
+        <footer className="flex flex-col-reverse gap-3 border-t border-ink-900/10 bg-white px-5 py-4 sm:flex-row sm:justify-end sm:px-8">
+          <button type="button" onClick={onClose} className="min-h-11 rounded-full border border-ink-900/20 px-6 text-sm font-semibold transition-colors hover:border-ink-900">
             Cancelar
           </button>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={create.isPending || !title.trim()}
-            className="min-h-11 rounded-full bg-ink-900 px-6 text-sm font-medium text-cream disabled:opacity-40 hover:bg-black cursor-pointer"
-          >
-            {create.isPending ? "Creando…" : "Crear oferta"}
+          <button type="button" onClick={submit} disabled={create.isPending || !title.trim()} className="min-h-11 rounded-full bg-ink-900 px-8 text-sm font-semibold text-white transition-colors hover:bg-ink-700 disabled:opacity-50">
+            {create.isPending ? "Creando..." : "Crear oferta"}
           </button>
         </footer>
       </div>
@@ -635,42 +657,13 @@ function NewOfferModal({ courses, onClose }: { courses: Course[]; onClose: () =>
   );
 }
 
-function Section({
-  number,
-  title,
-  children,
-}: {
-  number: string;
-  title: string;
-  children: ReactNode;
-}) {
+function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
-    <section className="border border-ink-900/10 rounded-xl bg-white p-5">
-      <header className="flex items-center gap-3 mb-4">
-        <span className="grid place-items-center w-7 h-7 rounded-full bg-ink-900 text-cream text-[10px] font-mono">
-          {number}
-        </span>
-        <h4 className="font-serif text-ink-900 text-lg">{title}</h4>
-      </header>
-      <div className="grid gap-3">{children}</div>
-    </section>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="grid gap-1.5">
-      <span className="text-[11px] font-medium text-ink-600">{label}</span>
-      {children}
-    </label>
-  );
-}
-
-function SummaryRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
-  return (
-    <div className="flex items-baseline justify-between py-1.5 border-b border-ink-900/5 last:border-0">
-      <dt className="text-ink-500 text-xs">{label}</dt>
-      <dd className={"text-ink-900 " + (strong ? "font-serif text-lg" : "text-sm")}>{value}</dd>
+    <div className="flex items-center gap-3">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink-900 text-[10px] font-semibold text-white">
+        {eyebrow}
+      </span>
+      <h4 className="text-sm font-semibold text-ink-900">{title}</h4>
     </div>
   );
 }
@@ -755,6 +748,7 @@ function OfferRow({
   onStats,
   onEdit,
   onToggleStatus,
+  onDelete,
 }: {
   offer: OfferRecord;
   metrics: OfferMetrics;
@@ -763,6 +757,7 @@ function OfferRow({
   onStats: () => void;
   onEdit: () => void;
   onToggleStatus: () => void;
+  onDelete: () => void;
 }) {
   const isMenuOpen = openMenu === offer.id;
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -810,6 +805,9 @@ function OfferRow({
       </td>
       <td className="py-4">{offer.products}</td>
       <td className="py-4">{formatOfferPrice(offer)}</td>
+      <td className="py-4 text-xs text-ink-600">
+        {offer.expiresAt ? new Date(offer.expiresAt).toLocaleDateString("es-MX") : "Sin vencimiento"}
+      </td>
       <td className="py-4">{metrics.qtySold}</td>
       <td className="py-4">
         {formatMoney(metrics.netRevenue, offer.currency)}
@@ -858,7 +856,9 @@ function OfferRow({
             position={menuPosition}
             onClose={() => setOpenMenu(null)}
             onCopy={copyLink}
+            onEdit={onEdit}
             onStats={onStats}
+            onDelete={onDelete}
           />
         )}
       </td>
@@ -870,13 +870,17 @@ function MoreMenu({
   offer,
   onClose,
   onCopy,
+  onEdit,
   onStats,
+  onDelete,
   position,
 }: {
   offer: OfferRecord;
   onClose: () => void;
   onCopy: () => void;
+  onEdit: () => void;
   onStats: () => void;
+  onDelete: () => void;
   position: { left: number; top: number } | null;
 }) {
   const itemClass =
@@ -892,6 +896,16 @@ function MoreMenu({
       <Link className={itemClass} to={offer.checkoutPath} onClick={onClose}>
         <EyeIcon /> Vista previa
       </Link>
+      <button
+        type="button"
+        className={itemClass}
+        onClick={() => {
+          onClose();
+          onEdit();
+        }}
+      >
+        <EditIcon /> Editar
+      </button>
       <button
         type="button"
         className={itemClass}
@@ -920,8 +934,7 @@ function MoreMenu({
           type="button"
           className="flex min-h-10 w-full cursor-pointer items-center gap-3 px-4 text-left text-sm text-red-600 hover:bg-red-50"
           onClick={() => {
-            toast.success("Opción de eliminar lista");
-            onClose();
+            onDelete();
           }}
         >
           <TrashIcon /> Eliminar
@@ -1445,7 +1458,7 @@ function collectOffers(courses: Course[]): OfferRecord[] {
       Array<
         Partial<OfferRecord> & {
           access?: string;
-          paymentType?: "free" | "one_time";
+          paymentType?: "free" | "one_time" | "subscription";
           price?: number;
         }
       >
@@ -1466,6 +1479,9 @@ function collectOffers(courses: Course[]): OfferRecord[] {
     return rawOffers.map((offer) => ({
       id: String(offer.id || crypto.randomUUID()),
       courseId,
+      targetType: "course",
+      targetId: courseId,
+      content: [{ courseId, access: "full", moduleIds: [] }],
       title: String(offer.title || course.title),
       status: offer.status === "draft" ? "draft" : "published",
       products: 1,
@@ -1474,35 +1490,52 @@ function collectOffers(courses: Course[]): OfferRecord[] {
       paymentType:
         offer.paymentType === "free"
           ? "free"
+          : offer.paymentType === "subscription"
+            ? "subscription"
           : Number(offer.price || course.price) > 0
             ? "one_time"
             : "free",
       thumbnail: String(offer.thumbnail || course.thumbnail || ""),
       courseTitle: course.title,
+      expiresAt: null,
       checkoutPath: `/checkout?offer=${encodeURIComponent(String(offer.id || courseId))}`,
     }));
   });
 }
 
-function mapPersistedOffer(offer: Offer, courses: Course[]): OfferRecord {
+function mapPersistedOffer(offer: Offer, courses: Course[], packages: Package[]): OfferRecord {
   const firstContent = offer.content?.[0];
   const firstCourse = courses.find((course) => (course._id || course.id) === firstContent?.courseId);
-  const products = offer.content?.reduce((sum, item) => {
+  const targetPackage = offer.targetType === "package"
+    ? packages.find((pkg) => (pkg._id || pkg.id) === offer.targetId)
+    : undefined;
+  const packageContent =
+    targetPackage?.courseIds.map((courseId) => ({
+      courseId,
+      access: "full" as const,
+      moduleIds: [],
+    })) ?? [];
+  const normalizedContent = offer.content?.length ? offer.content : packageContent;
+  const products = normalizedContent.reduce((sum, item) => {
     if (item.access === "full") return sum + 1;
-    return sum + Math.max(1, item.moduleIds.length);
-  }, 0) ?? 0;
+    return sum + Math.max(1, item.moduleIds?.length ?? 0);
+  }, 0);
 
   return {
     id: offer._id || offer.id || offer.slug,
-    courseId: firstContent?.courseId || "",
+    courseId: normalizedContent[0]?.courseId || "",
+    targetType: offer.targetType || "course",
+    targetId: offer.targetId || normalizedContent[0]?.courseId || "",
+    content: normalizedContent,
     title: offer.title,
     status: offer.status === "draft" ? "draft" : "published",
     products,
     price: Number(offer.price || 0),
     currency: offer.currency || "MXN",
-    paymentType: Number(offer.price || 0) > 0 ? "one_time" : "free",
+    paymentType: offer.paymentType || (Number(offer.price || 0) > 0 ? "one_time" : "free"),
     thumbnail: firstCourse?.thumbnail || "",
-    courseTitle: firstCourse?.title || `${products} producto${products === 1 ? "" : "s"}`,
+    courseTitle: targetPackage?.name || firstCourse?.title || `${products} producto${products === 1 ? "" : "s"}`,
+    expiresAt: offer.expiresAt,
     checkoutPath: `/checkout?offer=${encodeURIComponent(offer._id || offer.id || offer.slug)}`,
   };
 }
@@ -1743,6 +1776,22 @@ function DuplicateIcon() {
   );
 }
 
+function EditIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      className="h-4 w-4"
+    >
+      <path strokeLinecap="round" d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+    </svg>
+  );
+}
+
 function DownloadIcon() {
   return (
     <svg
@@ -1808,16 +1857,22 @@ interface OfferFullSettings {
 }
 
 function defaultFullSettings(offer: OfferRecord): OfferFullSettings {
+  const productIds = Array.from(
+    new Set(
+      (offer.content ?? [])
+        .map((item) => item.courseId)
+        .filter(Boolean),
+    ),
+  );
+  if (productIds.length === 0 && offer.courseId && offer.courseId !== "standalone") {
+    productIds.push(offer.courseId);
+  }
+
   return {
     title: offer.title,
     internalTitle: "",
     description: "",
-    paymentType:
-      offer.paymentType === "free"
-        ? "free"
-        : offer.title.toLowerCase().includes("mensual") || offer.title.toLowerCase().includes("suscripcion")
-        ? "subscription"
-        : "one_time",
+    paymentType: offer.paymentType,
     price: offer.price,
     currency: offer.currency || "MXN",
     billingInterval: "month",
@@ -1840,8 +1895,7 @@ function defaultFullSettings(offer: OfferRecord): OfferFullSettings {
     affiliateEnabled: false,
     affiliateType: "percentage",
     affiliateValue: "20",
-    selectedProductIds:
-      offer.courseId && offer.courseId !== "standalone" ? [offer.courseId] : [],
+    selectedProductIds: productIds,
   };
 }
 
@@ -1850,18 +1904,27 @@ type EditOfferTab = "details" | "pricing" | "flow" | "settings";
 function OfferEditView({
   offer,
   courses,
+  packages,
   onBack,
   onSave,
 }: {
   offer: OfferRecord;
   courses: Course[];
+  packages: Package[];
   onBack: () => void;
   onSave: (patch: Partial<OfferRecord>) => void;
 }) {
+  const updatePackage = useUpdatePackage();
   const settingsKey = `dd-offer-full-${offer.id}`;
   const [settings, setSettings] = useState<OfferFullSettings>(() => {
     const saved = loadJson<Partial<OfferFullSettings>>(settingsKey, {});
-    return { ...defaultFullSettings(offer), ...saved };
+    const defaults = defaultFullSettings(offer);
+    return {
+      ...defaults,
+      ...saved,
+      selectedProductIds:
+        saved.selectedProductIds?.length ? saved.selectedProductIds : defaults.selectedProductIds,
+    };
   });
   const [tab, setTab] = useState<EditOfferTab>("details");
   const [editCheckout, setEditCheckout] = useState(false);
@@ -1872,14 +1935,40 @@ function OfferEditView({
     setSettings((prev) => ({ ...prev, [key]: value }));
 
   const handleSave = () => {
-    localStorage.setItem(settingsKey, JSON.stringify(settings));
-    onSave({
+    const content = settings.selectedProductIds.map((courseId) => ({
+      courseId,
+      access: "full" as const,
+      moduleIds: [],
+    }));
+    const patch: Partial<OfferRecord> = {
       title: settings.title,
       status: settings.status,
       price: settings.price,
       currency: settings.currency,
-      paymentType: settings.paymentType === "subscription" ? "one_time" : settings.paymentType,
-    });
+      paymentType: settings.paymentType,
+      targetType: offer.targetType,
+      targetId: offer.targetId,
+      content,
+      products: content.length,
+    };
+    const finishSave = () => {
+      localStorage.setItem(settingsKey, JSON.stringify(settings));
+      onSave(patch);
+    };
+    const targetPackage = packages.find((pkg) => (pkg._id || pkg.id) === offer.targetId);
+    if (offer.targetType === "package" && targetPackage) {
+      updatePackage.mutate(
+        {
+          id: offer.targetId,
+          data: {
+            courseIds: settings.selectedProductIds,
+          },
+        },
+        { onSuccess: finishSave },
+      );
+      return;
+    }
+    finishSave();
   };
 
   const selectedCourses = courses.filter((c) => {
@@ -2096,16 +2185,11 @@ function OfferEditView({
               <div className="rounded-2xl border border-ink-900/10 bg-white p-6 shadow-sm">
                 <h2 className="text-base font-semibold">Product Access</h2>
                 <p className="mt-0.5 text-sm text-ink-500">
-                  Set limits for members who purchase this Offer.
+                  El acceso anual se activa automáticamente el día de compra y termina 365 días después.
                 </p>
-                <label className="mt-4 flex cursor-pointer items-center gap-3 text-sm">
-                  <input type="checkbox" className="h-4 w-4 rounded border-ink-900/30" />
-                  Begin access at a specific date
-                </label>
-                <label className="mt-3 flex cursor-pointer items-center gap-3 text-sm">
-                  <input type="checkbox" className="h-4 w-4 rounded border-ink-900/30" />
-                  Restrict access to a specific amount of days
-                </label>
+                <div className="mt-4 rounded-xl border border-ink-900/10 bg-cream-100 px-4 py-3 text-sm text-ink-700">
+                  Sin fechas manuales: anual = hoy + 365 días.
+                </div>
               </div>
             </div>
           )}
@@ -2157,30 +2241,11 @@ function OfferEditView({
                 )}
 
                 {settings.paymentType === "subscription" && (
-                  <div className="mt-5 grid grid-cols-2 gap-4">
-                    <label className="block">
-                      <span className="text-sm font-medium">Bill the customer every</span>
-                      <input
-                        type="number"
-                        min={1}
-                        value={settings.billingCount}
-                        onChange={(e) => upd("billingCount", Number(e.target.value))}
-                        className="mt-1.5 block w-full rounded-lg border border-ink-900/20 px-3 py-2.5 text-sm outline-none focus:border-ink-900"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-sm font-medium">Billing interval</span>
-                      <select
-                        value={settings.billingInterval}
-                        onChange={(e) =>
-                          upd("billingInterval", e.target.value as "month" | "year")
-                        }
-                        className="mt-1.5 min-h-11 w-full rounded-lg border border-ink-900/20 bg-white px-3 text-sm"
-                      >
-                        <option value="month">month</option>
-                        <option value="year">year</option>
-                      </select>
-                    </label>
+                  <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="rounded-xl border border-ink-900/10 bg-cream-100 px-4 py-3">
+                      <span className="text-sm font-medium">Periodo de cobro</span>
+                      <p className="mt-1 text-sm text-ink-600">Anual automático: inicia hoy y vence en 365 días.</p>
+                    </div>
                     <label className="block">
                       <span className="text-sm font-medium">
                         Trial period days{" "}

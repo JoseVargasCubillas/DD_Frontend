@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { listAllSubscriptions } from '@api/subscriptions.api';
+import ManagePackages from '@pages/Admin/ManagePackages';
 
 function fmtDate(iso?: string) {
   if (!iso) return '—';
@@ -43,12 +44,21 @@ export default function ManageSubscriptions() {
       <header className="mb-8">
         <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-3">Academia</p>
         <h1 className="font-serif text-4xl md:text-5xl text-ink-900 leading-none">Suscripciones</h1>
-        <p className="text-sm text-ink-600 mt-3 max-w-2xl">
-          Registro de todos los <b>Paquetes</b> asignados a clientes. Para otorgar uno nuevo, entra al perfil de un
-          contacto en <span className="font-mono text-[11px] px-1.5 py-0.5 bg-cream-200 border border-ink-900/10">/admin/contactos</span>{' '}
-          y usa <em>“Asignar paquete”</em>.
+        <p className="text-sm text-ink-600 mt-3 max-w-3xl">
+          Los tres planes de la Academia. Edita precio, tiempo, cursos incluidos y beneficios. Cada uno
+          genera un link de pago con Stripe (envíaselo al cliente) y puedes también otorgarlo manualmente
+          por email. La tabla de abajo lista todas las suscripciones activas.
         </p>
       </header>
+
+      {/* Config de los 3 tiers + venta / asignación */}
+      <ManagePackages hideHeader />
+
+      <section className="mt-16">
+        <header className="mb-4">
+          <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-2">Registro</p>
+          <h2 className="font-serif text-2xl md:text-3xl text-ink-900 leading-none">Clientes con suscripción activa</h2>
+        </header>
 
       <div className="bg-cream-100 border border-ink-900/15 overflow-hidden overflow-x-auto">
         <table className="w-full text-sm min-w-[900px]">
@@ -140,6 +150,7 @@ export default function ManageSubscriptions() {
           </tbody>
         </table>
       </div>
+      </section>
     </div>
   );
 }

@@ -25,6 +25,10 @@ export default function Login() {
   const { login, isLoading } = useAuth();
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
   const [showPwd, setShowPwd] = useState(false);
+  const onSubmit = (data: LoginFormData) => {
+    if (isLoading) return;
+    login(data);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -134,7 +138,7 @@ export default function Login() {
 
             <span className="ink-rule mb-10 text-ink-900/40" />
 
-            <form onSubmit={handleSubmit((d) => login(d))} className="space-y-7">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-7">
               {/* Email */}
               <div className="ink-field">
                 <label htmlFor="email" className="ink-label block mb-1">Correo</label>

@@ -26,7 +26,7 @@ const countdownLabels = [
   ['seconds', 'Seg'],
 ] as const;
 
-const FALLBACK_EVENT: Pick<SiteEvent, 'title' | 'slug' | 'shortDescription' | 'description' | 'location' | 'startDate' | 'endDate' | 'modality'> = {
+const FALLBACK_EVENT: Pick<SiteEvent, 'title' | 'slug' | 'shortDescription' | 'description' | 'location' | 'startDate' | 'endDate' | 'modality' | 'capacity' | 'registeredCount'> = {
   title: 'Estrategia Fiscal Edición CDMX',
   slug: EVENT_SLUG,
   shortDescription:
@@ -37,6 +37,8 @@ const FALLBACK_EVENT: Pick<SiteEvent, 'title' | 'slug' | 'shortDescription' | 'd
   startDate: EVENT_DATE,
   endDate: '2026-06-15T18:00:00-06:00',
   modality: 'in-person',
+  capacity: 80,
+  registeredCount: 57,
 };
 
 const loadStoredEvent = () => {
@@ -415,6 +417,12 @@ export default function EstrategiaFiscalLanding() {
     currentEvent.endDate && !Number.isNaN(new Date(currentEvent.endDate).getTime())
       ? formatLandingTime(currentEvent.endDate)
       : '18:00';
+  const currentEventCapacity = Math.max(Number(currentEvent.capacity || 0), 0);
+  const currentEventRegistered = Math.max(Number(currentEvent.registeredCount || 0), 0);
+  const currentEventRemaining =
+    currentEventCapacity > 0
+      ? Math.max(currentEventCapacity - currentEventRegistered, 0)
+      : null;
   const countdown = useCountdown(currentEventDate);
   const featuredSpeakers = speakers;
   const countdownEntries = useMemo(
@@ -428,14 +436,24 @@ export default function EstrategiaFiscalLanding() {
       <header className="border-b border-cream-400 bg-cream-200">
         <div className="mx-auto max-w-[1440px] px-5 pb-12 pt-7 sm:px-8 lg:px-14 lg:pb-[75px] lg:pt-10">
           <div className="grid gap-3 border-b border-cream-400 pb-4 text-[9px] uppercase tracking-[0.32em] text-ink-300 sm:grid-cols-[1fr_auto]">
-            <p>— Próximo evento · Seminario presencial</p>
-            <p>23 / 80 / Total · Quedan 23 cupos</p>
+            <p>— Evento · {currentEventModality}</p>
+            <p>
+              {currentEventRemaining !== null
+                ? `${currentEventRemaining} / ${currentEventCapacity} · Quedan ${currentEventRemaining} cupos`
+                : 'Cupos por confirmar'}
+            </p>
           </div>
 
           <div className="mt-[38px] flex flex-wrap items-center gap-3 text-[8px] uppercase tracking-[0.28em] text-ink-400">
-            <span className="border border-ink-900 bg-ink-900 px-4 py-2 text-white">Seminario · 1 día</span>
-            <span className="border border-cream-400 px-4 py-2">CDMX · WTC</span>
-            <span className="border border-cream-400 px-4 py-2">+ 90 · 15 Jun</span>
+            <span className="border border-ink-900 bg-ink-900 px-4 py-2 text-white">
+              {currentEventModality}
+            </span>
+            <span className="border border-cream-400 px-4 py-2">
+              {currentEventLocation}
+            </span>
+            <span className="border border-cream-400 px-4 py-2">
+              {currentEventTime} - {currentEventEndTime}
+            </span>
           </div>
 
           <h1 className="ef-hero-title mt-7 max-w-[760px] text-[clamp(64px,11vw,156px)] leading-[0.78] tracking-[-0.075em] text-ink-900">
@@ -500,7 +518,9 @@ export default function EstrategiaFiscalLanding() {
               Descargar dossier ↓
             </a>
             <p className="text-[9px] uppercase tracking-[0.32em] text-ink-400">
-              — Cierra el 10 Jun · 23 cupos restantes
+              {currentEventRemaining !== null
+                ? `— ${currentEventRemaining} cupos restantes`
+                : '— Cupos por confirmar'}
             </p>
           </div>
         </div>

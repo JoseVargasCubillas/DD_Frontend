@@ -85,7 +85,7 @@ export default function ManageCourses() {
     includeAll: true,
     limit: 200,
   });
-  const courses = data?.data ?? [];
+  const courses = (data?.data ?? []).filter((course) => course.status !== "archived");
   const [showWizard, setShowWizard] = useState(false);
   const [showDriveImport, setShowDriveImport] = useState(false);
   const [showProductDialog, setShowProductDialog] = useState<
@@ -1135,8 +1135,9 @@ function DriveImportDialog({ onClose }: { onClose: () => void }) {
   const [preview, setPreview] = useState<DrivePreviewResult | null>(null);
   const mutation = useMutation({
     mutationFn: importDriveCourses,
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["courses"] });
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["courses"] });
+      await queryClient.refetchQueries({ queryKey: ["courses"] });
       toast.success(
         `Importados ${result.createdCourses} cursos nuevos, ${result.updatedCourses} actualizados, ${result.createdModules} modulos y ${result.createdLessons} lecciones`,
       );

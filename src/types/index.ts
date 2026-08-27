@@ -83,6 +83,7 @@ export interface Package {
   stripePriceId?: string;
   courseIds: string[];
   durationDays: number;
+  expiresAt?: string | null;
   isActive: boolean;
   isFeatured: boolean;
   tier?: PackageTier;
@@ -128,6 +129,7 @@ export interface Course {
   instructor: User | string;
   totalDuration: number;
   totalLessons: number;
+  modules?: Module[];
   lessons?: Lesson[];
   enrolledCount: number;
   rating: number;
@@ -159,6 +161,8 @@ export interface Offer {
   paymentType?: PaymentType;
   stripePriceId?: string;
   plan?: Plan;
+  targetType?: "course" | "package" | "product";
+  targetId?: string;
   content: OfferContentItem[];
   assignedUserIds: string[];
   startsAt?: string | null;
@@ -172,6 +176,7 @@ export interface Lesson {
   title: string;
   slug: string;
   course: string;
+  moduleId?: string;
   order: number;
   description: string;
   videoUrl: string;

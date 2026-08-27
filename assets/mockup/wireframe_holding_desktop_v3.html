@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Holding · El legado de los empresarios · Diego Díaz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script>document.documentElement.classList.add('js');</script>
+<style>
+:root{
+  --paper:#f5f2ec; --paper-2:#ede8df; --paper-3:#e3ddd0;
+  --ink:#0a0a0a; --ink-2:#1a1a1a;
+  --line:rgba(10,10,10,0.12); --line-strong:rgba(10,10,10,0.32);
+  --accent:#6b4f2a; --accent-2:#8a6a3d;
+  --muted:#6b6258;
+  --font-display:'Libre Baskerville', Baskerville, Georgia, serif;
+  --font-body:'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --noise:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.4 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-weight:400;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;width:1440px;}
+body::before{content:"";position:fixed;inset:0;background-image:var(--noise);opacity:0.4;mix-blend-mode:multiply;pointer-events:none;z-index:0;}
+body > *{position:relative;z-index:1;}
+a{color:inherit;text-decoration:none;}
+button{font:inherit;cursor:pointer;border:0;background:transparent;}
+
+.container{max-width:1312px;margin:0 auto;padding:0 64px;}
+.container-wide{max-width:1440px;margin:0 auto;padding:0 64px;}
+.it{font-style:italic;}
+.muted{color:var(--muted);}
+
+/* ========== NAV (mismo) ========== */
+nav.site-nav{position:sticky;top:0;z-index:50;background:rgba(245,242,236,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--line);}
+.nav-inner{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:32px;padding:18px 64px;max-width:1440px;margin:0 auto;}
+.nav-brand{font-family:var(--font-display);font-style:italic;font-size:18px;}
+.nav-items{display:flex;gap:32px;justify-content:center;font-size:13px;}
+.nav-items a.active{border-bottom:1px solid var(--ink);padding-bottom:2px;}
+.nav-cta{display:inline-flex;align-items:center;gap:10px;background:var(--ink);color:var(--paper);padding:10px 20px;font-size:11px;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;}
+
+/* ========== HERO DARK ========== */
+.hero{
+  background:var(--ink);color:var(--paper);
+  padding:0;position:relative;overflow:hidden;
+}
+.hero::before{content:"";position:absolute;inset:0;background-image:var(--noise);opacity:0.30;mix-blend-mode:screen;pointer-events:none;}
+.hero::after{
+  content:"";position:absolute;
+  right:-160px;top:-120px;width:800px;height:800px;border-radius:50%;
+  background:radial-gradient(circle, rgba(180,150,110,0.22) 0%, transparent 60%);
+  pointer-events:none;
+}
+.hero-topbar{
+  background:var(--paper);color:var(--ink);
+  padding:14px 0;text-align:center;
+  font-family:var(--font-body);font-size:10px;font-weight:500;
+  letter-spacing:0.26em;text-transform:uppercase;
+  position:relative;z-index:2;
+}
+.hero-topbar .sep{margin:0 14px;color:var(--muted);}
+.hero-inner{
+  padding:88px 0 96px;position:relative;z-index:1;
+  max-width:1312px;margin:0 auto;padding-left:64px;padding-right:64px;
+}
+.hero-eyebrow{
+  font-family:var(--font-body);font-size:10.5px;font-weight:500;
+  letter-spacing:0.30em;text-transform:uppercase;
+  color:rgba(245,242,236,0.55);
+  padding-bottom:20px;border-bottom:1px solid rgba(245,242,236,0.20);
+  margin-bottom:40px;
+  display:flex;justify-content:space-between;
+}
+.hero-eyebrow .n{color:var(--accent-2);}
+.hero-title{
+  font-family:var(--font-display);font-weight:400;
+  font-size:200px;line-height:0.88;letter-spacing:-0.035em;
+  color:var(--paper);
+  margin-bottom:12px;
+}
+.hero-title .it{font-style:italic;}
+.hero-sub{
+  font-family:var(--font-body);font-size:11px;font-weight:500;
+  letter-spacing:0.30em;text-transform:uppercase;
+  color:rgba(245,242,236,0.65);
+  margin-bottom:56px;
+}
+.hero-body{
+  font-family:var(--font-body);font-size:15px;line-height:1.7;
+  color:rgba(245,242,236,0.82);
+  max-width:640px;
+  margin-bottom:56px;
+}
+.hero-meta{
+  display:grid;grid-template-columns:auto auto auto 1fr;
+  gap:48px;align-items:center;
+  padding:24px 0;
+  border-top:1px solid rgba(245,242,236,0.20);
+  border-bottom:1px solid rgba(245,242,236,0.20);
+  margin-bottom:40px;
+}
+.hero-meta-item{
+  display:flex;flex-direction:column;gap:4px;
+}
+.hero-meta-item .lbl{
+  font-family:var(--font-body);font-size:9.5px;font-weight:500;
+  letter-spacing:0.24em;text-transform:uppercase;color:rgba(245,242,236,0.50);
+}
+.hero-meta-item .val{
+  font-family:var(--font-display);font-style:italic;font-size:18px;
+  color:var(--paper);
+}
+.hero-cta{
+  display:inline-flex;align-items:center;gap:24px;
+  padding:18px 32px;
+  background:var(--paper);color:var(--ink);
+  font-family:var(--font-body);font-size:11px;font-weight:500;
+  letter-spacing:0.24em;text-transform:uppercase;
+  border:1px solid var(--paper);
+}
+.hero-cta .arrow{font-family:var(--font-display);font-style:italic;font-size:15px;letter-spacing:0;}
+
+/* ========== SECTION HEADER ========== */
+.section-header{display:grid;grid-template-columns:1fr auto;gap:32px;align-items:flex-start;padding-bottom:28px;margin-bottom:56px;border-bottom:1px solid var(--line);}
+.section-header .marker{display:none;}
+.section-header .title h2{font-family:var(--font-display);font-weight:400;font-size:52px;line-height:1;letter-spacing:-0.022em;}
+.section-header .title h2 .it{font-style:italic;}
+.section-header .title p{font-family:var(--font-body);font-size:15px;line-height:1.6;color:#2a2a2a;margin-top:16px;max-width:640px;}
+.section-header .tag{font-size:10px;font-weight:500;letter-spacing:0.20em;text-transform:uppercase;color:var(--muted);text-align:right;padding-top:12px;line-height:1.6;}
+
+/* ========== PROBLEMAS ========== */
+.problemas{padding:120px 0 64px;}
+.prob-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1px;background:var(--line);border:1px solid var(--line);
+  margin-top:8px;
+}
+.prob-card{
+  background:var(--paper);
+  padding:40px 32px 36px;
+  display:flex;flex-direction:column;gap:14px;
+  min-height:260px;
+}
+.prob-num{
+  font-family:var(--font-body);font-size:10px;font-weight:500;
+  letter-spacing:0.22em;text-transform:uppercase;color:var(--accent);
+}
+.prob-title{
+  font-family:var(--font-display);font-weight:400;
+  font-size:26px;line-height:1.1;letter-spacing:-0.014em;
+  color:var(--ink);
+}
+.prob-title .it{font-style:italic;}
+.prob-body{
+  font-family:var(--font-body);font-size:13.5px;line-height:1.65;
+  color:#2a2a2a;
+}
+.prob-body strong{font-weight:500;color:var(--ink);}
+
+/* ========== SUB CTA ========== */
+.subcta{padding:96px 0 128px;text-align:center;}
+.subcta h3{
+  font-family:var(--font-display);font-weight:400;
+  font-size:56px;line-height:1.05;letter-spacing:-0.022em;
+  max-width:960px;margin:0 auto 20px;
+}
+.subcta h3 .it{font-style:italic;}
+.subcta .lead{
+  font-family:var(--font-display);font-style:italic;font-size:18px;
+  color:#2a2a2a;
+  margin-bottom:36px;
+}
+.subcta .btn-ink{
+  display:inline-flex;align-items:center;gap:20px;
+  padding:18px 32px;
+  background:var(--ink);color:var(--paper);
+  font-family:var(--font-body);font-size:11px;font-weight:500;
+  letter-spacing:0.24em;text-transform:uppercase;
+}
+.subcta .btn-ink .arrow{font-family:var(--font-display);font-style:italic;font-size:15px;letter-spacing:0;}
+
+/* ========== TEMARIO (DARK) ========== */
+.temario{
+  background:var(--ink);color:var(--paper);
+  padding:120px 0 128px;position:relative;
+}
+.temario::before{content:"";position:absolute;inset:0;background-image:var(--noise);opacity:0.25;mix-blend-mode:screen;pointer-events:none;}
+.temario > .container, .temario > .container-wide{position:relative;}
+.temario .section-header{border-color:rgba(245,242,236,0.20);}
+.temario .section-header .title h2{color:var(--paper);}
+.temario .section-header .title p{color:rgba(245,242,236,0.75);}
+.temario .section-header .tag{color:rgba(245,242,236,0.55);}
+.temario .section-header .marker{color:var(--paper);}
+
+.tem-list{display:flex;flex-direction:column;gap:1px;background:rgba(245,242,236,0.18);border:1px solid rgba(245,242,236,0.20);}
+.tem-block{
+  background:var(--ink);
+  padding:44px 48px 44px;
+  display:grid;grid-template-columns:1fr 1.2fr;
+  gap:48px;align-items:flex-start;
+}
+.tem-num{
+  font-family:var(--font-display);font-weight:400;
+  font-size:64px;line-height:0.9;letter-spacing:-0.02em;
+  color:var(--paper);
+}
+.tem-num .ord{font-family:var(--font-display);font-style:italic;font-size:18px;color:var(--accent-2);vertical-align:0.6em;margin-left:4px;}
+.tem-head h3{
+  font-family:var(--font-display);font-weight:400;
+  font-size:32px;line-height:1.08;letter-spacing:-0.018em;
+  color:var(--paper);
+  margin-bottom:14px;
+}
+.tem-head h3 .it{font-style:italic;}
+.tem-head p{
+  font-family:var(--font-body);font-size:13.5px;line-height:1.7;
+  color:rgba(245,242,236,0.72);
+  max-width:420px;
+}
+.tem-items{
+  list-style:none;padding:0;margin:0;
+  display:flex;flex-direction:column;gap:0;
+  border-top:1px solid rgba(245,242,236,0.18);
+}
+.tem-items li{
+  padding:12px 0;
+  border-bottom:1px solid rgba(245,242,236,0.14);
+  font-family:var(--font-body);font-size:13px;line-height:1.5;
+  color:rgba(245,242,236,0.85);
+}
+.tem-items li .n{
+  font-size:9.5px;font-weight:500;letter-spacing:0.22em;
+  text-transform:uppercase;color:rgba(245,242,236,0.45);
+  padding-top:3px;
+}
+.tem-items li .it{font-style:italic;color:rgba(245,242,236,0.65);}
+
+/* ========== INVERSIÓN (DARKER) ========== */
+.inversion{
+  background:var(--ink-2);color:var(--paper);
+  padding:128px 0;
+  position:relative;text-align:center;
+  border-top:1px solid rgba(245,242,236,0.10);
+}
+.inversion::before{content:"";position:absolute;inset:0;background-image:var(--noise);opacity:0.22;mix-blend-mode:screen;pointer-events:none;}
+.inversion > *{position:relative;}
+.inv-eye{
+  font-family:var(--font-body);font-size:11px;font-weight:500;
+  letter-spacing:0.32em;text-transform:uppercase;
+  color:rgba(245,242,236,0.55);
+  margin-bottom:36px;
+}
+.inv-title{
+  font-family:var(--font-display);font-weight:400;
+  font-size:88px;line-height:0.95;letter-spacing:-0.025em;
+  color:var(--paper);
+  margin-bottom:32px;
+}
+.inv-title .it{font-style:italic;}
+.inv-price{
+  font-family:var(--font-display);font-weight:400;
+  font-size:216px;line-height:0.9;letter-spacing:-0.045em;
+  color:var(--paper);
+  margin-bottom:48px;
+}
+.inv-price .cents{
+  font-family:var(--font-display);font-style:italic;font-size:60px;
+  vertical-align:0.9em;color:var(--accent-2);
+  margin-left:6px;
+}
+.inv-price .cur{
+  font-family:var(--font-body);font-size:24px;font-weight:500;
+  letter-spacing:0.28em;text-transform:uppercase;
+  vertical-align:1em;color:rgba(245,242,236,0.60);
+  margin-right:12px;
+}
+.inv-cta{
+  display:inline-flex;align-items:center;gap:24px;
+  padding:22px 40px;
+  background:var(--paper);color:var(--ink);
+  font-family:var(--font-body);font-size:12px;font-weight:500;
+  letter-spacing:0.28em;text-transform:uppercase;
+}
+.inv-cta .arrow{font-family:var(--font-display);font-style:italic;font-size:16px;letter-spacing:0;}
+.inv-note{
+  margin-top:28px;
+  font-family:var(--font-display);font-style:italic;font-size:14px;
+  color:rgba(245,242,236,0.55);
+}
+
+/* ========== FOOTER MEGA (mismo, título "Blindar.") ========== */
+footer.site-foot{background:var(--ink);color:var(--paper);padding:80px 0 48px;border-top:1px solid rgba(245,242,236,0.18);}
+.foot-mega{font-family:var(--font-display);font-style:italic;font-weight:400;font-size:176px;line-height:0.92;letter-spacing:-0.035em;padding-bottom:48px;border-bottom:1px solid rgba(245,242,236,0.18);margin-bottom:48px;}
+.foot-cols{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr;gap:32px;margin-bottom:48px;}
+.foot-col strong{display:block;font-size:10px;font-weight:500;letter-spacing:0.20em;text-transform:uppercase;color:var(--paper);margin-bottom:18px;}
+.foot-col p, .foot-col a{display:block;font-size:12px;color:rgba(245,242,236,0.6);line-height:1.8;}
+.foot-bot{display:flex;justify-content:space-between;font-size:10px;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:rgba(245,242,236,0.45);padding-top:32px;border-top:1px solid rgba(245,242,236,0.18);}
+
+/* ============ MOTION ============ */
+
+/* Hover — cards & buttons */
+.prob-card{transition:background 400ms cubic-bezier(.2,.7,.2,1), transform 400ms cubic-bezier(.2,.7,.2,1);}
+.prob-card:hover{background:var(--paper-2);transform:translateY(-3px);}
+.prob-card .prob-title{transition:color 300ms ease;}
+.prob-card:hover .prob-title{color:var(--accent);}
+
+.tem-block{transition:background 400ms cubic-bezier(.2,.7,.2,1);}
+.tem-block:hover{background:var(--ink-2);}
+.tem-block .tem-head h3{transition:color 300ms ease;}
+.tem-block:hover .tem-head h3{color:var(--accent-2);}
+
+.tem-items li{transition:background 260ms ease, padding-left 260ms ease, color 260ms ease;}
+.tem-items li:hover{background:rgba(245,242,236,0.05);padding-left:14px;color:var(--paper);}
+
+.hero-cta, .subcta .btn-ink, .inv-cta, .nav-cta{
+  transition:transform 300ms cubic-bezier(.2,.7,.2,1),
+             background 300ms ease,
+             box-shadow 300ms ease,
+             color 300ms ease;
+}
+.hero-cta:hover, .inv-cta:hover{background:var(--paper-2);transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,0.28);}
+.subcta .btn-ink:hover{background:var(--accent);transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,0.18);}
+.nav-cta:hover{background:var(--accent);}
+
+.nav-items a{transition:color 200ms ease, border-color 200ms ease;}
+.nav-items a:hover{color:var(--accent);}
+
+/* Reveal — entrance animations on scroll (only apply when JS is available) */
+.js .reveal{
+  opacity:0;
+  transform:translateY(24px);
+  transition:opacity 800ms cubic-bezier(.2,.7,.2,1),
+             transform 800ms cubic-bezier(.2,.7,.2,1);
+  will-change:opacity, transform;
+}
+.js .reveal.in{opacity:1;transform:translateY(0);}
+.js .reveal.slow{transition-duration:1100ms;}
+.js .reveal.d1{transition-delay:80ms;}
+.js .reveal.d2{transition-delay:160ms;}
+.js .reveal.d3{transition-delay:240ms;}
+.js .reveal.d4{transition-delay:320ms;}
+.js .reveal.d5{transition-delay:400ms;}
+.js .reveal.d6{transition-delay:480ms;}
+
+.js .reveal-left{opacity:0;transform:translateX(-32px);transition:opacity 800ms cubic-bezier(.2,.7,.2,1), transform 800ms cubic-bezier(.2,.7,.2,1);}
+.js .reveal-left.in{opacity:1;transform:translateX(0);}
+
+.js .reveal-scale{opacity:0;transform:scale(0.94);transition:opacity 900ms cubic-bezier(.2,.7,.2,1), transform 900ms cubic-bezier(.2,.7,.2,1);}
+.js .reveal-scale.in{opacity:1;transform:scale(1);}
+
+@media (prefers-reduced-motion: reduce){
+  .reveal, .reveal-left, .reveal-scale{opacity:1;transform:none;transition:none;}
+  .prob-card, .tem-block, .hero-cta, .subcta .btn-ink, .inv-cta, .nav-cta, .tem-items li{transition:none;}
+  .prob-card:hover, .tem-block:hover, .hero-cta:hover, .subcta .btn-ink:hover, .inv-cta:hover{transform:none;box-shadow:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-brand">Diego <span class="it">Díaz.</span></a>
+    <div class="nav-items">
+      <a href="#" class="active">Sobre nosotros</a>
+      <a href="#">Tienda</a>
+      <a href="#">Capacitaciones</a>
+      <a href="#">Eventos</a>
+      <a href="#">Miembros</a>
+      <a href="#">Contenido gratuito</a>
+      <a href="#">Contacto</a>
+    </div>
+    <a href="#" class="nav-cta">Iniciar sesión <span>→</span></a>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-topbar">
+    <span>Cupos limitados</span><span class="sep">·</span><span>Blinda tu patrimonio</span>
+  </div>
+  <div class="hero-inner">
+    <div class="hero-eyebrow">
+      <span> · Masterclass exclusiva 2026</span>
+      <span>Vol. II · Legado</span>
+    </div>
+    <h1 class="hero-title reveal">Holding<span class="it">.</span></h1>
+    <div class="hero-sub reveal d1">— El legado de los empresarios</div>
+    <p class="hero-body reveal d2">Protege tu patrimonio, estructura tu empresa y construye un legado que trascienda. Descubre las estrategias fiscales y estructuras que los empresarios exitosos están implementando en 2026.</p>
+
+    <div class="hero-meta reveal d3">
+      <div class="hero-meta-item">
+        <span class="lbl">— Fecha</span>
+        <span class="val">Martes 28 de Julio.</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="lbl">— Modalidad</span>
+        <span class="val">Vía online.</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="lbl">— Cupo</span>
+        <span class="val">Limitado.</span>
+      </div>
+      <div></div>
+    </div>
+
+    <a href="#" class="hero-cta reveal d4">Asegura tu lugar ahora <span class="arrow">→</span></a>
+  </div>
+</section>
+
+<!-- ============ PROBLEMAS ============ -->
+<section class="problemas">
+  <div class="container">
+    <div class="section-header">
+      <div class="title reveal">
+        <h2>¿Reconoces estos problemas <span class="it">en tu empresa?</span></h2>
+        <p>El 2026 trae las reformas fiscales más agresivas de la última década. Tu empresa está en riesgo y la mayoría de los empresarios aún no lo saben.</p>
+      </div>
+      <div class="tag">El riesgo real<br>en 2026</div>
+    </div>
+  </div>
+  <div class="container-wide">
+    <div class="prob-grid">
+      <article class="prob-card reveal d1">
+        <h3 class="prob-title">Fiscalización <span class="it">agresiva.</span></h3>
+        <p class="prob-body">El SAT implementa Big Data, Machine Learning e IA para detectar irregularidades. Las revisiones son más frecuentes y sofisticadas que nunca.</p>
+      </article>
+      <article class="prob-card reveal d2">
+        <h3 class="prob-title">Certificados <span class="it">bloqueados.</span></h3>
+        <p class="prob-body">Empresas quedan paralizadas sin poder facturar por restricciones de CSD. Sin facturación, no hay operación.</p>
+      </article>
+      <article class="prob-card reveal d3">
+        <h3 class="prob-title">Cuentas <span class="it">inmovilizadas.</span></h3>
+        <p class="prob-body">Bloqueos bancarios repentinos por UIF, SAT o IMSS afectan el flujo de efectivo y pueden paralizar tu negocio.</p>
+      </article>
+      <article class="prob-card reveal d4">
+        <h3 class="prob-title">Patrimonio <span class="it">expuesto.</span></h3>
+        <p class="prob-body">Tener todo en una sola empresa significa que cualquier contingencia pone en riesgo <strong>todos</strong> tus activos.</p>
+      </article>
+      <article class="prob-card reveal d5">
+        <h3 class="prob-title">Sucesión <span class="it">sin plan.</span></h3>
+        <p class="prob-body">Sin estructura adecuada, heredar tu empresa significa una carga fiscal brutal para tus herederos.</p>
+      </article>
+      <article class="prob-card reveal d6">
+        <h3 class="prob-title">Carga fiscal <span class="it">excesiva.</span></h3>
+        <p class="prob-body">Pagando más impuestos de lo necesario por no tener la estructura corporativa correcta.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SUB CTA ============ -->
+<section class="subcta">
+  <div class="container">
+    <h3 class="reveal">No dejes que estos problemas destruyan lo que tanto <span class="it">te costó construir.</span></h3>
+    <p class="lead reveal d1">Inscríbete ahora y descubre cómo protegerte.</p>
+    <a href="#" class="btn-ink reveal d2">Asegura tu lugar ahora <span class="arrow">→</span></a>
+  </div>
+</section>
+
+<!-- ============ TEMARIO (DARK) ============ -->
+<section class="temario">
+  <div class="container">
+    <div class="section-header">
+      <div class="title reveal">
+        <h2>Temario<span class="it">.</span></h2>
+        <p>Un temario completo diseñado para transformar la manera en que proteges y estructuras tu patrimonio empresarial.</p>
+      </div>
+      <div class="tag">Tres bloques<br>secuenciales</div>
+    </div>
+  </div>
+  <div class="container-wide">
+    <div class="tem-list">
+      <article class="tem-block reveal d2">
+        <div class="tem-head">
+          <h3>Riesgos jurídico-fiscales <span class="it">2026.</span></h3>
+          <p>Entiende las nuevas reglas del juego. El SAT ha cambiado su estrategia y debes estar preparado.</p>
+        </div>
+        <ul class="tem-items">
+          <li><span>Plan Maestro de <span class="it">Fiscalización 2026</span> del SAT.</span></li>
+          <li><span>Combate a facturas falsas: <span class="it">qué hacer si te señalan.</span></span></li>
+          <li><span>Restricción y cancelación de CSD: <span class="it">cómo evitarlo.</span></span></li>
+          <li><span>Bloqueo de cuentas bancarias: <span class="it">causas y soluciones.</span></span></li>
+          <li><span>Visitas domiciliarias express: <span class="it">24 días que pueden cambiar todo.</span></span></li>
+          <li><span>Nuevos delitos fiscales <span class="it">y responsabilidad de socios.</span></span></li>
+        </ul>
+      </article>
+
+      <article class="tem-block reveal d4">
+        <div class="tem-head">
+          <h3>Estructura <span class="it">Holding.</span></h3>
+          <p>La estrategia que usan los empresarios más sofisticados para proteger su patrimonio y optimizar impuestos.</p>
+        </div>
+        <ul class="tem-items">
+          <li><span>Qué es un Holding <span class="it">y por qué lo necesitas.</span></span></li>
+          <li><span>Protección patrimonial: <span class="it">separa riesgos de activos.</span></span></li>
+          <li><span>Cómo diseñar tu estructura <span class="it">corporativa ideal.</span></span></li>
+          <li><span>Beneficios fiscales del Holding <span class="it">(Art. 16 y 140 LISR).</span></span></li>
+          <li><span>Planeación sucesoria <span class="it">eficiente.</span></span></li>
+          <li><span>Casos prácticos <span class="it">y estructuras reales.</span></span></li>
+        </ul>
+      </article>
+
+      <article class="tem-block reveal d6">
+        <div class="tem-head">
+          <h3>Diagnóstico del <span class="it">empresario.</span></h3>
+          <p>Evalúa dónde estás parado y qué necesitas hacer para preparar tu empresa para el futuro.</p>
+        </div>
+        <ul class="tem-items">
+          <li><span>Salud financiera <span class="it">de tu empresa.</span></span></li>
+          <li><span>Nivel de profesionalización <span class="it">del dueño.</span></span></li>
+          <li><span>Predictibilidad <span class="it">del negocio.</span></span></li>
+          <li><span>Orden patrimonial <span class="it">personal.</span></span></li>
+          <li><span>Gobernanza familiar <span class="it">y empresarial.</span></span></li>
+          <li><span>Plan de acción <span class="it">personalizado.</span></span></li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ INVERSIÓN ============ -->
+<section class="inversion">
+  <div class="container">
+    <div class="inv-eye reveal">— Inversión · Único pago</div>
+    <h2 class="inv-title reveal d1">Asegura tu <span class="it">lugar hoy.</span></h2>
+    <div class="inv-price reveal-scale"><span class="cur">MXN</span>$4,997</div>
+    <a href="#" class="inv-cta reveal d3">Inscribirme ahora <span class="arrow">→</span></a>
+    <p class="inv-note reveal d4">— Acceso completo · material descargable · sesión en vivo.</p>
+  </div>
+</section>
+
+<!-- ============ FOOTER MEGA (mismo) ============ -->
+<footer class="site-foot">
+  <div class="container">
+    <div class="foot-mega reveal-scale">Blindar<span class="it">.</span></div>
+    <div class="foot-cols">
+      <div class="foot-col">
+        <strong>— Holding · Masterclass</strong>
+        <p>Serie exclusiva de estrategias fiscales y corporativas para empresarios que quieren proteger su patrimonio y trascender. Sesión en vivo con material descargable y acceso continuo durante doce meses.</p>
+      </div>
+      <div class="foot-col">
+        <strong>— Programa</strong>
+        <a href="#">Sobre nosotros</a>
+        <a href="#">Capacitaciones</a>
+        <a href="#">Eventos</a>
+        <a href="#">Miembros</a>
+      </div>
+      <div class="foot-col">
+        <strong>— Contenido</strong>
+        <a href="#">Tienda</a>
+        <a href="#">Contenido gratuito</a>
+        <a href="#">Blog</a>
+        <a href="#">Libros</a>
+      </div>
+      <div class="foot-col">
+        <strong>— Contacto</strong>
+        <a href="#">holding@diegodiaz.mx</a>
+        <a href="#">+52 55 8400 1184</a>
+        <a href="#">Aviso de privacidad</a>
+        <a href="#">Preguntas frecuentes</a>
+      </div>
+      <div class="foot-col">
+        <strong>— Legal</strong>
+        <a href="#">RFC: DLA210315ABC</a>
+        <a href="#">© 2005 Diego Díaz</a>
+        <a href="#">Diego Díaz · Díaz Lara · Experto en Impuestos</a>
+      </div>
+    </div>
+    <div class="foot-bot">
+      <span>diegodiaz.mx · v2.1 · Sistema editorial</span>
+      <span>Baskerville + Helvetica · México · CDMX</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  function init(){
+    var els = document.querySelectorAll('.reveal, .reveal-left, .reveal-scale');
+    if (!('IntersectionObserver' in window)){
+      els.forEach(function(el){ el.classList.add('in'); });
+      return;
+    }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if (entry.isIntersecting){
+          entry.target.classList.add('in');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+    els.forEach(function(el){ io.observe(el); });
+  }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
