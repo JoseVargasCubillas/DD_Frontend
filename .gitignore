@@ -8,9 +8,15 @@ assets/mockup/*.pdf
 assets/eventos/Video EF.mp4
 uploads/
 
-# Video del hero de Academia — se sube manualmente al VPS (raíz del dominio).
-# NUNCA versionar. Si aparece localmente por accidente, git lo ignorará.
+# Videos del hero (Academia + Home + Estrategia Fiscal) — se suben manualmente al VPS
+# a /public_html/media/. NUNCA versionar (son 30-300MB, revientan el bundle y se
+# pisan en cada deploy). Si aparecen localmente por accidente, git los ignora.
 video academia.mp4
 video*academia*.mp4
+VIDEO SEF vertical web.mp4
+Video EF.mp4
+assets/eventos/*.mp4
+assets/Academia/*.mp4
 public/video*.mp4
 public/videos/
+public/media/
