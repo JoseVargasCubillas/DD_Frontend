@@ -172,7 +172,10 @@ export default function ManageSubscriptions() {
             ) : error ? (
               <tr>
                 <td colSpan={6} className="text-center py-10 text-red-700 text-sm">
-                  Error cargando suscripciones. ¿Estás autenticado como admin?
+                  <p className="font-serif text-base mb-1">No pude cargar la lista de suscripciones.</p>
+                  <p className="text-xs opacity-80">
+                    {(error as Error)?.message || 'Error desconocido'}
+                  </p>
                 </td>
               </tr>
             ) : subs.length === 0 ? (
