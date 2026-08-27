@@ -7,3 +7,10 @@ dist/
 assets/mockup/*.pdf
 assets/eventos/Video EF.mp4
 uploads/
+
+# Video del hero de Academia — se sube manualmente al VPS (raíz del dominio).
+# NUNCA versionar. Si aparece localmente por accidente, git lo ignorará.
+video academia.mp4
+video*academia*.mp4
+public/video*.mp4
+public/videos/

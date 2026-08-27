@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '@store/cartStore';
 import { useSubscription } from '@hooks/useSubscription';
@@ -7,7 +7,9 @@ import diegoPortrait from '../../../../assets/eventos/LEF_img_001.png';
 import imarPortrait from '../../../../assets/eventos/LEF_img 002.png';
 import jazminPortrait from '../../../../assets/eventos/LEF_img 003.png';
 import jessicaPortrait from '../../../../assets/eventos/LEF_img_004.png';
-const academyVideoDriveId = '1m2OAl2aFDzbjT1e9uu-C3ZAp3wBOdYXR';
+// Video subido manualmente al VPS en la raíz del dominio.
+// El nombre tiene un espacio, lo codificamos como %20 en la URL.
+const academyVideoUrl = '/video%20academia.mp4';
 
 const cream = 'bg-[#f5f2ec]';
 const pearl = 'bg-[#efebe2]';
@@ -306,6 +308,7 @@ export default function Academy() {
   const clearCart = useCartStore((state) => state.clear);
   const { subscription } = useSubscription();
   const { data: packages } = usePackages();
+  const academyVideoRef = useRef<HTMLVideoElement>(null);
   const hasAcademyAccess = subscription?.status === 'active' || subscription?.status === 'trialing';
 
   const plans = useMemo<PlanCard[]>(() => {
@@ -318,6 +321,31 @@ export default function Academy() {
     );
     return sorted.map(packageToPlan);
   }, [packages]);
+
+  // El navegador bloquea autoplay con sonido: arrancamos muted, y al primer
+  // gesto del usuario (click, tap, scroll o tecla) quitamos el mute.
+  useEffect(() => {
+    const video = academyVideoRef.current;
+    if (!video) return;
+
+    void video.play().catch(() => {});
+
+    const unmute = () => {
+      if (!academyVideoRef.current) return;
+      academyVideoRef.current.muted = false;
+      academyVideoRef.current.volume = 1;
+      void academyVideoRef.current.play().catch(() => {});
+    };
+
+    const events: (keyof WindowEventMap)[] = ['click', 'touchstart', 'keydown', 'scroll'];
+    const handler = () => {
+      unmute();
+      events.forEach((e) => window.removeEventListener(e, handler));
+    };
+    events.forEach((e) => window.addEventListener(e, handler, { once: false, passive: true }));
+
+    return () => events.forEach((e) => window.removeEventListener(e, handler));
+  }, []);
 
   const startAcademyCheckout = (plan: PlanCard = plans[1] ?? plans[0]) => {
     if (hasAcademyAccess) {
@@ -381,15 +409,17 @@ export default function Academy() {
           </div>
 
           <div className="relative mx-auto aspect-[420/582] w-full max-w-[420px] overflow-hidden border border-[#0a0a0a]/20 bg-[#0a0a0a] shadow-[0_28px_70px_rgba(10,10,10,0.16)] lg:mx-0 lg:justify-self-end">
-            <iframe
-              src={`https://drive.google.com/file/d/${academyVideoDriveId}/preview`}
-              className="absolute inset-0 h-full w-full border-0"
-              allow="autoplay; encrypted-media; fullscreen"
-              allowFullScreen
-              title="Video de Academia Diego Díaz"
+            <video
+              ref={academyVideoRef}
+              src={academyVideoUrl}
+              className="absolute inset-0 h-full w-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              aria-label="Video de Academia Diego Díaz"
             />
-            {/* Tapa el título/logo superior de Drive */}
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-12 bg-[#0a0a0a]" aria-hidden="true" />
           </div>
         </div>
       </section>
