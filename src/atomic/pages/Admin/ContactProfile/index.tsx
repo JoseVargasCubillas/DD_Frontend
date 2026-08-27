@@ -3,7 +3,6 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useUser, useUpdateUser, useSendPassword, useUpdateNotes, useAssignTag, useRemoveTag, useToggleUserActive } from '@hooks/useUsers';
 import { useTags } from '@hooks/useTags';
 import { usePackages, useAssignPackage } from '@hooks/usePackages';
-import { useAssignOffer, useOffers } from '@hooks/useOffers';
 import type { Course, Offer, Package, Tag } from '@t/index';
 
 type TabKey = 'lifecycle' | 'info' | 'purchases' | 'products' | 'notes';
@@ -24,8 +23,7 @@ export default function ContactProfile() {
   const [tab, setTab] = useState<TabKey>('lifecycle');
   const [editing, setEditing] = useState(false);
   const [showMore, setShowMore] = useState(false);
-  const [showAssignPkg, setShowAssignPkg] = useState(false);
-  const [showAssignOffer, setShowAssignOffer] = useState(false);
+  const [showAssignSubscription, setShowAssignSubscription] = useState(false);
 
   if (isLoading) return <p className="text-sm text-ink-500">Cargando contacto…</p>;
   if (!contact) return <p className="text-sm text-ink-500">Contacto no encontrado.</p>;
@@ -46,11 +44,8 @@ export default function ContactProfile() {
             <button onClick={() => setEditing(true)} className="text-[10px] uppercase tracking-[0.3em] border border-ink-900/20 hover:border-ink-900 px-4 py-2.5 cursor-pointer">
               Editar detalles
             </button>
-            <button onClick={() => setShowAssignPkg(true)} className="text-[10px] uppercase tracking-[0.3em] bg-ink-900 text-cream hover:bg-ink-800 px-4 py-2.5 cursor-pointer">
-              + Asignar paquete
-            </button>
-            <button onClick={() => setShowAssignOffer(true)} className="text-[10px] uppercase tracking-[0.3em] bg-ink-900 text-cream hover:bg-ink-800 px-4 py-2.5 cursor-pointer">
-              + Asignar oferta
+            <button onClick={() => setShowAssignSubscription(true)} className="text-[10px] uppercase tracking-[0.3em] bg-ink-900 text-cream hover:bg-ink-800 px-4 py-2.5 cursor-pointer">
+              + Asignar suscripción
             </button>
             <SendPasswordButton id={id} />
             <button onClick={() => setShowMore((s) => !s)} className="text-[10px] uppercase tracking-[0.3em] border border-ink-900/20 hover:border-ink-900 px-4 py-2.5 cursor-pointer">
@@ -108,88 +103,116 @@ export default function ContactProfile() {
       </div>
 
       {editing && <EditModal id={id} contact={contact} onClose={() => setEditing(false)} />}
-      {showAssignPkg && <AssignPackageModal userId={id} packages={allPackages} onClose={() => setShowAssignPkg(false)} />}
-      {showAssignOffer && <AssignOfferModal userId={id} onClose={() => setShowAssignOffer(false)} />}
+      {showAssignSubscription && (
+        <AssignSubscriptionModal userId={id} packages={allPackages} onClose={() => setShowAssignSubscription(false)} />
+      )}
     </div>
   );
 }
 
-function AssignOfferModal({ userId, onClose }: { userId: string; onClose: () => void }) {
-  const { data: offers = [] } = useOffers();
-  const assign = useAssignOffer();
-  const [selected, setSelected] = useState('');
-  const available = offers.filter((offer) => offer.status !== 'archived');
+const DURATION_OPTIONS: { days: number; label: string; sub: string }[] = [
+  { days: 30,  label: '1 mes',   sub: '30 días de acceso' },
+  { days: 90,  label: '90 días', sub: '3 meses de acceso' },
+  { days: 365, label: '1 año',   sub: '365 días de acceso' },
+];
 
-  return (
-    <div className="fixed inset-0 z-50 bg-ink-900/40 flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-cream border border-ink-900/20 shadow-xl p-7" style={{ animation: 'paper-unfold 320ms ease-out both' }}>
-        <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-2">Academia</p>
-        <h3 className="font-serif text-2xl text-ink-900 mb-1">Asignar oferta</h3>
-        <p className="text-sm text-ink-600 mb-5">Otorga el acceso configurado en la oferta: cursos completos o modulos de prueba.</p>
-
-        <div className="space-y-2 max-h-72 overflow-y-auto border border-ink-900/15 p-2 bg-cream-100 mb-4">
-          {available.map((offer) => (
-            <label key={offer._id} className={`flex items-start gap-3 p-3 cursor-pointer border ${selected === offer._id ? 'border-ink-900 bg-cream-200' : 'border-transparent hover:bg-cream-200/60'}`}>
-              <input type="radio" name="offer" value={offer._id} checked={selected === offer._id} onChange={() => setSelected(offer._id)} className="mt-1" />
-              <div className="flex-1 min-w-0">
-                <p className="font-serif text-lg text-ink-900">{offer.title}</p>
-                <p className="text-xs text-ink-500">{offer.type === 'trial' ? 'Prueba por modulos' : 'Oferta normal'} · {offer.content.length} producto{offer.content.length === 1 ? '' : 's'}</p>
-              </div>
-              <p className="font-serif text-lg text-ink-900">${offer.price}</p>
-            </label>
-          ))}
-          {available.length === 0 && <p className="p-5 text-center text-sm text-ink-500">Aun no hay ofertas creadas.</p>}
-        </div>
-
-        <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 text-[10px] uppercase tracking-[0.3em] border border-ink-900/20 hover:border-ink-900 py-2.5 cursor-pointer">Cancelar</button>
-          <button
-            onClick={() => selected && assign.mutate({ offerId: selected, userIds: [userId] }, { onSuccess: onClose })}
-            disabled={!selected || assign.isPending}
-            className="btn-broadsheet flex-1 disabled:opacity-50"
-          >
-            {assign.isPending ? 'Asignando...' : 'Asignar'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+function pickCanonicalPackage(packages: Package[]): Package | null {
+  const active = packages.filter((p) => p.isActive);
+  if (active.length === 0) return null;
+  const tierRank: Record<string, number> = { master: 0, business: 1, entrepreneur: 2 };
+  return [...active].sort(
+    (a, b) => (tierRank[a.tier ?? ''] ?? 99) - (tierRank[b.tier ?? ''] ?? 99),
+  )[0];
 }
 
-function AssignPackageModal({ userId, packages, onClose }: { userId: string; packages: Package[]; onClose: () => void }) {
+function AssignSubscriptionModal({
+  userId,
+  packages,
+  onClose,
+}: {
+  userId: string;
+  packages: Package[];
+  onClose: () => void;
+}) {
   const assign = useAssignPackage();
-  const [selected, setSelected] = useState('');
+  const [durationDays, setDurationDays] = useState<number>(365);
+  const canonical = useMemo(() => pickCanonicalPackage(packages), [packages]);
+
+  const submit = () => {
+    if (!canonical) return;
+    assign.mutate(
+      { userId, packageId: canonical._id, durationDays },
+      { onSuccess: onClose },
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-ink-900/40 flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-cream border border-ink-900/20 shadow-xl p-7" style={{ animation: 'paper-unfold 320ms ease-out both' }}>
+      <div
+        className="w-full max-w-md bg-cream border border-ink-900/20 shadow-xl p-7"
+        style={{ animation: 'paper-unfold 320ms ease-out both' }}
+      >
         <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-2">Academia</p>
-        <h3 className="font-serif text-2xl text-ink-900 mb-1">Asignar paquete</h3>
-        <p className="text-sm text-ink-600 mb-5">Otorgará todos los cursos del paquete y activará la suscripción.</p>
+        <h3 className="font-serif text-2xl text-ink-900 mb-1">Asignar suscripción</h3>
+        <p className="text-sm text-ink-600 mb-5">
+          Otorga acceso a todos los cursos de la academia por el tiempo que elijas.
+        </p>
 
-        {packages.length === 0 ? (
+        {!canonical ? (
           <div className="text-sm text-ink-500 border border-dashed border-ink-900/15 p-6 text-center mb-4">
-            Aún no hay paquetes. <Link to="/admin/ventas/paquetes" className="underline">Crea uno aquí</Link>.
+            No hay un paquete de suscripción activo.{' '}
+            <Link to="/admin/ventas/paquetes" className="underline">Crea uno aquí</Link>.
           </div>
         ) : (
-          <div className="space-y-2 max-h-72 overflow-y-auto border border-ink-900/15 p-2 bg-cream-100 mb-4">
-            {packages.filter((p) => p.isActive).map((p) => (
-              <label key={p._id} className={`flex items-start gap-3 p-3 cursor-pointer border ${selected === p._id ? 'border-ink-900 bg-cream-200' : 'border-transparent hover:bg-cream-200/60'}`}>
-                <input type="radio" name="pkg" value={p._id} checked={selected === p._id} onChange={() => setSelected(p._id)} className="mt-1" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-serif text-lg text-ink-900">{p.name}</p>
-                  <p className="text-xs text-ink-500">{p.courseIds.length} cursos · {p.durationDays > 0 ? `${p.durationDays} días` : 'De por vida'}</p>
-                </div>
-                <p className="font-serif text-lg text-ink-900">${p.price}</p>
-              </label>
-            ))}
-          </div>
+          <>
+            <div className="border border-ink-900/15 bg-cream-100 p-4 mb-5">
+              <p className="text-[10px] uppercase tracking-[0.32em] text-ink-500 mb-1">Paquete</p>
+              <p className="font-serif text-lg text-ink-900">{canonical.name}</p>
+              <p className="text-xs text-ink-500 mt-0.5">
+                {canonical.courseIds.length} cursos incluidos
+              </p>
+            </div>
+
+            <p className="text-[10px] uppercase tracking-[0.32em] text-ink-500 mb-2">Duración</p>
+            <div className="space-y-2 mb-5">
+              {DURATION_OPTIONS.map((opt) => (
+                <label
+                  key={opt.days}
+                  className={`flex items-center gap-3 p-3 cursor-pointer border transition-colors ${
+                    durationDays === opt.days
+                      ? 'border-ink-900 bg-cream-200'
+                      : 'border-ink-900/15 hover:bg-cream-200/60'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="duration"
+                    value={opt.days}
+                    checked={durationDays === opt.days}
+                    onChange={() => setDurationDays(opt.days)}
+                    className="shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-serif text-lg text-ink-900">{opt.label}</p>
+                    <p className="text-xs text-ink-500">{opt.sub}</p>
+                  </div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-ink-500">{opt.days} días</p>
+                </label>
+              ))}
+            </div>
+          </>
         )}
 
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 text-[10px] uppercase tracking-[0.3em] border border-ink-900/20 hover:border-ink-900 py-2.5 cursor-pointer">Cancelar</button>
           <button
-            onClick={() => selected && assign.mutate({ userId, packageId: selected }, { onSuccess: onClose })}
-            disabled={!selected || assign.isPending}
+            onClick={onClose}
+            className="flex-1 text-[10px] uppercase tracking-[0.3em] border border-ink-900/20 hover:border-ink-900 py-2.5 cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={submit}
+            disabled={!canonical || assign.isPending}
             className="btn-broadsheet flex-1 disabled:opacity-50"
           >
             {assign.isPending ? 'Asignando…' : 'Asignar'}
