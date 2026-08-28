@@ -71,7 +71,7 @@ export default function NotFound({ mode = "not-found", message }: NotFoundProps)
           {isError ? "Error de aplicación" : "Página no encontrada"}
         </p>
 
-        <div className="mt-[12vh] flex w-full max-w-[760px] flex-col items-center sm:mt-[11vh] lg:mt-[12vh]">
+        <div className="mt-[6vh] flex w-full max-w-[800px] flex-col items-center sm:mt-[6vh] lg:mt-[7vh]">
           <p
             key={`${isError ? "error" : "not-found"}-${isError ? errorPhrase : phraseIndex}`}
             className="max-w-[760px] animate-[hero-fade_500ms_var(--ease-out)_both] text-balance font-sans text-[clamp(30px,3.25vw,46px)] font-bold leading-[1.06] tracking-[-0.035em] text-ink-900 [&_em]:font-serif [&_em]:font-normal [&_em]:italic"
@@ -79,7 +79,7 @@ export default function NotFound({ mode = "not-found", message }: NotFoundProps)
             {visiblePhrase}
           </p>
 
-          <div className="mt-8 flex w-full max-w-[240px] flex-col items-stretch justify-center sm:items-center">
+          <div className="mt-7 flex w-full max-w-[240px] flex-col items-stretch justify-center sm:items-center">
             <Link to="/" className="btn-primary min-w-[180px]">
               Volver al inicio <span className="arrow">→</span>
             </Link>
