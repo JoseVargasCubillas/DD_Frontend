@@ -65,8 +65,8 @@ const EVENT_STORAGE_KEY = "dd-admin-events";
 const FEATURED_EVENT_SLUG_KEY = "dd-featured-event-slug";
 const ENABLE_EVENT_API_SYNC = import.meta.env.VITE_EVENTS_API_SYNC !== "false";
 const DEFAULT_CTA_SETTINGS = {
-  salesPhone: "5210000000000",
-  waitlistPhone: "5210000000000",
+  salesPhone: "5214427475869",
+  waitlistPhone: "5214427475869",
 };
 const DEPRECATED_EVENT_SLUGS = new Set([
   "formacion-equipos",
@@ -77,13 +77,40 @@ const DEPRECATED_EVENT_SLUGS = new Set([
   "estrategia-rockefeller",
 ]);
 
+const LEGACY_PLACEHOLDER_PHONES = new Set(["5210000000000", "5218400001184"]);
+
+const sanitizePhone = (phone: string | undefined | null): string => {
+  const digits = String(phone ?? "").replace(/\D/g, "");
+  if (!digits || LEGACY_PLACEHOLDER_PHONES.has(digits)) {
+    return DEFAULT_CTA_SETTINGS.salesPhone;
+  }
+  return digits;
+};
+
 const loadCtaSettings = () => {
   if (typeof window === "undefined") return DEFAULT_CTA_SETTINGS;
   try {
     const raw = window.localStorage.getItem(EVENT_CTA_SETTINGS_KEY);
-    return raw
+    const parsed = raw
       ? { ...DEFAULT_CTA_SETTINGS, ...JSON.parse(raw) }
       : DEFAULT_CTA_SETTINGS;
+    const migrated = {
+      ...parsed,
+      salesPhone: sanitizePhone(parsed.salesPhone),
+      waitlistPhone: sanitizePhone(parsed.waitlistPhone),
+    };
+    // Persistimos la migración para que el admin ya no vea el placeholder viejo.
+    if (
+      raw &&
+      (parsed.salesPhone !== migrated.salesPhone ||
+        parsed.waitlistPhone !== migrated.waitlistPhone)
+    ) {
+      window.localStorage.setItem(
+        EVENT_CTA_SETTINGS_KEY,
+        JSON.stringify(migrated),
+      );
+    }
+    return migrated;
   } catch {
     return DEFAULT_CTA_SETTINGS;
   }
@@ -1214,7 +1241,7 @@ export default function Events() {
               <a
                 href={whatsappHref(
                   ctaSettings.salesPhone,
-                  "Hola, quiero hablar con un asesor sobre los eventos para despachos.",
+                  "Hola Diego estoy navegando tu sitio web y tengo una duda",
                 )}
                 target="_blank"
                 rel="noreferrer"
@@ -1239,7 +1266,7 @@ export default function Events() {
               <a
                 href={whatsappHref(
                   ctaSettings.waitlistPhone,
-                  "Hola, quiero apuntarme a la lista de espera del siguiente cohort.",
+                  "Hola Diego estoy navegando tu sitio web y tengo una duda",
                 )}
                 target="_blank"
                 rel="noreferrer"
@@ -1362,12 +1389,17 @@ export default function Events() {
               su equipo y su inversión. Si tu pregunta no está aquí, escríbenos
               por WhatsApp.
             </p>
-            <Link
-              to="/contacto"
+            <a
+              href={whatsappHref(
+                ctaSettings.salesPhone,
+                "Hola Diego estoy navegando tu sitio web y tengo una duda",
+              )}
+              target="_blank"
+              rel="noreferrer"
               className="mt-9 inline-flex min-h-[54px] items-center border border-ink-900 px-7 text-[11px] uppercase tracking-[0.18em] text-ink-900 transition-colors hover:bg-ink-900 hover:text-white"
             >
               WhatsApp directo <span className="ml-3">→</span>
-            </Link>
+            </a>
           </aside>
 
           <div className="border-t border-cream-400">
@@ -1452,18 +1484,11 @@ export default function Events() {
           </p>
           <div className="mt-12 flex w-full flex-col justify-center gap-4 sm:w-auto sm:flex-row">
             <Link
-              to="/eventos/estrategia-fiscal"
+              to={nextEvent?.to ?? "/eventos/estrategia-fiscal"}
               className="inline-flex min-h-[58px] items-center justify-center border border-ink-900 bg-ink-900 px-9 text-[11px] uppercase tracking-[0.18em] text-white transition-colors hover:bg-transparent hover:text-ink-900"
             >
               Reservar próximo evento <span className="ml-3">→</span>
             </Link>
-            <a
-              href={calendarDownloadHref}
-              download="calendario-diego-diaz-2026.ics"
-              className="inline-flex min-h-[58px] items-center justify-center border border-ink-900 px-9 text-[11px] uppercase tracking-[0.18em] text-ink-900 transition-colors hover:bg-ink-900 hover:text-white"
-            >
-              Descargar calendario .ICS <span className="ml-3">↓</span>
-            </a>
           </div>
         </div>
       </section>

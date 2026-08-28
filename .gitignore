@@ -23,3 +23,6 @@ public/media/
 
 .tmp-boletines/
 
+
+# Large asset: hosted on GitHub Releases (media-v1)
+public/DDMedia-Kit.pdf

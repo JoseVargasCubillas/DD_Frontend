@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import toast from "react-hot-toast";
 import HeroSection from "@organisms/HeroSection";
 import AnimateIn from "@atoms/AnimateIn";
 import { useAutoUnmuteOnGesture } from "@hooks/useAutoUnmuteOnGesture";
 import { useEvents } from "@hooks/useEvents";
 import { useInView } from "@hooks/useInView";
 import { useNowTick } from "@hooks/useNowTick";
+import { requestSatGuide } from "@api/leads.api";
 import {
   FALLBACK_CALENDAR_EVENTS,
   getCalendarEventPath,
@@ -396,6 +398,40 @@ export default function Home() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoMuted, toggleVideoMute] = useAutoUnmuteOnGesture(videoRef);
+
+  const [guideEmail, setGuideEmail] = useState("");
+  const [guideSubmitting, setGuideSubmitting] = useState(false);
+  const [guideSent, setGuideSent] = useState(false);
+
+  const handleGuideSubmit = useCallback(
+    async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const email = guideEmail.trim();
+      if (!email) {
+        toast.error("Escribe tu correo para enviarte la guía.");
+        return;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        toast.error("Ese correo no parece válido.");
+        return;
+      }
+
+      setGuideSubmitting(true);
+      try {
+        await requestSatGuide(email);
+        setGuideSent(true);
+        toast.success("Listo. Revisa tu bandeja de entrada.");
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "No pudimos enviarte la guía.";
+        toast.error(message);
+      } finally {
+        setGuideSubmitting(false);
+      }
+    },
+    [guideEmail],
+  );
   const [testimonialIdx, setTestimonialIdx] = useState(0);
   const [testimonialFading, setTestimonialFading] = useState(false);
 
@@ -860,21 +896,33 @@ export default function Home() {
 
                 <form
                   className="mt-16 flex flex-col sm:flex-row gap-0 max-w-[760px]"
-                  onSubmit={(e) => e.preventDefault()}
+                  onSubmit={handleGuideSubmit}
                 >
                   <input
                     type="email"
                     placeholder="tu@correo.com"
                     className="input-base flex-1 h-[60px] bg-ink-800/70 border-ink-700 px-7 text-[16px]"
                     aria-label="Correo electrónico"
+                    value={guideEmail}
+                    onChange={(e) => setGuideEmail(e.target.value)}
+                    required
+                    disabled={guideSubmitting}
+                    autoComplete="email"
                   />
                   <button
                     type="submit"
-                    className="btn-primary-inv h-[60px] px-9 whitespace-nowrap"
+                    className="btn-primary-inv h-[60px] px-9 whitespace-nowrap disabled:opacity-70"
+                    disabled={guideSubmitting}
                   >
-                    Descargar
+                    {guideSubmitting ? "Enviando…" : guideSent ? "Enviar de nuevo" : "Descargar"}
                   </button>
                 </form>
+
+                {guideSent && (
+                  <p className="mt-4 text-[13px] text-cream-100/80">
+                    Enviamos la guía a <span className="text-white">{guideEmail}</span>. Revisa la bandeja de entrada y la carpeta de promociones.
+                  </p>
+                )}
 
                 <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] uppercase tracking-[0.25em] text-ink-400">
                   <span className="whitespace-nowrap">40 páginas</span>
