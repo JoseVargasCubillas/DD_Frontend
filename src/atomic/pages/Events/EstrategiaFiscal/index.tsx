@@ -24,6 +24,7 @@ import type { Event as SiteEvent } from '@t/index';
 const ENABLE_EVENT_API_SYNC = import.meta.env.VITE_EVENTS_API_SYNC !== 'false';
 const dossierUrl = new URL('../../../../../assets/eventos/Seminario Estrategia Fiscal (2).pdf', import.meta.url).href;
 const stripeCheckoutUrls = {
+  online: String(import.meta.env.VITE_ESTRATEGIA_FISCAL_ONLINE_STRIPE_URL || ''),
   general: String(import.meta.env.VITE_ESTRATEGIA_FISCAL_GENERAL_STRIPE_URL || ''),
   vip: String(import.meta.env.VITE_ESTRATEGIA_FISCAL_VIP_STRIPE_URL || ''),
 };
@@ -196,44 +197,42 @@ const speakers = [
 
 const tickets = [
   {
-    eyebrow: 'Early bird',
-    price: '$X,XXX',
-    note: 'Termina el 30 de mayo',
+    eyebrow: 'Online',
+    price: '$4,997',
+    note: 'Pago único · Acceso en vivo',
     variant: 'early',
-    cta: 'Reservar Early Bird',
-    href: stripeCheckoutUrls.general,
-    items: ['Acceso completo al evento', 'Material digital descargable', 'Coffee break + comida', 'Networking estructurado'],
-  },
-  {
-    eyebrow: 'General',
-    price: '$X,XXX',
-    note: 'Disponibilidad regular',
-    variant: 'general',
-    cta: 'Reservar General',
-    href: stripeCheckoutUrls.general,
+    cta: 'Comprar Online',
+    href: stripeCheckoutUrls.online,
     items: [
-      'Acceso completo al evento',
-      'Material digital + impreso',
-      'Coffee + comida + cena de cierre',
-      'Networking estructurado',
-      'Grabación de sesiones · 30 días',
-      'Prioridad en Q&A',
+      'Transmisión en vivo de los 6 bloques',
+      '09:00 a 14:00 hrs (aprox.)',
+      'Grabación disponible por tiempo limitado',
     ],
   },
   {
-    eyebrow: 'VIP',
-    price: '$XX,XXX',
-    note: 'Solo 10 cupos',
+    eyebrow: 'General · CDMX',
+    price: '$7,997',
+    note: 'Pago único · Entrada general',
+    variant: 'general',
+    cta: 'Comprar General',
+    href: stripeCheckoutUrls.general,
+    items: [
+      'Entrada general al evento',
+      '09:00 a 14:00 hrs (aprox.)',
+      'Acceso a los 6 bloques completos',
+    ],
+  },
+  {
+    eyebrow: 'VIP · CDMX',
+    price: '$24,997',
+    note: 'Pago único · Cupo reducido',
     variant: 'vip',
-    cta: 'Aplicar a VIP',
+    cta: 'Comprar VIP',
     href: stripeCheckoutUrls.vip,
     items: [
-      'Todo lo anterior, incluido',
-      'Comida privada con Diego',
-      'Sesión 1-a-1 · 30 min post-evento',
-      '3 meses gratis en Academia',
-      'Asientos en primera fila',
-      'Material exclusivo VIP',
+      'Entrada en zona preferencial',
+      'Espacio privado para empresarios con Diego Díaz',
+      '15:00 a 16:30 hrs · Incluye alimentos',
     ],
   },
 ];
