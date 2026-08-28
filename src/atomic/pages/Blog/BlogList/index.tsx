@@ -1,61 +1,48 @@
 import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useEvents } from '@hooks/useEvents';
 import diegoPasarela from '../../../../../assets/ddweb/diego-pasarela.jpg';
 import satDigital from '../../../../../assets/ddweb/sat-cumplimiento-digital.jpg';
-import recibos from '../../../../../assets/ddweb/recibos-deducibles.jpg';
-import equipoUnido from '../../../../../assets/ddweb/equipo-unido.jpg';
-import blindaje from '../../../../../assets/ddweb/blindaje-digital.jpg';
-import reforma from '../../../../../assets/ddweb/reforma-fiscal-2026.jpg';
-import alianza from '../../../../../assets/ddweb/alianza-empresarial.jpg';
-import inmobiliario from '../../../../../assets/ddweb/inmobiliario-construccion.jpg';
 import sefCdmx from '../../../../../assets/ddweb/SEF.jpg';
+import { STATIC_BLOG_POSTS, formatStaticBlogDate } from '@/data/blogPosts';
 
 const border = 'border-ink-900/10';
 const mono = 'font-mono text-[11px] uppercase tracking-[0.18em] text-ink-900/45';
 
-const posts = [
-  {
-    title: 'Cómo cobrarte un dividendo sin meterte en problemas',
-    image: recibos,
-    tag: 'Estrategia fiscal',
-    date: '14 May · 6 min',
-    excerpt: 'Tres rutas legales para retirar utilidades de tu empresa, con sus tasas efectivas reales. Incluye plantilla.',
-  },
-  {
-    title: 'El equipo no renunció: nunca lo construiste',
-    image: equipoUnido,
-    tag: 'Liderazgo',
-    date: '07 May · 11 min',
-    excerpt: 'Ensayo sobre rotación, cultura y el costo oculto de no tener un sistema de talento. A propósito del caso Remax 2026.',
-  },
-  {
-    title: 'Cómo resolvimos un bloqueo de certificado en cuatro días',
-    image: blindaje,
-    tag: 'Casos reales',
-    date: '30 Abr · 9 min',
-    excerpt: 'Cronología paso a paso de un caso real con empresa de +1,000 colaboradores. Los oficios, las llamadas, los movimientos clave.',
-  },
-  {
-    title: 'Reforma fiscal 2026: lo que sí impacta a las PyMEs',
-    image: reforma,
-    tag: 'SAT & reformas',
-    date: '23 Abr · 7 min',
-    excerpt: 'Resumen ejecutivo de los cambios que más impactan a empresarios con facturación entre $20M y $200M.',
-  },
-  {
-    title: 'Honorarios cruzados entre socios: la guía completa',
-    image: alianza,
-    tag: 'Estrategia fiscal',
-    date: '16 Abr · 8 min',
-    excerpt: 'Cuándo conviene, cuándo no, y cómo documentarlo para que resista una revisión del SAT. Incluye plantilla.',
-  },
-  {
-    title: 'La arquitectura antes que el truco',
-    image: inmobiliario,
-    tag: 'Ensayo largo',
-    date: '09 Abr · 18 min',
-    excerpt: 'Ensayo de 4,200 palabras sobre por qué los empresarios mexicanos confunden táctica con estrategia y por qué pagan caro.',
-  },
-];
+/* ─────────── Countdown ─────────── */
+function useCountdown(targetMs: number | null) {
+  const calc = () => {
+    if (!targetMs) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+    const diff = targetMs - Date.now();
+    if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+    return {
+      days: Math.floor(diff / 86400000),
+      hours: Math.floor((diff % 86400000) / 3600000),
+      minutes: Math.floor((diff % 3600000) / 60000),
+      seconds: Math.floor((diff % 60000) / 1000),
+    };
+  };
+  const [time, setTime] = useState(calc);
+  useEffect(() => {
+    const id = setInterval(() => setTime(calc()), 1000);
+    return () => clearInterval(id);
+  }, [targetMs]);
+  return time;
+}
+
+const monthShort = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const formatEventDate = (iso?: string) => {
+  if (!iso) return '15 Jun 2026 · WTC CDMX';
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2, '0')} ${monthShort[d.getMonth()]} ${d.getFullYear()}`;
+};
+
+const eventPath = (slug?: string, title?: string): string => {
+  const key = `${slug ?? ''} ${title ?? ''}`.toLowerCase();
+  if (key.includes('estrategia') && key.includes('fiscal')) return '/eventos/estrategia-fiscal';
+  if (slug) return `/eventos/${slug}`;
+  return '/eventos';
+};
 
 const mostRead = [
   ['"El SAT no es tu enemigo"', 'Versión texto del video viral', '12,050 lecturas · 6 min'],
@@ -73,13 +60,35 @@ const territories = [
 ];
 
 export default function BlogList() {
+  // Post destacado = el primero del registry (más reciente).
+  const [featured, ...rest] = STATIC_BLOG_POSTS;
+  const posts = rest;
+
+  // ── Próximo evento (mismo patrón que Home) ────────────────
+  const { data: eventsData } = useEvents({ limit: 1, status: 'upcoming' });
+  const nextEvent = eventsData?.data?.[0];
+
+  const eventTargetMs = useMemo<number | null>(() => {
+    if (!nextEvent?.startDate) return null;
+    const ms = new Date(nextEvent.startDate).getTime();
+    return Number.isFinite(ms) ? ms : null;
+  }, [nextEvent?.startDate]);
+
+  const countdown = useCountdown(eventTargetMs);
+  const eventHref = eventPath(nextEvent?.slug, nextEvent?.title);
+  const eventTitle = nextEvent?.title ?? 'Estrategia Fiscal Edición CDMX';
+  const eventDateLabel = nextEvent
+    ? `${formatEventDate(nextEvent.startDate)}${nextEvent.location ? ` · ${nextEvent.location}` : ''}`
+    : '15 Jun 2026 · WTC CDMX';
+  const eventImage = nextEvent?.thumbnail || sefCdmx;
+
   return (
     <div className="bg-cream-50 text-ink-900">
       <section className="container-app pt-8">
         <div className={`grid gap-4 border-b ${border} pb-5 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-900/45 md:grid-cols-4`}>
           <span>* Vol. III · 2026</span>
           <span>Publicado los miércoles · 06:00 CDMX</span>
-          <span>184 ensayos publicados desde 2019</span>
+          <span>{STATIC_BLOG_POSTS.length} ensayos disponibles</span>
           <span className="md:text-right">Edición · Viernes 22 Mayo 2026</span>
         </div>
 
@@ -108,29 +117,31 @@ export default function BlogList() {
       <section className="border-y border-ink-900/70">
         <div className="container-app grid gap-12 py-14 lg:grid-cols-[0.98fr_0.72fr] lg:items-center lg:py-20">
           <img
-            src={diegoPasarela}
-            alt="Diego Díaz en pasarela corporativa"
+            src={featured?.image ?? diegoPasarela}
+            alt={featured?.title ?? 'Destacado'}
             className="h-[360px] w-full object-cover md:h-[440px] lg:h-[510px]"
           />
           <article className="max-w-[520px] lg:pl-5">
             <p className="inline-flex bg-ink-900 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-white">
               * Destacado de la semana
             </p>
-            <p className={`${mono} mt-6`}>— Estrategia fiscal · análisis profundo</p>
-            <h2 className="mt-5 font-serif text-[clamp(45px,5.4vw,78px)] font-normal leading-[0.91] tracking-[-0.055em]">
-              El SAT no es <em className="font-normal">tu enemigo.</em><br />Es un <em className="font-normal">algoritmo</em> mal entendido.
+            <p className={`${mono} mt-6`}>— {featured?.tag ?? 'Estrategia fiscal'} · análisis profundo</p>
+            <h2 className="mt-5 font-serif text-[clamp(38px,4.8vw,64px)] font-normal leading-[0.98] tracking-[-0.045em]">
+              {featured?.title}
             </h2>
             <p className="mt-7 max-w-[500px] font-serif text-[18px] italic leading-[1.48] text-ink-900/62">
-              "Llevo veinticinco años en esto. Los empresarios que más rápido cambian su carga fiscal son los que dejan de tratar al SAT como persona. Te explico por qué."
+              {featured?.excerpt}
             </p>
             <div className={`mt-7 flex flex-wrap gap-x-5 gap-y-2 border-y ${border} py-4 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-900/48`}>
-              <span>— Diego Díaz</span>
-              <span>22 May 2026</span>
-              <span>14 min lectura</span>
-              <span>+4,208 lectores</span>
+              <span>— {featured?.author.name.split(' ').slice(0, 2).join(' ')}</span>
+              <span>{featured ? formatStaticBlogDate(featured.publishedAt) : ''}</span>
+              <span>{featured?.readTimeMin} min lectura</span>
             </div>
             <div className="mt-7 grid gap-3 sm:grid-cols-2">
-              <Link to="/blog/sat-algoritmo" className="bg-ink-900 px-6 py-5 text-center font-mono text-[11px] uppercase tracking-[0.16em] text-white transition-colors hover:bg-ink-900/85">
+              <Link
+                to={featured ? `/blog/${featured.slug}` : '/blog'}
+                className="bg-ink-900 px-6 py-5 text-center font-mono text-[11px] uppercase tracking-[0.16em] text-white transition-colors hover:bg-ink-900/85"
+              >
                 Leer ensayo completo →
               </Link>
               <button type="button" className={`border ${border} px-6 py-5 font-mono text-[11px] uppercase tracking-[0.16em] transition-colors hover:bg-ink-900 hover:text-white`}>
@@ -143,12 +154,11 @@ export default function BlogList() {
         <div className="border-t border-ink-900/10">
           <div className="container-app flex flex-wrap items-center justify-between gap-5 py-5">
             <div className="flex flex-wrap gap-x-6 gap-y-3 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-900/45">
-              <Link to="/blog" className="border-b border-ink-900 text-ink-900">Todas 184</Link>
-              <Link to="/blog">Estrategia fiscal 62</Link>
-              <Link to="/blog">SAT & reformas 48</Link>
-              <Link to="/blog">Liderazgo empresarial 31</Link>
-              <Link to="/blog">Casos reales 24</Link>
-              <Link to="/blog">Ensayos largos 19</Link>
+              <Link to="/blog" className="border-b border-ink-900 text-ink-900">Todas {STATIC_BLOG_POSTS.length}</Link>
+              <Link to="/blog">Estrategia fiscal</Link>
+              <Link to="/blog">SAT & reformas</Link>
+              <Link to="/blog">Casos reales</Link>
+              <Link to="/blog">Ensayo largo</Link>
             </div>
             <button type="button" className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-900/55">
               — Orden · Más reciente ↓
@@ -161,9 +171,9 @@ export default function BlogList() {
         <main>
           <div className={`flex items-end justify-between border-b ${border} pb-6`}>
             <h2 className="font-serif text-[34px] font-normal leading-none">
-              Publicados <em className="font-normal">este mes.</em>
+              Publicados <em className="font-normal">recientemente.</em>
             </h2>
-            <span className={mono}>14 ensayos · Mayo 2026</span>
+            <span className={mono}>{posts.length} ensayos</span>
           </div>
 
           <article className={`border-b ${border} py-9`}>
@@ -188,36 +198,26 @@ export default function BlogList() {
 
           <div className="grid gap-x-6 md:grid-cols-2">
             {posts.map((post) => (
-              <Link key={post.title} to="/blog" className={`group border-b ${border} py-7`}>
-                <img src={post.image} alt={post.title} className="h-[220px] w-full object-cover transition duration-300 group-hover:grayscale" />
+              <Link key={post.slug} to={`/blog/${post.slug}`} className={`group border-b ${border} py-7`}>
+                <img
+                  src={post.image}
+                  alt={post.title}
+                  className="h-[220px] w-full object-cover transition duration-300 group-hover:grayscale"
+                />
                 <div className="mt-5 flex items-center justify-between gap-4">
                   <p className={mono}>— {post.tag}</p>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-900/40">{post.date}</p>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-900/40">
+                    {formatStaticBlogDate(post.publishedAt)} · {post.readTimeMin} min
+                  </p>
                 </div>
-                <h3 className="mt-3 font-serif text-[26px] font-normal leading-[1.02] tracking-[-0.035em]">
+                <h3 className="mt-3 font-serif text-[26px] font-normal leading-[1.05] tracking-[-0.03em]">
                   {post.title}
                 </h3>
                 <p className="mt-3 text-[13px] leading-[1.65] text-ink-900/58">{post.excerpt}</p>
                 <p className={`mt-5 border-t ${border} pt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-900/60`}>
-                  — Diego Díaz
+                  — {post.author.name.split(' ').slice(0, 2).join(' ')}
                 </p>
               </Link>
-            ))}
-          </div>
-
-          <div className="mt-10 flex flex-wrap justify-center gap-2 border-t border-ink-900/10 pt-9">
-            {['←', '1', '2', '3', '4', '...', '28', 'Siguiente →'].map((item) => (
-              <button
-                key={item}
-                type="button"
-                className={`min-h-11 border px-4 font-mono text-[10px] uppercase tracking-[0.14em] transition-colors ${
-                  item === '1'
-                    ? 'border-ink-900 bg-ink-900 text-white'
-                    : `${border} text-ink-900/60 hover:border-ink-900 hover:bg-ink-900 hover:text-white`
-                }`}
-              >
-                {item}
-              </button>
             ))}
           </div>
         </main>
@@ -226,22 +226,40 @@ export default function BlogList() {
           <div className="bg-ink-900 p-6 text-white">
             <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-white/50">— Próximo evento</p>
             <h3 className="mt-5 font-serif text-[30px] leading-[0.95]">
-              Estrategia <em className="font-normal">Fiscal</em><br />Edición CDMX
+              {eventTitle}
             </h3>
-            <img src={sefCdmx} alt="Seminario Estrategia Fiscal CDMX" className="mt-5 aspect-square w-full object-cover" />
-            <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.14em] text-white/55">15 Jun 2026 · WTC CDMX</p>
+            <img
+              src={eventImage}
+              alt={eventTitle}
+              className="mt-5 aspect-square w-full object-cover"
+            />
+            <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.14em] text-white/55">
+              {eventDateLabel}
+            </p>
             <div className="mt-4 grid grid-cols-4 border border-white/15">
-              {['24 días', '11 hrs', '42 min', '17 seg'].map((item) => (
-                <div key={item} className="border-r border-white/15 p-3 text-center last:border-r-0">
-                  <span className="block font-serif text-[22px] leading-none">{item.split(' ')[0]}</span>
-                  <span className="mt-1 block font-mono text-[8px] uppercase tracking-[0.14em] text-white/45">{item.split(' ')[1]}</span>
+              {[
+                { value: countdown.days, label: 'días' },
+                { value: countdown.hours, label: 'hrs' },
+                { value: countdown.minutes, label: 'min' },
+                { value: countdown.seconds, label: 'seg' },
+              ].map((item) => (
+                <div key={item.label} className="border-r border-white/15 p-3 text-center last:border-r-0">
+                  <span className="block font-serif text-[22px] leading-none">
+                    {String(item.value).padStart(2, '0')}
+                  </span>
+                  <span className="mt-1 block font-mono text-[8px] uppercase tracking-[0.14em] text-white/45">
+                    {item.label}
+                  </span>
                 </div>
               ))}
             </div>
             <p className="mt-4 text-[12px] leading-[1.55] text-white/62">
-              23 cupos disponibles de 80. Early bird vigente hasta el 30 de mayo.
+              Reserva tu lugar y conoce el programa completo del próximo seminario.
             </p>
-            <Link to="/eventos" className="mt-5 block bg-white px-5 py-4 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-ink-900 transition-colors hover:bg-cream-200">
+            <Link
+              to={eventHref}
+              className="mt-5 block bg-white px-5 py-4 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-ink-900 transition-colors hover:bg-cream-200"
+            >
               Reservar lugar →
             </Link>
           </div>
@@ -258,7 +276,7 @@ export default function BlogList() {
                 Suscribir
               </button>
             </div>
-            <p className="mt-4 font-mono text-[9px] uppercase tracking-[0.14em] text-ink-900/45">— Sin spam · cancelación con un click · Vol. 184</p>
+            <p className="mt-4 font-mono text-[9px] uppercase tracking-[0.14em] text-ink-900/45">— Sin spam · cancelación con un click</p>
           </div>
 
           <div className={`border ${border} p-6`}>
@@ -287,10 +305,9 @@ export default function BlogList() {
           <div className={`border ${border} p-6`}>
             <p className={mono}>— Archivos por año</p>
             {[
-              ['2026', '42'],
-              ['2025', '58'],
-              ['2024', '44'],
-              ['2023', '40'],
+              ['2025', '1'],
+              ['2024', '4'],
+              ['2023', '1'],
             ].map(([year, count]) => (
               <Link key={year} to="/blog" className={`flex justify-between border-b ${border} py-4 font-serif text-[20px] last:border-b-0`}>
                 <span>{year}</span>
