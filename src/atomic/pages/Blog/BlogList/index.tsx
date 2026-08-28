@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { useNextCalendarEvent } from '@hooks/useNextCalendarEvent';
 import { getCalendarEventPath } from '@utils/eventCalendar';
+import { getEventImage } from '@utils/eventImages';
 import diegoPasarela from '../../../../../assets/ddweb/diego-pasarela.jpg';
 import satDigital from '../../../../../assets/ddweb/sat-cumplimiento-digital.jpg';
-import sefCdmx from '../../../../../assets/ddweb/SEF.jpg';
 import { STATIC_BLOG_POSTS, formatStaticBlogDate } from '@/data/blogPosts';
 
 const border = 'border-ink-900/10';
@@ -69,11 +69,9 @@ export default function BlogList() {
 
   const countdown = useCountdown(eventTargetMs);
   const eventHref = getCalendarEventPath(nextEvent);
-  const eventTitle = nextEvent?.title ?? 'Estrategia Fiscal Edición CDMX';
-  const eventDateLabel = nextEvent
-    ? `${formatEventDate(nextEvent.startDate)}${nextEvent.location ? ` · ${nextEvent.location}` : ''}`
-    : '15 Jun 2026 · WTC CDMX';
-  const eventImage = sefCdmx;
+  const eventTitle = nextEvent.title;
+  const eventDateLabel = `${formatEventDate(nextEvent.startDate)}${nextEvent.location ? ` · ${nextEvent.location}` : ''}`;
+  const eventImage = getEventImage(nextEvent);
 
   return (
     <div className="bg-cream-50 text-ink-900">
