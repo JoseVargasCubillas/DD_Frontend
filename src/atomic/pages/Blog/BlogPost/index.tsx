@@ -6,8 +6,8 @@ import Spinner from '@atoms/Spinner';
 import { formatDate } from '@utils/formatters';
 import { useNextCalendarEvent } from '@hooks/useNextCalendarEvent';
 import { getCalendarEventPath } from '@utils/eventCalendar';
+import { getEventImage } from '@utils/eventImages';
 import { findStaticBlogPost, formatStaticBlogDate, STATIC_BLOG_POSTS } from '@/data/blogPosts';
-import sefCdmx from '../../../../../assets/ddweb/SEF.jpg';
 
 const border = 'border-ink-900/10';
 const mono = 'font-mono text-[11px] uppercase tracking-[0.18em] text-ink-900/45';
@@ -60,11 +60,9 @@ export default function BlogPost() {
 
   const countdown = useCountdown(eventTargetMs);
   const eventHref = getCalendarEventPath(nextEvent);
-  const eventTitle = nextEvent?.title ?? 'Estrategia Fiscal Edición CDMX';
-  const eventDateLabel = nextEvent
-    ? `${formatEventDate(nextEvent.startDate)}${nextEvent.location ? ` · ${nextEvent.location}` : ''}`
-    : '15 Jun 2026 · WTC CDMX';
-  const eventImage = sefCdmx;
+  const eventTitle = nextEvent.title;
+  const eventDateLabel = `${formatEventDate(nextEvent.startDate)}${nextEvent.location ? ` · ${nextEvent.location}` : ''}`;
+  const eventImage = getEventImage(nextEvent);
 
   if (!localPost && isLoading) {
     return <div className="flex justify-center py-20"><Spinner size="lg" /></div>;
