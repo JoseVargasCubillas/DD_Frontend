@@ -4,7 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import * as blogApi from '@api/blog.api';
 import Spinner from '@atoms/Spinner';
 import { formatDate } from '@utils/formatters';
-import { useEvents } from '@hooks/useEvents';
+import { useNextCalendarEvent } from '@hooks/useNextCalendarEvent';
+import { getCalendarEventPath } from '@utils/eventCalendar';
 import { findStaticBlogPost, formatStaticBlogDate, STATIC_BLOG_POSTS } from '@/data/blogPosts';
 import sefCdmx from '../../../../../assets/ddweb/SEF.jpg';
 
@@ -38,13 +39,6 @@ const formatEventDate = (iso?: string) => {
   return `${String(d.getDate()).padStart(2, '0')} ${monthShort[d.getMonth()]} ${d.getFullYear()}`;
 };
 
-const eventPath = (slug?: string, title?: string): string => {
-  const key = `${slug ?? ''} ${title ?? ''}`.toLowerCase();
-  if (key.includes('estrategia') && key.includes('fiscal')) return '/eventos/estrategia-fiscal';
-  if (slug) return `/eventos/${slug}`;
-  return '/eventos';
-};
-
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const localPost = slug ? findStaticBlogPost(slug) : undefined;
@@ -56,8 +50,7 @@ export default function BlogPost() {
     retry: false,
   });
 
-  const { data: eventsData } = useEvents({ limit: 1, status: 'upcoming' });
-  const nextEvent = eventsData?.data?.[0];
+  const nextEvent = useNextCalendarEvent();
 
   const eventTargetMs = useMemo<number | null>(() => {
     if (!nextEvent?.startDate) return null;
@@ -66,12 +59,12 @@ export default function BlogPost() {
   }, [nextEvent?.startDate]);
 
   const countdown = useCountdown(eventTargetMs);
-  const eventHref = eventPath(nextEvent?.slug, nextEvent?.title);
+  const eventHref = getCalendarEventPath(nextEvent);
   const eventTitle = nextEvent?.title ?? 'Estrategia Fiscal Edición CDMX';
   const eventDateLabel = nextEvent
     ? `${formatEventDate(nextEvent.startDate)}${nextEvent.location ? ` · ${nextEvent.location}` : ''}`
     : '15 Jun 2026 · WTC CDMX';
-  const eventImage = nextEvent?.thumbnail || sefCdmx;
+  const eventImage = sefCdmx;
 
   if (!localPost && isLoading) {
     return <div className="flex justify-center py-20"><Spinner size="lg" /></div>;
