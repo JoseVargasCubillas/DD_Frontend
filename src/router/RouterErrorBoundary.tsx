@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link, isRouteErrorResponse, useRouteError } from "react-router-dom";
+import NotFound from "@pages/NotFound";
 
 /**
  * ErrorBoundary del router. Captura:
@@ -31,6 +32,17 @@ export default function RouterErrorBoundary() {
     window.sessionStorage.setItem(key, "1");
     window.location.reload();
   }, [isChunkError]);
+
+  const isNotFound = isRouteErrorResponse(error) && error.status === 404;
+
+  if (!isChunkError) {
+    return (
+      <NotFound
+        mode={isNotFound ? "not-found" : "error"}
+        message={isNotFound ? undefined : message}
+      />
+    );
+  }
 
   return (
     <main className="min-h-screen bg-cream-50 flex items-center justify-center px-6">
