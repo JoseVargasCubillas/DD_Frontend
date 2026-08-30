@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useHeroReveal, useReveal } from '@hooks/useReveal';
+import LeadCaptureModal from '@molecules/LeadCaptureModal';
+import { requestMediaKit } from '@api/leads.api';
 import diegoHero from '../../../../assets/ddweb/figma-diego-hero.png';
 import equipoDiazLara from '../../../../assets/ddweb/equipo-diaz-lara-escaleras.jpg';
 import logoLider from '../../../../assets/home/008_home_logo1_DD.png';
@@ -193,6 +195,7 @@ export default function About() {
   const pressRef = useReveal<HTMLDivElement>(0.08);
   const speakerRef = useReveal<HTMLDivElement>(0.12);
   const [showAllPress, setShowAllPress] = useState(false);
+  const [mediaKitOpen, setMediaKitOpen] = useState(false);
   const visiblePress = showAllPress ? press : press.slice(0, 8);
 
   return (
@@ -379,26 +382,38 @@ export default function About() {
       <section className="bg-cream-100 py-24">
         <div ref={speakerRef} className="stagger-grid container-app grid gap-12 lg:grid-cols-2 lg:items-center">
           <div data-s="0">
-            <p className={mono}>07 / Para organizadores</p>
-            <h2 className="mt-6 font-serif text-[72px] leading-none tracking-[-0.06em]">¿Buscas a Diego para tu evento?</h2>
+            <p className={mono}>07 / Kit editorial & prensa</p>
+            <h2 className="mt-6 font-serif text-[72px] leading-none tracking-[-0.06em]">Media kit de Diego Díaz.</h2>
             <p className="mt-7 max-w-[580px] text-[20px] leading-relaxed text-ink-900/65">
-              Diego participa cada año en cumbres empresariales, foros fiscales y entrevistas para medios. Descarga el dossier para conocer agenda, requerimientos técnicos y portafolio de conferencias.
+              Descarga el kit oficial con biografía, fotografías en alta, logotipos, líneas editoriales y la trayectoria pública de Diego. Pensado para redacciones, editoriales, universidades y organizaciones que preparan una publicación, entrevista o colaboración.
             </p>
-            <a href="/assets/home/DDMedia Kit.pdf" className="mt-8 inline-block cursor-pointer bg-ink-900 px-7 py-4 text-sm font-medium text-white transition-colors duration-200 hover:bg-ink-700">
-              Descargar dossier ↓
-            </a>
+            <button
+              type="button"
+              onClick={() => setMediaKitOpen(true)}
+              className="mt-8 inline-block cursor-pointer bg-ink-900 px-7 py-4 text-sm font-medium text-white transition-colors duration-200 hover:bg-ink-700"
+            >
+              Descargar media kit ↓
+            </button>
           </div>
           <div data-s="1" className={`border ${border} bg-white p-10 transition-shadow duration-300 hover:shadow-[0_24px_70px_-40px_rgba(10,10,10,0.45)]`}>
             <div className={`grid h-20 w-16 place-items-center border ${border} font-serif text-[34px]`}>PDF</div>
-            <p className={`${mono} mt-8`}>— DOSSIER DE CONFERENCISTA · 2026</p>
-            <h3 className="mt-6 font-serif text-[48px] leading-tight tracking-[-0.05em]">Press kit + bio + portafolio de conferencias.</h3>
+            <p className={`${mono} mt-8`}>— MEDIA KIT · 2026</p>
+            <h3 className="mt-6 font-serif text-[48px] leading-tight tracking-[-0.05em]">Bio, fotografías, logotipos y líneas editoriales.</h3>
             <div className={`mt-8 flex justify-between border-t ${border} pt-5 ${mono}`}>
-              <span>12 PÁG · ESP/ENG</span>
-              <span>4.2 MB ↓</span>
+              <span>USO EDITORIAL · ESP/ENG</span>
+              <span>PDF ↓</span>
             </div>
           </div>
         </div>
       </section>
+      <LeadCaptureModal
+        open={mediaKitOpen}
+        onClose={() => setMediaKitOpen(false)}
+        resource="media-kit"
+        submit={requestMediaKit}
+        fallbackDownloadUrl="https://github.com/JoseVargasCubillas/DD_Frontend/releases/download/media-v1/DDMedia-Kit.pdf"
+        fallbackFilename="Diego-Diaz-Media-Kit.pdf"
+      />
     </div>
   );
 }

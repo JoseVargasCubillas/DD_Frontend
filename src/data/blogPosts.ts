@@ -42,7 +42,7 @@ const JAZMIN: BlogAuthor = {
   role: 'Abogada Fiscal',
 };
 
-export const STATIC_BLOG_POSTS: StaticBlogPost[] = [
+export const HAND_WRITTEN_POSTS: StaticBlogPost[] = [
   {
     slug: 'reformas-fiscales-vs-amenazas-fiscales-2025',
     title: 'Reformas fiscales vs amenazas fiscales: ¿cómo afectan a las empresas en México?',
@@ -283,6 +283,19 @@ export const STATIC_BLOG_POSTS: StaticBlogPost[] = [
 `,
   },
 ];
+
+import { BOLETINES_MM_POSTS } from './boletines.generated';
+
+/**
+ * Registry combinado: posts escritos a mano (arriba) + boletines fiscales MM
+ * (auto-generados desde los PDFs originales por `scripts/build-boletines.py`).
+ * Se ordena por fecha descendente para que el destacado sea siempre el más
+ * reciente.
+ */
+export const STATIC_BLOG_POSTS: StaticBlogPost[] = [
+  ...HAND_WRITTEN_POSTS,
+  ...BOLETINES_MM_POSTS,
+].sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1));
 
 const MONTHS_ES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 

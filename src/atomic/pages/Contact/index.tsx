@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import diegoAjedrez from '../../../../assets/ddweb/diego-ajedrez.jpg';
+import { waLink, WHATSAPP_DEFAULT_MESSAGE } from '@utils/whatsapp';
 
 const mono = 'font-mono text-[13px] uppercase tracking-[0.14em] text-ink-900/55';
 const border = 'border-ink-900/10';
@@ -19,10 +20,10 @@ const responseTimes = [
   ['Otro', '3-5 días hábiles'],
 ];
 
-const channels = [
-  ['— Canal 01 · Más rápido', 'WhatsApp', 'Para asuntos urgentes, cierres de cupo, dudas concretas. Te responde Diego o su jefa de gabinete.', '+52 55 8400 1184', 'Abrir conversación →'],
-  ['— Canal 02', 'Por correo', 'Para asuntos formales, propuestas, prensa, documentación adjunta o cuando el detalle importa.', 'hola@diegodiaz.mx', 'Redactar correo →'],
-  ['— Canal 03', 'Llamada agendada', '30 minutos con la jefa de gabinete para mapear si Diego es la persona correcta para ayudarte.', 'Agenda privada', 'Agendar llamada →'],
+const channels: Array<[string, string, string, string, string, string?]> = [
+  ['— Canal 01 · Más rápido', 'WhatsApp', 'Para asuntos urgentes, cierres de cupo, dudas concretas. Te responde Diego o su jefa de gabinete.', '+52 1 442 747 5869', 'Abrir conversación →', waLink(WHATSAPP_DEFAULT_MESSAGE)],
+  ['— Canal 02', 'Por correo', 'Para asuntos formales, propuestas, prensa, documentación adjunta o cuando el detalle importa.', 'hola@diegodiaz.mx', 'Redactar correo →', 'mailto:hola@diegodiaz.mx'],
+  ['— Canal 03', 'Llamada agendada', '30 minutos con la jefa de gabinete para mapear si Diego es la persona correcta para ayudarte.', 'Agenda privada', 'Agendar llamada →', '/contacto#formulario'],
 ];
 
 const pressResources = [
@@ -162,34 +163,45 @@ export default function Contact() {
           <span className={`${mono} hidden md:block`}>3 canales · sin formulario</span>
         </div>
         <div className={`mt-14 grid items-stretch gap-5 lg:grid-cols-3`}>
-          {channels.map(([eyebrow, title, body, value, cta]) => (
-            <article
-              key={title}
-              className={`group flex min-h-[312px] cursor-pointer flex-col border ${border} bg-cream-50 p-8 text-ink-900 transition-colors duration-300 hover:border-ink-900 hover:bg-ink-900 hover:text-white`}
-            >
-              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-900/45 transition-colors duration-300 group-hover:text-white/55">{eyebrow}</p>
-              <h3 className="mt-6 font-serif text-[clamp(31px,3vw,38px)] leading-[1.02] tracking-[-0.045em]">
-                {title.includes('WhatsApp') ? (
-                  <>
-                    <em className="font-normal">WhatsApp</em> directo
-                  </>
-                ) : title.includes('Llamada') ? (
-                  <>
-                    Llamada <em className="font-normal">agendada</em>
-                  </>
-                ) : title.includes('correo') ? (
-                  <>
-                    Por <em className="font-normal">correo</em>
-                  </>
-                ) : title}
-              </h3>
-              <p className="mt-5 max-w-[300px] text-[13px] leading-[1.6] text-ink-900/62 transition-colors duration-300 group-hover:text-white/65">{body}</p>
-              <p className="mt-5 font-mono text-[13px] tracking-[0.18em] text-ink-900 transition-colors duration-300 group-hover:text-white">{value}</p>
-              <p className="mt-auto border-t border-ink-900/10 pt-5 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-900 transition-colors duration-300 group-hover:border-white/15 group-hover:text-white">
-                {cta}
-              </p>
-            </article>
-          ))}
+          {channels.map(([eyebrow, title, body, value, cta, href]) => {
+            const isExternal = href?.startsWith('http') || href?.startsWith('mailto:');
+            const Wrapper: 'a' | 'article' = href ? 'a' : 'article';
+            const wrapperProps: any = href
+              ? {
+                  href,
+                  ...(isExternal ? { target: '_blank', rel: 'noreferrer' } : {}),
+                }
+              : {};
+            return (
+              <Wrapper
+                key={title}
+                {...wrapperProps}
+                className={`group flex min-h-[312px] cursor-pointer flex-col border ${border} bg-cream-50 p-8 text-ink-900 no-underline transition-colors duration-300 hover:border-ink-900 hover:bg-ink-900 hover:text-white`}
+              >
+                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-900/45 transition-colors duration-300 group-hover:text-white/55">{eyebrow}</p>
+                <h3 className="mt-6 font-serif text-[clamp(31px,3vw,38px)] leading-[1.02] tracking-[-0.045em]">
+                  {title.includes('WhatsApp') ? (
+                    <>
+                      <em className="font-normal">WhatsApp</em> directo
+                    </>
+                  ) : title.includes('Llamada') ? (
+                    <>
+                      Llamada <em className="font-normal">agendada</em>
+                    </>
+                  ) : title.includes('correo') ? (
+                    <>
+                      Por <em className="font-normal">correo</em>
+                    </>
+                  ) : title}
+                </h3>
+                <p className="mt-5 max-w-[300px] text-[13px] leading-[1.6] text-ink-900/62 transition-colors duration-300 group-hover:text-white/65">{body}</p>
+                <p className="mt-5 font-mono text-[13px] tracking-[0.18em] text-ink-900 transition-colors duration-300 group-hover:text-white">{value}</p>
+                <p className="mt-auto border-t border-ink-900/10 pt-5 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-900 transition-colors duration-300 group-hover:border-white/15 group-hover:text-white">
+                  {cta}
+                </p>
+              </Wrapper>
+            );
+          })}
         </div>
       </section>
 

@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
-import { useEvents } from '@hooks/useEvents';
+import { useNextCalendarEvent } from '@hooks/useNextCalendarEvent';
+import { getCalendarEventPath } from '@utils/eventCalendar';
+import { getEventImage } from '@utils/eventImages';
 import diegoPasarela from '../../../../../assets/ddweb/diego-pasarela.jpg';
 import satDigital from '../../../../../assets/ddweb/sat-cumplimiento-digital.jpg';
-import sefCdmx from '../../../../../assets/ddweb/SEF.jpg';
 import { STATIC_BLOG_POSTS, formatStaticBlogDate } from '@/data/blogPosts';
 
 const border = 'border-ink-900/10';
@@ -37,13 +38,6 @@ const formatEventDate = (iso?: string) => {
   return `${String(d.getDate()).padStart(2, '0')} ${monthShort[d.getMonth()]} ${d.getFullYear()}`;
 };
 
-const eventPath = (slug?: string, title?: string): string => {
-  const key = `${slug ?? ''} ${title ?? ''}`.toLowerCase();
-  if (key.includes('estrategia') && key.includes('fiscal')) return '/eventos/estrategia-fiscal';
-  if (slug) return `/eventos/${slug}`;
-  return '/eventos';
-};
-
 const mostRead = [
   ['"El SAT no es tu enemigo"', 'Versión texto del video viral', '12,050 lecturas · 6 min'],
   ['Holding o fideicomiso: guía comparativa con casos', '8,910 lecturas · 12 min'],
@@ -64,9 +58,8 @@ export default function BlogList() {
   const [featured, ...rest] = STATIC_BLOG_POSTS;
   const posts = rest;
 
-  // ── Próximo evento (mismo patrón que Home) ────────────────
-  const { data: eventsData } = useEvents({ limit: 1, status: 'upcoming' });
-  const nextEvent = eventsData?.data?.[0];
+  // ── Próximo evento (misma lógica que Home/Navbar: fallback + stored + API) ─
+  const nextEvent = useNextCalendarEvent();
 
   const eventTargetMs = useMemo<number | null>(() => {
     if (!nextEvent?.startDate) return null;
@@ -75,12 +68,10 @@ export default function BlogList() {
   }, [nextEvent?.startDate]);
 
   const countdown = useCountdown(eventTargetMs);
-  const eventHref = eventPath(nextEvent?.slug, nextEvent?.title);
-  const eventTitle = nextEvent?.title ?? 'Estrategia Fiscal Edición CDMX';
-  const eventDateLabel = nextEvent
-    ? `${formatEventDate(nextEvent.startDate)}${nextEvent.location ? ` · ${nextEvent.location}` : ''}`
-    : '15 Jun 2026 · WTC CDMX';
-  const eventImage = nextEvent?.thumbnail || sefCdmx;
+  const eventHref = getCalendarEventPath(nextEvent);
+  const eventTitle = nextEvent.title;
+  const eventDateLabel = `${formatEventDate(nextEvent.startDate)}${nextEvent.location ? ` · ${nextEvent.location}` : ''}`;
+  const eventImage = getEventImage(nextEvent);
 
   return (
     <div className="bg-cream-50 text-ink-900">

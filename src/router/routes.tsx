@@ -8,6 +8,7 @@ import Events from "@pages/Events";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 import RouterErrorBoundary from "./RouterErrorBoundary";
+import NotFound from "@pages/NotFound";
 
 
 const Home = lazy(() => import("@pages/Home"));
@@ -53,7 +54,6 @@ const DiazLara = lazy(() => import("@pages/DiazLara"));
 const ManageEmail = lazy(() => import("@pages/Admin/ManageEmail"));
 const BookCheckout = lazy(() => import("@pages/Books/BookCheckout"));
 const Books = lazy(() => import("@pages/Books"));
-
 export const router = createBrowserRouter([
   {
     element: <MainLayout />,
@@ -101,6 +101,7 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      { path: "*", element: <NotFound /> },
     ],
   },
   {

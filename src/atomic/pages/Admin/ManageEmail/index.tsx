@@ -1,11 +1,18 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import * as emailApi from '@api/email.api';
 import type { BroadcastPayload, ContactPreview } from '@api/email.api';
 
 // ── Tipos ─────────────────────────────────────────────────────
-type Segment = 'all' | 'subscribed' | 'customers' | 'leads';
+type Segment =
+  | 'all'
+  | 'subscribed'
+  | 'customers'
+  | 'leads'
+  | 'guide-leads'
+  | 'lead-source:guia-blindaje-sat';
 
 interface SegmentOption {
   id: Segment;
@@ -16,7 +23,9 @@ interface SegmentOption {
 const SEGMENT_OPTIONS: SegmentOption[] = [
   { id: 'subscribed', label: 'Suscritos a marketing', description: 'Contactos con opt-in activo' },
   { id: 'customers', label: 'Clientes', description: 'Compraron al menos una vez' },
-  { id: 'leads', label: 'Leads', description: 'Registrados sin compra' },
+  { id: 'leads', label: 'Leads (usuarios)', description: 'Cuentas sin compra' },
+  { id: 'lead-source:guia-blindaje-sat', label: 'Leads · Guía SAT', description: 'Descargaron la guía desde el Home' },
+  { id: 'guide-leads', label: 'Leads editoriales', description: 'Guía SAT + Media Kit + Newsletter' },
   { id: 'all', label: 'Todos los contactos', description: 'Toda la base de datos activa' },
 ];
 
@@ -52,9 +61,21 @@ function CountBadge({ count, label }: { count?: number; label: string }) {
 
 // ── Página ────────────────────────────────────────────────────
 export default function ManageEmail() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [segment, setSegment] = useState<Segment>('all');
+
+  useEffect(() => {
+    const urlSegment = searchParams.get('segment');
+    if (!urlSegment) return;
+    const known = SEGMENT_OPTIONS.some((opt) => opt.id === urlSegment);
+    if (known) {
+      setSegment(urlSegment as Segment);
+      searchParams.delete('segment');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
   const [showContacts, setShowContacts] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [logs, setLogs] = useState<SentLog[]>(loadLogs);
@@ -105,7 +126,13 @@ export default function ManageEmail() {
       ? segments?.subscribed
       : segment === 'customers'
       ? segments?.customers
-      : segments?.leads;
+      : segment === 'leads'
+      ? segments?.leads
+      : segment === 'guide-leads'
+      ? segments?.guideLeads
+      : segment === 'lead-source:guia-blindaje-sat'
+      ? segments?.guiaSat
+      : contactList.length;
 
   const canSend = subject.trim().length > 0 && body.trim().length > 0;
 
@@ -146,11 +173,13 @@ export default function ManageEmail() {
       </header>
 
       {/* ── Estadísticas rápidas ─────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <CountBadge count={segments?.all} label="Total contactos" />
         <CountBadge count={segments?.subscribed} label="Suscritos" />
         <CountBadge count={segments?.customers} label="Clientes" />
-        <CountBadge count={segments?.leads} label="Leads" />
+        <CountBadge count={segments?.leads} label="Leads usuarios" />
+        <CountBadge count={segments?.guiaSat} label="Leads Guía SAT" />
+        <CountBadge count={segments?.guideLeads} label="Leads editoriales" />
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -164,7 +193,7 @@ export default function ManageEmail() {
               <label className="mb-3 block text-[10px] font-bold uppercase tracking-[0.2em] text-ink-400">
                 Destinatarios
               </label>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {SEGMENT_OPTIONS.map((opt) => (
                   <button
                     key={opt.id}

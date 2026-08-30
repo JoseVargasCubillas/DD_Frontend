@@ -17,10 +17,162 @@ import { useEvents, useAssignUsersToEvent, useDeregisterUsersFromEvent } from '@
 import { useOffers, useAssignOffer, useBulkRevokeOffer } from '@hooks/useOffers';
 import type { ImportContactInput, ImportContactsResult } from '@api/users.api';
 import type { User, Tag, Course, Offer, Event as EventType } from '@t/index';
+import { useLeads } from '@hooks/useLeads';
+
+const LEAD_SOURCE_LABELS: Record<string, string> = {
+  'guia-blindaje-sat': 'Guía SAT',
+  'media-kit': 'Media Kit',
+  newsletter: 'Newsletter',
+  contact: 'Formulario contacto',
+  other: 'Otro',
+};
+
+const formatLeadDate = (value?: string | null) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('es-MX', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+};
+
+function LeadsTab() {
+  const [source, setSource] = useState<string>('guia-blindaje-sat');
+  const { data: leads = [], isLoading } = useLeads(source || undefined);
+  const campaignHref = source
+    ? `/admin/email?segment=${encodeURIComponent(`lead-source:${source}`)}`
+    : '/admin/email?segment=guide-leads';
+
+  const copyEmails = () => {
+    const text = leads.map((l) => l.email).join('\n');
+    void navigator.clipboard.writeText(text);
+  };
+
+  const downloadCsv = () => {
+    const header = ['email', 'name', 'source', 'createdAt', 'emailedAt'];
+    const rows = leads.map((l) => [
+      l.email,
+      l.name ?? '',
+      l.source,
+      l.createdAt ?? '',
+      l.emailedAt ?? '',
+    ]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `leads-${source || 'todos'}-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <section className="rounded-2xl border border-ink-900/10 bg-white px-5 py-7 shadow-sm">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-ink-900">Leads capturados</h2>
+          <p className="mt-1 text-sm text-ink-600">
+            Correos que descargaron un recurso desde la web. Se guardan al enviar el PDF.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <select
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+            className="min-h-10 cursor-pointer rounded-full border border-ink-900/15 bg-white px-4 text-sm text-ink-900"
+          >
+            <option value="">Todas las fuentes</option>
+            <option value="guia-blindaje-sat">Guía SAT</option>
+            <option value="media-kit">Media Kit</option>
+            <option value="newsletter">Newsletter</option>
+            <option value="contact">Formulario contacto</option>
+          </select>
+          <button
+            type="button"
+            onClick={copyEmails}
+            disabled={!leads.length}
+            className="min-h-10 cursor-pointer rounded-full border border-ink-900/15 bg-white px-4 text-sm font-medium text-ink-900 hover:bg-ink-50 disabled:opacity-50"
+          >
+            Copiar correos
+          </button>
+          <button
+            type="button"
+            onClick={downloadCsv}
+            disabled={!leads.length}
+            className="min-h-10 cursor-pointer rounded-full border border-ink-900/15 bg-white px-4 text-sm font-medium text-ink-900 hover:bg-ink-50 disabled:opacity-50"
+          >
+            Descargar CSV
+          </button>
+          <Link
+            to={campaignHref}
+            className="min-h-10 inline-flex items-center rounded-full bg-[#2f2f2f] px-4 text-sm font-semibold text-white hover:bg-ink-900"
+          >
+            Enviar campaña ↗
+          </Link>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-ink-900/10">
+        <table className="min-w-full text-sm">
+          <thead className="bg-ink-50 text-left text-xs uppercase tracking-wider text-ink-600">
+            <tr>
+              <th className="px-4 py-3">Correo</th>
+              <th className="px-4 py-3">Fuente</th>
+              <th className="px-4 py-3">Capturado</th>
+              <th className="px-4 py-3">Correo enviado</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-ink-900/5">
+            {isLoading ? (
+              <tr>
+                <td colSpan={4} className="px-4 py-10 text-center text-ink-500">Cargando…</td>
+              </tr>
+            ) : leads.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-4 py-10 text-center text-ink-500">
+                  Sin leads todavía en esta fuente.
+                </td>
+              </tr>
+            ) : (
+              leads.map((lead) => (
+                <tr key={lead._id ?? lead.id ?? lead.email} className="text-ink-900">
+                  <td className="px-4 py-3 font-medium">{lead.email}</td>
+                  <td className="px-4 py-3 text-ink-600">
+                    {LEAD_SOURCE_LABELS[lead.source] ?? lead.source}
+                  </td>
+                  <td className="px-4 py-3 text-ink-600">{formatLeadDate(lead.createdAt)}</td>
+                  <td className="px-4 py-3">
+                    {lead.emailedAt ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-700">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        {formatLeadDate(lead.emailedAt)}
+                      </span>
+                    ) : (
+                      <span className="text-ink-500">Pendiente</span>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
 
 export default function ManageContacts() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') === 'tags' ? 'tags' : 'contacts';
+  const tabParam = searchParams.get('tab');
+  const activeTab: 'contacts' | 'tags' | 'leads' =
+    tabParam === 'tags' ? 'tags' : tabParam === 'leads' ? 'leads' : 'contacts';
   const [search, setSearch] = useState('');
   const [tagFilter, setTagFilter] = useState<string | undefined>();
   const [segment, setSegment] = useState('');
@@ -64,6 +216,7 @@ export default function ManageContacts() {
   };
 
   const showTags = () => setSearchParams({ tab: 'tags' });
+  const showLeads = () => setSearchParams({ tab: 'leads' });
 
   return (
     <div className="mx-auto max-w-[1180px]">
@@ -88,6 +241,13 @@ export default function ManageContacts() {
                 className={`pb-4 ${activeTab === 'tags' ? 'border-b-2 border-ink-900 text-ink-900' : 'text-ink-800 hover:text-ink-900'}`}
               >
                 Manage tags
+              </button>
+              <button
+                type="button"
+                onClick={showLeads}
+                className={`pb-4 ${activeTab === 'leads' ? 'border-b-2 border-ink-900 text-ink-900' : 'text-ink-800 hover:text-ink-900'}`}
+              >
+                Leads
               </button>
             </nav>
           </div>
@@ -131,6 +291,8 @@ export default function ManageContacts() {
 
       {activeTab === 'tags' ? (
         <ManageTagsTab tags={tags} onSelectTag={(tagId) => showContacts(tagId)} />
+      ) : activeTab === 'leads' ? (
+        <LeadsTab />
       ) : (
       <section className="rounded-2xl border border-ink-900/10 bg-white px-5 py-7 shadow-sm">
         <div className="mb-8 flex flex-wrap items-center gap-5">
