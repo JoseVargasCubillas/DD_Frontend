@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as eventsApi from '@api/events.api';
 import Spinner from '@atoms/Spinner';
+import { useCartStore } from '@store/cartStore';
 import { formatDate, formatCurrency } from '@utils/formatters';
 import type { Event as SiteEvent } from '@t/index';
 
@@ -54,10 +55,10 @@ function deriveInfo(ev: SiteEvent) {
   const displayPrice = ev.salePrice != null && ev.salePrice > 0 ? ev.salePrice : ev.price;
   const priceLabel = isFree ? 'Gratuito' : formatCurrency(displayPrice);
   const eventId = ev._id || ev.id || '';
-  const ctaLink = (!isFree && eventId) ? '/checkout?event=' + eventId : undefined;
+  const canBuy = !isFree && Boolean(eventId);
   const hasAgenda = Array.isArray(ev.agenda) && ev.agenda.length > 0;
 
-  return { dateLabel, timeLabel, locationText, priceLabel, isFree, spotsLeft, soldOut, ctaLink, hasAgenda };
+  return { dateLabel, timeLabel, locationText, priceLabel, isFree, spotsLeft, soldOut, canBuy, eventId, displayPrice, hasAgenda };
 }
 
 function InfoCell({ label, value }: { label: string; value: string }) {
@@ -69,7 +70,7 @@ function InfoCell({ label, value }: { label: string; value: string }) {
   );
 }
 
-interface CtaProps { registered: boolean; soldOut: boolean; loading: boolean; ctaLink: string | undefined; dark: boolean; onRegister: () => void; }
+interface CtaProps { registered: boolean; soldOut: boolean; loading: boolean; canBuy: boolean; dark: boolean; onRegister: () => void; onBuy: () => void; }
 
 function CtaBtn(p: CtaProps) {
   const b = 'inline-flex h-[48px] min-w-[200px] items-center justify-center gap-2 px-8 text-[11px] font-bold uppercase tracking-[0.2em] transition-colors';
@@ -86,14 +87,17 @@ function CtaBtn(p: CtaProps) {
     );
   }
   if (p.soldOut) { return <Link to="/contacto" className={outline}>Lista de espera</Link>; }
-  if (p.ctaLink) { return <Link to={p.ctaLink} className={filled}>Comprar entrada</Link>; }
+  if (p.canBuy) { return <button type="button" onClick={p.onBuy} className={filled}>Comprar entrada</button>; }
   const label = p.loading ? 'Enviando...' : 'Registrarme gratis';
   return <button type="button" onClick={p.onRegister} className={filled}>{label}</button>;
 }
 
 export default function EventDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const addItem = useCartStore((s) => s.addItem);
+  const clearCart = useCartStore((s) => s.clear);
   const [registered, setRegistered] = useState(false);
 
   const localEvent = useMemo(() => loadStoredEvent(slug), [slug]);
@@ -114,6 +118,22 @@ export default function EventDetail() {
 
   const handleRegister = () => { registerMutation.mutate(); };
 
+  const handleBuy = () => {
+    if (!event || !info) return;
+    clearCart();
+    addItem({
+      id: `event-${info.eventId}`,
+      type: 'event',
+      refId: info.eventId,
+      title: event.title,
+      price: info.displayPrice,
+      quantity: 1,
+      currency: 'MXN',
+      paymentType: 'one_time',
+    });
+    navigate('/eventos/checkout');
+  };
+
   if (isLoading && !event) {
     return <div className="flex min-h-[60vh] items-center justify-center"><Spinner size="lg" /></div>;
   }
@@ -129,7 +149,7 @@ export default function EventDetail() {
     );
   }
 
-  const { dateLabel, timeLabel, locationText, priceLabel, spotsLeft, soldOut, ctaLink, hasAgenda } = info;
+  const { dateLabel, timeLabel, locationText, priceLabel, spotsLeft, soldOut, canBuy, hasAgenda } = info;
 
   const infoCells = [
     { label: 'Fecha', value: dateLabel },
@@ -148,7 +168,7 @@ export default function EventDetail() {
     event.registeredCount > 0 ? { label: 'Registrados', value: event.registeredCount + ' personas' } : null,
   ].filter(Boolean) as Array<{ label: string; value: string }>;
 
-  const ctaP: CtaProps = { registered, soldOut, loading: registerMutation.isPending, ctaLink, dark: false, onRegister: handleRegister };
+  const ctaP: CtaProps = { registered, soldOut, loading: registerMutation.isPending, canBuy, dark: false, onRegister: handleRegister, onBuy: handleBuy };
 
   return (
     <div className="bg-cream-50 text-ink-900">

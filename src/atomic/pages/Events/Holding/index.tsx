@@ -173,7 +173,7 @@ export default function HoldingLanding() {
   const startHoldingCheckout = () => {
     clearCart();
     addItem(HOLDING_CHECKOUT_ITEM);
-    navigate("/checkout");
+    navigate("/eventos/checkout");
   };
 
   return (

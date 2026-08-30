@@ -1,7 +1,9 @@
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAutoUnmuteOnGesture } from '@hooks/useAutoUnmuteOnGesture';
 import { useEvents } from '@hooks/useEvents';
 import { useNowTick } from '@hooks/useNowTick';
+import { useCartStore } from '@store/cartStore';
 import {
   FALLBACK_CALENDAR_EVENTS,
   getNextEstrategiaFiscalEvent,
@@ -23,11 +25,6 @@ import type { Event as SiteEvent } from '@t/index';
 
 const ENABLE_EVENT_API_SYNC = import.meta.env.VITE_EVENTS_API_SYNC !== 'false';
 const dossierUrl = new URL('../../../../../assets/eventos/Seminario Estrategia Fiscal (2).pdf', import.meta.url).href;
-const stripeCheckoutUrls = {
-  online: String(import.meta.env.VITE_ESTRATEGIA_FISCAL_ONLINE_STRIPE_URL || ''),
-  general: String(import.meta.env.VITE_ESTRATEGIA_FISCAL_GENERAL_STRIPE_URL || ''),
-  vip: String(import.meta.env.VITE_ESTRATEGIA_FISCAL_VIP_STRIPE_URL || ''),
-};
 
 const countdownLabels = [
   ['days', 'Días'],
@@ -199,10 +196,11 @@ const tickets = [
   {
     eyebrow: 'Online',
     price: '$4,997',
+    priceValue: 4997,
+    refId: 'estrategia-fiscal-online',
     note: 'Pago único · Acceso en vivo',
     variant: 'early',
     cta: 'Comprar Online',
-    href: stripeCheckoutUrls.online,
     items: [
       'Transmisión en vivo de los 6 bloques',
       '09:00 a 14:00 hrs (aprox.)',
@@ -212,10 +210,11 @@ const tickets = [
   {
     eyebrow: 'General · CDMX',
     price: '$7,997',
+    priceValue: 7997,
+    refId: 'estrategia-fiscal-general',
     note: 'Pago único · Entrada general',
     variant: 'general',
     cta: 'Comprar General',
-    href: stripeCheckoutUrls.general,
     items: [
       'Entrada general al evento',
       '09:00 a 14:00 hrs (aprox.)',
@@ -225,10 +224,11 @@ const tickets = [
   {
     eyebrow: 'VIP · CDMX',
     price: '$24,997',
+    priceValue: 24997,
+    refId: 'estrategia-fiscal-vip',
     note: 'Pago único · Cupo reducido',
     variant: 'vip',
     cta: 'Comprar VIP',
-    href: stripeCheckoutUrls.vip,
     items: [
       'Entrada en zona preferencial',
       'Espacio privado para empresarios con Diego Díaz',
@@ -356,6 +356,9 @@ const FaqSection = memo(function FaqSection() {
 export default function EstrategiaFiscalLanding() {
   const videoRef = useRef<HTMLVideoElement>(null);
   useAutoUnmuteOnGesture(videoRef);
+  const navigate = useNavigate();
+  const addItem = useCartStore((s) => s.addItem);
+  const clearCart = useCartStore((s) => s.clear);
   const nowTick = useNowTick(30_000);
   const [storedEvents, setStoredEvents] = useState<CalendarEventSummary[]>(
     loadStoredCalendarEvents,
@@ -418,6 +421,21 @@ export default function EstrategiaFiscalLanding() {
     () => countdownLabels.map(([key, label]) => ({ key, label, value: countdown[key] })),
     [countdown],
   );
+
+  const buyTicket = (ticket: (typeof tickets)[number]) => {
+    clearCart();
+    addItem({
+      id: `event-${ticket.refId}`,
+      type: 'event',
+      refId: ticket.refId,
+      title: `Taller de Estrategia Fiscal · ${ticket.eyebrow}`,
+      price: ticket.priceValue,
+      quantity: 1,
+      currency: 'MXN',
+      paymentType: 'one_time',
+    });
+    navigate('/eventos/checkout');
+  };
 
   return (
     <div className="bg-cream-200 text-ink-900">
@@ -735,7 +753,6 @@ export default function EstrategiaFiscalLanding() {
           <div className="mx-auto mt-[50px] grid max-w-[1240px] grid-cols-1 overflow-visible border border-cream-400 md:grid-cols-3">
             {tickets.map((ticket) => {
               const isGeneral = ticket.variant === 'general';
-              const checkoutHref = ticket.href || '#formatos';
               return (
                 <article
                   key={ticket.eyebrow}
@@ -776,20 +793,18 @@ export default function EstrategiaFiscalLanding() {
                     ))}
                   </ul>
 
-                  <a
-                    href={checkoutHref}
-                    target={ticket.href ? '_blank' : undefined}
-                    rel={ticket.href ? 'noopener noreferrer' : undefined}
-                    aria-disabled={!ticket.href}
-                    className={`mt-auto flex min-h-[54px] w-fit items-center justify-between gap-4 border px-5 text-[10px] uppercase tracking-[0.16em] transition-colors ${
+                  <button
+                    type="button"
+                    onClick={() => buyTicket(ticket)}
+                    className={`mt-auto flex min-h-[54px] w-fit cursor-pointer items-center justify-between gap-4 border px-5 text-[10px] uppercase tracking-[0.16em] transition-colors ${
                       isGeneral
                         ? 'border-cream-50 bg-cream-50 text-ink-900 hover:bg-white'
                         : 'border-ink-900 text-ink-900 hover:bg-ink-900 hover:text-white'
-                    } ${ticket.href ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
+                    }`}
                   >
                     <span>{ticket.cta}</span>
                     <span className="card-arrow" aria-hidden="true">→</span>
-                  </a>
+                  </button>
                 </article>
               );
             })}
@@ -869,15 +884,14 @@ export default function EstrategiaFiscalLanding() {
             </div>
           </div>
 
-          <a
-            href={stripeCheckoutUrls.general || '#formatos'}
-            target={stripeCheckoutUrls.general ? '_blank' : undefined}
-            rel={stripeCheckoutUrls.general ? 'noopener noreferrer' : undefined}
+          <button
+            type="button"
+            onClick={() => buyTicket(tickets[1])}
             className="mt-[40px] flex min-h-[36px] w-[153px] cursor-pointer items-center justify-between bg-cream-50 px-[20px] text-[9px] uppercase tracking-[0.18em] text-ink-900 transition-colors hover:bg-white"
           >
             <span>Reservar mi lugar</span>
             <span aria-hidden="true">→</span>
-          </a>
+          </button>
         </div>
       </section>
     </div>

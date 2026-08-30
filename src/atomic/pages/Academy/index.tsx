@@ -93,9 +93,18 @@ type PlanCard = {
   cta: string;
 };
 
+// IDs de las ofertas reales sembradas por seed-academy-offers.ts (tabla `offers`).
+// El checkout resuelve el refId del carrito contra Offer, no contra Package,
+// asi que las plan cards deben apuntar siempre a estos ids.
+const ACADEMIA_OFFER_ID_BY_TIER: Record<string, string> = {
+  entrepreneur: 'off_academia_entrepreneur',
+  business: 'off_academia_plus',
+  master: 'off_academia_master',
+};
+
 const plansFallback: PlanCard[] = [
   {
-    id: 'pkg_entrepreneur',
+    id: ACADEMIA_OFFER_ID_BY_TIER.entrepreneur,
     name: 'Entrepreneur',
     eyebrow: 'Plan de entrada',
     price: '4,997',
@@ -112,7 +121,7 @@ const plansFallback: PlanCard[] = [
     cta: 'Aplicar',
   },
   {
-    id: 'pkg_business',
+    id: ACADEMIA_OFFER_ID_BY_TIER.business,
     name: 'Business',
     eyebrow: 'Más demandado',
     price: '14,997',
@@ -129,7 +138,7 @@ const plansFallback: PlanCard[] = [
     cta: 'Aplicar',
   },
   {
-    id: 'pkg_master',
+    id: ACADEMIA_OFFER_ID_BY_TIER.master,
     name: 'Master',
     eyebrow: 'Acceso total',
     price: '49,997',
@@ -189,7 +198,7 @@ function packageToPlan(pkg: {
   if (pkg.benefits?.whatsappCeoUrl) custom.push('Asesoramiento por WhatsApp con Diego Díaz');
   const items = custom.length >= 2 ? custom : benefitsForTier(tier);
   return {
-    id: pkg.id || pkg._id || `pkg_${tier}`,
+    id: ACADEMIA_OFFER_ID_BY_TIER[tier] ?? pkg.id ?? pkg._id ?? `pkg_${tier}`,
     name,
     eyebrow: tier === 'business' ? 'Más demandado' : tier === 'master' ? 'Acceso total' : 'Plan de entrada',
     price: amount.toLocaleString('es-MX'),

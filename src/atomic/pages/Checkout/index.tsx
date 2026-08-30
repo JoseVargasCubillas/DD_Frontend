@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useCartStore } from '@store/cartStore';
+import { useAuthStore } from '@store/authStore';
 import { createPaymentIntent } from '@api/payments.api';
 import { subscribe } from '@api/subscriptions.api';
 import { formatCurrency, formatDate } from '@utils/formatters';
@@ -196,16 +197,25 @@ function OrderConfirmation({ order, paymentLabel }: { order: OrderSummary; payme
 
 export default function Checkout() {
   const { items, total, clear } = useCartStore();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   const [clientSecret, setClientSecret] = useState('' as string);
   const [loading, setLoading] = useState(false);
   const [initError, setInitError] = useState('' as string);
   const [success, setSuccess] = useState(false);
   const [order, setOrder] = useState<OrderSummary | null>(null);
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
 
   const mode = detectMode(items);
+  const needsGuestContact = mode === 'subscription' && !isAuthenticated;
+  const canSubmitContact =
+    !needsGuestContact ||
+    (contactName.trim().length >= 2 && /\S+@\S+\.\S+/.test(contactEmail.trim()) && contactPhone.trim().length >= 8);
 
   const handleInitPayment = async () => {
+    if (!canSubmitContact) return;
     setInitError('');
     setLoading(true);
     try {
@@ -218,6 +228,9 @@ export default function Checkout() {
             refId: subscriptionItem?.refId,
             quantity: subscriptionItem?.quantity ?? 1,
           },
+          customer: needsGuestContact
+            ? { name: contactName.trim(), email: contactEmail.trim(), phone: contactPhone.trim() }
+            : undefined,
         });
         setClientSecret(result.clientSecret ?? '');
         const subscription = result.subscription;
@@ -236,11 +249,11 @@ export default function Checkout() {
 
   const handleSuccess = () => {
     setOrder((current) => current ?? { mode, items, total: total(), orderId: '' });
+    clear();
     setSuccess(true);
   };
 
   if (success && order) {
-    clear();
     const paymentLabel = clientSecret.startsWith('demo_') ? 'Modo local (demo)' : 'Tarjeta bancaria · Stripe';
     return <OrderConfirmation order={order} paymentLabel={paymentLabel} />;
   }
@@ -371,12 +384,45 @@ export default function Checkout() {
 
               {!clientSecret || !elementsOptions ? (
                 <div className="mt-8 flex flex-col gap-5">
+                  {needsGuestContact && (
+                    <div className="flex flex-col gap-4">
+                      <label className="flex flex-col gap-2">
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-white/55">Nombre</span>
+                        <input
+                          value={contactName}
+                          onChange={(e) => setContactName(e.target.value)}
+                          placeholder="Tu nombre completo"
+                          className="border border-white/20 bg-white/5 px-4 py-3 text-[14px] text-white outline-none placeholder:text-white/30 focus:border-white/50"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-2">
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-white/55">Correo</span>
+                        <input
+                          type="email"
+                          value={contactEmail}
+                          onChange={(e) => setContactEmail(e.target.value)}
+                          placeholder="tucorreo@ejemplo.com"
+                          className="border border-white/20 bg-white/5 px-4 py-3 text-[14px] text-white outline-none placeholder:text-white/30 focus:border-white/50"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-2">
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-white/55">Teléfono</span>
+                        <input
+                          type="tel"
+                          value={contactPhone}
+                          onChange={(e) => setContactPhone(e.target.value)}
+                          placeholder="10 dígitos"
+                          className="border border-white/20 bg-white/5 px-4 py-3 text-[14px] text-white outline-none placeholder:text-white/30 focus:border-white/50"
+                        />
+                      </label>
+                    </div>
+                  )}
                   <p className="text-[13px] leading-[1.7] text-white/60">
                     Haz clic en continuar para ingresar los datos de tu tarjeta de forma segura a través de Stripe.
                   </p>
                   <button
                     onClick={handleInitPayment}
-                    disabled={loading}
+                    disabled={loading || !canSubmitContact}
                     className="flex w-full items-center justify-between bg-cream-50 px-7 py-5 text-ink-900 transition-opacity disabled:opacity-50"
                   >
                     <span className="text-[11px] font-bold uppercase tracking-[0.18em]">
