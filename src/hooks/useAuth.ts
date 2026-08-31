@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@store/authStore';
 import * as authApi from '@api/auth.api';
@@ -12,6 +12,7 @@ interface LoginCredentials {
 export const useAuth = () => {
   const { user, isAuthenticated, setAuth, logout: storeLogout } = useAuthStore();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const loginMutation = useMutation({
     mutationFn: authApi.login,
@@ -19,7 +20,13 @@ export const useAuth = () => {
     onSuccess: (data) => {
       setAuth(data);
       toast.success(`Bienvenido, ${data.user.name}`);
-      navigate(data.user.role === 'admin' ? '/admin' : '/mi-cuenta');
+      // Si venimos de un flujo interrumpido (ej. "inicia sesion para
+      // continuar tu compra" en el checkout de libros), regresa ahi en vez
+      // del destino generico por rol — solo se acepta una ruta relativa
+      // propia, nunca una URL externa.
+      const redirect = searchParams.get('redirect');
+      const isSafeRedirect = Boolean(redirect) && redirect!.startsWith('/') && !redirect!.startsWith('//');
+      navigate(isSafeRedirect ? redirect! : data.user.role === 'admin' ? '/admin' : '/mi-cuenta');
     },
     onError: (error) => {
       const message = error instanceof Error ? error.message : 'Credenciales incorrectas';

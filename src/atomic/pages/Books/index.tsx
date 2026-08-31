@@ -15,7 +15,7 @@ const books = [
     title: '7 Secretos de un fiscalista',
     subtitle: 'La mentalidad detrás de la estrategia fiscal moderna.',
     image: bookFiscalista,
-    price: '$520 MXN',
+    price: '$497 MXN',
     description:
       'Diego Díaz comparte cómo piensa un fiscalista cuando deja de reaccionar a problemas y empieza a diseñar arquitectura fiscal para empresas reales.',
   },
@@ -26,7 +26,7 @@ const books = [
     title: 'Los 7 secretos que el SAT no quiere que conozcas',
     subtitle: 'El libro que volvió pública la conversación fiscal.',
     image: bookSat,
-    price: '$420 MXN',
+    price: '$497 MXN',
     description:
       'Una lectura directa para empresarios que necesitan entender los riesgos, los mitos y las decisiones que más cuestan antes de una revisión.',
   },
@@ -37,7 +37,7 @@ const books = [
     title: '7 Claves para cobrar a tu empresa',
     subtitle: 'La jugada maestra que al SAT le encantaría prohibir.',
     image: bookClaves,
-    price: '$380 MXN',
+    price: '$497 MXN',
     description:
       'Una guía práctica para ordenar sueldos, dividendos, honorarios y retiros sin destruir el flujo de la empresa ni improvisar al cierre.',
   },
@@ -205,7 +205,7 @@ export default function Books() {
             <div className="mt-9 flex flex-col gap-5 border-t border-ink-900/10 pt-8 sm:flex-row sm:items-end">
               <div className="min-w-[130px]">
                 <p className={mono}>Precio</p>
-                <p className="mt-1 font-serif text-[44px] italic leading-none">$380</p>
+                <p className="mt-1 font-serif text-[44px] italic leading-none">$497</p>
                 <p className="mt-1 text-[11px] tracking-[0.22em] text-ink-900/38">MXN · Envío incluido</p>
               </div>
               <ArrowButton to="/libros/7-claves-cobrar-empresa/checkout">Comprar libro</ArrowButton>
@@ -367,7 +367,7 @@ export default function Books() {
             <div className="mt-9 flex flex-col gap-5 border-t border-white/10 pt-8 sm:flex-row sm:items-end">
               <div className="min-w-[130px]">
                 <p className="font-mono text-[10px] uppercase tracking-[0.34em] text-white/38">Precio</p>
-                <p className="mt-1 font-serif text-[44px] italic leading-none">$520</p>
+                <p className="mt-1 font-serif text-[44px] italic leading-none">$497</p>
                 <p className="mt-1 text-[11px] tracking-[0.22em] text-white/36">MXN · Envío incluido</p>
               </div>
               <ArrowButton to="/libros/7-secretos-fiscalista/checkout" dark>Comprar libro</ArrowButton>
@@ -405,10 +405,10 @@ export default function Books() {
             <div className="mt-9 max-w-[560px] border border-white/12 bg-white/[0.03] p-8">
               <div className="divide-y divide-white/10 text-[15px] text-white/64">
                 {[
-                  ['7 Claves para cobrar a tu empresa', '$380'],
-                  ['Los 7 secretos del SAT (lista de espera)', '$420'],
-                  ['7 Secretos de un fiscalista', '$520'],
-                  ['Suma individual', '$1,320'],
+                  ['7 Claves para cobrar a tu empresa', '$497'],
+                  ['Los 7 secretos del SAT (lista de espera)', '$497'],
+                  ['7 Secretos de un fiscalista', '$497'],
+                  ['Suma individual', '$1,491'],
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between gap-5 py-4 first:pt-0">
                     <span>{label}</span>
@@ -424,7 +424,7 @@ export default function Books() {
             </div>
 
             <div className="mt-8">
-              <ArrowButton to="/checkout?mode=books-bundle" dark>Comprar bundle</ArrowButton>
+              <ArrowButton to="/libros/bundle-tres-libros/checkout" dark>Comprar bundle</ArrowButton>
             </div>
           </div>
 

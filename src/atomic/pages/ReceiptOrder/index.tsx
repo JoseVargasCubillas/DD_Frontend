@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useOrderReceipt } from '@hooks/useReceipt';
 import { formatCurrency, formatDate } from '@utils/formatters';
 import Spinner from '@atoms/Spinner';
-import { ReceiptShell, AmountBand, ConfirmationPanel, DetailRows, ReceiptNotFound } from '@molecules/ReceiptLayout';
+import { ReceiptShell, AmountBand, ConfirmationPanel, DetailRows, LinkButton, ReceiptNotFound } from '@molecules/ReceiptLayout';
 
 export default function ReceiptOrder() {
   const { id } = useParams<{ id: string }>();
@@ -50,9 +50,30 @@ export default function ReceiptOrder() {
           ...(receipt.shippingCost > 0
             ? ([['Envío', `${formatCurrency(receipt.shippingCost, receipt.currency)} ${receipt.currency}`]] as [string, string][])
             : []),
+          ...(receipt.shippingCarrier
+            ? ([['Paquetería', receipt.shippingCarrier.toUpperCase()]] as [string, string][])
+            : []),
+          ...(receipt.shippingTrackingNumber
+            ? ([['Número de guía', receipt.shippingTrackingNumber]] as [string, string][])
+            : []),
           ['Referencia', receipt.reference],
         ]}
       />
+
+      {receipt.shippingTrackingNumber && (
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          {receipt.shippingTrackUrl && (
+            <div className="flex-1">
+              <LinkButton href={receipt.shippingTrackUrl} label="Rastrear envío" detail={receipt.shippingTrackingNumber} dark />
+            </div>
+          )}
+          {receipt.shippingLabelUrl && (
+            <div className="flex-1">
+              <LinkButton href={receipt.shippingLabelUrl} label="Descargar guía (PDF)" />
+            </div>
+          )}
+        </div>
+      )}
     </ReceiptShell>
   );
 }

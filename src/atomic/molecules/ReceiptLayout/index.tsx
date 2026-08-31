@@ -116,18 +116,38 @@ export function DetailRows({ rows }: { rows: [string, string][] }) {
   );
 }
 
-export function LinkButton({ to, label, detail, dark }: { to: string; label: string; detail?: string; dark?: boolean }) {
-  return (
-    <Link
-      to={to}
-      className={`flex items-center justify-between border px-6 py-4 transition-opacity hover:opacity-90 ${
-        dark ? 'border-ink-900 bg-ink-900 text-cream-50' : 'border-cream-400 bg-white text-ink-900'
-      }`}
-    >
+interface LinkButtonProps {
+  to?: string;
+  href?: string;
+  label: string;
+  detail?: string;
+  dark?: boolean;
+}
+
+export function LinkButton({ to, href, label, detail, dark }: LinkButtonProps) {
+  const className = `flex items-center justify-between border px-6 py-4 transition-opacity hover:opacity-90 ${
+    dark ? 'border-ink-900 bg-ink-900 text-cream-50' : 'border-cream-400 bg-white text-ink-900'
+  }`;
+  const content = (
+    <>
       <span className="text-[11px] font-bold uppercase tracking-[0.18em]">{label}</span>
       {detail && (
         <span className={`font-serif text-[13px] italic ${dark ? 'text-ink-100' : 'text-ink-400'}`}>{detail} →</span>
       )}
+    </>
+  );
+
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className={className}>
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <Link to={to ?? '/'} className={className}>
+      {content}
     </Link>
   );
 }

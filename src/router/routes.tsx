@@ -89,14 +89,7 @@ export const router = createBrowserRouter([
       { path: "/checkout", element: <Checkout /> },
       { path: "/recibo/:id", element: <Receipt /> },
       { path: "/recibo/pedido/:id", element: <ReceiptOrder /> },
-      {
-        path: "/libros/:slug/checkout",
-        element: (
-          <ProtectedRoute>
-            <BookCheckout />
-          </ProtectedRoute>
-        ),
-      },
+      { path: "/libros/:slug/checkout", element: <BookCheckout /> },
       {
         path: "/cursos/:slug/leccion/:lessonId",
         element: (
