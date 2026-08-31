@@ -54,6 +54,8 @@ const DiazLara = lazy(() => import("@pages/DiazLara"));
 const ManageEmail = lazy(() => import("@pages/Admin/ManageEmail"));
 const BookCheckout = lazy(() => import("@pages/Books/BookCheckout"));
 const Books = lazy(() => import("@pages/Books"));
+const Receipt = lazy(() => import("@pages/Receipt"));
+const ReceiptOrder = lazy(() => import("@pages/ReceiptOrder"));
 export const router = createBrowserRouter([
   {
     element: <MainLayout />,
@@ -85,6 +87,8 @@ export const router = createBrowserRouter([
       { path: "/contacto", element: <Contact /> },
       { path: "/libros", element: <Books /> },
       { path: "/checkout", element: <Checkout /> },
+      { path: "/recibo/:id", element: <Receipt /> },
+      { path: "/recibo/pedido/:id", element: <ReceiptOrder /> },
       {
         path: "/libros/:slug/checkout",
         element: (

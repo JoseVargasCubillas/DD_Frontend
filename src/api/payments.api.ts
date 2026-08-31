@@ -36,3 +36,20 @@ export const listAllOrders = (): Promise<Order[]> =>
     .get<ApiResponse<Order[]>>('/payments/admin/orders')
     .then((r) => r.data)
     .catch(() => []);
+
+export interface OrderReceipt {
+  id: string;
+  items: { title: string; price: number; quantity: number }[];
+  subtotal: number;
+  tax: number;
+  shippingCost: number;
+  total: number;
+  currency: string;
+  customerName: string;
+  customerEmail: string;
+  paidAt: string | null;
+  reference: string;
+}
+
+export const getOrderReceipt = (id: string): Promise<OrderReceipt> =>
+  client.get<ApiResponse<OrderReceipt>>(`/receipts/order/${id}`).then((r) => r.data);

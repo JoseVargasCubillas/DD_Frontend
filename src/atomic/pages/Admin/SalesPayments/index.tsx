@@ -1,5 +1,6 @@
-import { useMemo, useState, type MouseEvent, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import { Link, useSearchParams } from "react-router-dom";
 import { useOrders } from "@hooks/usePayments";
 import { useUsers } from "@hooks/useUsers";
@@ -26,6 +27,7 @@ interface SalesTransaction {
   status: "completed" | "refunded" | "failed";
   items: Order["items"];
   subscriptionId?: string;
+  kind: "order" | "subscription";
 }
 
 interface SubscriptionRow {
@@ -37,6 +39,7 @@ interface SubscriptionRow {
   email: string;
   offer: string;
   createdAt: string;
+  contactId?: string;
 }
 
 type SalesRange =
@@ -161,7 +164,6 @@ export default function SalesPayments() {
           title="Aún no hay planes de pago"
           description="Cuando tus clientes compren ofertas con plan de pagos, aparecerán aquí."
           searchPlaceholder="Buscar planes de pago..."
-          filters
         />
       )}
       {activeTab === "disputes" && (
@@ -171,8 +173,6 @@ export default function SalesPayments() {
           title="No hay pagos disputados"
           description="Los pagos autorizados en disputa aparecerán aquí."
           searchPlaceholder="Buscar disputas..."
-          filters
-          exportButton
         />
       )}
     </div>
@@ -363,6 +363,12 @@ function PaymentsOverview({
   );
 }
 
+const TRANSACTION_STATUSES: Array<[SalesTransaction["status"], string]> = [
+  ["completed", "Completado"],
+  ["refunded", "Reembolsado"],
+  ["failed", "Fallido"],
+];
+
 function TransactionsTab({
   transactions,
   search,
@@ -372,20 +378,76 @@ function TransactionsTab({
   search: string;
   setSearch: (value: string) => void;
 }) {
-  const filtered = filterTransactions(transactions, search);
+  const queryClient = useQueryClient();
+  const [excludedStatuses, setExcludedStatuses] = useState<Set<SalesTransaction["status"]>>(new Set());
+  const filtered = filterTransactions(transactions, search).filter(
+    (item) => !excludedStatuses.has(item.status),
+  );
+
+  const toggleStatus = (status: SalesTransaction["status"], checked: boolean) => {
+    setExcludedStatuses((current) => {
+      const next = new Set(current);
+      if (checked) next.delete(status);
+      else next.add(status);
+      return next;
+    });
+  };
+
+  const handleExport = () => {
+    downloadCsv(
+      `transacciones-${toDateKey(new Date())}.csv`,
+      ["Monto", "Moneda", "Título", "Cliente", "Correo", "Fecha", "Estado"],
+      filtered.map((item) => [
+        item.amount,
+        item.currency,
+        item.title,
+        item.customer,
+        item.email,
+        item.date,
+        item.status,
+      ]),
+    );
+  };
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["orders"] });
+    queryClient.invalidateQueries({ queryKey: ["subscriptions", "admin", "all"] });
+    toast.success("Transacciones actualizadas");
+  };
+
   return (
     <Panel>
       <Toolbar
         search={search}
         setSearch={setSearch}
         placeholder="Buscar transacciones..."
-        filters
-        exportButton
+        activeFilterCount={excludedStatuses.size}
+        filterContent={
+          <div>
+            <p className="px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-ink-400">Estado</p>
+            {TRANSACTION_STATUSES.map(([status, label]) => (
+              <FilterCheckbox
+                key={status}
+                label={label}
+                checked={!excludedStatuses.has(status)}
+                onChange={(checked) => toggleStatus(status, checked)}
+              />
+            ))}
+          </div>
+        }
+        onExport={handleExport}
+        canExport={filtered.length > 0}
+        onRefresh={handleRefresh}
       />
       <SimpleTransactionsTable transactions={filtered} detailed />
     </Panel>
   );
 }
+
+const SUBSCRIPTION_STATUSES: Array<[SubscriptionRow["status"], string]> = [
+  ["active", "Activa"],
+  ["canceled", "Cancelada"],
+];
 
 function SubscriptionsTab({
   subscriptions,
@@ -396,11 +458,15 @@ function SubscriptionsTab({
   search: string;
   setSearch: (value: string) => void;
 }) {
-  const filtered = subscriptions.filter(
-    (item) =>
-      item.email.toLowerCase().includes(search.toLowerCase()) ||
-      item.offer.toLowerCase().includes(search.toLowerCase()),
-  );
+  const queryClient = useQueryClient();
+  const [excludedStatuses, setExcludedStatuses] = useState<Set<SubscriptionRow["status"]>>(new Set());
+  const filtered = subscriptions
+    .filter(
+      (item) =>
+        item.email.toLowerCase().includes(search.toLowerCase()) ||
+        item.offer.toLowerCase().includes(search.toLowerCase()),
+    )
+    .filter((item) => !excludedStatuses.has(item.status));
   const monthlyRecurringRevenue = subscriptions.reduce(
     (sum, item) => sum + item.amount,
     0,
@@ -408,6 +474,37 @@ function SubscriptionsTab({
   const newLast30Days = subscriptions.filter(
     (item) => daysBetween(new Date(item.createdAt), new Date()) <= 30,
   ).length;
+
+  const toggleStatus = (status: SubscriptionRow["status"], checked: boolean) => {
+    setExcludedStatuses((current) => {
+      const next = new Set(current);
+      if (checked) next.delete(status);
+      else next.add(status);
+      return next;
+    });
+  };
+
+  const handleExport = () => {
+    downloadCsv(
+      `suscripciones-${toDateKey(new Date())}.csv`,
+      ["Monto", "Moneda", "Estado", "Siguiente pago", "Correo", "Oferta", "Creada"],
+      filtered.map((item) => [
+        item.amount,
+        item.currency,
+        item.status,
+        item.nextPayment,
+        item.email,
+        item.offer,
+        item.createdAt,
+      ]),
+    );
+  };
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["subscriptions", "admin", "all"] });
+    toast.success("Suscripciones actualizadas");
+  };
+
   return (
     <div className="space-y-5">
       <div className="grid gap-5 md:grid-cols-3">
@@ -421,7 +518,15 @@ function SubscriptionsTab({
           value={String(newLast30Days)}
           note=""
         />
-        <MetricCard title="Canceladas · últimos 30 días" value="0" note="" />
+        <MetricCard
+          title="Canceladas · últimos 30 días"
+          value={String(
+            subscriptions.filter(
+              (item) => item.status === "canceled" && daysBetween(new Date(item.createdAt), new Date()) <= 30,
+            ).length,
+          )}
+          note=""
+        />
       </div>
       <Panel>
         <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
@@ -433,7 +538,23 @@ function SubscriptionsTab({
             search={search}
             setSearch={setSearch}
             placeholder="Buscar suscripciones..."
-            filters
+            activeFilterCount={excludedStatuses.size}
+            filterContent={
+              <div>
+                <p className="px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-ink-400">Estado</p>
+                {SUBSCRIPTION_STATUSES.map(([status, label]) => (
+                  <FilterCheckbox
+                    key={status}
+                    label={label}
+                    checked={!excludedStatuses.has(status)}
+                    onChange={(checked) => toggleStatus(status, checked)}
+                  />
+                ))}
+              </div>
+            }
+            onExport={handleExport}
+            canExport={filtered.length > 0}
+            onRefresh={handleRefresh}
             compact
           />
         </div>
@@ -460,8 +581,14 @@ function SubscriptionsTab({
                     {formatMoney(item.amount, item.currency)}
                   </td>
                   <td className="py-5">
-                    <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
-                      Activa
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        item.status === "active"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-ink-900/10 text-ink-600"
+                      }`}
+                    >
+                      {item.status === "active" ? "Activa" : "Cancelada"}
                     </span>
                   </td>
                   <td className="py-5">{formatDate(item.nextPayment)}</td>
@@ -470,7 +597,25 @@ function SubscriptionsTab({
                   <td className="py-5 text-ink-600">
                     {formatDateTime(item.createdAt)}
                   </td>
-                  <td className="py-5 text-right">•••</td>
+                  <td className="py-5 text-right">
+                    <Dropdown
+                      trigger={({ toggle }) => (
+                        <button
+                          type="button"
+                          onClick={toggle}
+                          aria-label="Más opciones"
+                          className="cursor-pointer rounded-full px-2 py-1 hover:bg-cream-100"
+                        >
+                          •••
+                        </button>
+                      )}
+                    >
+                      <MenuLink to={`/recibo/${item.id}`}>Ver recibo →</MenuLink>
+                      {item.contactId && (
+                        <MenuLink to={`/admin/contactos/${item.contactId}`}>Ver cliente →</MenuLink>
+                      )}
+                    </Dropdown>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -488,16 +633,12 @@ function EmptySalesState({
   title,
   description,
   searchPlaceholder,
-  filters,
-  exportButton,
 }: {
   search: string;
   setSearch: (value: string) => void;
   title: string;
   description: string;
   searchPlaceholder: string;
-  filters?: boolean;
-  exportButton?: boolean;
 }) {
   return (
     <Panel>
@@ -505,8 +646,6 @@ function EmptySalesState({
         search={search}
         setSearch={setSearch}
         placeholder={searchPlaceholder}
-        filters={filters}
-        exportButton={exportButton}
       />
       <div className="flex min-h-72 flex-col items-center justify-center text-center">
         <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-300 text-white">
@@ -526,15 +665,21 @@ function Toolbar({
   search,
   setSearch,
   placeholder,
-  filters,
-  exportButton,
+  filterContent,
+  activeFilterCount = 0,
+  onExport,
+  canExport = true,
+  onRefresh,
   compact,
 }: {
   search: string;
   setSearch: (value: string) => void;
   placeholder: string;
-  filters?: boolean;
-  exportButton?: boolean;
+  filterContent?: ReactNode;
+  activeFilterCount?: number;
+  onExport?: () => void;
+  canExport?: boolean;
+  onRefresh?: () => void;
   compact?: boolean;
 }) {
   return (
@@ -551,33 +696,82 @@ function Toolbar({
           className="min-h-11 w-full rounded-lg border border-ink-900/20 bg-white py-2 pl-10 pr-3 text-sm outline-none focus:border-ink-900"
         />
       </label>
-      {filters && (
-        <button
-          type="button"
-          className="relative min-h-11 rounded-full border border-ink-900/20 px-4 text-sm"
+      {filterContent && (
+        <Dropdown
+          align="left"
+          trigger={({ toggle }) => (
+            <button
+              type="button"
+              onClick={toggle}
+              className="relative min-h-11 cursor-pointer rounded-full border border-ink-900/20 px-4 text-sm hover:bg-cream-100"
+            >
+              Filtros
+              {activeFilterCount > 0 && (
+                <span className="absolute -right-1 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-ink-900 text-[11px] text-cream">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          )}
         >
-          Filtros
-          <span className="absolute -right-1 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-ink-900 text-[11px] text-cream">
-            1
-          </span>
-        </button>
+          {filterContent}
+        </Dropdown>
       )}
-      {exportButton && (
+      {onExport && (
         <button
           type="button"
-          className="min-h-11 rounded-full border border-ink-900/20 px-4 text-sm"
+          onClick={onExport}
+          disabled={!canExport}
+          title={canExport ? undefined : "No hay datos para exportar"}
+          className="min-h-11 cursor-pointer rounded-full border border-ink-900/20 px-4 text-sm hover:bg-cream-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
         >
           Exportar
         </button>
       )}
-      <button
-        type="button"
-        aria-label="Más opciones"
-        className="flex h-11 w-11 items-center justify-center rounded-full border border-ink-900/20"
+      <Dropdown
+        trigger={({ toggle }) => (
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label="Más opciones"
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-ink-900/20 hover:bg-cream-100"
+          >
+            •••
+          </button>
+        )}
       >
-        •••
-      </button>
+        {onRefresh ? (
+          <MenuButton onClick={onRefresh}>Actualizar lista</MenuButton>
+        ) : (
+          <p className="px-3 py-2 text-sm text-ink-400">Sin acciones disponibles</p>
+        )}
+      </Dropdown>
     </div>
+  );
+}
+
+function FilterCheckbox({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label
+      className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-cream-100"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="h-4 w-4 rounded border-ink-900/30"
+      />
+      {label}
+    </label>
   );
 }
 
@@ -601,6 +795,76 @@ function Panel({
         </div>
       )}
     </section>
+  );
+}
+
+function Dropdown({
+  trigger,
+  children,
+  align = "right",
+}: {
+  trigger: (state: { open: boolean; toggle: () => void }) => ReactNode;
+  children: ReactNode;
+  align?: "left" | "right";
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (event: globalThis.MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    };
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      {trigger({ open, toggle: () => setOpen((value) => !value) })}
+      {open && (
+        <div
+          className={`absolute z-30 mt-2 min-w-[220px] rounded-xl border border-ink-900/10 bg-white p-2 shadow-lg ${
+            align === "right" ? "right-0" : "left-0"
+          }`}
+          onClick={() => setOpen(false)}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MenuLink({ to, children }: { to: string; children: ReactNode }) {
+  return (
+    <Link
+      to={to}
+      target="_blank"
+      rel="noreferrer"
+      className="block cursor-pointer rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-cream-100 hover:text-ink-900"
+    >
+      {children}
+    </Link>
+  );
+}
+
+function MenuButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="block w-full cursor-pointer rounded-lg px-3 py-2 text-left text-sm text-ink-700 hover:bg-cream-100 hover:text-ink-900"
+    >
+      {children}
+    </button>
   );
 }
 
@@ -696,7 +960,36 @@ function SimpleTransactionsTable({
                 </td>
               )}
               <td className="py-5 text-ink-600">{formatDate(item.date)}</td>
-              {detailed && <td className="py-5 text-right">•••</td>}
+              {detailed && (
+                <td className="py-5 text-right">
+                  <Dropdown
+                    trigger={({ toggle }) => (
+                      <button
+                        type="button"
+                        onClick={toggle}
+                        aria-label="Más opciones"
+                        className="cursor-pointer rounded-full px-2 py-1 hover:bg-cream-100"
+                      >
+                        •••
+                      </button>
+                    )}
+                  >
+                    {item.status === "completed" && (
+                      <MenuLink
+                        to={item.kind === "subscription" ? `/recibo/${item.orderId}` : `/recibo/pedido/${item.orderId}`}
+                      >
+                        Ver recibo →
+                      </MenuLink>
+                    )}
+                    {item.contactId && (
+                      <MenuLink to={`/admin/contactos/${item.contactId}`}>Ver cliente →</MenuLink>
+                    )}
+                    {item.status !== "completed" && !item.contactId && (
+                      <p className="px-3 py-2 text-sm text-ink-400">Sin acciones disponibles</p>
+                    )}
+                  </Dropdown>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -1010,6 +1303,7 @@ function ordersToTransactions(
         status: mapOrderStatus(order.status),
         items: order.items || [],
         subscriptionId: order.subscriptionId,
+        kind: "order" as const,
       };
     });
 }
@@ -1041,6 +1335,7 @@ function subscriptionsToTransactions(subs: AdminSubscriptionRow[]): SalesTransac
           },
         ],
         subscriptionId: id,
+        kind: "subscription" as const,
       };
     });
 }
@@ -1160,6 +1455,7 @@ function adminSubscriptionsToRows(subs: AdminSubscriptionRow[]): SubscriptionRow
     email: sub.userEmail || "",
     offer: sub.offerTitle || sub.packageName || sub.plan || "Academia",
     createdAt: sub.createdAt || sub.startDate || sub.currentPeriodEnd,
+    contactId: sub.user,
   }));
 }
 
@@ -1266,6 +1562,23 @@ function toDateKey(date: Date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function downloadCsv(filename: string, headers: string[], rows: (string | number)[][]) {
+  const escapeCell = (value: string | number) => {
+    const text = String(value);
+    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  };
+  const csv = [headers, ...rows].map((row) => row.map(escapeCell).join(",")).join("\n");
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 function isSalesTab(value: string | null): value is SalesTab {
