@@ -32,6 +32,7 @@ const Register = lazy(() => import("@pages/Auth/Register"));
 const MyCourses = lazy(() => import("@pages/Dashboard/MyCourses"));
 const Profile = lazy(() => import("@pages/Dashboard/Profile"));
 const Checkout = lazy(() => import("@pages/Checkout"));
+const EventCheckout = lazy(() => import("@pages/Events/EventCheckout"));
 const AdminDashboard = lazy(() => import("@pages/Admin/AdminDashboard"));
 const ManageCourses = lazy(() => import("@pages/Admin/ManageCourses"));
 const CourseDetailAdmin = lazy(() => import("@pages/Admin/CourseDetail"));
@@ -73,6 +74,7 @@ export const router = createBrowserRouter([
       { path: "/eventos/holding-septiembre", element: <HoldingLanding /> },
       { path: "/eventos/holding-octubre", element: <HoldingLanding /> },
       { path: "/eventos/holding-noviembre", element: <HoldingLanding /> },
+      { path: "/eventos/checkout", element: <EventCheckout /> },
       { path: "/eventos/:slug", element: <EventDetail /> },
       { path: "/blog", element: <BlogList /> },
       { path: "/blog/:slug", element: <BlogPost /> },

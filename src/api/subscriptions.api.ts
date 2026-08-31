@@ -38,6 +38,9 @@ export interface AdminSubscriptionRow extends Subscription {
   packageName?: string | null;
   packageTier?: string | null;
   offerTitle?: string | null;
+  price?: number | null;
+  currency?: string | null;
+  createdAt?: string;
 }
 
 export const listAllSubscriptions = (): Promise<AdminSubscriptionRow[]> =>

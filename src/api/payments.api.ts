@@ -19,9 +19,13 @@ const checkoutRefs = (items: OrderItem[]) =>
     quantity: item.quantity ?? 1,
   }));
 
-export const createPaymentIntent = (items: OrderItem[], shipping?: ShippingAddress) =>
+export const createPaymentIntent = (
+  items: OrderItem[],
+  shipping?: ShippingAddress,
+  customer?: { name: string; email: string; phone: string },
+) =>
   client
-    .post<ApiResponse<PaymentIntentResult>>('/payments/intent', { items: checkoutRefs(items), shipping })
+    .post<ApiResponse<PaymentIntentResult>>('/payments/intent', { items: checkoutRefs(items), shipping, customer })
     .then((r) => r.data);
 
 export const getOrders = (): Promise<Order[]> =>

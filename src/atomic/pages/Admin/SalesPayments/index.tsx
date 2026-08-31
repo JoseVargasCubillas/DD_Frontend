@@ -1,7 +1,9 @@
 import { useMemo, useState, type MouseEvent, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { useOrders } from "@hooks/usePayments";
 import { useUsers } from "@hooks/useUsers";
+import { listAllSubscriptions, type AdminSubscriptionRow } from "@api/subscriptions.api";
 import type { Order, User } from "@t/index";
 
 type SalesTab =
@@ -88,12 +90,19 @@ export default function SalesPayments() {
   const { data: orders = [], isLoading: isLoadingOrders } = useOrders();
   const { data: contactsResponse } = useUsers({ limit: 500 });
   const contacts = contactsResponse?.data ?? [];
+  const { data: adminSubs = [] } = useQuery({
+    queryKey: ["subscriptions", "admin", "all"],
+    queryFn: listAllSubscriptions,
+    staleTime: 30 * 1000,
+  });
   const transactions = useMemo(() => {
-    return ordersToTransactions(orders, contacts);
-  }, [orders, contacts]);
+    return [...ordersToTransactions(orders, contacts), ...subscriptionsToTransactions(adminSubs)].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+  }, [orders, contacts, adminSubs]);
   const subscriptions = useMemo(
-    () => deriveSubscriptions(transactions),
-    [transactions],
+    () => adminSubscriptionsToRows(adminSubs),
+    [adminSubs],
   );
   const activeTab = isSalesTab(tabParam) ? tabParam : "overview";
   const changeTab = (tab: SalesTab) =>
@@ -1005,6 +1014,37 @@ function ordersToTransactions(
     });
 }
 
+function subscriptionsToTransactions(subs: AdminSubscriptionRow[]): SalesTransaction[] {
+  return subs
+    .filter((sub) => sub.price)
+    .map((sub) => {
+      const id = String(sub._id || sub.id || crypto.randomUUID());
+      const title = sub.offerTitle || sub.packageName || `Academia ${sub.plan}`;
+      return {
+        id,
+        orderId: id,
+        amount: Number(sub.price || 0),
+        currency: sub.currency || "MXN",
+        title,
+        email: sub.userEmail || "",
+        customer: sub.userName || sub.userEmail || "Cliente",
+        contactId: sub.user,
+        date: sub.createdAt || sub.startDate || sub.currentPeriodEnd,
+        status: "completed" as const,
+        items: [
+          {
+            type: "subscription",
+            refId: sub.offer || sub.plan,
+            title,
+            price: Number(sub.price || 0),
+            quantity: 1,
+          },
+        ],
+        subscriptionId: id,
+      };
+    });
+}
+
 function filterTransactionsByRange(
   transactions: SalesTransaction[],
   range: SalesRange,
@@ -1110,40 +1150,17 @@ function summarizeOffers(transactions: SalesTransaction[]) {
   return Array.from(map.values()).sort((a, b) => b.total - a.total);
 }
 
-function deriveSubscriptions(
-  transactions: SalesTransaction[],
-): SubscriptionRow[] {
-  const recurringMap = new Map<string, SalesTransaction[]>();
-
-  transactions
-    .filter((item) => item.status === "completed")
-    .forEach((item) => {
-      const key =
-        item.subscriptionId || `${item.contactId || item.email}:${item.title}`;
-      const current = recurringMap.get(key) ?? [];
-      current.push(item);
-      recurringMap.set(key, current);
-    });
-
-  return Array.from(recurringMap.entries())
-    .filter(([, items]) => items[0]?.subscriptionId || items.length >= 2)
-    .map(([key, items]) => {
-      const sorted = items.sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-      );
-      const first = sorted[0];
-      const last = sorted[sorted.length - 1];
-      return {
-        id: first.subscriptionId || key,
-        amount: last.amount,
-        currency: last.currency,
-        status: "active" as const,
-        nextPayment: addDays(last.date, estimateIntervalDays(sorted)),
-        email: last.email,
-        offer: last.title,
-        createdAt: first.date,
-      };
-    });
+function adminSubscriptionsToRows(subs: AdminSubscriptionRow[]): SubscriptionRow[] {
+  return subs.map((sub) => ({
+    id: String(sub._id || sub.id || ""),
+    amount: Number(sub.price || 0),
+    currency: sub.currency || "MXN",
+    status: sub.status === "canceled" ? ("canceled" as const) : ("active" as const),
+    nextPayment: sub.currentPeriodEnd,
+    email: sub.userEmail || "",
+    offer: sub.offerTitle || sub.packageName || sub.plan || "Academia",
+    createdAt: sub.createdAt || sub.startDate || sub.currentPeriodEnd,
+  }));
 }
 
 function buildRevenueSeries(transactions: SalesTransaction[], days: number) {
@@ -1234,28 +1251,21 @@ function findStringValue(source: unknown, keys: string[]) {
   return undefined;
 }
 
-function estimateIntervalDays(items: SalesTransaction[]) {
-  if (items.length < 2) return 30;
-  const last = new Date(items[items.length - 1].date);
-  const prev = new Date(items[items.length - 2].date);
-  const diff = Math.max(daysBetween(prev, last), 1);
-  return diff;
-}
-
-function addDays(value: string, days: number) {
-  const date = new Date(value);
-  date.setDate(date.getDate() + days);
-  return date.toISOString();
-}
-
 function daysBetween(start: Date, end: Date) {
   return Math.floor(
     Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
   );
 }
 
+// Usa componentes de fecha locales (no UTC): una compra hecha de noche en
+// México cae en el dia UTC siguiente, y si esta funcion usara toISOString()
+// esa transaccion quedaria en un bucket que el rango "Hoy"/"7d" no genera,
+// desapareciendo del cast de la grafica aunque si cuente en el total.
 function toDateKey(date: Date) {
-  return date.toISOString().slice(0, 10);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function isSalesTab(value: string | null): value is SalesTab {
