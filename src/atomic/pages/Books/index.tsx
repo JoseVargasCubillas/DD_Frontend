@@ -399,16 +399,15 @@ export default function Books() {
               juntos.
             </h2>
             <p className="mt-8 max-w-[520px] text-[15px] leading-[1.8] text-white/62">
-              La biblioteca completa del estratega fiscal mexicano. Edición especial con caja de lino impresa, tres libros y dedicatoria firmada por Diego a quien tú elijas.
+              Edición especial con caja de lino impresa, dos libros y dedicatoria firmada por Diego a quien tú elijas.
             </p>
 
             <div className="mt-9 max-w-[560px] border border-white/12 bg-white/[0.03] p-8">
               <div className="divide-y divide-white/10 text-[15px] text-white/64">
                 {[
                   ['7 Claves para cobrar a tu empresa', '$497'],
-                  ['Los 7 secretos del SAT (lista de espera)', '$497'],
                   ['7 Secretos de un fiscalista', '$497'],
-                  ['Suma individual', '$1,491'],
+                  ['Suma individual', '$994'],
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between gap-5 py-4 first:pt-0">
                     <span>{label}</span>
@@ -419,8 +418,12 @@ export default function Books() {
 
               <div className="mt-5 flex items-end justify-between gap-5 border-t border-white/25 pt-7">
                 <p className="font-serif text-[32px] leading-none text-white/72">Bundle con caja firmada</p>
-                <p className="font-serif text-[34px] italic leading-none text-[#b6894f]">$ 980</p>
+                <p className="font-serif text-[34px] italic leading-none text-[#b6894f]">$ 750</p>
               </div>
+
+              <p className="mt-5 border-t border-white/10 pt-5 text-[12px] leading-[1.6] text-white/50">
+                Incluye 2 libros impresos. "Los 7 secretos que el SAT no quiere que conozcas" está agotado — al comprar el bundle te anotamos en la lista de espera de su reimpresión 2026, sin costo adicional, y te lo enviamos en cuanto esté disponible.
+              </p>
             </div>
 
             <div className="mt-8">

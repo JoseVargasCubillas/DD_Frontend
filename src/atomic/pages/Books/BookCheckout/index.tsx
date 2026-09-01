@@ -8,6 +8,7 @@ import { quoteShipping, type ShippingRateOption } from '@api/shipping.api';
 import { formatCurrency } from '@utils/formatters';
 import { hasStripePublishableKey, stripeMissingKeyMessage, stripePromise } from '@utils/stripe';
 import Spinner from '@atoms/Spinner';
+import NotFound from '@pages/NotFound';
 import type { ShippingAddress, OrderItem } from '@t/index';
 import bookClaves from '../../../../../assets/ddweb/libro-siete-claves-cobrar.png';
 import bookSat from '../../../../../assets/ddweb/libro-siete-secretos-sat.png';
@@ -162,14 +163,7 @@ export default function BookCheckout() {
   }
 
   if (isError || !book) {
-    return (
-      <div className="bg-cream-50 py-24 text-center text-ink-900">
-        <p className="text-ink-500">No encontramos ese libro.</p>
-        <Link to="/acerca#biblioteca" className="btn-primary mt-6 inline-flex">
-          Volver
-        </Link>
-      </div>
-    );
+    return <NotFound mode={isError ? 'error' : 'not-found'} />;
   }
 
   const coverSrc = book.coverImage || FALLBACK_COVERS[book.slug] || FALLBACK_COVERS[slug ?? ''] || bookClaves;
