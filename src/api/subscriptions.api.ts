@@ -48,3 +48,24 @@ export const listAllSubscriptions = (): Promise<AdminSubscriptionRow[]> =>
     .get<ApiResponse<AdminSubscriptionRow[]>>('/subscriptions/admin/all')
     .then((r) => r.data)
     .catch(() => []);
+
+export interface SubscriptionReceipt {
+  id: string;
+  plan: string;
+  offerTitle: string;
+  status: string;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  amount: number;
+  currency: string;
+  cardLabel: string;
+  nextChargeAt: string | null;
+  reference: string;
+}
+
+export const getSubscriptionReceipt = (id: string): Promise<SubscriptionReceipt> =>
+  client.get<ApiResponse<SubscriptionReceipt>>(`/receipts/subscription/${id}`).then((r) => r.data);

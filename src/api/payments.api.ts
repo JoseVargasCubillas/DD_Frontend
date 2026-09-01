@@ -23,9 +23,15 @@ export const createPaymentIntent = (
   items: OrderItem[],
   shipping?: ShippingAddress,
   customer?: { name: string; email: string; phone: string },
+  shippingSelection?: { carrier: string; service: string },
 ) =>
   client
-    .post<ApiResponse<PaymentIntentResult>>('/payments/intent', { items: checkoutRefs(items), shipping, customer })
+    .post<ApiResponse<PaymentIntentResult>>('/payments/intent', {
+      items: checkoutRefs(items),
+      shipping,
+      customer,
+      shippingSelection,
+    })
     .then((r) => r.data);
 
 export const getOrders = (): Promise<Order[]> =>
@@ -36,3 +42,24 @@ export const listAllOrders = (): Promise<Order[]> =>
     .get<ApiResponse<Order[]>>('/payments/admin/orders')
     .then((r) => r.data)
     .catch(() => []);
+
+export interface OrderReceipt {
+  id: string;
+  items: { title: string; price: number; quantity: number }[];
+  subtotal: number;
+  tax: number;
+  shippingCost: number;
+  total: number;
+  currency: string;
+  customerName: string;
+  customerEmail: string;
+  paidAt: string | null;
+  reference: string;
+  shippingCarrier: string;
+  shippingTrackingNumber: string;
+  shippingLabelUrl: string;
+  shippingTrackUrl: string;
+}
+
+export const getOrderReceipt = (id: string): Promise<OrderReceipt> =>
+  client.get<ApiResponse<OrderReceipt>>(`/receipts/order/${id}`).then((r) => r.data);

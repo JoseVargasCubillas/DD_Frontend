@@ -60,6 +60,8 @@ const Books = lazy(() => import("@pages/Books"));
 const Terminos = lazy(() => import("@pages/LegalDocuments/Terminos"));
 const Privacidad = lazy(() => import("@pages/LegalDocuments/Privacidad"));
 const Faq = lazy(() => import("@pages/LegalDocuments/Faq"));
+const Receipt = lazy(() => import("@pages/Receipt"));
+const ReceiptOrder = lazy(() => import("@pages/ReceiptOrder"));
 export const router = createBrowserRouter([
   {
     element: <MainLayout />,
@@ -96,14 +98,9 @@ export const router = createBrowserRouter([
       { path: "/terminos", element: <Terminos /> },
       { path: "/privacidad", element: <Privacidad /> },
       { path: "/faq", element: <Faq /> },
-      {
-        path: "/libros/:slug/checkout",
-        element: (
-          <ProtectedRoute>
-            <BookCheckout />
-          </ProtectedRoute>
-        ),
-      },
+      { path: "/recibo/:id", element: <Receipt /> },
+      { path: "/recibo/pedido/:id", element: <ReceiptOrder /> },
+      { path: "/libros/:slug/checkout", element: <BookCheckout /> },
       {
         path: "/cursos/:slug/leccion/:lessonId",
         element: (

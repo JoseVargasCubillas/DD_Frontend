@@ -4,18 +4,22 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { useAuthStore } from '@store/authStore';
 import { useBook } from '@hooks/useBooks';
 import { createPaymentIntent } from '@api/payments.api';
+import { quoteShipping, type ShippingRateOption } from '@api/shipping.api';
 import { formatCurrency } from '@utils/formatters';
 import { hasStripePublishableKey, stripeMissingKeyMessage, stripePromise } from '@utils/stripe';
 import Spinner from '@atoms/Spinner';
-import type { ShippingAddress } from '@t/index';
+import type { ShippingAddress, OrderItem } from '@t/index';
 import bookClaves from '../../../../../assets/ddweb/libro-siete-claves-cobrar.png';
 import bookSat from '../../../../../assets/ddweb/libro-siete-secretos-sat.png';
 import bookFiscalista from '../../../../../assets/ddweb/libro-siete-secretos-fiscalista.png';
 
 const MEXICAN_STATES = [
-  'Ciudad de México', 'Estado de México', 'Jalisco', 'Nuevo León', 'Puebla',
-  'Guanajuato', 'Querétaro', 'Yucatán', 'Baja California', 'Coahuila',
-  'Chihuahua', 'Sonora', 'Veracruz', 'Otro',
+  'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
+  'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima', 'Durango', 'Guanajuato',
+  'Guerrero', 'Hidalgo', 'Jalisco', 'Estado de México', 'Michoacán', 'Morelos',
+  'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo',
+  'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala',
+  'Veracruz', 'Yucatán', 'Zacatecas',
 ];
 
 const emptyShipping: ShippingAddress = {
@@ -140,17 +144,14 @@ export default function BookCheckout() {
   const [success, setSuccess] = useState(false);
   const [orderId, setOrderId] = useState('');
   const [finalTotal, setFinalTotal] = useState(0);
+  const [shippingRates, setShippingRates] = useState<ShippingRateOption[]>([]);
+  const [selectedRate, setSelectedRate] = useState<ShippingRateOption | null>(null);
+  const [loadingRates, setLoadingRates] = useState(false);
+  const [ratesFetched, setRatesFetched] = useState(false);
+  const [guestEmail, setGuestEmail] = useState('');
 
-  if (!isAuthenticated) {
-    return (
-      <div className="bg-cream-50 py-24 text-center text-ink-900">
-        <p className="text-ink-500">Inicia sesión para continuar con tu compra.</p>
-        <Link to={`/iniciar-sesion?redirect=/libros/${slug}/checkout`} className="btn-primary mt-6 inline-flex">
-          Iniciar sesión →
-        </Link>
-      </div>
-    );
-  }
+  const needsGuestContact = !isAuthenticated;
+  const canSubmitShipping = !needsGuestContact || /\S+@\S+\.\S+/.test(guestEmail.trim());
 
   if (isLoading) {
     return (
@@ -173,16 +174,31 @@ export default function BookCheckout() {
 
   const coverSrc = book.coverImage || FALLBACK_COVERS[book.slug] || FALLBACK_COVERS[slug ?? ''] || bookClaves;
   const subtotal = book.price * quantity;
-  const shippingCost = book.shippingCost ?? 0;
+  // El envío ya está incluido en el precio del libro — se paga con el saldo
+  // de la cuenta de Envia, nunca se le cobra aparte al cliente.
+  const shippingCost = 0;
   const tax = 0;
   const total = subtotal + shippingCost + tax;
+  const bookItems: OrderItem[] = [
+    { type: 'product', refId: book._id ?? book.id ?? book.slug, title: book.title, price: book.price, quantity },
+  ];
 
   const updateShipping = (name: keyof ShippingAddress, value: string) =>
     setShipping((current) => ({ ...current, [name]: value }));
 
-  const handleContinueToPayment = (e: FormEvent) => {
+  const handleContinueToPayment = async (e: FormEvent) => {
     e.preventDefault();
+    if (!canSubmitShipping) return;
     setStep('payment');
+    setLoadingRates(true);
+    try {
+      const rates = await quoteShipping(bookItems, shipping);
+      setShippingRates(rates);
+      setSelectedRate(rates[0] ?? null);
+    } finally {
+      setLoadingRates(false);
+      setRatesFetched(true);
+    }
   };
 
   const handleInitPayment = async () => {
@@ -190,8 +206,10 @@ export default function BookCheckout() {
     setLoading(true);
     try {
       const result = await createPaymentIntent(
-        [{ type: 'product', refId: book._id ?? book.id ?? book.slug, title: book.title, price: book.price, quantity }],
+        bookItems,
         shipping,
+        needsGuestContact ? { name: shipping.fullName.trim(), email: guestEmail.trim(), phone: shipping.phone.trim() } : undefined,
+        selectedRate ? { carrier: selectedRate.carrier, service: selectedRate.service } : undefined,
       );
       setClientSecret(result.clientSecret ?? '');
       setOrderId(result.orderId ?? '');
@@ -280,14 +298,13 @@ export default function BookCheckout() {
                 <p className="text-[10px] uppercase tracking-[0.24em] text-ink-300">— Envío nacional</p>
                 <h3 className="mt-4 font-serif text-[28px]">3 a 5 días hábiles.</h3>
                 <p className="mt-4 text-[13px] leading-[1.7] text-ink-500">
-                  Te avisaremos por correo cuando tu pedido salga a reparto, junto con tu número de guía.
+                  Te avisaremos por correo en cuanto tengamos el número de guía. También puedes verlo en tu recibo — solo tarda unos minutos en aparecer.
                 </p>
                 <Link
-                  to="/mi-cuenta"
+                  to={`/recibo/pedido/${orderId}`}
                   className="mt-6 flex w-full items-center justify-between bg-ink-900 px-6 py-4 text-cream-50 transition-opacity hover:opacity-90"
                 >
-                  <span className="text-[11px] font-bold uppercase tracking-[0.18em]">Ir a mi cuenta</span>
-                  <span>→</span>
+                  <span className="text-[11px] font-bold uppercase tracking-[0.18em]">Ver recibo y guía →</span>
                 </Link>
               </aside>
             </div>
@@ -453,7 +470,24 @@ export default function BookCheckout() {
               {step === 'shipping' ? (
                 <form onSubmit={handleContinueToPayment} className="mt-8">
                   <h2 className="font-serif text-[36px] italic">Envío.</h2>
-                  <p className="mt-2 text-[13px] text-white/55">A dónde llega tu ejemplar.</p>
+                  <p className="mt-2 text-[13px] text-white/55">
+                    {needsGuestContact ? 'A dónde llega tu ejemplar. No necesitas crear una cuenta.' : 'A dónde llega tu ejemplar.'}
+                  </p>
+
+                  {needsGuestContact && (
+                    <label className="mt-6 flex flex-col gap-2">
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-white/45">— Correo</span>
+                      <input
+                        type="email"
+                        required
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        placeholder="tucorreo@ejemplo.com"
+                        className="input-cream rounded-none border-white/25 bg-transparent font-serif text-[18px] text-cream-50 placeholder:text-white/35"
+                      />
+                      <span className="text-[11px] text-white/45">Ahí te enviaremos la confirmación y el número de guía.</span>
+                    </label>
+                  )}
 
                   <div className="mt-8 grid gap-6 sm:grid-cols-2 [&_input]:bg-transparent [&_input]:text-cream-50 [&_input]:border-white/25 [&_input::placeholder]:text-white/35 [&_label>span]:text-white/45">
                     {SHIPPING_FIELDS.map((field) => (
@@ -488,7 +522,8 @@ export default function BookCheckout() {
 
                   <button
                     type="submit"
-                    className="mt-8 flex w-full items-center justify-between bg-cream-50 px-7 py-5 text-ink-900"
+                    disabled={!canSubmitShipping}
+                    className="mt-8 flex w-full items-center justify-between bg-cream-50 px-7 py-5 text-ink-900 disabled:opacity-50"
                   >
                     <span className="text-[11px] font-bold uppercase tracking-[0.18em]">Continuar a pago →</span>
                   </button>
@@ -519,17 +554,57 @@ export default function BookCheckout() {
 
                   {!clientSecret || !elementsOptions ? (
                     <div className="mt-6 flex flex-col gap-5">
+                      {loadingRates ? (
+                        <div className="flex items-center gap-3 text-[13px] text-white/60">
+                          <Spinner size="sm" />
+                          Cotizando envío con paqueterías…
+                        </div>
+                      ) : shippingRates.length > 0 ? (
+                        <div className="flex flex-col gap-3">
+                          <span className="text-[10px] uppercase tracking-[0.2em] text-white/45">
+                            — Elige tu paquetería · envío incluido
+                          </span>
+                          {shippingRates.map((rate) => {
+                            const isSelected = selectedRate?.carrier === rate.carrier && selectedRate?.service === rate.service;
+                            return (
+                              <button
+                                key={`${rate.carrier}-${rate.service}`}
+                                type="button"
+                                onClick={() => setSelectedRate(rate)}
+                                className={`flex items-center justify-between border px-4 py-3 text-left transition-colors ${
+                                  isSelected ? 'border-cream-50 bg-white/10' : 'border-white/20 hover:border-white/40'
+                                }`}
+                              >
+                                <span>
+                                  <span className="block text-[13px] font-semibold">
+                                    {rate.carrierDescription} · {rate.serviceDescription}
+                                  </span>
+                                  <span className="block text-[11px] text-white/50">Llega en {rate.deliveryEstimate}</span>
+                                </span>
+                                <span className="font-serif text-[13px] italic text-white/70">Incluido</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        ratesFetched && (
+                          <p className="border border-white/15 bg-white/5 px-4 py-3 text-[13px] text-white/60">
+                            No encontramos paqueterías disponibles para tu dirección en este momento — el envío se coordinará manualmente.
+                          </p>
+                        )
+                      )}
                       <p className="text-[13px] leading-[1.7] text-white/60">
                         Haz clic en continuar para ingresar los datos de tu tarjeta de forma segura a través de Stripe.
                       </p>
                       <button
                         onClick={handleInitPayment}
-                        disabled={loading}
+                        disabled={loading || loadingRates}
                         className="flex w-full items-center justify-between bg-cream-50 px-7 py-5 text-ink-900 disabled:opacity-50"
                       >
                         <span className="text-[11px] font-bold uppercase tracking-[0.18em]">
                           {loading ? 'Cargando…' : 'Continuar al pago →'}
                         </span>
+                        <span className="font-serif text-[15px] italic">{formatCurrency(total)}</span>
                       </button>
                     </div>
                   ) : !hasStripePublishableKey ? (
