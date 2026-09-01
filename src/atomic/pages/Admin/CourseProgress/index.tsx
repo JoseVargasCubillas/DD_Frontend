@@ -27,7 +27,7 @@ export default function CourseProgress() {
       <section className="overflow-hidden rounded-2xl border border-ink-900/10 bg-white shadow-sm">
         <div className="flex min-h-52 flex-col items-center justify-center bg-ink-900 px-6 py-10 text-center text-cream">
           <h2 className="font-serif text-3xl uppercase tracking-wide md:text-4xl">{course.title}</h2>
-          <Link to={`/cursos/${course.slug}`} target="_blank" className="mt-7 inline-flex min-h-11 items-center bg-cream px-7 text-xs font-bold uppercase tracking-[0.12em] text-ink-900">Iniciar entrenamiento</Link>
+          <Link to={`/cursos/${course.slug}`} target="_blank" rel="noreferrer" className="mt-7 inline-flex min-h-11 items-center bg-cream px-7 text-xs font-bold uppercase tracking-[0.12em] text-ink-900">Iniciar entrenamiento</Link>
         </div>
         <div className="grid gap-6 bg-cream-50 p-6 md:grid-cols-[1fr_280px] md:p-10">
           <div className="rounded-xl bg-white p-6">

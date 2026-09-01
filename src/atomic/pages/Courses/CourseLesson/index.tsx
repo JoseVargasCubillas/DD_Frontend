@@ -4,6 +4,7 @@ import Spinner from "@atoms/Spinner";
 import { useCourse, useCourseComments, useCreateCourseComment, useDeleteCourseComment } from "@hooks/useCourses";
 import { useAuthStore } from "@store/authStore";
 import { getMediaFile, localMediaId } from "@utils/lessonMedia";
+import { sanitizeHtml } from "@utils/sanitizeHtml";
 
 const isDrivePreviewUrl = (url: string): boolean =>
   /drive\.google\.com\/file\/d\/[^/]+\/preview/.test(url);
@@ -177,6 +178,7 @@ export default function CourseLesson() {
   const commentsLocked = lesson.commentsVisibility === "locked";
   const commentCount = comments.length;
   const lessonTitleLengthClass = getTitleLengthClass(lesson.title);
+  const safeLessonContent = lesson.content ? sanitizeHtml(lesson.content) : "";
 
   return (
     <div className="bg-cream-50 text-ink-900">
@@ -278,7 +280,7 @@ export default function CourseLesson() {
 
         {lesson.content && (
           <section className="mx-auto mt-12 max-w-[760px] text-[17px] leading-[1.75] text-ink-600 [&_h1]:font-serif [&_h1]:text-4xl [&_h2]:font-serif [&_h2]:text-3xl [&_p]:mb-5">
-            <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
+            <div dangerouslySetInnerHTML={{ __html: safeLessonContent }} />
           </section>
         )}
 

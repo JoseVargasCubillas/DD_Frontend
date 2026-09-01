@@ -7,6 +7,7 @@ import { formatDate } from '@utils/formatters';
 import { useNextCalendarEvent } from '@hooks/useNextCalendarEvent';
 import { getCalendarEventAction } from '@utils/eventCalendar';
 import { getEventImage } from '@utils/eventImages';
+import { sanitizeHtml } from '@utils/sanitizeHtml';
 import { findStaticBlogPost, formatStaticBlogDate, STATIC_BLOG_POSTS } from '@/data/blogPosts';
 
 const border = 'border-ink-900/10';
@@ -93,6 +94,7 @@ export default function BlogPost() {
     ?? 'Diego Díaz';
   const authorRole = localPost?.author.role;
   const html = localPost?.html ?? remotePost?.content ?? '';
+  const safeHtml = sanitizeHtml(html);
   const tags = localPost?.tags ?? [];
 
   // Sugerencias: otros 3 posts del registry (excluye el actual)
@@ -148,7 +150,7 @@ export default function BlogPost() {
                      prose-a:text-ink-900 prose-a:underline prose-a:decoration-ink-900/30 hover:prose-a:decoration-ink-900
                      prose-ul:my-5 prose-ol:my-5 prose-li:my-1
                      [&_.lead]:font-serif [&_.lead]:text-[22px] [&_.lead]:leading-[1.45] [&_.lead]:text-ink-900 [&_.lead]:mt-0"
-          dangerouslySetInnerHTML={{ __html: html }}
+          dangerouslySetInnerHTML={{ __html: safeHtml }}
         />
 
         <aside className="space-y-6 lg:pt-2">

@@ -1510,11 +1510,11 @@ function ImportContactsModal({ mode, onClose }: { mode: 'import' | 'migrate'; on
             <label htmlFor="contacts-import-file" className="block cursor-pointer border border-dashed border-ink-900/30 bg-cream-100 p-6 transition-colors hover:border-ink-900">
               <span className="block text-[10px] uppercase tracking-[0.32em] text-ink-500">Archivo de contactos</span>
               <span className="mt-3 block font-serif text-2xl text-ink-900">{fileName || 'Seleccionar archivo'}</span>
-              <span className="mt-2 block text-sm text-ink-600">Formatos permitidos: .csv, .xls, .xlsx</span>
+              <span className="mt-2 block text-sm text-ink-600">Formato permitido: .csv</span>
               <input
                 id="contacts-import-file"
                 type="file"
-                accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                accept=".csv,text/csv"
                 className="sr-only"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
@@ -1837,11 +1837,8 @@ type ContactRow = Record<string, string | number | undefined>;
 
 async function readContactsFile(file: File): Promise<ContactRow[]> {
   const ext = file.name.split('.').pop()?.toLowerCase();
-  if (ext === 'xls' || ext === 'xlsx') {
-    const XLSX = await import('xlsx');
-    const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    return XLSX.utils.sheet_to_json<ContactRow>(sheet, { defval: '' });
+  if (ext !== 'csv') {
+    throw new Error('Formato no soportado. Sube un archivo .csv.');
   }
 
   const text = await file.text();

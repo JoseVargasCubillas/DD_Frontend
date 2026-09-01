@@ -180,6 +180,7 @@ export default function CourseDetail() {
           <Link
             to={`/cursos/${course.slug}`}
             target="_blank"
+            rel="noreferrer"
             className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-ink-900/20 px-4 text-sm transition-colors hover:border-ink-900"
           >
             <EyeIcon /> Vista previa

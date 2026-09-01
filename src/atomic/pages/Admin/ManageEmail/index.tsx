@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import * as emailApi from '@api/email.api';
+import { sanitizeHtml } from '@utils/sanitizeHtml';
 import type { BroadcastPayload, ContactPreview } from '@api/email.api';
 
 // ── Tipos ─────────────────────────────────────────────────────
@@ -158,6 +159,7 @@ export default function ManageEmail() {
   const previewHtml = body
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\n/g, '<br />');
+  const safePreviewHtml = sanitizeHtml(previewHtml);
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-8">
@@ -320,7 +322,7 @@ export default function ManageEmail() {
               </div>
               <div
                 className="prose prose-sm max-w-none p-5 text-ink-700"
-                dangerouslySetInnerHTML={{ __html: previewHtml }}
+                dangerouslySetInnerHTML={{ __html: safePreviewHtml }}
               />
             </div>
           )}
