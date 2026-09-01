@@ -9,6 +9,7 @@ import { formatCurrency } from '@utils/formatters';
 import { hasStripePublishableKey, stripeMissingKeyMessage, stripePromise } from '@utils/stripe';
 import Spinner from '@atoms/Spinner';
 import NotFound from '@pages/NotFound';
+import BookStack from '@molecules/BookStack';
 import type { ShippingAddress, OrderItem } from '@t/index';
 import bookClaves from '../../../../../assets/ddweb/libro-siete-claves-cobrar.png';
 import bookSat from '../../../../../assets/ddweb/libro-siete-secretos-sat.png';
@@ -39,35 +40,6 @@ const BOOK_SLUG_ALIASES: Record<string, string> = {
 };
 
 const BUNDLE_SLUG = 'bundle-tres-libros';
-
-function BundleCovers() {
-  return (
-    <div className="flex h-[150px] shrink-0 items-stretch gap-2">
-      <div className="flex gap-1 overflow-hidden border border-ink-900/10 bg-cream-50 shadow-[10px_14px_28px_rgba(10,10,10,0.14)]">
-        <img
-          src={bookClaves}
-          alt="Portada 7 Claves para cobrar a tu empresa"
-          className="h-full w-[58px] object-cover"
-        />
-        <img
-          src={bookFiscalista}
-          alt="Portada 7 Secretos de un fiscalista"
-          className="h-full w-[58px] object-cover"
-        />
-      </div>
-      <div className="relative w-[58px] shrink-0 overflow-hidden border border-ink-900/10 bg-cream-50 opacity-60 grayscale">
-        <img
-          src={bookSat}
-          alt="Portada Los 7 secretos que el SAT no quiere que conozcas — no disponible, lista de espera"
-          className="h-full w-full object-cover"
-        />
-        <span className="absolute inset-x-0 bottom-0 bg-ink-900/85 px-1 py-1 text-center text-[6.5px] font-bold uppercase leading-tight tracking-[0.08em] text-white">
-          Lista de espera
-        </span>
-      </div>
-    </div>
-  );
-}
 
 function BundleShippingNote() {
   return (
@@ -418,10 +390,21 @@ export default function BookCheckout() {
                 <span>Pago único</span>
               </div>
 
-              <div className="flex gap-5 border-b border-cream-400 py-6">
-                {isBundle ? (
-                  <BundleCovers />
-                ) : (
+              {isBundle ? (
+                <div className="border-b border-cream-400 py-6">
+                  <BookStack />
+                  <div className="mt-4">
+                    <p className="font-serif text-[24px] leading-[1.05] tracking-[-0.02em] text-ink-900">{book.title}</p>
+                    <p className="mt-2 text-[13px] italic text-ink-400">{book.author} · {book.year}</p>
+                    <div className="mt-4 flex flex-wrap gap-2 text-[9.5px] uppercase tracking-[0.16em] text-ink-500">
+                      <span className="border border-cream-400 px-2 py-1">{book.format}</span>
+                      <span className="border border-cream-400 px-2 py-1">{book.pages} pág</span>
+                      <span className="border border-cream-400 px-2 py-1">{book.language}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-5 border-b border-cream-400 py-6">
                   <div className="h-[150px] w-[100px] shrink-0 overflow-hidden border border-ink-900/10 bg-cream-50 shadow-[10px_14px_28px_rgba(10,10,10,0.14)]">
                     <img
                       src={coverSrc}
@@ -429,17 +412,17 @@ export default function BookCheckout() {
                       className="h-full w-full object-cover"
                     />
                   </div>
-                )}
-                <div className="min-w-0">
-                  <p className="font-serif text-[24px] leading-[1.05] tracking-[-0.02em] text-ink-900">{book.title}</p>
-                  <p className="mt-2 text-[13px] italic text-ink-400">{book.author} · {book.year}</p>
-                  <div className="mt-4 flex flex-wrap gap-2 text-[9.5px] uppercase tracking-[0.16em] text-ink-500">
-                    <span className="border border-cream-400 px-2 py-1">{book.format}</span>
-                    <span className="border border-cream-400 px-2 py-1">{book.pages} pág</span>
-                    <span className="border border-cream-400 px-2 py-1">{book.language}</span>
+                  <div className="min-w-0">
+                    <p className="font-serif text-[24px] leading-[1.05] tracking-[-0.02em] text-ink-900">{book.title}</p>
+                    <p className="mt-2 text-[13px] italic text-ink-400">{book.author} · {book.year}</p>
+                    <div className="mt-4 flex flex-wrap gap-2 text-[9.5px] uppercase tracking-[0.16em] text-ink-500">
+                      <span className="border border-cream-400 px-2 py-1">{book.format}</span>
+                      <span className="border border-cream-400 px-2 py-1">{book.pages} pág</span>
+                      <span className="border border-cream-400 px-2 py-1">{book.language}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {isBundle && <BundleShippingNote />}
 
