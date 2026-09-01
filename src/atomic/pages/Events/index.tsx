@@ -1003,7 +1003,7 @@ export default function Events() {
   return (
     <div className="bg-cream-50 text-ink-900">
       <section className="border-b border-cream-400 bg-cream-100">
-        <div className="mx-auto max-w-[1184px] px-5 pb-16 pt-16 sm:px-8 lg:px-0 lg:pb-[68px] lg:pt-[90px]">
+        <div className="mx-auto max-w-[1184px] px-5 pb-12 pt-10 sm:px-8 sm:pb-16 sm:pt-16 lg:px-0 lg:pb-[68px] lg:pt-[90px]">
           <div className="flex items-center justify-between border-b border-cream-400 pb-7 text-[10px] uppercase tracking-[0.24em] text-ink-400">
             <p>- Calendario 2026 · Vol. I</p>
             <p className="hidden sm:block">
@@ -1011,7 +1011,7 @@ export default function Events() {
             </p>
           </div>
 
-          <div ref={heroRef} className="hero-reveal pt-12">
+          <div ref={heroRef} className="hero-reveal pt-9 sm:pt-12">
             <h1 className="events-calendar-hero max-w-[760px] font-serif font-normal leading-[0.77] tracking-[-0.065em]">
               <span className="line-mask">
                 <span>Diego en</span>
@@ -1022,7 +1022,7 @@ export default function Events() {
             </h1>
           </div>
 
-          <div className="grid gap-10 pt-16 lg:grid-cols-[420px_minmax(0,540px)] lg:items-end lg:justify-between">
+          <div className="grid gap-9 pt-10 sm:pt-16 lg:grid-cols-[420px_minmax(0,540px)] lg:items-end lg:justify-between">
             <p className="max-w-[430px] text-[17px] leading-[1.5] tracking-[-0.01em] text-ink-600">
               Quince eventos a lo largo del año, en formato presencial y online.
               Cumbres, talleres y formaciones intensivas para empresarios
@@ -1059,12 +1059,13 @@ export default function Events() {
       </section>
 
       <section id="evento-principal" className="scroll-mt-[98px] bg-[#080808] text-white">
-        <div className="mx-auto grid max-w-[1184px] items-center gap-12 px-5 py-[84px] sm:px-8 lg:grid-cols-[minmax(360px,480px)_minmax(0,610px)] lg:gap-20 lg:px-0 lg:py-[112px]">
-          <div className="mx-auto flex w-full max-w-[480px] items-center justify-center border border-white/10 bg-[#101010] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.34)] sm:p-4 lg:mx-0">
+        <div className="mx-auto grid max-w-[1184px] items-center gap-9 px-5 py-12 sm:px-8 sm:py-[84px] lg:grid-cols-[minmax(360px,480px)_minmax(0,610px)] lg:gap-20 lg:px-0 lg:py-[112px]">
+          <div className="mx-auto flex w-full max-w-[480px] items-center justify-center border border-white/10 bg-[#101010] p-2 shadow-[0_24px_80px_rgba(0,0,0,0.34)] sm:p-4 lg:mx-0">
             <Placeholder
               src={nextEvent?.image}
               alt={nextEvent?.title}
               className="aspect-square w-full object-center text-white/28"
+              fit="contain"
             />
           </div>
           <div className="flex flex-col justify-center lg:pt-4">
@@ -1101,7 +1102,7 @@ export default function Events() {
               ))}
             </div>
 
-            <div className="mt-12 grid max-w-[360px] grid-cols-4 gap-6">
+            <div className="mt-9 grid max-w-[360px] grid-cols-4 gap-4 sm:mt-12 sm:gap-6">
               {(
                 [
                   [String(countdown.days).padStart(2, "0"), "Días"],
@@ -1111,7 +1112,7 @@ export default function Events() {
                 ] as [string, string][]
               ).map(([value, label]) => (
                 <div key={label}>
-                  <p className="font-serif text-[42px] leading-none tracking-[-0.05em]">
+                  <p className="font-serif text-[34px] leading-none tracking-[-0.05em] sm:text-[42px]">
                     {value}
                   </p>
                   <p className="mt-2 text-[9px] uppercase tracking-[0.22em] text-white/45">
@@ -1247,7 +1248,7 @@ export default function Events() {
       </section>
 
       <section className="bg-cream-50">
-        <div className="mx-auto max-w-[1280px] px-5 py-10 sm:px-8 sm:py-14 lg:px-0 lg:py-20">
+        <div className="mx-auto max-w-[1280px] px-5 py-8 sm:px-8 sm:py-14 lg:px-0 lg:py-20">
           <div className="grid items-start gap-5 border-b border-cream-400 pb-7 md:grid-cols-[120px_minmax(0,1fr)_230px] md:gap-0 md:pb-10">
             <p className="text-[12px] uppercase leading-[1.35] tracking-[0.22em] text-ink-400">
               02 /<br />
@@ -1276,7 +1277,7 @@ export default function Events() {
                 return (
                   <div
                     key={group.month}
-                    className="grid gap-5 py-8 sm:gap-7 sm:py-10 lg:grid-cols-[190px_minmax(0,1fr)] lg:gap-10 lg:py-12"
+                    className="grid gap-5 py-7 sm:gap-7 sm:py-10 lg:grid-cols-[190px_minmax(0,1fr)] lg:gap-10 lg:py-12"
                   >
                     <div className="flex items-start justify-between gap-5 lg:block">
                       <p className="text-[11px] uppercase tracking-[0.22em] text-ink-300">
@@ -1435,7 +1436,7 @@ export default function Events() {
       ) : null}
 
       <section className="bg-[#0b0b0b] text-white">
-        <div className="mx-auto flex min-h-[440px] max-w-[1320px] flex-col items-center justify-center px-5 py-20 text-center sm:px-8 lg:min-h-[780px] lg:py-24 lg:px-10">
+        <div className="mx-auto flex min-h-[360px] max-w-[1320px] flex-col items-center justify-center px-5 py-16 text-center sm:px-8 sm:py-20 lg:min-h-[780px] lg:py-24 lg:px-10">
           <p className="text-[10px] uppercase tracking-[0.28em] text-white/28">
             04 / Voces de asistentes
           </p>
@@ -1455,7 +1456,7 @@ export default function Events() {
       </section>
 
       <section className="border-t border-cream-400 bg-cream-50">
-        <div className="mx-auto grid max-w-[1320px] gap-14 px-5 py-24 sm:px-8 lg:grid-cols-[360px_minmax(0,760px)] lg:gap-[132px] lg:px-10 lg:py-[136px]">
+        <div className="mx-auto grid max-w-[1320px] gap-12 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[360px_minmax(0,760px)] lg:gap-[132px] lg:px-10 lg:py-[136px]">
           <aside className="lg:pt-2">
             <p className="text-[10px] uppercase leading-[1.45] tracking-[0.24em] text-ink-400">
               05 /<span className="block">Preguntas</span>
@@ -1552,7 +1553,7 @@ export default function Events() {
       </section>
 
       <section className="border-t border-cream-400 bg-cream-100 text-center">
-        <div className="mx-auto flex min-h-[420px] max-w-[1040px] flex-col items-center justify-center px-5 py-20 sm:px-8 lg:min-h-[680px] lg:py-24">
+        <div className="mx-auto flex min-h-[360px] max-w-[1040px] flex-col items-center justify-center px-5 py-16 sm:px-8 sm:py-20 lg:min-h-[680px] lg:py-24">
           <p className="text-[10px] uppercase tracking-[0.28em] text-ink-400">
             06 / Cierre
           </p>

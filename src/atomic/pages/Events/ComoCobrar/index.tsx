@@ -193,11 +193,12 @@ export default function ComoCobrarLanding() {
       <section className="px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
         <div className="mx-auto max-w-[1344px]">
           <SectionKicker left="01 / Programa" right="5 bloques secuenciales" />
-          <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,820px)_minmax(300px,430px)] lg:items-end lg:gap-12">
+          <div className="mt-10 grid gap-8 xl:grid-cols-[minmax(0,760px)_minmax(300px,430px)] xl:items-end xl:gap-12">
             <div className="min-w-0 overflow-visible">
-              <h2 className="max-w-[820px] font-serif text-[clamp(48px,7vw,86px)] font-normal leading-[0.94] tracking-[-0.055em]">
+              <h2 className="max-w-[760px] font-serif text-[clamp(46px,6vw,78px)] font-normal leading-[0.94] tracking-[-0.045em]">
                 <span className="block">5 bloques.</span>
-                <span className="block">Una transformación</span>
+                <span className="block">Una</span>
+                <span className="block">transformación</span>
                 <span className="block italic">completa.</span>
               </h2>
             </div>

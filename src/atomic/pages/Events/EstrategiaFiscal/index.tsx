@@ -603,7 +603,7 @@ export default function EstrategiaFiscalLanding() {
               </div>
             </div>
 
-            <div className="relative flex min-h-[520px] items-center justify-center overflow-hidden border-t border-cream-400 bg-cream-200 lg:min-h-[690px] lg:border-l lg:border-t-0">
+            <div className="relative flex aspect-[1080/1350] min-h-0 items-center justify-center overflow-hidden border-t border-cream-400 bg-cream-200 lg:aspect-auto lg:min-h-[690px] lg:border-l lg:border-t-0">
               <video
                 ref={videoRef}
                 src={heroVideo}
