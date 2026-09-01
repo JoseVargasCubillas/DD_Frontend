@@ -392,7 +392,7 @@ export default function BookCheckout() {
 
               {isBundle ? (
                 <div className="border-b border-cream-400 py-6">
-                  <BookStack />
+                  <BookStack dimSat />
                   <div className="mt-4">
                     <p className="font-serif text-[24px] leading-[1.05] tracking-[-0.02em] text-ink-900">{book.title}</p>
                     <p className="mt-2 text-[13px] italic text-ink-400">{book.author} · {book.year}</p>

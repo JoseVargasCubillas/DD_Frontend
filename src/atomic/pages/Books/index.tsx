@@ -469,7 +469,7 @@ export default function Books() {
           </div>
 
           <div className="lg:pt-8">
-            <BookStack />
+            <BookStack dimSat />
           </div>
         </div>
       </section>
