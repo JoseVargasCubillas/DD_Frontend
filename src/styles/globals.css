@@ -354,6 +354,26 @@
   .section-header.in > *:nth-child(2) { transition-delay: 80ms; }
   .section-header.in > *:nth-child(3) { transition-delay: 160ms; }
   .section-header.in > *:nth-child(4) { transition-delay: 240ms; }
+
+  @media (max-width: 767px), (pointer: coarse) {
+    .motion-section,
+    .fade-up,
+    .section-header > *,
+    .stagger-grid > [data-s] {
+      opacity: 1 !important;
+      transform: none !important;
+    }
+
+    .line-mask > span,
+    .hero-reveal .line-mask > span {
+      transform: translateY(0) !important;
+    }
+
+    .hero-lede {
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
 }
 
 @layer components {

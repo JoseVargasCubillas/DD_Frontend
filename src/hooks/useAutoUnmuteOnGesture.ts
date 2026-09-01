@@ -36,9 +36,21 @@ export function useAutoUnmuteOnGesture(
     // Asegura el estado inicial que hace legal el autoplay.
     video.muted = true;
     video.defaultMuted = true;
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
     // Intento inicial de play (algunos navegadores ignoran `autoplay` si el
     // elemento se rehidrata tarde).
     void video.play().catch(() => {});
+
+    const visibilityObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        void video.play().catch(() => {});
+      },
+      { threshold: 0.25 },
+    );
+    visibilityObserver.observe(video);
 
     const unlock = () => {
       if (unlockedRef.current) return;
@@ -67,6 +79,7 @@ export function useAutoUnmuteOnGesture(
     );
 
     return () => {
+      visibilityObserver.disconnect();
       GESTURE_EVENTS.forEach((evt) => window.removeEventListener(evt, unlock));
     };
   }, [ref]);

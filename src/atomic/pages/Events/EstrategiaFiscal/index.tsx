@@ -612,7 +612,7 @@ export default function EstrategiaFiscalLanding() {
                 muted
                 loop
                 playsInline
-                preload="metadata"
+                preload="auto"
                 className="h-full max-h-[690px] w-full object-contain object-center"
                 aria-label="Video del seminario Estrategia Fiscal"
               />

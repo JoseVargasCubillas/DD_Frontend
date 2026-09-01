@@ -81,7 +81,7 @@ export default function GlobalMotion() {
             observer.unobserve(el);
           });
         },
-        { threshold: 0.14 },
+        { rootMargin: '0px 0px 16% 0px', threshold: 0.08 },
       );
 
       const counterObserver = new IntersectionObserver(
@@ -100,7 +100,14 @@ export default function GlobalMotion() {
         .forEach((el) => observer.observe(el));
       root.querySelectorAll<HTMLElement>('[data-motion-count]').forEach((el) => counterObserver.observe(el));
 
+      const revealFallback = window.setTimeout(() => {
+        root
+          .querySelectorAll<HTMLElement>('.hero-reveal, .fade-up, .motion-section, .section-header, .stagger-grid')
+          .forEach((el) => el.classList.add('in', 'play'));
+      }, 900);
+
       cleanupObservers = () => {
+        window.clearTimeout(revealFallback);
         observer.disconnect();
         counterObserver.disconnect();
       };

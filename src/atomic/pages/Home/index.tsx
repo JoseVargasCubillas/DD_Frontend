@@ -478,6 +478,7 @@ export default function Home() {
                   muted
                   playsInline
                   loop
+                  preload="auto"
                 />
                 {/* Overlay: solo mientras el video aún está en mute (antes del primer gesto) */}
                 {videoMuted && (

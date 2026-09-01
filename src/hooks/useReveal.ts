@@ -14,19 +14,25 @@ export function useReveal<T extends HTMLElement = HTMLDivElement>(threshold = 0.
       return;
     }
 
+    const fallback = window.setTimeout(() => el.classList.add('in', 'play'), 900);
+
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
+          window.clearTimeout(fallback);
           el.classList.add('in', 'play');
         } else {
           el.classList.remove('in', 'play');
         }
       },
-      { threshold }
+      { rootMargin: '0px 0px 16% 0px', threshold }
     );
 
     obs.observe(el);
-    return () => obs.disconnect();
+    return () => {
+      window.clearTimeout(fallback);
+      obs.disconnect();
+    };
   }, [threshold]);
 
   return ref;
@@ -46,22 +52,25 @@ export function useHeroReveal<T extends HTMLElement = HTMLDivElement>(delay = 12
     }
 
     let tid: ReturnType<typeof setTimeout> | null = null;
+    const fallback = setTimeout(() => el.classList.add('play'), delay + 900);
 
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
+          clearTimeout(fallback);
           tid = setTimeout(() => el.classList.add('play'), delay);
         } else {
           if (tid !== null) { clearTimeout(tid); tid = null; }
           el.classList.remove('play');
         }
       },
-      { threshold: 0.1 }
+      { rootMargin: '0px 0px 16% 0px', threshold: 0.1 }
     );
 
     obs.observe(el);
     return () => {
       obs.disconnect();
+      clearTimeout(fallback);
       if (tid !== null) clearTimeout(tid);
     };
   }, [delay]);
