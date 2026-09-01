@@ -38,6 +38,23 @@ const BOOK_SLUG_ALIASES: Record<string, string> = {
   '7-claves-cobrar-empresa': '7-claves-para-cobrar-a-tu-empresa',
 };
 
+const BUNDLE_SLUG = 'bundle-tres-libros';
+
+function BundleShippingNote() {
+  return (
+    <div className="mt-4 border border-ink-900/15 bg-white px-5 py-4">
+      <p className="text-[10px] uppercase tracking-[0.2em] text-ink-300">— Se envían 2 libros</p>
+      <ul className="mt-2 space-y-1 text-[13px] leading-[1.5] text-ink-600">
+        <li>· 7 Claves para cobrar a tu empresa</li>
+        <li>· 7 Secretos de un fiscalista</li>
+      </ul>
+      <p className="mt-3 text-[12px] leading-[1.6] text-ink-400">
+        "Los 7 secretos que el SAT no quiere que conozcas" está agotado. Con esta compra quedas anotado en la lista de espera de su reimpresión 2026, sin costo adicional, y te lo enviaremos en cuanto esté disponible.
+      </p>
+    </div>
+  );
+}
+
 const FALLBACK_COVERS: Record<string, string> = {
   '7-claves-para-cobrar-a-tu-empresa': bookClaves,
   '7-claves-cobrar-empresa': bookClaves,
@@ -166,6 +183,7 @@ export default function BookCheckout() {
     return <NotFound mode={isError ? 'error' : 'not-found'} />;
   }
 
+  const isBundle = book.slug === BUNDLE_SLUG;
   const coverSrc = book.coverImage || FALLBACK_COVERS[book.slug] || FALLBACK_COVERS[slug ?? ''] || bookClaves;
   const subtotal = book.price * quantity;
   // El envío ya está incluido en el precio del libro — se paga con el saldo
@@ -241,8 +259,15 @@ export default function BookCheckout() {
               Va en <span className="italic">camino.</span>
             </h1>
             <p className="mt-6 max-w-[560px] font-serif text-[16px] leading-[1.6] text-ink-500">
-              Gracias por tu compra. Estamos preparando tu ejemplar de "{book.title}" para enviarlo a la dirección que nos diste.
+              {isBundle
+                ? 'Gracias por tu compra. Estamos preparando tus 2 ejemplares para enviarlos a la dirección que nos diste.'
+                : `Gracias por tu compra. Estamos preparando tu ejemplar de "${book.title}" para enviarlo a la dirección que nos diste.`}
             </p>
+            {isBundle && (
+              <div className="mt-6 max-w-[560px]">
+                <BundleShippingNote />
+              </div>
+            )}
           </div>
         </section>
 
@@ -382,6 +407,8 @@ export default function BookCheckout() {
                   </div>
                 </div>
               </div>
+
+              {isBundle && <BundleShippingNote />}
 
               <div className="flex items-center justify-between border-b border-cream-400 py-5">
                 <span className="text-[10px] uppercase tracking-[0.2em] text-ink-300">— Cantidad</span>
