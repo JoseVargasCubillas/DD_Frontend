@@ -13,6 +13,7 @@ type Segment =
   | 'customers'
   | 'leads'
   | 'guide-leads'
+  | 'newsletter-leads'
   | 'lead-source:guia-blindaje-sat';
 
 interface SegmentOption {
@@ -22,11 +23,12 @@ interface SegmentOption {
 }
 
 const SEGMENT_OPTIONS: SegmentOption[] = [
-  { id: 'subscribed', label: 'Suscritos a marketing', description: 'Contactos con opt-in activo' },
+  { id: 'subscribed', label: 'Suscritos Academia', description: 'Cuentas de la plataforma con opt-in activo (no es lo mismo que Mailing)' },
+  { id: 'newsletter-leads', label: 'Suscriptores Mailing', description: 'Se suscribieron al newsletter, sin cuenta necesariamente' },
   { id: 'customers', label: 'Clientes', description: 'Compraron al menos una vez' },
   { id: 'leads', label: 'Leads (usuarios)', description: 'Cuentas sin compra' },
   { id: 'lead-source:guia-blindaje-sat', label: 'Leads · Guía SAT', description: 'Descargaron la guía desde el Home' },
-  { id: 'guide-leads', label: 'Leads editoriales', description: 'Guía SAT + Media Kit + Newsletter' },
+  { id: 'guide-leads', label: 'Leads editoriales', description: 'Guía SAT + Media Kit + Dossier + Recursos (no incluye Newsletter)' },
   { id: 'all', label: 'Todos los contactos', description: 'Toda la base de datos activa' },
 ];
 
@@ -131,6 +133,8 @@ export default function ManageEmail() {
       ? segments?.leads
       : segment === 'guide-leads'
       ? segments?.guideLeads
+      : segment === 'newsletter-leads'
+      ? segments?.newsletterLeads
       : segment === 'lead-source:guia-blindaje-sat'
       ? segments?.guiaSat
       : contactList.length;
@@ -175,14 +179,18 @@ export default function ManageEmail() {
       </header>
 
       {/* ── Estadísticas rápidas ─────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
         <CountBadge count={segments?.all} label="Total contactos" />
-        <CountBadge count={segments?.subscribed} label="Suscritos" />
+        <CountBadge count={segments?.subscribed} label="Suscritos Academia" />
+        <CountBadge count={segments?.newsletterLeads} label="Suscriptores Mailing" />
         <CountBadge count={segments?.customers} label="Clientes" />
         <CountBadge count={segments?.leads} label="Leads usuarios" />
         <CountBadge count={segments?.guiaSat} label="Leads Guía SAT" />
         <CountBadge count={segments?.guideLeads} label="Leads editoriales" />
       </div>
+      <p className="-mt-4 text-[11px] text-ink-400">
+        Nota: "Suscritos Academia" (cuentas de la plataforma) y "Suscriptores Mailing" (newsletter) son audiencias distintas — no se suman.
+      </p>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
 
