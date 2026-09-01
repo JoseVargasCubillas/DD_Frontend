@@ -2243,8 +2243,8 @@ function OfferEditView({
                 {settings.paymentType === "subscription" && (
                   <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="rounded-xl border border-ink-900/10 bg-cream-100 px-4 py-3">
-                      <span className="text-sm font-medium">Periodo de cobro</span>
-                      <p className="mt-1 text-sm text-ink-600">Anual automático: inicia hoy y vence en 365 días.</p>
+                      <span className="text-sm font-medium">Periodo de acceso</span>
+                      <p className="mt-1 text-sm text-ink-600">Acceso por 365 días desde la compra. El cliente renueva manualmente — ya no hay cobro automático.</p>
                     </div>
                     <label className="block">
                       <span className="text-sm font-medium">

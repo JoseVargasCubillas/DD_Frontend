@@ -346,8 +346,8 @@ export default function Academy() {
 
     clearCart();
     addItem({
-      id: `subscription-${plan.id}`,
-      type: 'subscription',
+      id: `academia-${plan.id}`,
+      type: 'academia',
       refId: plan.id,
       title: plan.name,
       price: plan.amount,

@@ -4,15 +4,14 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { useCartStore } from '@store/cartStore';
 import { useAuthStore } from '@store/authStore';
 import { createPaymentIntent } from '@api/payments.api';
-import { subscribe } from '@api/subscriptions.api';
 import { formatCurrency, formatDate } from '@utils/formatters';
 import { hasStripePublishableKey, stripeMissingKeyMessage, stripePromise } from '@utils/stripe';
 import type { OrderItem } from '@t/index';
 
-type CheckoutMode = 'subscription' | 'one_time';
+type CheckoutMode = 'academia' | 'one_time';
 
 function detectMode(items: { type?: string }[]): CheckoutMode {
-  return items.some((i) => i.type === 'subscription') ? 'subscription' : 'one_time';
+  return items.some((i) => i.type === 'academia') ? 'academia' : 'one_time';
 }
 
 interface PaymentFormProps {
@@ -63,7 +62,7 @@ function PaymentForm({ mode, total, onSuccess }: PaymentFormProps) {
         className="flex w-full items-center justify-between bg-cream-50 px-7 py-5 text-ink-900 transition-opacity disabled:opacity-50"
       >
         <span className="text-[11px] font-bold uppercase tracking-[0.18em]">
-          {paying ? 'Procesando…' : mode === 'subscription' ? 'Suscribirme ahora →' : 'Pagar ahora →'}
+          {paying ? 'Procesando…' : mode === 'academia' ? 'Confirmar acceso →' : 'Pagar ahora →'}
         </span>
         <span className="font-serif text-[15px] italic">{formatCurrency(total)}</span>
       </button>
@@ -79,15 +78,15 @@ interface OrderSummary {
 }
 
 function OrderConfirmation({ order, paymentLabel }: { order: OrderSummary; paymentLabel: string }) {
-  const isSubscription = order.mode === 'subscription';
-  const nextRenewal = new Date();
-  nextRenewal.setMonth(nextRenewal.getMonth() + 1);
+  const isAcademia = order.mode === 'academia';
+  const accessUntil = new Date();
+  accessUntil.setDate(accessUntil.getDate() + 365);
 
   return (
     <div className="bg-cream-50 text-ink-900">
       <section className="border-b border-cream-400 bg-cream-50">
         <div className="mx-auto flex max-w-[1184px] items-center gap-3 px-5 py-6 text-[10.5px] uppercase tracking-[0.24em] text-ink-300 sm:px-8 lg:px-0">
-          <span>{isSubscription ? 'ACADEMIA' : 'CURSOS'}</span>
+          <span>{isAcademia ? 'ACADEMIA' : 'CURSOS'}</span>
           <span className="opacity-50">/</span>
           <span>Checkout</span>
           <span className="opacity-50">/</span>
@@ -111,10 +110,10 @@ function OrderConfirmation({ order, paymentLabel }: { order: OrderSummary; payme
             </h1>
             <aside className="pt-2">
               <p className="font-serif text-[16px] leading-[1.6] text-ink-500">
-                Tu {isSubscription ? 'suscripción' : 'compra'} ya está activa. Revisa tu correo para el recibo y los siguientes pasos.
+                Tu {isAcademia ? 'acceso' : 'compra'} ya está activa. Revisa tu correo para el recibo y los siguientes pasos.
               </p>
               <p className="mt-6 font-serif text-[16px] leading-[1.6] text-ink-500">
-                Bienvenido{isSubscription ? ' a la Academia' : ''}. Es un honor tenerte del otro lado.
+                Bienvenido{isAcademia ? ' a la Academia' : ''}. Es un honor tenerte del otro lado.
               </p>
               <p className="mt-6 font-serif text-[22px] italic text-ink-900">
                 Diego Díaz<span className="ml-2 text-[13px] not-italic uppercase tracking-[0.18em] text-ink-300">— del otro lado</span>
@@ -152,10 +151,10 @@ function OrderConfirmation({ order, paymentLabel }: { order: OrderSummary; payme
                   <span className="text-[11px] uppercase tracking-[0.18em] text-ink-300">Método de pago</span>
                   <span className="font-serif text-[15px]">{paymentLabel}</span>
                 </div>
-                {isSubscription && (
+                {isAcademia && (
                   <div className="flex items-center justify-between py-5">
-                    <span className="text-[11px] uppercase tracking-[0.18em] text-ink-300">Próxima renovación</span>
-                    <span className="font-serif text-[15px]">{formatDate(nextRenewal)}</span>
+                    <span className="text-[11px] uppercase tracking-[0.18em] text-ink-300">Acceso vigente hasta</span>
+                    <span className="font-serif text-[15px]">{formatDate(accessUntil)}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between py-5">
@@ -164,7 +163,7 @@ function OrderConfirmation({ order, paymentLabel }: { order: OrderSummary; payme
                 </div>
               </div>
               <div className="flex items-baseline justify-between border-t border-ink-900/20 pt-6">
-                <span className="font-serif text-[18px]">Total {isSubscription ? 'anual' : ''}</span>
+                <span className="font-serif text-[18px]">Total {isAcademia ? 'del acceso' : ''}</span>
                 <span className="font-serif text-[40px]">
                   {formatCurrency(order.total)}
                   <span className="ml-2 text-[13px] uppercase tracking-[0.18em] text-ink-300">MXN</span>
@@ -207,7 +206,7 @@ export default function Checkout() {
   const [contactPhone, setContactPhone] = useState('');
 
   const mode = detectMode(items);
-  const needsGuestContact = mode === 'subscription' && !isAuthenticated;
+  const needsGuestContact = mode === 'academia' && !isAuthenticated;
   const canSubmitContact =
     !needsGuestContact ||
     (contactName.trim().length >= 2 && /\S+@\S+\.\S+/.test(contactEmail.trim()) && contactPhone.trim().length >= 8);
@@ -217,27 +216,12 @@ export default function Checkout() {
     setInitError('');
     setLoading(true);
     try {
-      if (mode === 'subscription') {
-        const subscriptionItem = items.find((item) => item.type === 'subscription') ?? items[0];
-        const result = await subscribe({
-          plan: subscriptionItem?.refId?.replace('off_academia_', '') || 'plus',
-          item: {
-            type: 'offer',
-            refId: subscriptionItem?.refId,
-            quantity: subscriptionItem?.quantity ?? 1,
-          },
-          customer: needsGuestContact
-            ? { name: contactName.trim(), email: contactEmail.trim(), phone: contactPhone.trim() }
-            : undefined,
-        });
-        setClientSecret(result.clientSecret ?? '');
-        const subscription = result.subscription;
-        setOrder({ mode, items, total: total(), orderId: subscription?._id ?? subscription?.id ?? '' });
-      } else {
-        const result = await createPaymentIntent(items);
-        setClientSecret(result.clientSecret ?? '');
-        setOrder({ mode, items, total: result.total ?? total(), orderId: result.orderId ?? '' });
-      }
+      const customer = needsGuestContact
+        ? { name: contactName.trim(), email: contactEmail.trim(), phone: contactPhone.trim() }
+        : undefined;
+      const result = await createPaymentIntent(items, undefined, customer);
+      setClientSecret(result.clientSecret ?? '');
+      setOrder({ mode, items, total: result.total ?? total(), orderId: result.orderId ?? '' });
     } catch (error) {
       setInitError((error as Error).message || 'No se pudo iniciar el pago. Intenta de nuevo.');
     } finally {
@@ -288,7 +272,7 @@ export default function Checkout() {
       }
     : null;
 
-  const breadcrumbCategory = mode === 'subscription' ? 'ACADEMIA' : 'CURSOS';
+  const breadcrumbCategory = mode === 'academia' ? 'ACADEMIA' : 'CURSOS';
   const subtotal = total() / 1.16;
   const tax = total() - subtotal;
 
@@ -299,10 +283,10 @@ export default function Checkout() {
         <div className="mx-auto flex max-w-[1184px] items-center gap-3 px-5 py-6 text-[10.5px] uppercase tracking-[0.24em] text-ink-300 sm:px-8 lg:px-0">
           <span>{breadcrumbCategory}</span>
           <span className="opacity-50">/</span>
-          <span>{mode === 'subscription' ? 'SUSCRIPCIÓN' : 'PAGO ÚNICO'}</span>
+          <span>{mode === 'academia' ? 'ACCESO 1 AÑO' : 'PAGO ÚNICO'}</span>
           <span className="opacity-50">/</span>
           <span className="font-serif italic text-[13px] normal-case tracking-normal text-ink-900">
-            Checkout{mode === 'subscription' ? ' · Academia+' : ''}.
+            Checkout{mode === 'academia' ? ' · Academia+' : ''}.
           </span>
         </div>
       </section>
@@ -311,15 +295,15 @@ export default function Checkout() {
       <section className="border-b border-cream-400 bg-cream-50">
         <div className="mx-auto max-w-[1184px] px-5 pb-16 pt-14 sm:px-8 lg:px-0">
           <div className="flex items-center justify-between border-b border-cream-400 pb-5 text-[10px] uppercase tracking-[0.24em] text-ink-300">
-            <span>— {mode === 'subscription' ? 'Suscripción · Academia+' : 'Pago único · sin renovación'}</span>
-            {mode === 'subscription' && <span>Renovación anual</span>}
+            <span>— {mode === 'academia' ? 'Acceso · Academia+' : 'Pago único · sin renovación'}</span>
+            {mode === 'academia' && <span>Válido 365 días</span>}
           </div>
           <h1 className="mt-8 font-serif text-[64px] leading-[0.85] tracking-[-0.03em] sm:text-[96px] lg:text-[128px]">
             Checkout<span className="italic">.</span>
           </h1>
           <p className="mt-6 max-w-[640px] text-[16px] leading-[1.7] text-ink-500">
-            {mode === 'subscription'
-              ? 'Un solo paso para acceder al programa completo. Suscripción con renovación automática, cancelable desde tu portal en cualquier momento.'
+            {mode === 'academia'
+              ? 'Un solo paso para acceder al programa completo. Tu acceso es válido por 365 días — la renovación es manual, sin cobros automáticos.'
               : 'Un solo paso para asegurar tu acceso. Recibirás la confirmación y los datos de acceso por correo al completar tu compra.'}
           </p>
         </div>
@@ -340,7 +324,7 @@ export default function Checkout() {
                     <div className="min-w-0">
                       <p className="font-serif text-[16px] leading-tight text-ink-900">{item.title}</p>
                       <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-ink-300">
-                        {item.type === 'subscription' ? 'Suscripción anual' : 'Pago único'}
+                        {item.type === 'academia' ? 'Acceso · 365 días' : 'Pago único'}
                       </p>
                     </div>
                     <p className="whitespace-nowrap font-serif text-[15px] text-ink-900">{formatCurrency(item.price)}</p>
@@ -357,13 +341,13 @@ export default function Checkout() {
                   <span className="font-serif">{formatCurrency(tax)}</span>
                 </div>
                 <div className="flex items-baseline justify-between border-t border-ink-900/25 pt-4">
-                  <span className="font-serif text-[16px]">Total {mode === 'subscription' ? 'anual' : ''}</span>
+                  <span className="font-serif text-[16px]">Total {mode === 'academia' ? 'del acceso' : ''}</span>
                   <span className="font-serif text-[34px]">{formatCurrency(total())}</span>
                 </div>
               </div>
-              {mode === 'subscription' && (
+              {mode === 'academia' && (
                 <p className="mt-6 border-t border-cream-400 pt-5 font-serif text-[13px] italic leading-[1.55] text-ink-400">
-                  Se renueva automáticamente cada año. Puedes cancelar cuando quieras desde el portal de miembro — la cancelación aplica al ciclo siguiente.
+                  Tu acceso es válido por 365 días desde hoy. La renovación es manual — te avisaremos por correo antes de que se venza, sin cobros automáticos.
                 </p>
               )}
             </div>
@@ -445,7 +429,7 @@ export default function Checkout() {
                     className="mt-6 flex w-full items-center justify-between bg-cream-50 px-7 py-5 text-ink-900"
                   >
                     <span className="text-[11px] font-bold uppercase tracking-[0.18em]">
-                      {mode === 'subscription' ? 'Activar suscripción →' : 'Confirmar compra →'}
+                      {mode === 'academia' ? 'Activar acceso →' : 'Confirmar compra →'}
                     </span>
                     <span className="font-serif text-[15px] italic">{formatCurrency(total())}</span>
                   </button>

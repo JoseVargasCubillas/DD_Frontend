@@ -267,6 +267,32 @@ export default function MyCourses() {
         </label>
       </header>
 
+      {subscription && (subscription.status === 'active' || subscription.status === 'trialing') && (() => {
+        const expiresAt = new Date(subscription.currentPeriodEnd);
+        const daysLeft = Math.ceil((expiresAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+        if (daysLeft > 7) return null;
+        const expired = daysLeft < 0;
+        const whenText = expired ? 'venció' : daysLeft === 0 ? 'vence hoy' : daysLeft === 1 ? 'vence mañana' : `vence en ${daysLeft} días`;
+        return (
+          <div className="flex flex-col gap-4 rounded-[24px] border border-ink-900 bg-ink-900 p-6 text-cream-50 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-[0.24em] text-cream-50/60">
+                {expired ? 'Acceso vencido' : 'Renovación manual'}
+              </p>
+              <p className="mt-2 font-serif text-[20px] italic leading-tight">
+                Tu acceso a Academia {whenText}.
+              </p>
+            </div>
+            <Link
+              to="/academia"
+              className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-cream-50 px-5 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-900 hover:opacity-90"
+            >
+              Renovar ahora →
+            </Link>
+          </div>
+        );
+      })()}
+
       {loadingLibrary && <p className="font-serif italic text-ink-600">Cargando cursos...</p>}
 
       {!loadingLibrary && courses.length === 0 && (

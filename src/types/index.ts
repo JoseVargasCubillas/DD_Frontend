@@ -262,8 +262,9 @@ export interface Subscription {
   cancelAtPeriodEnd: boolean;
   package?: string | null;
   offer?: string | null;
+  orderId?: string | null;
   startDate?: string;
-  source?: 'stripe' | 'manual_admin' | string;
+  source?: 'stripe' | 'manual_admin' | 'order' | string;
 }
 
 export interface OrderItem {

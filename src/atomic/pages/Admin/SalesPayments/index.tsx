@@ -1314,9 +1314,13 @@ function subscriptionsToTransactions(subs: AdminSubscriptionRow[]): SalesTransac
     .map((sub) => {
       const id = String(sub._id || sub.id || crypto.randomUUID());
       const title = sub.offerTitle || sub.packageName || `Academia ${sub.plan}`;
+      // Las compras pagadas de Academia (renovación manual) son un Order de un
+      // solo pago por debajo — su recibo real vive en /recibo/pedido/:id, no en
+      // el legacy /recibo/:id de las viejas Subscriptions de Stripe Billing.
+      const isOrderBacked = Boolean(sub.orderId);
       return {
         id,
-        orderId: id,
+        orderId: isOrderBacked ? String(sub.orderId) : id,
         amount: Number(sub.price || 0),
         currency: sub.currency || "MXN",
         title,
@@ -1335,7 +1339,7 @@ function subscriptionsToTransactions(subs: AdminSubscriptionRow[]): SalesTransac
           },
         ],
         subscriptionId: id,
-        kind: "subscription" as const,
+        kind: (isOrderBacked ? "order" : "subscription") as SalesTransaction["kind"],
       };
     });
 }
