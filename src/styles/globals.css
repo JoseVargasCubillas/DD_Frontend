@@ -329,15 +329,19 @@
   }
   .fade-up.in { opacity: 1; transform: translateY(0); }
 
+  /* Solo opacity (sin transform): GlobalMotion aplica esta clase a TODAS las
+     <section> del sitio automáticamente, incluidas secciones muy altas
+     (más de una pantalla en móvil, p.ej. el hero de "próximo evento").
+     Animar `transform` en cajas así de altas dispara un bug de pintado en
+     algunos navegadores móviles: el fondo deja de repintarse a la mitad de
+     la sección mientras el usuario sigue haciendo scroll, dejando un hueco
+     en blanco. Quitar el transform evita esa capa de composición. */
   .motion-section {
     opacity: 0;
-    transform: translateY(28px);
-    transition: opacity var(--d-base) var(--ease-out),
-                transform var(--d-base) var(--ease-out);
+    transition: opacity var(--d-base) var(--ease-out);
   }
   .motion-section.in {
     opacity: 1;
-    transform: translateY(0);
   }
 
   .section-header > * {
