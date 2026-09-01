@@ -437,7 +437,7 @@ const FaqSection = memo(function FaqSection() {
 
 export default function EstrategiaFiscalLanding() {
   const videoRef = useRef<HTMLVideoElement>(null);
-  useAutoUnmuteOnGesture(videoRef);
+  const [, , videoState] = useAutoUnmuteOnGesture(videoRef);
   const navigate = useNavigate();
   const addItem = useCartStore((s) => s.addItem);
   const clearCart = useCartStore((s) => s.clear);
@@ -606,16 +606,18 @@ export default function EstrategiaFiscalLanding() {
             <div className="relative flex aspect-[1080/1350] min-h-0 items-center justify-center overflow-hidden border-t border-cream-400 bg-cream-200 lg:aspect-auto lg:min-h-[690px] lg:border-l lg:border-t-0">
               <video
                 ref={videoRef}
-                src={heroVideo}
                 poster={heroDiego}
                 autoPlay
                 muted
                 loop
                 playsInline
                 preload="auto"
+                controls={videoState.needsUserPlay}
                 className="h-full max-h-[690px] w-full object-contain object-center"
                 aria-label="Video del seminario Estrategia Fiscal"
-              />
+              >
+                <source src={heroVideo} type="video/mp4" />
+              </video>
             </div>
           </div>
 

@@ -324,7 +324,7 @@ export default function Academy() {
   const { subscription } = useSubscription();
   const { data: packages } = usePackages();
   const academyVideoRef = useRef<HTMLVideoElement>(null);
-  const [videoMuted, toggleVideoMute] = useAutoUnmuteOnGesture(academyVideoRef);
+  const [videoMuted, toggleVideoMute, videoState] = useAutoUnmuteOnGesture(academyVideoRef);
   const hasAcademyAccess = subscription?.status === 'active' || subscription?.status === 'trialing';
 
   const plans = useMemo<PlanCard[]>(() => {
@@ -413,16 +413,18 @@ export default function Academy() {
           <div className="relative mx-auto aspect-[420/582] w-full max-w-[420px] overflow-hidden border border-[#0a0a0a]/20 bg-[#0a0a0a] shadow-[0_28px_70px_rgba(10,10,10,0.16)] lg:mx-0 lg:justify-self-end">
             <video
               ref={academyVideoRef}
-              src={academyVideoUrl}
               className="absolute inset-0 h-full w-full object-cover"
               autoPlay
               loop
               muted
               playsInline
               preload="auto"
+              controls={videoState.needsUserPlay}
               aria-label="Video de Academia Diego Díaz"
               onClick={toggleVideoMute}
-            />
+            >
+              <source src={academyVideoUrl} type="video/mp4" />
+            </video>
 
             {/* Aviso persistente mientras el video está muted */}
             {videoMuted && (

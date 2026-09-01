@@ -401,7 +401,7 @@ export default function Home() {
   const c18 = useCountUp(18, statsInView);
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoMuted, toggleVideoMute] = useAutoUnmuteOnGesture(videoRef);
+  const [videoMuted, toggleVideoMute, videoState] = useAutoUnmuteOnGesture(videoRef);
 
   const [guideEmail, setGuideEmail] = useState("");
   const [guideSubmitting, setGuideSubmitting] = useState(false);
@@ -472,17 +472,24 @@ export default function Home() {
               >
                 <video
                   ref={videoRef}
-                  src={videoSEF}
                   className="w-full h-full object-contain"
                   autoPlay
                   muted
                   playsInline
                   loop
                   preload="auto"
-                />
-                {/* Overlay: solo mientras el video aún está en mute (antes del primer gesto) */}
-                {videoMuted && (
-                  <div className="absolute inset-0 flex flex-col justify-between p-6">
+                  controls={videoState.needsUserPlay}
+                >
+                  <source src={videoSEF} type="video/mp4" />
+                </video>
+                {/* Overlay: solo si el navegador móvil bloqueó el arranque. */}
+                {videoState.needsUserPlay && (
+                  <button
+                    type="button"
+                    onClick={toggleVideoMute}
+                    aria-label="Reproducir video"
+                    className="absolute inset-0 flex cursor-pointer flex-col justify-between p-6 text-left"
+                  >
                     <p className="text-white text-[15px] font-light leading-snug max-w-[200px]">
                       Lo primero que te enseñamos es cómo
                     </p>
@@ -500,7 +507,17 @@ export default function Home() {
                         </svg>
                       </div>
                     </div>
-                  </div>
+                  </button>
+                )}
+                {!videoState.needsUserPlay && videoMuted && (
+                  <button
+                    type="button"
+                    onClick={toggleVideoMute}
+                    aria-label="Activar sonido del video"
+                    className="absolute bottom-4 right-4 z-10 min-h-11 cursor-pointer bg-white px-4 py-3 font-mono text-[9px] uppercase tracking-[0.18em] text-ink-900 shadow-lg"
+                  >
+                    Activar sonido
+                  </button>
                 )}
               </div>
             </AnimateIn>
