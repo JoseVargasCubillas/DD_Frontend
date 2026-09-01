@@ -17,12 +17,14 @@ import { useEvents, useAssignUsersToEvent, useDeregisterUsersFromEvent } from '@
 import { useOffers, useAssignOffer, useBulkRevokeOffer } from '@hooks/useOffers';
 import type { ImportContactInput, ImportContactsResult } from '@api/users.api';
 import type { User, Tag, Course, Offer, Event as EventType } from '@t/index';
-import { useLeads } from '@hooks/useLeads';
+import { useDeleteLeads, useLeads } from '@hooks/useLeads';
 
 const LEAD_SOURCE_LABELS: Record<string, string> = {
   'guia-blindaje-sat': 'Guía SAT',
   'media-kit': 'Media Kit',
-  newsletter: 'Newsletter',
+  newsletter: 'Lead suscrito · Mailing',
+  'centro-recursos': 'Centro de recursos',
+  'estrategia-fiscal-dossier': 'Dossier Estrategia Fiscal',
   'libro-sat-waitlist': 'Lista de espera · Libro SAT',
   contact: 'Formulario contacto',
   other: 'Otro',
@@ -42,11 +44,53 @@ const formatLeadDate = (value?: string | null) => {
 };
 
 function LeadsTab() {
-  const [source, setSource] = useState<string>('guia-blindaje-sat');
+  const [source, setSource] = useState<string>('newsletter');
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<string[] | null>(null);
   const { data: leads = [], isLoading } = useLeads(source || undefined);
-  const campaignHref = source
+  const deleteLeadsMutation = useDeleteLeads();
+  const campaignHref = source === 'newsletter'
+    ? '/admin/email?segment=newsletter-leads'
+    : source
     ? `/admin/email?segment=${encodeURIComponent(`lead-source:${source}`)}`
     : '/admin/email?segment=guide-leads';
+  const visibleLeadIds = leads
+    .map((lead) => String(lead._id ?? lead.id ?? ''))
+    .filter(Boolean);
+  const allVisibleSelected = visibleLeadIds.length > 0 && visibleLeadIds.every((id) => selectedLeadIds.includes(id));
+
+  useEffect(() => {
+    setSelectedLeadIds([]);
+  }, [source]);
+
+  useEffect(() => {
+    setSelectedLeadIds((current) => current.filter((id) => visibleLeadIds.includes(id)));
+  }, [visibleLeadIds.join('|')]);
+
+  const toggleAllLeads = (checked: boolean) => {
+    setSelectedLeadIds(checked ? visibleLeadIds : []);
+  };
+
+  const toggleLead = (id: string, checked: boolean) => {
+    setSelectedLeadIds((current) =>
+      checked ? Array.from(new Set([...current, id])) : current.filter((item) => item !== id),
+    );
+  };
+
+  const confirmDelete = (ids: string[]) => {
+    if (ids.length === 0) return;
+    setDeleteTarget(ids);
+  };
+
+  const finishDelete = () => {
+    const ids = deleteTarget ?? [];
+    deleteLeadsMutation.mutate(ids, {
+      onSuccess: () => {
+        setSelectedLeadIds((current) => current.filter((id) => !ids.includes(id)));
+        setDeleteTarget(null);
+      },
+    });
+  };
 
   const copyEmails = () => {
     const text = leads.map((l) => l.email).join('\n');
@@ -81,7 +125,7 @@ function LeadsTab() {
         <div>
           <h2 className="text-lg font-semibold text-ink-900">Leads capturados</h2>
           <p className="mt-1 text-sm text-ink-600">
-            Correos que descargaron un recurso desde la web. Se guardan al enviar el PDF.
+            Administra mailing, descargas y formularios por fuente. Los suscritos al newsletter viven separados de los leads de descarga.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -93,10 +137,20 @@ function LeadsTab() {
             <option value="">Todas las fuentes</option>
             <option value="guia-blindaje-sat">Guía SAT</option>
             <option value="media-kit">Media Kit</option>
-            <option value="newsletter">Newsletter</option>
+            <option value="newsletter">Lead suscrito · Mailing</option>
+            <option value="centro-recursos">Centro de recursos</option>
+            <option value="estrategia-fiscal-dossier">Dossier Estrategia Fiscal</option>
             <option value="libro-sat-waitlist">Lista de espera · Libro SAT</option>
             <option value="contact">Formulario contacto</option>
           </select>
+          <button
+            type="button"
+            onClick={() => confirmDelete(selectedLeadIds)}
+            disabled={!selectedLeadIds.length || deleteLeadsMutation.isPending}
+            className="min-h-10 cursor-pointer rounded-full border border-red-200 bg-red-50 px-4 text-sm font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Borrar seleccionados
+          </button>
           <button
             type="button"
             onClick={copyEmails}
@@ -126,49 +180,93 @@ function LeadsTab() {
         <table className="min-w-full text-sm">
           <thead className="bg-ink-50 text-left text-xs uppercase tracking-wider text-ink-600">
             <tr>
+              <th className="w-12 px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={allVisibleSelected}
+                  onChange={(e) => toggleAllLeads(e.target.checked)}
+                  disabled={!visibleLeadIds.length}
+                  aria-label="Seleccionar todos los leads visibles"
+                  className="h-4 w-4 cursor-pointer accent-ink-900 disabled:cursor-not-allowed"
+                />
+              </th>
               <th className="px-4 py-3">Correo</th>
               <th className="px-4 py-3">Teléfono</th>
               <th className="px-4 py-3">Fuente</th>
               <th className="px-4 py-3">Capturado</th>
               <th className="px-4 py-3">Correo enviado</th>
+              <th className="px-4 py-3 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink-900/5">
             {isLoading ? (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-ink-500">Cargando…</td>
+                <td colSpan={7} className="px-4 py-10 text-center text-ink-500">Cargando…</td>
               </tr>
             ) : leads.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-ink-500">
+                <td colSpan={7} className="px-4 py-10 text-center text-ink-500">
                   Sin leads todavía en esta fuente.
                 </td>
               </tr>
             ) : (
-              leads.map((lead) => (
-                <tr key={lead._id ?? lead.id ?? lead.email} className="text-ink-900">
-                  <td className="px-4 py-3 font-medium">{lead.email}</td>
-                  <td className="px-4 py-3 text-ink-600">{lead.phone || '—'}</td>
-                  <td className="px-4 py-3 text-ink-600">
-                    {LEAD_SOURCE_LABELS[lead.source] ?? lead.source}
-                  </td>
-                  <td className="px-4 py-3 text-ink-600">{formatLeadDate(lead.createdAt)}</td>
-                  <td className="px-4 py-3">
-                    {lead.emailedAt ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-700">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        {formatLeadDate(lead.emailedAt)}
-                      </span>
-                    ) : (
-                      <span className="text-ink-500">Pendiente</span>
-                    )}
-                  </td>
-                </tr>
-              ))
+              leads.map((lead) => {
+                const leadId = String(lead._id ?? lead.id ?? '');
+                return (
+                  <tr key={leadId || lead.email} className="text-ink-900">
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={leadId ? selectedLeadIds.includes(leadId) : false}
+                        onChange={(e) => leadId && toggleLead(leadId, e.target.checked)}
+                        disabled={!leadId}
+                        aria-label={`Seleccionar ${lead.email}`}
+                        className="h-4 w-4 cursor-pointer accent-ink-900 disabled:cursor-not-allowed"
+                      />
+                    </td>
+                    <td className="px-4 py-3 font-medium">{lead.email}</td>
+                    <td className="px-4 py-3 text-ink-600">{lead.phone || '—'}</td>
+                    <td className="px-4 py-3 text-ink-600">
+                      {LEAD_SOURCE_LABELS[lead.source] ?? lead.source}
+                    </td>
+                    <td className="px-4 py-3 text-ink-600">{formatLeadDate(lead.createdAt)}</td>
+                    <td className="px-4 py-3">
+                      {lead.emailedAt ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-700">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                          {formatLeadDate(lead.emailedAt)}
+                        </span>
+                      ) : (
+                        <span className="text-ink-500">Pendiente</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => leadId && confirmDelete([leadId])}
+                        disabled={!leadId || deleteLeadsMutation.isPending}
+                        className="cursor-pointer text-sm font-semibold text-red-600 underline underline-offset-4 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Borrar
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
+      {deleteTarget && (
+        <BulkConfirmModal
+          title="Borrar leads"
+          message={`¿Eliminar ${deleteTarget.length} lead${deleteTarget.length === 1 ? '' : 's'}? Esta acción no se puede deshacer.`}
+          confirmLabel="Borrar"
+          isPending={deleteLeadsMutation.isPending}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={finishDelete}
+        />
+      )}
     </section>
   );
 }

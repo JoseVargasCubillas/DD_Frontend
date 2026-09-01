@@ -125,7 +125,7 @@ export default function Books() {
     }
     setNewsletterSending(true);
     try {
-      await subscribeNewsletter(value);
+      await subscribeNewsletter(value, undefined, 'libros');
       setNewsletterDone(true);
       setNewsletterEmail('');
       toast.success('Listo, ya estás suscrito.');

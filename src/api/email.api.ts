@@ -20,6 +20,7 @@ export interface SegmentCounts {
   leads: number;
   guideLeads?: number;
   guiaSat?: number;
+  newsletterLeads?: number;
 }
 
 export const sendBroadcast = (payload: BroadcastPayload): Promise<BroadcastResult> =>

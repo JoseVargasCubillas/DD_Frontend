@@ -12,6 +12,7 @@ type Segment =
   | 'subscribed'
   | 'customers'
   | 'leads'
+  | 'newsletter-leads'
   | 'guide-leads'
   | 'lead-source:guia-blindaje-sat';
 
@@ -25,8 +26,9 @@ const SEGMENT_OPTIONS: SegmentOption[] = [
   { id: 'subscribed', label: 'Suscritos a marketing', description: 'Contactos con opt-in activo' },
   { id: 'customers', label: 'Clientes', description: 'Compraron al menos una vez' },
   { id: 'leads', label: 'Leads (usuarios)', description: 'Cuentas sin compra' },
+  { id: 'newsletter-leads', label: 'Leads suscritos', description: 'Correos del footer, blog y formularios de mailing' },
   { id: 'lead-source:guia-blindaje-sat', label: 'Leads · Guía SAT', description: 'Descargaron la guía desde el Home' },
-  { id: 'guide-leads', label: 'Leads editoriales', description: 'Guía SAT + Media Kit + Newsletter' },
+  { id: 'guide-leads', label: 'Leads editoriales', description: 'Descargas de recursos y media kit' },
   { id: 'all', label: 'Todos los contactos', description: 'Toda la base de datos activa' },
 ];
 
@@ -129,6 +131,8 @@ export default function ManageEmail() {
       ? segments?.customers
       : segment === 'leads'
       ? segments?.leads
+      : segment === 'newsletter-leads'
+      ? segments?.newsletterLeads
       : segment === 'guide-leads'
       ? segments?.guideLeads
       : segment === 'lead-source:guia-blindaje-sat'
@@ -180,6 +184,7 @@ export default function ManageEmail() {
         <CountBadge count={segments?.subscribed} label="Suscritos" />
         <CountBadge count={segments?.customers} label="Clientes" />
         <CountBadge count={segments?.leads} label="Leads usuarios" />
+        <CountBadge count={segments?.newsletterLeads} label="Leads suscritos" />
         <CountBadge count={segments?.guiaSat} label="Leads Guía SAT" />
         <CountBadge count={segments?.guideLeads} label="Leads editoriales" />
       </div>

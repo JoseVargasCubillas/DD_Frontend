@@ -21,9 +21,18 @@ export interface Lead {
   updatedAt: string;
 }
 
-export const subscribeNewsletter = (email: string, name?: string): Promise<LeadCaptureResult> =>
+export interface BulkDeleteLeadsResult {
+  deleted: number;
+  missing: string[];
+}
+
+export const subscribeNewsletter = (
+  email: string,
+  name?: string,
+  origin?: string,
+): Promise<LeadCaptureResult> =>
   client
-    .post<ApiResponse<LeadCaptureResult>>('/leads/newsletter', { email, name })
+    .post<ApiResponse<LeadCaptureResult>>('/leads/newsletter', { email, name, origin })
     .then((r) => r.data);
 
 export const subscribeSatWaitlist = (email: string, name?: string): Promise<LeadCaptureResult> =>
@@ -69,3 +78,8 @@ export const requestDownloadableResource = (input: {
 export const listLeads = (source?: string): Promise<Lead[]> =>
   client.get<ApiResponse<Lead[]>>('/leads', source ? { source } : undefined).then((r) => r.data);
 
+export const deleteLead = (id: string): Promise<{ id: string }> =>
+  client.delete<ApiResponse<{ id: string }>>(`/leads/${id}`).then((r) => r.data);
+
+export const deleteLeads = (ids: string[]): Promise<BulkDeleteLeadsResult> =>
+  client.post<ApiResponse<BulkDeleteLeadsResult>>('/leads/bulk-delete', { ids }).then((r) => r.data);

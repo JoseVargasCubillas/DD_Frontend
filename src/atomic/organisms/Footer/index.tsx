@@ -28,7 +28,7 @@ export default function Footer() {
 
     setSubscribing(true);
     try {
-      await subscribeNewsletter(value);
+      await subscribeNewsletter(value, undefined, 'footer');
       setSubscribed(true);
       setEmail('');
       toast.success('Listo, ya estás suscrito.');

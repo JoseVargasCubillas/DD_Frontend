@@ -78,7 +78,7 @@ export default function BlogList() {
     }
     setNewsletterSending(true);
     try {
-      await subscribeNewsletter(value);
+      await subscribeNewsletter(value, undefined, 'blog');
       setNewsletterDone(true);
       setNewsletterEmail('');
       toast.success('Listo, ya estás suscrito.');
