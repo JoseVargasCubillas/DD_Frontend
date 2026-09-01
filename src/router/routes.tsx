@@ -20,6 +20,7 @@ const EstrategiaFiscalLanding = lazy(
   () => import("@pages/Events/EstrategiaFiscal"),
 );
 const HoldingLanding = lazy(() => import("@pages/Events/Holding"));
+const ComoCobrarLanding = lazy(() => import("@pages/Events/ComoCobrar"));
 
 const EventDetail = lazy(() => import("@pages/Events/EventDetail"));
 const BlogList = lazy(() => import("@pages/Blog/BlogList"));
@@ -29,6 +30,8 @@ const Resources = lazy(() => import("@pages/Resources"));
 const Contact = lazy(() => import("@pages/Contact"));
 const Login = lazy(() => import("@pages/Auth/Login"));
 const Register = lazy(() => import("@pages/Auth/Register"));
+const ForgotPassword = lazy(() => import("@pages/Auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("@pages/Auth/ResetPassword"));
 const MyCourses = lazy(() => import("@pages/Dashboard/MyCourses"));
 const Profile = lazy(() => import("@pages/Dashboard/Profile"));
 const Checkout = lazy(() => import("@pages/Checkout"));
@@ -54,6 +57,9 @@ const DiazLara = lazy(() => import("@pages/DiazLara"));
 const ManageEmail = lazy(() => import("@pages/Admin/ManageEmail"));
 const BookCheckout = lazy(() => import("@pages/Books/BookCheckout"));
 const Books = lazy(() => import("@pages/Books"));
+const Terminos = lazy(() => import("@pages/LegalDocuments/Terminos"));
+const Privacidad = lazy(() => import("@pages/LegalDocuments/Privacidad"));
+const Faq = lazy(() => import("@pages/LegalDocuments/Faq"));
 export const router = createBrowserRouter([
   {
     element: <MainLayout />,
@@ -74,6 +80,8 @@ export const router = createBrowserRouter([
       { path: "/eventos/holding-septiembre", element: <HoldingLanding /> },
       { path: "/eventos/holding-octubre", element: <HoldingLanding /> },
       { path: "/eventos/holding-noviembre", element: <HoldingLanding /> },
+      { path: "/eventos/como-cobrar", element: <ComoCobrarLanding /> },
+      { path: "/eventos/como-cobrar-como-ceo", element: <ComoCobrarLanding /> },
       { path: "/eventos/checkout", element: <EventCheckout /> },
       { path: "/eventos/:slug", element: <EventDetail /> },
       { path: "/blog", element: <BlogList /> },
@@ -85,6 +93,9 @@ export const router = createBrowserRouter([
       { path: "/contacto", element: <Contact /> },
       { path: "/libros", element: <Books /> },
       { path: "/checkout", element: <Checkout /> },
+      { path: "/terminos", element: <Terminos /> },
+      { path: "/privacidad", element: <Privacidad /> },
+      { path: "/faq", element: <Faq /> },
       {
         path: "/libros/:slug/checkout",
         element: (
@@ -110,6 +121,8 @@ export const router = createBrowserRouter([
     children: [
       { path: "/iniciar-sesion", element: <Login /> },
       { path: "/registro", element: <Register /> },
+      { path: "/recuperar-contrasena", element: <ForgotPassword /> },
+      { path: "/restablecer-contrasena", element: <ResetPassword /> },
     ],
   },
   {

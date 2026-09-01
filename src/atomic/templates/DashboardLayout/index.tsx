@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, ScrollRestoration } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 import Navbar from '@organisms/Navbar';
 import Footer from '@organisms/Footer';
@@ -13,6 +13,7 @@ export default function DashboardLayout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-cream text-ink-900">
+      <ScrollRestoration />
       <Navbar />
 
       <div className="border-b border-ink-900/15 bg-cream-100">

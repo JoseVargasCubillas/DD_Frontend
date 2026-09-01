@@ -5,7 +5,7 @@ import * as blogApi from '@api/blog.api';
 import Spinner from '@atoms/Spinner';
 import { formatDate } from '@utils/formatters';
 import { useNextCalendarEvent } from '@hooks/useNextCalendarEvent';
-import { getCalendarEventPath } from '@utils/eventCalendar';
+import { getCalendarEventAction } from '@utils/eventCalendar';
 import { getEventImage } from '@utils/eventImages';
 import { findStaticBlogPost, formatStaticBlogDate, STATIC_BLOG_POSTS } from '@/data/blogPosts';
 
@@ -59,7 +59,7 @@ export default function BlogPost() {
   }, [nextEvent?.startDate]);
 
   const countdown = useCountdown(eventTargetMs);
-  const eventHref = getCalendarEventPath(nextEvent);
+  const eventAction = getCalendarEventAction(nextEvent);
   const eventTitle = nextEvent.title;
   const eventDateLabel = `${formatEventDate(nextEvent.startDate)}${nextEvent.location ? ` · ${nextEvent.location}` : ''}`;
   const eventImage = getEventImage(nextEvent);
@@ -193,12 +193,23 @@ export default function BlogPost() {
                 </div>
               ))}
             </div>
-            <Link
-              to={eventHref}
-              className="mt-5 block bg-white px-5 py-4 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-ink-900 transition-colors hover:bg-cream-200"
-            >
-              Reservar lugar →
-            </Link>
+            {eventAction.type === 'whatsapp' ? (
+              <a
+                href={eventAction.href}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-5 block bg-white px-5 py-4 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-ink-900 transition-colors hover:bg-cream-200"
+              >
+                Reservar lugar →
+              </a>
+            ) : (
+              <Link
+                to={eventAction.href}
+                className="mt-5 block bg-white px-5 py-4 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-ink-900 transition-colors hover:bg-cream-200"
+              >
+                Reservar lugar →
+              </Link>
+            )}
           </div>
 
           <div className={`border ${border} p-6`}>

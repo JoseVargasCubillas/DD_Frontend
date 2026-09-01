@@ -1,16 +1,18 @@
 import { useState, useCallback, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
-type Resource = 'media-kit' | 'sat-guide';
+type Resource = 'media-kit' | 'sat-guide' | 'estrategia-fiscal-dossier' | 'downloadable-resource';
 
 interface Props {
   open: boolean;
   onClose: () => void;
   resource: Resource;
-  submit: (email: string, name?: string) => Promise<{ downloadUrl?: string } | void | unknown>;
+  submit: (email: string, name?: string, phone?: string) => Promise<{ downloadUrl?: string } | void | unknown>;
   title?: string;
   description?: string;
   submitLabel?: string;
+  requireName?: boolean;
+  requirePhone?: boolean;
   fallbackDownloadUrl?: string;
   fallbackFilename?: string;
 }
@@ -25,11 +27,14 @@ export default function LeadCaptureModal({
   title,
   description,
   submitLabel,
+  requireName = false,
+  requirePhone = false,
   fallbackDownloadUrl,
   fallbackFilename,
 }: Props) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -37,6 +42,7 @@ export default function LeadCaptureModal({
     if (!open) {
       setEmail('');
       setName('');
+      setPhone('');
       setBusy(false);
       setSent(false);
     }
@@ -50,9 +56,23 @@ export default function LeadCaptureModal({
         toast.error('Escribe un correo válido.');
         return;
       }
+      const cleanName = name.trim();
+      if (requireName && cleanName.length < 2) {
+        toast.error('Escribe tu nombre.');
+        return;
+      }
+      const cleanPhone = phone.trim();
+      if (requirePhone && cleanPhone.length < 8) {
+        toast.error('Escribe un número de teléfono válido.');
+        return;
+      }
       setBusy(true);
       try {
-        const result = (await submit(cleanEmail, name.trim() || undefined)) as
+        const result = (await submit(
+          cleanEmail,
+          cleanName || undefined,
+          cleanPhone || undefined,
+        )) as
           | { downloadUrl?: string }
           | undefined;
         setSent(true);
@@ -75,7 +95,7 @@ export default function LeadCaptureModal({
         setBusy(false);
       }
     },
-    [email, name, submit, fallbackDownloadUrl, fallbackFilename],
+    [email, name, phone, requireName, requirePhone, submit, fallbackDownloadUrl, fallbackFilename],
   );
 
   if (!open) return null;
@@ -91,6 +111,18 @@ export default function LeadCaptureModal({
       title: 'Recibe la Guía para blindarte del SAT',
       description: 'Te enviamos el PDF a tu correo en menos de un minuto. Sin spam.',
       submit: 'Enviar guía',
+    },
+    'estrategia-fiscal-dossier': {
+      title: 'Recibe el dossier de Estrategia Fiscal',
+      description:
+        'Déjanos tus datos y te enviamos el dossier oficial del seminario a tu correo.',
+      submit: 'Enviar dossier',
+    },
+    'downloadable-resource': {
+      title: 'Recibe el recurso',
+      description:
+        'Déjanos tu correo y te enviamos el material a tu bandeja. También abriremos la descarga al terminar.',
+      submit: 'Enviar y descargar',
     },
   };
   const copy = defaults[resource];
@@ -135,16 +167,36 @@ export default function LeadCaptureModal({
               htmlFor="lead-name"
               className="mb-1 block text-[11px] uppercase tracking-[0.18em] text-ink-500"
             >
-              Nombre (opcional)
+              Nombre {requireName ? '*' : '(opcional)'}
             </label>
             <input
               id="lead-name"
               type="text"
+              required={requireName}
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoComplete="name"
               disabled={busy}
               placeholder="Tu nombre"
+              className="w-full border border-ink-900/15 bg-white px-4 py-3 text-[15px] text-ink-900 focus:border-ink-900 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="lead-phone"
+              className="mb-1 block text-[11px] uppercase tracking-[0.18em] text-ink-500"
+            >
+              Número {requirePhone ? '*' : '(opcional)'}
+            </label>
+            <input
+              id="lead-phone"
+              type="tel"
+              required={requirePhone}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              autoComplete="tel"
+              disabled={busy}
+              placeholder="Tu número"
               className="w-full border border-ink-900/15 bg-white px-4 py-3 text-[15px] text-ink-900 focus:border-ink-900 focus:outline-none"
             />
           </div>

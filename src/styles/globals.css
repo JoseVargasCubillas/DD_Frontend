@@ -119,6 +119,41 @@
 .ink-blot { animation: ink-blot 900ms var(--ease-soft) both; }
 .col-fade { animation: column-fade 900ms var(--ease-out) both; }
 
+/* Panel oscuro del login de Academia: textura + marca de agua editorial */
+.academia-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(180,150,110,0.16) 0%, transparent 55%),
+    radial-gradient(circle at 80% 70%, rgba(120,90,60,0.14) 0%, transparent 55%),
+    linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 60%, #050505 100%);
+}
+.academia-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.32;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.4 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+.academia-watermark {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+  bottom: -0.06em;
+  left: -0.03em;
+  font-family: 'Libre Baskerville', Baskerville, Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(9rem, 24vw, 20rem);
+  line-height: 0.85;
+  letter-spacing: -0.03em;
+  color: rgba(245,242,236,0.05);
+  white-space: nowrap;
+}
+
 /* Periódico form: underline ink que crece al focus */
 .ink-input {
   background: transparent;

@@ -1,4 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import LeadCaptureModal from '@molecules/LeadCaptureModal';
+import { requestEstrategiaFiscalDossier } from '@api/leads.api';
 import { useNavigate } from 'react-router-dom';
 import { useAutoUnmuteOnGesture } from '@hooks/useAutoUnmuteOnGesture';
 import { useEvents } from '@hooks/useEvents';
@@ -24,8 +26,6 @@ import jessicaPortrait from '../../../../../assets/eventos/LEF_img_004.png';
 import type { Event as SiteEvent } from '@t/index';
 
 const ENABLE_EVENT_API_SYNC = import.meta.env.VITE_EVENTS_API_SYNC !== 'false';
-const dossierUrl = new URL('../../../../../assets/eventos/Seminario Estrategia Fiscal (2).pdf', import.meta.url).href;
-
 const countdownLabels = [
   ['days', 'Días'],
   ['hours', 'Horas'],
@@ -58,6 +58,15 @@ const formatHeaderDate = (value: string) => {
     month: '2-digit',
     year: 'numeric',
   }).format(date);
+};
+
+const formatCalloutDate = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'en la próxima edición';
+  return `el ${new Intl.DateTimeFormat('es-MX', {
+    day: 'numeric',
+    month: 'long',
+  }).format(date)}`;
 };
 
 const formatLandingTime = (value: string) => {
@@ -237,6 +246,79 @@ const tickets = [
   },
 ];
 
+const testimonials: Array<{
+  quote: ReactNode;
+  author: string;
+  role: string;
+}> = [
+  {
+    quote: (
+      <>
+        Estamos creciendo y necesitábamos <span className="font-bold">blindarnos.</span>{' '}
+        En unas horas entendí cómo estructurar mi empresa, cómo cobrar correctamente y
+        cómo prepararme para el cierre fiscal 2026.{' '}
+        <span className="font-bold">El valor es inmenso.</span>
+      </>
+    ),
+    author: '— Empresario asistente',
+    role: 'Seminario Estrategia Fiscal',
+  },
+  {
+    quote: (
+      <>
+        Vine buscando una solución porque mi contador no conocía estos temas.
+        Aprendí cómo estructurar holdings, empresas operativas y nuevas estrategias
+        fiscales para <span className="font-bold">cobrarle mejor a mi empresa.</span>
+      </>
+    ),
+    author: '— Dueño de negocio',
+    role: 'Asistente presencial',
+  },
+  {
+    quote: (
+      <>
+        Aprendí cómo cobrarle a mi empresa, cómo estructurar una holding y cómo
+        proteger mi patrimonio para el futuro.{' '}
+        <span className="font-bold">Era justo lo que estaba buscando.</span>
+      </>
+    ),
+    author: '— Empresario en crecimiento',
+    role: 'Estrategia Fiscal 2026',
+  },
+  {
+    quote: (
+      <>
+        Se me fue rapidísimo el tiempo. Es un evento privado, muy directo, y lo que
+        aprendí me va a servir muchísimo para estructurar el futuro de mi empresa y
+        mi patrimonio.
+      </>
+    ),
+    author: '— Director de empresa',
+    role: 'Edición presencial',
+  },
+  {
+    quote: (
+      <>
+        Esto va dirigido a dueños de negocio que ya tienen retos fiscales que su
+        contador no siempre puede resolver. Si estás creciendo, necesitas entender
+        cómo <span className="font-bold">blindarte antes de tener un problema.</span>
+      </>
+    ),
+    author: '— Socio fundador',
+    role: 'PyME mexicana',
+  },
+  {
+    quote: (
+      <>
+        Al 1000%, quien pueda tomarlo, que lo aproveche. Vale la pena la inversión
+        porque sales con claridad para tu cierre fiscal, tu empresa y tu patrimonio.
+      </>
+    ),
+    author: '— Asistente del seminario',
+    role: 'Cierre fiscal 2026',
+  },
+];
+
 const faqItems = [
   {
     question: '¿Puedo cancelar o transferir mi lugar?',
@@ -360,6 +442,7 @@ export default function EstrategiaFiscalLanding() {
   const addItem = useCartStore((s) => s.addItem);
   const clearCart = useCartStore((s) => s.clear);
   const nowTick = useNowTick(30_000);
+  const [dossierOpen, setDossierOpen] = useState(false);
   const [storedEvents, setStoredEvents] = useState<CalendarEventSummary[]>(
     loadStoredCalendarEvents,
   );
@@ -403,6 +486,7 @@ export default function EstrategiaFiscalLanding() {
     currentEvent.description ||
     FALLBACK_ESTRATEGIA_FISCAL.shortDescription ||
     '';
+  const currentEventCalloutDate = formatCalloutDate(currentEventDate);
   const currentEventModality = formatModality(currentEvent.modality);
   const currentEventTime = formatLandingTime(currentEventDate);
   const currentEventEndTime =
@@ -421,6 +505,24 @@ export default function EstrategiaFiscalLanding() {
     () => countdownLabels.map(([key, label]) => ({ key, label, value: countdown[key] })),
     [countdown],
   );
+  const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const [testimonialLeaving, setTestimonialLeaving] = useState(false);
+  const activeTestimonial = testimonials[testimonialIndex];
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return undefined;
+
+    const interval = window.setInterval(() => {
+      setTestimonialLeaving(true);
+      window.setTimeout(() => {
+        setTestimonialIndex((current) => (current + 1) % testimonials.length);
+        setTestimonialLeaving(false);
+      }, 260);
+    }, 6200);
+
+    return () => window.clearInterval(interval);
+  }, []);
 
   const buyTicket = (ticket: (typeof tickets)[number]) => {
     clearCart();
@@ -521,9 +623,13 @@ export default function EstrategiaFiscalLanding() {
             <a href="#formatos" className="btn-primary justify-center">
               Reservar mi lugar →
             </a>
-            <a href={dossierUrl} download className="btn-secondary justify-center">
+            <button
+              type="button"
+              onClick={() => setDossierOpen(true)}
+              className="btn-secondary justify-center"
+            >
               Descargar dossier ↓
-            </a>
+            </button>
             <p className="text-[9px] uppercase tracking-[0.32em] text-ink-400">
               {currentEventRemaining !== null
                 ? `— ${currentEventRemaining} cupos restantes`
@@ -823,29 +929,45 @@ export default function EstrategiaFiscalLanding() {
               07 /{' '}
               <span className="normal-case">Voces</span>
             </p>
-            <p>01 / 8</p>
+            <p>
+              {String(testimonialIndex + 1).padStart(2, '0')} /{' '}
+              {String(testimonials.length).padStart(2, '0')}
+            </p>
           </div>
 
-          <blockquote className="mx-auto mt-[86px] max-w-[790px] text-center text-[clamp(29px,4.1vw,38px)] font-normal leading-[1.32] tracking-[-0.052em] text-ink-900">
-            &quot;Salí con un plan <span className="font-serif italic tracking-[-0.06em]">concreto</span> para los
-            <br className="hidden md:block" />
-            próximos seis meses.
-            <br className="hidden md:block" />
-            Lo mejor: las estrategias funcionan,
-            <span className="block font-serif italic tracking-[-0.06em]">no son teoría.&quot;</span>
-          </blockquote>
+          <div
+            className={`transition duration-300 ease-out ${
+              testimonialLeaving ? 'translate-y-3 opacity-0' : 'translate-y-0 opacity-100'
+            }`}
+            aria-live="polite"
+          >
+            <blockquote className="mx-auto mt-[86px] max-w-[940px] text-center text-[clamp(28px,4.3vw,44px)] font-normal leading-[1.18] tracking-[-0.056em] text-ink-900">
+              &quot;{activeTestimonial.quote}&quot;
+            </blockquote>
 
-          <div className="mt-[34px] text-center text-ink-900">
-            <p className="font-serif text-[11px] italic leading-none tracking-[-0.02em]">— Asistente Edición Mayo 2025</p>
-            <p className="mt-1 text-[11px] font-normal leading-none tracking-[-0.01em]">Director General · PyME familiar</p>
+            <div className="mt-[34px] text-center text-ink-900">
+              <p className="font-serif text-[12px] italic leading-none tracking-[-0.02em]">
+                {activeTestimonial.author}
+              </p>
+              <p className="mt-2 text-[10px] font-normal uppercase leading-none tracking-[0.22em] text-ink-400">
+                {activeTestimonial.role}
+              </p>
+            </div>
           </div>
 
-          <div className="mt-[31px] flex justify-center gap-[6px]" aria-label="Testimonio 1 de 8">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <span
+          <div
+            className="mt-[31px] flex justify-center gap-[7px]"
+            aria-label={`Testimonio ${testimonialIndex + 1} de ${testimonials.length}`}
+          >
+            {testimonials.map((testimonial, index) => (
+              <button
+                type="button"
                 key={index}
-                aria-hidden="true"
-                className={`h-[5px] w-[5px] rounded-full ${index === 0 ? 'bg-ink-900' : 'bg-ink-300/45'}`}
+                onClick={() => setTestimonialIndex(index)}
+                aria-label={`Ver testimonio ${index + 1}: ${testimonial.role}`}
+                className={`h-[7px] w-[7px] cursor-pointer rounded-full transition-colors ${
+                  index === testimonialIndex ? 'bg-ink-900' : 'bg-ink-300/45 hover:bg-ink-500'
+                }`}
               />
             ))}
           </div>
@@ -861,7 +983,7 @@ export default function EstrategiaFiscalLanding() {
           <h2 className="mt-[31px] max-w-[760px] text-[clamp(54px,7.1vw,92px)] font-normal leading-[0.9] tracking-[-0.065em] text-white">
             El cambio
             <span className="block font-serif italic font-normal tracking-[-0.08em]">empieza</span>
-            <span className="block">el 15 de junio.</span>
+            <span className="block">{currentEventCalloutDate}.</span>
           </h2>
 
           <p className="mt-[32px] max-w-[520px] font-serif text-[15px] italic leading-[1.32] tracking-[-0.015em] text-white/55">
@@ -894,6 +1016,18 @@ export default function EstrategiaFiscalLanding() {
           </button>
         </div>
       </section>
+
+      <LeadCaptureModal
+        open={dossierOpen}
+        onClose={() => setDossierOpen(false)}
+        resource="estrategia-fiscal-dossier"
+        submit={requestEstrategiaFiscalDossier}
+        requireName
+        requirePhone
+        title="Recibe el dossier del seminario"
+        description="Déjanos tu nombre, correo y número. Te enviaremos el dossier oficial de Estrategia Fiscal directamente a tu bandeja."
+        submitLabel="Enviar dossier"
+      />
     </div>
   );
 }

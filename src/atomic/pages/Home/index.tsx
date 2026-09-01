@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from "react";
 import toast from "react-hot-toast";
 import HeroSection from "@organisms/HeroSection";
 import AnimateIn from "@atoms/AnimateIn";
@@ -10,19 +10,23 @@ import { useNowTick } from "@hooks/useNowTick";
 import { requestSatGuide } from "@api/leads.api";
 import {
   FALLBACK_CALENDAR_EVENTS,
-  getCalendarEventPath,
+  getCalendarEventAction,
+  getCalendarEventStatus,
+  getCalendarEventTime,
+  getCalendarEventType,
   getNextEstrategiaFiscalEvent,
+  isUpcomingCalendarEvent,
   loadStoredCalendarEvents,
   mergeCalendarEventSources,
   type CalendarEventSummary,
 } from "@utils/eventCalendar";
-
-// Assets
 import imgEstrategia from "../../../../assets/home/002_home_Estrategia_DD.png";
 import imgFormacion from "../../../../assets/home/003_home_Formacion_DD.png";
 import imgRevision from "../../../../assets/home/004_home_Revision_DD.png";
 import imgCreativos from "../../../../assets/home/005_home_creativos_DD.png";
 import imgRockefeller from "../../../../assets/home/006_home_rockefeller_DD.png";
+
+// Assets
 import imgBio from "../../../../assets/home/007_home_bios_DD.png";
 import imgGuia from "../../../../assets/home/010_home_guía_DD.png";
 import logoAzteca from "../../../../assets/home/008_home_logo1_DD.png";
@@ -47,6 +51,18 @@ import logoPrensa17 from "../../../../assets/home/010_home_logo17_DD.png";
 const videoSEF =
   "https://github.com/JoseVargasCubillas/DD_Frontend/releases/download/media-v1/VIDEO.SEF.vertical.web.mp4";
 
+// Pool de imágenes de respaldo para la sección "Calendario": mismas fotos ya
+// recortadas a la medida de estas tarjetas (usadas antes en STATIC_EVENTS).
+// Los eventos reales (API/admin) traen su propia `thumbnail`; los eventos de
+// fallback (sin foto propia) rotan sobre este pool para no verse mal cortados.
+const HOME_CALENDAR_FALLBACK_IMAGES = [
+  imgEstrategia,
+  imgFormacion,
+  imgRevision,
+  imgCreativos,
+  imgRockefeller,
+];
+
 const formatHomeEventDate = (value: string) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Por definir";
@@ -58,6 +74,32 @@ const formatHomeEventDate = (value: string) => {
     .format(date)
     .replace(".", "");
 };
+
+// Envuelve una tarjeta de evento con el destino correcto: su landing (interna)
+// si existe de verdad, o WhatsApp (nueva pestaña) si el evento todavía no
+// tiene página propia — así nunca se manda a alguien a una landing rota.
+function CalendarCardLink({
+  action,
+  className,
+  children,
+}: {
+  action: { type: "internal" | "whatsapp"; href: string };
+  className: string;
+  children: ReactNode;
+}) {
+  if (action.type === "whatsapp") {
+    return (
+      <a href={action.href} target="_blank" rel="noreferrer" className={className}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link to={action.href} className={className}>
+      {children}
+    </Link>
+  );
+}
 
 const splitHomeEventTitle = (title: string) => {
   const words = title.trim().split(/\s+/);
@@ -185,75 +227,6 @@ function BookTilt({
   );
 }
 
-/* ─────────────────────────────── Static events ─ */
-const STATIC_EVENTS = [
-  {
-    id: "cdmx",
-    featured: true,
-    image: imgEstrategia,
-    date: "09 Jul",
-    location: "CDMX",
-    type: "Seminario",
-    duration: "1 día",
-    titleLine1: "Estrategia Fiscal",
-    titleLine2: "CDMX",
-    status: "available", // available | limited | sold-out
-    slug: "/eventos",
-  },
-  {
-    id: "formacion",
-    featured: false,
-    image: imgFormacion,
-    date: "29-30 May",
-    location: "",
-    type: "Cumbre",
-    duration: "2 días",
-    titleLine1: "Formacion de",
-    titleLine2: "Equipos",
-    status: "limited",
-    slug: "/eventos",
-  },
-  {
-    id: "revision",
-    featured: false,
-    image: imgRevision,
-    date: "4 Jun",
-    location: "",
-    type: "Workshop",
-    duration: "",
-    titleLine1: "Revisión",
-    titleLine2: "Estratégica",
-    status: "available",
-    slug: "/eventos",
-  },
-  {
-    id: "creativos",
-    featured: false,
-    image: imgCreativos,
-    date: "4, 5 Sep",
-    location: "",
-    type: "Cumbre",
-    duration: "2 días",
-    titleLine1: "Equipos",
-    titleLine2: "Creativos",
-    status: "available",
-    slug: "/eventos",
-  },
-  {
-    id: "rockefeller",
-    featured: false,
-    image: imgRockefeller,
-    date: "20, 25 Nov",
-    location: "",
-    type: "Cumbre",
-    duration: "3 días",
-    titleLine1: "Estrategia",
-    titleLine2: "Rockefeller",
-    status: "available",
-    slug: "/eventos",
-  },
-];
-
 const MEDIA_LOGOS = [
   { src: logoAzteca, alt: "Azteca" },
   { src: logoLider, alt: "Líder" },
@@ -339,24 +312,55 @@ export default function Home() {
   // Tick del reloj: hace que el "próximo evento" se recompute con el tiempo,
   // así al pasar la fecha del actual, salta automáticamente al siguiente EF.
   const nowTick = useNowTick(30_000);
+  const calendarCandidates = useMemo(
+    () =>
+      mergeCalendarEventSources(
+        FALLBACK_CALENDAR_EVENTS,
+        eventsData?.data ?? [],
+        storedEvents,
+      ),
+    [eventsData?.data, storedEvents],
+  );
   const nextEvent = useMemo(() => {
-    const candidates = mergeCalendarEventSources(
-      FALLBACK_CALENDAR_EVENTS,
-      eventsData?.data ?? [],
-      storedEvents,
-    );
     // Home siempre destaca el próximo taller de Estrategia Fiscal — es la landing
     // ancla del negocio. Si por algo no hay próximos, cae al primer EF del fallback.
     return (
-      getNextEstrategiaFiscalEvent(candidates, nowTick) ??
+      getNextEstrategiaFiscalEvent(calendarCandidates, nowTick) ??
       FALLBACK_CALENDAR_EVENTS.find((event) =>
         event.slug.includes("taller-estrategia-fiscal"),
       ) ??
       FALLBACK_CALENDAR_EVENTS[0]
     );
-  }, [eventsData?.data, storedEvents, nowTick]);
+  }, [calendarCandidates, nowTick]);
+
+  // Sección "Calendario": los 5 próximos eventos reales (fallback + API + admin),
+  // ordenados por fecha — mismo criterio que el resto del sitio, sin nada a mano.
+  const calendarEvents = useMemo(() => {
+    return calendarCandidates
+      .filter((event) => isUpcomingCalendarEvent(event, nowTick))
+      .sort((a, b) => getCalendarEventTime(a) - getCalendarEventTime(b))
+      .slice(0, 5)
+      .map((event, index) => {
+        const [titleLine1, titleLine2] = splitHomeEventTitle(event.title);
+        return {
+          id: event.slug,
+          // Foto real del evento si existe (API/admin); si no, una del pool
+          // ya recortado a la medida de esta tarjeta — así nunca se ve cortada.
+          image:
+            event.thumbnail ||
+            HOME_CALENDAR_FALLBACK_IMAGES[index % HOME_CALENDAR_FALLBACK_IMAGES.length],
+          date: formatHomeEventDate(event.startDate),
+          location: event.location || (event.modality === "online" ? "Online" : ""),
+          type: getCalendarEventType(event),
+          titleLine1,
+          titleLine2,
+          status: getCalendarEventStatus(event),
+          action: getCalendarEventAction(event),
+        };
+      });
+  }, [calendarCandidates, nowTick]);
   const [nextEventTitle, nextEventSerifTitle] = splitHomeEventTitle(nextEvent.title);
-  const nextEventHref = getCalendarEventPath(nextEvent);
+  const nextEventAction = getCalendarEventAction(nextEvent);
   const nextEventDescription =
     nextEvent.shortDescription ||
     nextEvent.description ||
@@ -448,8 +452,8 @@ export default function Home() {
     toggleVideoMute();
   };
 
-  const featured = STATIC_EVENTS[0];
-  const smallCards = STATIC_EVENTS.slice(1);
+  const featured = calendarEvents[0];
+  const smallCards = calendarEvents.slice(1);
 
   return (
     <div>
@@ -569,9 +573,20 @@ export default function Home() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-5 pt-2">
-                  <Link to={nextEventHref} className="btn-primary-inv">
-                    Reservar mi lugar →
-                  </Link>
+                  {nextEventAction.type === "whatsapp" ? (
+                    <a
+                      href={nextEventAction.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-primary-inv"
+                    >
+                      Reservar mi lugar →
+                    </a>
+                  ) : (
+                    <Link to={nextEventAction.href} className="btn-primary-inv">
+                      Reservar mi lugar →
+                    </Link>
+                  )}
                   {nextEventRemaining !== null ? (
                     <span className="text-[11px] text-ink-400 uppercase tracking-[0.2em]">
                       {nextEventRemaining} cupos restantes
@@ -622,8 +637,8 @@ export default function Home() {
               delay={0}
               className="md:row-span-2 flex flex-col"
             >
-              <Link
-                to={featured.slug}
+              <CalendarCardLink
+                action={featured.action}
                 className="group flex-1 flex flex-col overflow-hidden border border-cream-400 hover:border-ink-400 hover:-translate-y-1.5 transition-[transform,border-color] duration-[400ms] bg-white"
               >
                 <div className="flex-1 overflow-hidden min-h-[260px] md:min-h-0">
@@ -644,12 +659,6 @@ export default function Home() {
                     )}
                     <span>·</span>
                     <span>{featured.type}</span>
-                    {featured.duration && (
-                      <>
-                        <span>·</span>
-                        <span>{featured.duration}</span>
-                      </>
-                    )}
                   </div>
                   <div>
                     <p className="text-[22px] font-normal text-ink-900 leading-tight">
@@ -678,14 +687,14 @@ export default function Home() {
                     </span>
                   </div>
                 </div>
-              </Link>
+              </CalendarCardLink>
             </AnimateIn>
 
             {/* Tarjetas pequeñas */}
             {smallCards.map((ev, i) => (
               <AnimateIn key={ev.id} variant="fade-up" delay={100 + i * 80}>
-                <Link
-                  to={ev.slug}
+                <CalendarCardLink
+                  action={ev.action}
                   className="group flex flex-col overflow-hidden border border-cream-400 hover:border-ink-400 hover:-translate-y-1.5 transition-[transform,border-color] duration-[400ms] bg-white h-full"
                 >
                   <div className="overflow-hidden h-40">
@@ -700,12 +709,6 @@ export default function Home() {
                       <span>{ev.date}</span>
                       <span>·</span>
                       <span>{ev.type}</span>
-                      {ev.duration && (
-                        <>
-                          <span>·</span>
-                          <span>{ev.duration}</span>
-                        </>
-                      )}
                     </div>
                     <div>
                       <p className="text-[17px] font-normal text-ink-900 leading-tight">
@@ -734,7 +737,7 @@ export default function Home() {
                       </span>
                     </div>
                   </div>
-                </Link>
+                </CalendarCardLink>
               </AnimateIn>
             ))}
           </div>

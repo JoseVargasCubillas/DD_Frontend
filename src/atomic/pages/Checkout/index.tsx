@@ -1,15 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useCartStore } from '@store/cartStore';
 import { useAuthStore } from '@store/authStore';
 import { createPaymentIntent } from '@api/payments.api';
 import { subscribe } from '@api/subscriptions.api';
 import { formatCurrency, formatDate } from '@utils/formatters';
+import { hasStripePublishableKey, stripeMissingKeyMessage, stripePromise } from '@utils/stripe';
 import type { OrderItem } from '@t/index';
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string);
 
 type CheckoutMode = 'subscription' | 'one_time';
 
@@ -240,8 +238,8 @@ export default function Checkout() {
         setClientSecret(result.clientSecret ?? '');
         setOrder({ mode, items, total: result.total ?? total(), orderId: result.orderId ?? '' });
       }
-    } catch {
-      setInitError('No se pudo iniciar el pago. Intenta de nuevo.');
+    } catch (error) {
+      setInitError((error as Error).message || 'No se pudo iniciar el pago. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -432,6 +430,10 @@ export default function Checkout() {
                   <div className="flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/35">
                     Pagos seguros con Stripe
                   </div>
+                </div>
+              ) : !hasStripePublishableKey ? (
+                <div className="mt-8 border border-red-700 bg-red-950/40 px-4 py-3 text-[13px] text-red-300">
+                  {stripeMissingKeyMessage}
                 </div>
               ) : clientSecret.startsWith('demo_') ? (
                 <div className="mt-8">

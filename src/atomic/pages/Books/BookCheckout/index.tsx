@@ -1,18 +1,16 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useAuthStore } from '@store/authStore';
 import { useBook } from '@hooks/useBooks';
 import { createPaymentIntent } from '@api/payments.api';
 import { formatCurrency } from '@utils/formatters';
+import { hasStripePublishableKey, stripeMissingKeyMessage, stripePromise } from '@utils/stripe';
 import Spinner from '@atoms/Spinner';
 import type { ShippingAddress } from '@t/index';
 import bookClaves from '../../../../../assets/ddweb/libro-siete-claves-cobrar.png';
 import bookSat from '../../../../../assets/ddweb/libro-siete-secretos-sat.png';
 import bookFiscalista from '../../../../../assets/ddweb/libro-siete-secretos-fiscalista.png';
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string);
 
 const MEXICAN_STATES = [
   'Ciudad de México', 'Estado de México', 'Jalisco', 'Nuevo León', 'Puebla',
@@ -198,8 +196,8 @@ export default function BookCheckout() {
       setClientSecret(result.clientSecret ?? '');
       setOrderId(result.orderId ?? '');
       setFinalTotal(result.total ?? total);
-    } catch {
-      setInitError('No se pudo iniciar el pago. Intenta de nuevo.');
+    } catch (error) {
+      setInitError((error as Error).message || 'No se pudo iniciar el pago. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -533,6 +531,10 @@ export default function BookCheckout() {
                           {loading ? 'Cargando…' : 'Continuar al pago →'}
                         </span>
                       </button>
+                    </div>
+                  ) : !hasStripePublishableKey ? (
+                    <div className="mt-6 border border-red-700 bg-red-950/40 px-4 py-3 text-[13px] text-red-300">
+                      {stripeMissingKeyMessage}
                     </div>
                   ) : clientSecret.startsWith('demo_') ? (
                     <div className="mt-6">

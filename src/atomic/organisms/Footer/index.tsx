@@ -1,12 +1,44 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
+import toast from 'react-hot-toast';
+import { subscribeNewsletter } from '@api/leads.api';
 import logoFooter from '../../../../assets/home/012_home_footerlogo_DD.png';
 import logoDiegoWatermark from '../../../../assets/home/010_home_logo_fotter2_DD.png';
 import gptwBadge from '../../../../assets/certifications/gptw.png';
 import latinBadge from '../../../../assets/certifications/latin-excellence.png';
 
+const NEWSLETTER_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function Footer() {
   const [email, setEmail] = useState('');
+  const [subscribing, setSubscribing] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const value = email.trim();
+    if (!value) {
+      toast.error('Escribe tu correo para suscribirte.');
+      return;
+    }
+    if (!NEWSLETTER_EMAIL_RE.test(value)) {
+      toast.error('Ese correo no parece válido.');
+      return;
+    }
+
+    setSubscribing(true);
+    try {
+      await subscribeNewsletter(value);
+      setSubscribed(true);
+      setEmail('');
+      toast.success('Listo, ya estás suscrito.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'No pudimos suscribirte. Intenta de nuevo.';
+      toast.error(message);
+    } finally {
+      setSubscribing(false);
+    }
+  };
 
   return (
     <footer className="bg-ink-900 mt-auto">
@@ -29,21 +61,29 @@ export default function Footer() {
             <p className="font-serif text-[20px] text-ink-300 leading-snug max-w-[180px]">
               El &eacute;xito, ama la preparaci&oacute;n.
             </p>
-            <form className="flex flex-col sm:flex-row gap-0" onSubmit={(e) => { e.preventDefault(); setEmail(''); }}>
-              <input
-                type="email"
-                placeholder="tu@correo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 bg-transparent border border-ink-700 text-white text-[12px] px-3 py-2.5 focus:outline-none focus:border-ink-400 placeholder-ink-600 min-w-0 min-h-[44px]"
-              />
-              <button
-                type="submit"
-                className="bg-transparent border border-t-0 sm:border-t sm:border-l-0 border-ink-700 text-ink-300 text-[11px] uppercase tracking-[0.2em] px-4 min-h-[44px] hover:bg-ink-800 hover:text-white transition-colors"
-              >
-                Suscribirme
-              </button>
-            </form>
+            {subscribed ? (
+              <p className="text-[12px] uppercase tracking-[0.2em] text-ink-300 border border-ink-700 px-3 py-2.5 min-h-[44px] flex items-center">
+                ¡Gracias! Ya estás suscrito.
+              </p>
+            ) : (
+              <form className="flex flex-col sm:flex-row gap-0" onSubmit={handleSubscribe}>
+                <input
+                  type="email"
+                  placeholder="tu@correo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={subscribing}
+                  className="flex-1 bg-transparent border border-ink-700 text-white text-[12px] px-3 py-2.5 focus:outline-none focus:border-ink-400 placeholder-ink-600 min-w-0 min-h-[44px] disabled:opacity-60"
+                />
+                <button
+                  type="submit"
+                  disabled={subscribing}
+                  className="bg-transparent border border-t-0 sm:border-t sm:border-l-0 border-ink-700 text-ink-300 text-[11px] uppercase tracking-[0.2em] px-4 min-h-[44px] hover:bg-ink-800 hover:text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {subscribing ? 'Enviando…' : 'Suscribirme'}
+                </button>
+              </form>
+            )}
           </div>
 
           <div className="space-y-4">

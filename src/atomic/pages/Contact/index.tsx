@@ -21,7 +21,7 @@ const responseTimes = [
 ];
 
 const channels: Array<[string, string, string, string, string, string?]> = [
-  ['— Canal 01 · Más rápido', 'WhatsApp', 'Para asuntos urgentes, cierres de cupo, dudas concretas. Te responde Diego o su jefa de gabinete.', '+52 1 442 747 5869', 'Abrir conversación →', waLink(WHATSAPP_DEFAULT_MESSAGE)],
+  ['— Canal 01 · Más rápido', 'WhatsApp', 'Para asuntos urgentes, cierres de cupo, dudas concretas. Te responde Diego o su jefa de gabinete.', '+52 1 442 114 3667', 'Abrir conversación →', waLink(WHATSAPP_DEFAULT_MESSAGE)],
   ['— Canal 02', 'Por correo', 'Para asuntos formales, propuestas, prensa, documentación adjunta o cuando el detalle importa.', 'hola@diegodiaz.mx', 'Redactar correo →', 'mailto:hola@diegodiaz.mx'],
   ['— Canal 03', 'Llamada agendada', '30 minutos con la jefa de gabinete para mapear si Diego es la persona correcta para ayudarte.', 'Agenda privada', 'Agendar llamada →', '/contacto#formulario'],
 ];

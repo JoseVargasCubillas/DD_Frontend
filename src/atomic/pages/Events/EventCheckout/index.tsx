@@ -1,13 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useCartStore } from '@store/cartStore';
 import { createPaymentIntent } from '@api/payments.api';
 import { formatCurrency } from '@utils/formatters';
+import { hasStripePublishableKey, stripeMissingKeyMessage, stripePromise } from '@utils/stripe';
 import type { OrderItem } from '@t/index';
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string);
 
 interface PaymentFormProps {
   total: number;
@@ -185,8 +183,8 @@ export default function EventCheckout() {
       setClientSecret(result.clientSecret ?? '');
       setOrderId(result.orderId ?? '');
       setOrderTotal(result.total ?? total());
-    } catch {
-      setInitError('No se pudo iniciar el pago. Intenta de nuevo.');
+    } catch (error) {
+      setInitError((error as Error).message || 'No se pudo iniciar el pago. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -365,7 +363,11 @@ export default function EventCheckout() {
                     Pagos seguros con Stripe
                   </div>
                 </div>
-              ) : clientSecret.startsWith('demo_') ? (
+                  ) : !hasStripePublishableKey ? (
+                    <div className="mt-6 border border-red-700 bg-red-950/40 px-4 py-3 text-[13px] text-red-300">
+                      {stripeMissingKeyMessage}
+                    </div>
+                  ) : clientSecret.startsWith('demo_') ? (
                 <div className="mt-8">
                   <div className="border border-white/15 bg-white/5 px-4 py-3 text-[13px] text-white/70">
                     Modo local activo: se confirmará la compra sin contactar a Stripe.

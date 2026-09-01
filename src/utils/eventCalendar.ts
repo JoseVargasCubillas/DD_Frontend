@@ -15,7 +15,7 @@ export type CalendarEventSummary = Pick<
   | "registeredCount"
   | "status"
 > &
-  Partial<Pick<SiteEvent, "modality" | "endDate">>;
+  Partial<Pick<SiteEvent, "modality" | "endDate" | "thumbnail" | "type" | "id" | "_id">>;
 
 export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
   {
@@ -316,6 +316,93 @@ export const getNextEstrategiaFiscalEvent = (
   now = Date.now(),
 ) => getNextUpcomingCalendarEvent(events.filter(isEstrategiaFiscalEvent), now);
 
+// Clasifica un evento del calendario en una etiqueta de formato ("Seminario",
+// "Cumbre", etc.) a partir de su slug/título — la misma taxonomía que ya se
+// usa a mano en la página de Eventos, centralizada aquí para reutilizarla
+// donde haga falta mostrar el calendario de forma automática (p. ej. Home).
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  seminar: "Seminario",
+  workshop: "Workshop",
+  webinar: "Webinar",
+  conference: "Cumbre",
+};
+
+export const getCalendarEventType = (
+  event: Pick<CalendarEventSummary, "slug" | "title" | "type">,
+): string => {
+  // Eventos reales (API/admin) ya traen su tipo real capturado — se usa tal
+  // cual en vez de adivinar por palabras clave.
+  if (event.type && EVENT_TYPE_LABELS[event.type]) {
+    return EVENT_TYPE_LABELS[event.type];
+  }
+
+  const key = `${event.slug || ""} ${event.title || ""}`.toLowerCase();
+
+  if (key.includes("taller-estrategia-fiscal") || key.includes("taller de estrategia fiscal")) return "Workshop";
+  if (key.includes("mastermind")) return "Mastermind";
+  if (key.includes("prospeccion") || key.includes("prospección") || key.includes("cumbre")) return "Cumbre";
+  if (key.includes("rockefeller") || key.includes("4e")) return "Entrenamiento";
+  if (key.includes("coaching") || key.includes("liderazgo")) return "Seminario";
+  if (key.includes("maestria") || key.includes("maestría") || key.includes("escenica") || key.includes("escénica")) return "Seminario";
+  if (key.includes("mentalidad")) return "Seminario";
+  if (key.includes("holding") || key.includes("persona-fisica") || key.includes("persona física")) return "Webinar";
+  if (key.includes("como-cobrar") || key.includes("como cobrar")) return "Seminario";
+  return "Evento";
+};
+
+export const getCalendarEventStatus = (
+  event: Pick<CalendarEventSummary, "capacity" | "registeredCount">,
+): "available" | "limited" | "sold-out" => {
+  const capacity = Math.max(Number(event.capacity || 0), 0);
+  const registered = Math.max(Number(event.registeredCount || 0), 0);
+  if (capacity <= 0) return "available";
+  const remaining = capacity - registered;
+  if (remaining <= 0) return "sold-out";
+  if (remaining <= Math.max(Math.round(capacity * 0.15), 5)) return "limited";
+  return "available";
+};
+
+// Número de WhatsApp para eventos que aún no tienen landing propia.
+const EVENT_WHATSAPP_PHONE = "5214421143667";
+
+// Sólo Estrategia Fiscal / Holding / Como Cobrar tienen landing diseñada a
+// mano. Cualquier otro evento sólo tiene landing real si existe de verdad en
+// el backend (viene de la API o lo creó el admin, por eso trae id/_id) — de
+// lo contrario mandar a `/eventos/:slug` mostraría una página rota.
+export const hasDedicatedCalendarLanding = (
+  event: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl" | "id" | "_id">,
+) => {
+  if (isEstrategiaFiscalEvent(event)) return true;
+  const slug = (event.slug || "").toLowerCase();
+  const title = event.title.trim().toLowerCase();
+  if (slug.startsWith("holding") || title === "holding") return true;
+  if (
+    slug.includes("como-cobrar") ||
+    title.includes("como cobrar") ||
+    title.includes("cobrar como ceo")
+  ) {
+    return true;
+  }
+  return Boolean(event.id || event._id);
+};
+
+export const getEventWhatsAppLink = (event: Pick<CalendarEventSummary, "title">) => {
+  const message = `Hola, vengo de la página web y estoy interesado en el evento ${event.title}.`;
+  return `https://wa.me/${EVENT_WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
+};
+
+// Resuelve a dónde debe apuntar el botón de un evento del calendario: su
+// landing real si existe, o WhatsApp con el nombre del evento si no.
+export const getCalendarEventAction = (
+  event?: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl" | "id" | "_id"> | null,
+): { type: "internal" | "whatsapp"; href: string } => {
+  if (!event) return { type: "internal", href: "/eventos" };
+  if (hasDedicatedCalendarLanding(event)) {
+    return { type: "internal", href: getCalendarEventPath(event) };
+  }
+  return { type: "whatsapp", href: getEventWhatsAppLink(event) };
+};
+
 export const getCalendarEventPath = (
   event?: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl"> | null,
 ) => {
@@ -326,6 +413,13 @@ export const getCalendarEventPath = (
     title.includes("taller de estrategia fiscal")
   ) {
     return "/eventos/estrategia-fiscal";
+  }
+  if (
+    event.slug.includes("como-cobrar") ||
+    title.includes("como cobrar") ||
+    title.includes("cobrar como ceo")
+  ) {
+    return "/eventos/como-cobrar-como-ceo";
   }
   if (event.slug.startsWith("holding") || title === "holding") return "/eventos/holding";
   if (event.onlineUrl?.startsWith("/")) return event.onlineUrl;

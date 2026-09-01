@@ -13,6 +13,7 @@ import ponente from '../../assets/ddweb/figma-ponente-diego.png';
 import alianza from '../../assets/ddweb/alianza-empresarial.jpg';
 import equipoUnido from '../../assets/ddweb/equipo-unido.jpg';
 import diegoHero from '../../assets/ddweb/figma-diego-hero.png';
+import comoCobrarCeo from '../../assets/eventos/fondo-como-cobrar-ceo.png';
 
 export function getEventImage(
   event?: Pick<CalendarEventSummary, 'slug' | 'title'> | null,
@@ -21,6 +22,7 @@ export function getEventImage(
   const key = `${event.slug ?? ''} ${event.title ?? ''}`.toLowerCase();
 
   if (key.includes('estrategia-fiscal') || key.includes('estrategia fiscal')) return sefCdmx;
+  if (key.includes('como-cobrar') || key.includes('como cobrar') || key.includes('cobrar como ceo')) return comoCobrarCeo;
   if (key.includes('holding')) return reforma;
   if (key.includes('persona-fisica') || key.includes('persona física')) return satDigital;
   if (key.includes('mentalidad')) return diegoAjedrez;

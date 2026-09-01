@@ -1,458 +1,274 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import reformaFiscal from '../../../../assets/ddweb/reforma-fiscal-2026.jpg';
-import satDigital from '../../../../assets/ddweb/sat-cumplimiento-digital.jpg';
-import recibosDeducibles from '../../../../assets/ddweb/recibos-deducibles.jpg';
-import blindajeDigital from '../../../../assets/ddweb/blindaje-digital.jpg';
+import { useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
+import LeadCaptureModal from '@molecules/LeadCaptureModal';
+import { requestDownloadableResource } from '@api/leads.api';
+import phoneMockup from '../../../../assets/resources/calculadora-celular.png';
+import googlePlayBadge from '../../../../assets/resources/google-play-badge.png';
+import appStoreBadge from '../../../../assets/resources/app-store-badge.png';
+import coverIngresos from '../../../../assets/resources/cover-ingresos-exentos-isr.png';
+import coverAgenda from '../../../../assets/resources/cover-si-tu-agenda.png';
+import coverBlindaje from '../../../../assets/resources/cover-guia-blindarte-sat.png';
+import coverPartes from '../../../../assets/resources/cover-partes-relacionadas.png';
+import ingresosPdf from '../../../../assets/resources/recurso-asesorias.pdf';
+import agendaPdf from '../../../../assets/resources/recurso-rockefeller.pdf';
+import blindajePdf from '../../../../assets/resources/recurso-estrategia-fiscal.pdf';
+import partesPdf from '../../../../assets/resources/recurso-precios-transferencia.pdf';
 
-// ── Tipos ─────────────────────────────────────────────────────
-type ResourceCategory = 'guias' | 'plantillas' | 'herramientas' | 'todos';
-
-interface Resource {
+type Resource = {
   id: string;
-  category: Exclude<ResourceCategory, 'todos'>;
-  format: 'PDF' | 'XLSX' | 'DOCX' | 'ZIP';
   title: string;
   description: string;
-  pages?: number;
   size: string;
-  level: 'Básico' | 'Intermedio' | 'Avanzado';
-  new?: boolean;
-  premium?: boolean;
-  image?: string;
-  downloadUrl: string;
-}
+  fileUrl: string;
+  coverImage: string;
+};
 
-// ── Datos ──────────────────────────────────────────────────────
+const playStoreUrl =
+  'https://play.google.com/store/apps/details?id=com.calculadorafiscal&pcampaignid=web_share';
+
 const resources: Resource[] = [
   {
-    id: 'guia-estructura-fiscal',
-    category: 'guias',
-    format: 'PDF',
-    title: 'Guía de Estructuración Fiscal para PyMEs',
-    description: 'Cómo elegir el régimen fiscal correcto según el tipo de empresa, volumen de ventas y perfil del socio.',
-    image: satDigital,
-    pages: 48,
-    size: '3.2 MB',
-    level: 'Intermedio',
-    premium: false,
-    downloadUrl: '#',
+    id: 'ingresos-exentos-isr',
+    title: 'Ingresos exentos de ISR',
+    description: 'Documento guía para identificar ingresos exentos y criterios básicos de revisión.',
+    size: '6.4 MB',
+    fileUrl: ingresosPdf,
+    coverImage: coverIngresos,
   },
   {
-    id: 'guia-sat-2026',
-    category: 'guias',
-    format: 'PDF',
-    title: 'Novedades SAT 2026 — Lo que necesitas saber',
-    description: 'Resumen ejecutivo de las reformas fiscales, nuevas obligaciones y cambios en plataformas digitales.',
-    image: reformaFiscal,
-    pages: 24,
-    size: '1.8 MB',
-    level: 'Avanzado',
-    new: true,
-    premium: false,
-    downloadUrl: '#',
+    id: 'si-tu-agenda-se-ve-asi',
+    title: 'Si tu agenda se ve así: esto es para ti',
+    description: 'Una lectura breve para detectar si tu operación fiscal ya necesita más estructura.',
+    size: '2 MB',
+    fileUrl: agendaPdf,
+    coverImage: coverAgenda,
   },
   {
-    id: 'guia-defensa-sat',
-    category: 'guias',
-    format: 'PDF',
-    title: 'Manual de Defensa ante el SAT',
-    description: 'Protocolo paso a paso para responder auditorías, cartas invitación y requerimientos de información.',
-    image: blindajeDigital,
-    pages: 62,
-    size: '4.1 MB',
-    level: 'Avanzado',
-    premium: true,
-    downloadUrl: '#',
+    id: 'guia-para-blindarte-del-sat',
+    title: 'Guía para blindarte del SAT',
+    description: 'Estrategia fiscal paso a paso para revisar documentos, riesgos y defensa preventiva.',
+    size: '7.6 MB',
+    fileUrl: blindajePdf,
+    coverImage: coverBlindaje,
   },
   {
-    id: 'guia-precios-transferencia',
-    category: 'guias',
-    format: 'PDF',
-    title: 'Precios de Transferencia — Guía Práctica',
-    description: 'Principios OCDE aplicados a México, métodos de análisis y cómo preparar tu estudio de partes relacionadas.',
-    image: satDigital,
-    pages: 38,
-    size: '2.7 MB',
-    level: 'Avanzado',
-    premium: true,
-    downloadUrl: '#',
-  },
-  {
-    id: 'plantilla-flujo-caja',
-    category: 'plantillas',
-    format: 'XLSX',
-    title: 'Plantilla de Flujo de Caja Empresarial',
-    description: 'Control mensual de ingresos, egresos y proyección a 12 meses. Incluye dashboard visual automático.',
-    image: recibosDeducibles,
-    size: '820 KB',
-    level: 'Básico',
-    premium: false,
-    downloadUrl: '#',
-  },
-  {
-    id: 'plantilla-deducibles',
-    category: 'plantillas',
-    format: 'XLSX',
-    title: 'Registro de Gastos Deducibles',
-    description: 'Clasificación por categoría SAT, validación automática de límites y resumen para declaración anual.',
-    image: recibosDeducibles,
-    size: '640 KB',
-    level: 'Intermedio',
-    new: true,
-    premium: false,
-    downloadUrl: '#',
-  },
-  {
-    id: 'plantilla-nomina',
-    category: 'plantillas',
-    format: 'XLSX',
-    title: 'Cálculo de Nómina — Régimen de Sueldos',
-    description: 'ISR, IMSS, INFONAVIT y percepciones integradas. Compatible con CFDI de nómina 4.0.',
-    image: satDigital,
-    size: '1.1 MB',
-    level: 'Avanzado',
-    premium: true,
-    downloadUrl: '#',
-  },
-  {
-    id: 'plantilla-valuacion',
-    category: 'plantillas',
-    format: 'XLSX',
-    title: 'Valuación de Empresa — Método DCF',
-    description: 'Descuento de flujos de caja con supuestos editables, WACC y análisis de sensibilidad integrado.',
-    image: blindajeDigital,
-    size: '980 KB',
-    level: 'Avanzado',
-    premium: true,
-    downloadUrl: '#',
-  },
-  {
-    id: 'herramienta-checklist-auditoria',
-    category: 'herramientas',
-    format: 'PDF',
-    title: 'Checklist de Auditoría Fiscal Interna',
-    description: '87 puntos de revisión para detectar riesgos antes que el SAT. Actualizado a RMF 2026.',
-    image: reformaFiscal,
-    pages: 14,
-    size: '560 KB',
-    level: 'Intermedio',
-    new: true,
-    premium: false,
-    downloadUrl: '#',
-  },
-  {
-    id: 'herramienta-calculadora-isr',
-    category: 'herramientas',
-    format: 'XLSX',
-    title: 'Calculadora ISR Persona Moral 2026',
-    description: 'Coeficiente de utilidad, pagos provisionales y ajuste anual. Tablas actualizadas para el ejercicio 2026.',
-    image: satDigital,
-    size: '490 KB',
-    level: 'Intermedio',
-    premium: false,
-    downloadUrl: '#',
-  },
-  {
-    id: 'herramienta-comparador-regimenes',
-    category: 'herramientas',
-    format: 'XLSX',
-    title: 'Comparador de Regímenes Fiscales',
-    description: 'Ingresa tus datos y compara ISR efectivo, IMSS, deducciones y carga total entre regímenes.',
-    image: recibosDeducibles,
-    size: '720 KB',
-    level: 'Básico',
-    premium: false,
-    downloadUrl: '#',
-  },
-  {
-    id: 'herramienta-pack-contratos',
-    category: 'herramientas',
-    format: 'ZIP',
-    title: 'Pack de Contratos Fiscales Básicos',
-    description: 'Modelos editables: servicios, honorarios, arrendamiento y compraventa. Con cláusulas fiscales incluidas.',
-    image: blindajeDigital,
-    size: '2.3 MB',
-    level: 'Básico',
-    premium: true,
-    downloadUrl: '#',
+    id: 'partes-relacionadas',
+    title: 'Partes relacionadas',
+    description: 'Criterios de revisión para operaciones entre partes relacionadas y precios de transferencia.',
+    size: '5.5 MB',
+    fileUrl: partesPdf,
+    coverImage: coverPartes,
   },
 ];
 
-const categories: { id: ResourceCategory; label: string; count?: number }[] = [
-  { id: 'todos', label: 'Todos' },
-  { id: 'guias', label: 'Guías' },
-  { id: 'plantillas', label: 'Plantillas' },
-  { id: 'herramientas', label: 'Herramientas' },
-];
+function getAbsoluteUrl(fileUrl: string) {
+  if (/^https?:\/\//i.test(fileUrl)) return fileUrl;
+  return `${window.location.origin}${fileUrl}`;
+}
 
-const formatColors: Record<Resource['format'], string> = {
-  PDF: 'bg-red-50 text-red-700',
-  XLSX: 'bg-green-50 text-green-700',
-  DOCX: 'bg-blue-50 text-blue-700',
-  ZIP: 'bg-amber-50 text-amber-700',
-};
-
-const levelColors: Record<Resource['level'], string> = {
-  'Básico': 'text-ink-400',
-  'Intermedio': 'text-ink-600',
-  'Avanzado': 'text-ink-900',
-};
-
-// ── Componentes ────────────────────────────────────────────────
-function ResourceCard({ resource }: { resource: Resource }) {
-  const isPremium = resource.premium;
-
+function ResourceCover({ resource }: { resource: Resource }) {
   return (
-    <article className="card-lift group relative flex flex-col border border-cream-400 bg-white transition-colors duration-200 hover:border-ink-900">
-      {resource.new && (
-        <div className="absolute right-4 top-4 bg-ink-900 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-white">
-          Nuevo
-        </div>
-      )}
+    <div className="relative aspect-square overflow-hidden bg-cream-200">
+      <img
+        src={resource.coverImage}
+        alt={`Portada de ${resource.title}`}
+        loading="lazy"
+        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+      />
+    </div>
+  );
+}
 
-      <div className="flex-1 p-7">
-        {resource.image && (
-          <div className="-mx-7 -mt-7 mb-6 overflow-hidden border-b border-cream-300">
-            <img
-              src={resource.image}
-              alt=""
-              className="h-36 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-              loading="lazy"
-            />
-          </div>
-        )}
-        {/* Format + Level */}
-        <div className="mb-5 flex items-center gap-3">
-          <span className={`inline-block rounded-sm px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] ${formatColors[resource.format]}`}>
-            {resource.format}
-          </span>
-          <span className={`text-[10px] uppercase tracking-[0.18em] ${levelColors[resource.level]}`}>
-            {resource.level}
-          </span>
-        </div>
-
-        {/* Title */}
-        <h3 className="text-[17px] font-bold leading-[1.2] tracking-[-0.015em] text-ink-900">
+function DownloadCard({
+  resource,
+  onSelect,
+}: {
+  resource: Resource;
+  onSelect: (resource: Resource) => void;
+}) {
+  return (
+    <article
+      className="group relative flex h-full min-h-[458px] flex-col overflow-hidden border border-ink-900/10 bg-white pb-20 shadow-[0_18px_45px_-36px_rgba(10,10,10,0.45)] transition-colors duration-200 hover:border-ink-900"
+      style={{ minHeight: 458, paddingBottom: 86 }}
+    >
+      <ResourceCover resource={resource} />
+      <div className="flex flex-1 flex-col p-7">
+        <h3 className="text-[18px] font-bold uppercase leading-[1.12] text-ink-900">
           {resource.title}
         </h3>
-
-        {/* Description */}
-        <p className="mt-3 text-[13px] leading-[1.6] text-ink-500">{resource.description}</p>
-
-        {/* Meta */}
-        <div className="mt-5 flex items-center gap-4 text-[11px] uppercase tracking-[0.16em] text-ink-300">
-          {resource.pages && <span>{resource.pages} págs.</span>}
-          <span>{resource.size}</span>
-        </div>
-      </div>
-
-      {/* CTA */}
-      <div className="border-t border-cream-300 p-5">
-        {isPremium ? (
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] uppercase tracking-[0.16em] text-ink-400">Solo miembros</span>
-            <Link
-              to="/academia"
-              className="inline-flex h-[36px] items-center gap-2 border border-ink-900 px-4 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-900 transition-colors hover:bg-ink-900 hover:text-white"
-            >
-              Desbloquear →
-            </Link>
-          </div>
-        ) : (
-          <a
-            href={resource.downloadUrl}
-            className="flex h-[36px] w-full items-center justify-between border border-cream-400 px-4 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-600 transition-colors hover:border-ink-900 hover:text-ink-900"
-          >
-            Descargar gratis
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-          </a>
-        )}
+        <p className="mt-3 text-[13px] leading-[1.55] text-ink-600">
+          {resource.description}
+        </p>
+        <button
+          type="button"
+          onClick={() => onSelect(resource)}
+          className="absolute bottom-7 left-7 right-7 inline-flex min-h-11 cursor-pointer items-center justify-center border border-ink-900 bg-ink-900 px-4 text-[11px] font-bold text-white transition-colors duration-200 hover:bg-white hover:text-ink-900 focus:outline-none focus:ring-2 focus:ring-ink-900 focus:ring-offset-2"
+          style={{
+            display: 'flex',
+            minHeight: 44,
+            left: 28,
+            right: 28,
+            bottom: 28,
+            zIndex: 2,
+          }}
+        >
+          Descargar PDF ({resource.size})
+        </button>
       </div>
     </article>
   );
 }
 
-// ── Página ─────────────────────────────────────────────────────
 export default function Resources() {
-  const [activeCategory, setActiveCategory] = useState<ResourceCategory>('todos');
-  const [search, setSearch] = useState('');
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
 
-  const filtered = resources.filter((r) => {
-    const matchCat = activeCategory === 'todos' || r.category === activeCategory;
-    const matchSearch =
-      !search ||
-      r.title.toLowerCase().includes(search.toLowerCase()) ||
-      r.description.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
-  });
-
-  const counts: Record<ResourceCategory, number> = {
-    todos: resources.length,
-    guias: resources.filter((r) => r.category === 'guias').length,
-    plantillas: resources.filter((r) => r.category === 'plantillas').length,
-    herramientas: resources.filter((r) => r.category === 'herramientas').length,
-  };
-
-  const freeCount = resources.filter((r) => !r.premium).length;
-  const premiumCount = resources.filter((r) => r.premium).length;
+  const modalCopy = useMemo(() => {
+    if (!selectedResource) return null;
+    return {
+      title: `Descarga ${selectedResource.title}`,
+      description:
+        'Déjanos tus datos y te enviamos este recurso por correo. Al enviar, también abriremos la descarga en tu navegador.',
+    };
+  }, [selectedResource]);
 
   return (
-    <div className="bg-cream-50 text-ink-900">
-
-      {/* ── Hero ──────────────────────────────────────────────── */}
-      <section className="border-b border-cream-400 bg-cream-50">
-        <div className="container-app py-12 lg:py-16">
-          <div className="mb-9 flex flex-wrap items-center justify-between gap-4 border-b border-cream-400 pb-4">
-            <p className="text-[10px] uppercase tracking-[0.34em] text-ink-400">Biblioteca de recursos</p>
-            <Link to="/academia" className="link-grow text-[10px] font-bold uppercase tracking-[0.24em] text-ink-900">
-              Acceso completo →
-            </Link>
-          </div>
-
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end">
-            <div>
-              <h1 className="text-[clamp(48px,8vw,108px)] font-bold leading-[0.86] tracking-[-0.035em]">
-                Recursos
-                <span className="block font-serif italic font-normal tracking-[-0.055em]">fiscales.</span>
-              </h1>
-              <p className="mt-7 max-w-[520px] text-[16px] leading-relaxed text-ink-600">
-                Guías, plantillas y herramientas prácticas para revisar reforma
-                fiscal, gastos deducibles, defensa SAT y control documental antes
-                de que el cierre del ejercicio te alcance.
-              </p>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 border border-cream-400 bg-white">
-              {[
-                { n: String(resources.length), label: 'Recursos totales' },
-                { n: String(freeCount), label: 'Gratis' },
-                { n: String(premiumCount), label: 'Premium' },
-              ].map(({ n, label }) => (
-                <div key={label} className="flex flex-col items-center justify-center py-8 [&:not(:last-child)]:border-r [&:not(:last-child)]:border-cream-300">
-                  <span className="font-serif text-[42px] italic leading-none tracking-[-0.06em] text-ink-900">{n}</span>
-                  <span className="mt-2 text-[9px] uppercase tracking-[0.22em] text-ink-400">{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+    <main className="bg-white text-ink-900">
+      <section className="border-b border-ink-900/10 bg-white">
+        <div className="mx-auto px-6 py-7 text-center md:py-8" style={{ maxWidth: 1120 }}>
+          <h1
+            className="font-bold uppercase leading-none"
+            style={{ fontSize: 'clamp(40px, 4.4vw, 58px)', letterSpacing: '-0.025em' }}
+          >
+            Centro de recursos
+          </h1>
         </div>
       </section>
 
-      {/* ── Filtros ───────────────────────────────────────────── */}
-      <section className="border-b border-cream-400 bg-white">
-        <div className="container-app">
-          <div className="flex flex-wrap items-center justify-between gap-4 py-4">
-            {/* Categorías */}
-            <nav className="flex items-center gap-1">
-              {categories.map(({ id, label }) => (
-                <button
-                  key={id}
-                  onClick={() => setActiveCategory(id)}
-                  className={`inline-flex h-9 items-center gap-1.5 px-4 text-[11px] font-bold uppercase tracking-[0.18em] transition-colors ${
-                    activeCategory === id
-                      ? 'bg-ink-900 text-white'
-                      : 'text-ink-400 hover:text-ink-900'
-                  }`}
-                >
-                  {label}
-                  <span className={`text-[9px] ${activeCategory === id ? 'text-white/60' : 'text-ink-300'}`}>
-                    {counts[id]}
+      <section className="overflow-hidden border-b border-ink-900/10" style={{ backgroundColor: '#fff4dc' }}>
+        <div
+          className="mx-auto flex flex-col items-center justify-center gap-8 px-6 py-9 md:flex-row md:items-center md:justify-center md:gap-16 md:py-0"
+          style={{ maxWidth: 990, minHeight: 382 }}
+        >
+          <div
+            className="order-2 flex shrink-0 items-end justify-center self-stretch md:order-1"
+            style={{ width: 360, maxWidth: '100%', minHeight: 320 }}
+          >
+            <img
+              src={phoneMockup}
+              alt="Vista de la Calculadora Fiscal en celular"
+              className="w-auto max-w-none object-contain drop-shadow-[0_24px_34px_rgba(0,0,0,0.16)]"
+              style={{ height: 'min(430px, 88vw)' }}
+            />
+          </div>
+
+          <div className="order-1 w-full text-left md:order-2" style={{ maxWidth: 520 }}>
+            <h2
+              className="font-bold uppercase leading-tight"
+              style={{ fontSize: 'clamp(26px, 2.55vw, 31px)', letterSpacing: '-0.01em' }}
+            >
+              Calculadora fiscal
+            </h2>
+            <p className="mt-9 font-bold leading-tight text-ink-900" style={{ fontSize: 16 }}>
+              Del ábaco a la calculadora científica evolucionaste.
+              <br />
+              Tu forma de calcular ISR, también debe hacerlo.
+            </p>
+
+            <div className="mt-8 space-y-1 leading-snug text-ink-800" style={{ fontSize: 15 }}>
+            {[ 
+                '¿Cuántas veces has calculado mal tu ISR?',
+                '¿Le confías tus cálculos fiscales a un excel?',
+                '¿Excel para lo más importante de tu negocio?',
+              ].map((question) => (
+                <p key={question} className="flex items-start gap-3">
+                  <span className="translate-y-[-1px] text-[22px] font-bold leading-none text-ink-900">
+                    ?
                   </span>
-                </button>
-              ))}
-            </nav>
-
-            {/* Búsqueda */}
-            <div className="relative">
-              <svg className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar recursos…"
-                className="h-9 w-[220px] border border-cream-400 bg-cream-50 pl-9 pr-4 text-[12px] placeholder:text-ink-300 focus:border-ink-400 focus:outline-none"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Grid de recursos ──────────────────────────────────── */}
-      <section className="container-app py-10 lg:py-14">
-        {filtered.length === 0 ? (
-          <div className="py-24 text-center">
-            <p className="font-serif text-[22px] italic text-ink-300">Sin resultados para "{search}"</p>
-            <button onClick={() => { setSearch(''); setActiveCategory('todos'); }} className="mt-6 text-[11px] uppercase tracking-[0.2em] text-ink-500 underline underline-offset-4">
-              Limpiar búsqueda
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="mb-6 flex items-center justify-between">
-              <p className="text-[11px] uppercase tracking-[0.22em] text-ink-400">
-                {filtered.length} {filtered.length === 1 ? 'resultado' : 'resultados'}
-              </p>
-            </div>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filtered.map((resource) => (
-                <ResourceCard key={resource.id} resource={resource} />
+                  <span>{question}</span>
+                </p>
               ))}
             </div>
-          </>
-        )}
-      </section>
 
-      {/* ── CTA Premium ───────────────────────────────────────── */}
-      <section className="border-t border-cream-400 bg-ink-900 text-white">
-        <div className="container-app py-16 lg:py-20">
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.34em] text-white/35">— Academia · Suscripción</p>
-              <h2 className="mt-5 font-serif text-[clamp(36px,5vw,64px)] font-normal leading-[0.9] tracking-[-0.055em]">
-                Desbloquea todos<br />
-                los <span className="italic tracking-[-0.07em]">recursos premium.</span>
-              </h2>
-              <p className="mt-6 max-w-[480px] text-[15px] leading-relaxed text-white/55">
-                Acceso ilimitado a plantillas avanzadas, guías técnicas y herramientas exclusivas. Incluido en tu suscripción a la Academia.
-              </p>
-              <Link
-                to="/academia"
-                className="mt-8 inline-flex h-[44px] items-center gap-4 bg-white px-6 text-[11px] font-bold uppercase tracking-[0.2em] text-ink-900 transition-colors hover:bg-cream-100"
+            <p className="mt-8 font-bold leading-tight text-ink-900" style={{ fontSize: 16 }}>
+              Los emprendedores mexicanos ya calculan mejor.
+              <br />
+              Ahora es tu turno.
+            </p>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <a
+                href={playStoreUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Descargar Calculadora Fiscal en Google Play"
+                className="inline-flex min-h-11 cursor-pointer transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-ink-900 focus:ring-offset-2"
               >
-                Ver planes →
-              </Link>
-            </div>
-            <div className="hidden border border-white/15 bg-white/5 p-8 lg:block">
-              {resources
-                .filter((r) => r.premium)
-                .slice(0, 3)
-                .map((r, i) => (
-                  <div key={r.id} className={`flex items-start gap-4 py-4 ${i !== 0 ? 'border-t border-white/10' : ''}`}>
-                    <span className={`mt-0.5 inline-block shrink-0 rounded-sm px-1.5 py-0.5 text-[8px] font-bold uppercase ${formatColors[r.format]}`}>
-                      {r.format}
-                    </span>
-                    <div>
-                      <p className="text-[13px] font-semibold leading-tight text-white">{r.title}</p>
-                      <p className="mt-1 text-[11px] text-white/35">{r.level} · {r.size}</p>
-                    </div>
-                    <svg className="ml-auto mt-0.5 h-4 w-4 shrink-0 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                ))}
-              <div className="mt-4 border-t border-white/10 pt-4 text-center text-[10px] uppercase tracking-[0.2em] text-white/30">
-                + {premiumCount - 3} recursos más con membresía
-              </div>
+                <img
+                  src={googlePlayBadge}
+                  alt="Disponible en Google Play"
+                  className="w-auto"
+                  style={{ height: 44 }}
+                />
+              </a>
+              <button
+                type="button"
+                onClick={() => toast('App Store está en mantenimiento y pronto volverá a estar disponible.')}
+                aria-label="App Store en mantenimiento"
+                className="inline-flex min-h-11 cursor-pointer transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-ink-900 focus:ring-offset-2"
+              >
+                <img
+                  src={appStoreBadge}
+                  alt="Disponible en App Store"
+                  className="w-auto"
+                  style={{ height: 44 }}
+                />
+              </button>
             </div>
           </div>
         </div>
       </section>
-    </div>
+
+      <section className="bg-white">
+        <div className="container-app py-12 lg:py-16">
+          <div className="mb-10 text-center">
+            <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-ink-400">
+              PDF · Descarga con correo
+            </p>
+            <h2 className="mt-3 text-[clamp(34px,4.4vw,56px)] font-bold uppercase leading-none tracking-[-0.035em]">
+              Material descargable
+            </h2>
+          </div>
+
+          <div className="mx-auto grid max-w-[1080px] gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {resources.map((resource) => (
+              <DownloadCard key={resource.id} resource={resource} onSelect={setSelectedResource} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <LeadCaptureModal
+        open={Boolean(selectedResource)}
+        onClose={() => setSelectedResource(null)}
+        resource="downloadable-resource"
+        requireName
+        title={modalCopy?.title}
+        description={modalCopy?.description}
+        submitLabel="Enviar y descargar"
+        fallbackDownloadUrl={selectedResource?.fileUrl}
+        fallbackFilename={selectedResource ? `${selectedResource.id}.pdf` : undefined}
+        submit={(email, name, phone) => {
+          if (!selectedResource) return Promise.resolve();
+          return requestDownloadableResource({
+            email,
+            name,
+            phone,
+            resourceId: selectedResource.id,
+            resourceTitle: selectedResource.title,
+            downloadUrl: getAbsoluteUrl(selectedResource.fileUrl),
+          });
+        }}
+      />
+    </main>
   );
 }

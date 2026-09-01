@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { useNextCalendarEvent } from '@hooks/useNextCalendarEvent';
-import { getCalendarEventPath } from '@utils/eventCalendar';
+import { getCalendarEventAction } from '@utils/eventCalendar';
 import { getEventImage } from '@utils/eventImages';
 import diegoPasarela from '../../../../../assets/ddweb/diego-pasarela.jpg';
 import satDigital from '../../../../../assets/ddweb/sat-cumplimiento-digital.jpg';
@@ -68,7 +68,7 @@ export default function BlogList() {
   }, [nextEvent?.startDate]);
 
   const countdown = useCountdown(eventTargetMs);
-  const eventHref = getCalendarEventPath(nextEvent);
+  const eventAction = getCalendarEventAction(nextEvent);
   const eventTitle = nextEvent.title;
   const eventDateLabel = `${formatEventDate(nextEvent.startDate)}${nextEvent.location ? ` · ${nextEvent.location}` : ''}`;
   const eventImage = getEventImage(nextEvent);
@@ -247,12 +247,23 @@ export default function BlogList() {
             <p className="mt-4 text-[12px] leading-[1.55] text-white/62">
               Reserva tu lugar y conoce el programa completo del próximo seminario.
             </p>
-            <Link
-              to={eventHref}
-              className="mt-5 block bg-white px-5 py-4 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-ink-900 transition-colors hover:bg-cream-200"
-            >
-              Reservar lugar →
-            </Link>
+            {eventAction.type === 'whatsapp' ? (
+              <a
+                href={eventAction.href}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-5 block bg-white px-5 py-4 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-ink-900 transition-colors hover:bg-cream-200"
+              >
+                Reservar lugar →
+              </a>
+            ) : (
+              <Link
+                to={eventAction.href}
+                className="mt-5 block bg-white px-5 py-4 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-ink-900 transition-colors hover:bg-cream-200"
+              >
+                Reservar lugar →
+              </Link>
+            )}
           </div>
 
           <div className={`border ${border} p-6`}>

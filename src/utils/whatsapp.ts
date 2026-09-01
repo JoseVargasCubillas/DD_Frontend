@@ -1,4 +1,4 @@
-export const WHATSAPP_PHONE = "5214427475869";
+export const WHATSAPP_PHONE = "5214421143667";
 export const WHATSAPP_DEFAULT_MESSAGE =
   "Hola Diego estoy navegando tu sitio web y tengo una duda";
 

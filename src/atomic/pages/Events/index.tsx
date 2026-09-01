@@ -36,6 +36,8 @@ interface EventCard {
   cta?: string;
   isFeatured?: boolean;
   slug?: string;
+  id?: string;
+  _id?: string;
 }
 
 const featuredCountdown = [
@@ -65,8 +67,8 @@ const EVENT_STORAGE_KEY = "dd-admin-events";
 const FEATURED_EVENT_SLUG_KEY = "dd-featured-event-slug";
 const ENABLE_EVENT_API_SYNC = import.meta.env.VITE_EVENTS_API_SYNC !== "false";
 const DEFAULT_CTA_SETTINGS = {
-  salesPhone: "5214427475869",
-  waitlistPhone: "5214427475869",
+  salesPhone: "5214421143667",
+  waitlistPhone: "5214421143667",
 };
 const DEPRECATED_EVENT_SLUGS = new Set([
   "formacion-equipos",
@@ -77,7 +79,11 @@ const DEPRECATED_EVENT_SLUGS = new Set([
   "estrategia-rockefeller",
 ]);
 
-const LEGACY_PLACEHOLDER_PHONES = new Set(["5210000000000", "5218400001184"]);
+const LEGACY_PLACEHOLDER_PHONES = new Set([
+  "5210000000000",
+  "5218400001184",
+  "5214427475869", // número anterior — migra automáticamente al nuevo
+]);
 
 const sanitizePhone = (phone: string | undefined | null): string => {
   const digits = String(phone ?? "").replace(/\D/g, "");
@@ -208,6 +214,15 @@ const isTallerEstrategiaFiscalEvent = (event: Pick<SiteEvent, "slug" | "title">)
   event.slug.includes("taller-estrategia-fiscal") ||
   event.title.trim().toLowerCase().includes("taller de estrategia fiscal");
 
+const isComoCobrarEvent = (event: Pick<SiteEvent, "slug" | "title">) => {
+  const title = event.title.trim().toLowerCase();
+  return (
+    event.slug.includes("como-cobrar") ||
+    title.includes("como cobrar") ||
+    title.includes("cobrar como ceo")
+  );
+};
+
 const cardFromApiEvent = (event: SiteEvent): EventCard => {
   const titleParts = splitTitle(event.title);
   const price = event.salePrice ?? event.price ?? 0;
@@ -225,7 +240,9 @@ const cardFromApiEvent = (event: SiteEvent): EventCard => {
         ? "Online"
         : event.location ||
           (event.modality === "hybrid" ? "Híbrido" : "Por definir"),
-    to: isTallerEstrategiaFiscalEvent(event)
+    to: isComoCobrarEvent(event)
+      ? "/eventos/como-cobrar-como-ceo"
+      : isTallerEstrategiaFiscalEvent(event)
       ? "/eventos/estrategia-fiscal"
       : isHoldingEvent(event)
         ? "/eventos/holding"
@@ -234,8 +251,65 @@ const cardFromApiEvent = (event: SiteEvent): EventCard => {
     cta: event.status === "ongoing" ? "Entrar ahora" : "¡Estoy listo!",
     isFeatured: event.isFeatured,
     slug: event.slug,
+    id: event.id,
+    _id: event._id,
   };
 };
+
+// Rutas con landing propia, diseñada a mano. Cualquier otro evento sólo tiene
+// landing real si existe de verdad en el backend (API/admin, trae id) — si no,
+// en vez de mandar a una página genérica rota, se manda a WhatsApp con el
+// nombre del evento ya armado en el mensaje.
+const DEDICATED_LANDING_PATHS = new Set([
+  "/eventos/estrategia-fiscal",
+  "/eventos/holding",
+  "/eventos/como-cobrar",
+  "/eventos/como-cobrar-como-ceo",
+]);
+
+const hasRealEventLanding = (event?: EventCard | null) => {
+  if (!event) return false;
+  if (DEDICATED_LANDING_PATHS.has(event.to)) return true;
+  if (event.to?.startsWith("http")) return true; // link externo propio (p. ej. Zoom) ya capturado
+  return Boolean(event.id || event._id);
+};
+
+const eventWhatsAppMessage = (event: EventCard) => {
+  const title = [event.title, event.titleSerif].filter(Boolean).join(" ");
+  return `Hola, vengo de la página web y estoy interesado en el evento ${title}.`;
+};
+
+function EventCtaLink({
+  event,
+  label,
+  className,
+  salesPhone,
+  fallbackTo = "/eventos",
+}: {
+  event?: EventCard | null;
+  label: ReactNode;
+  className: string;
+  salesPhone: string;
+  fallbackTo?: string;
+}) {
+  if (event && !hasRealEventLanding(event)) {
+    return (
+      <a
+        href={whatsappHref(salesPhone, eventWhatsAppMessage(event))}
+        target="_blank"
+        rel="noreferrer"
+        className={className}
+      >
+        {label}
+      </a>
+    );
+  }
+  return (
+    <Link to={event?.to ?? fallbackTo} className={className}>
+      {label}
+    </Link>
+  );
+}
 
 const getEventCardSlug = (event: EventCard) =>
   event.slug ||
@@ -639,9 +713,11 @@ function Placeholder({
 function AgendaCard({
   event,
   compact = false,
+  salesPhone = DEFAULT_CTA_SETTINGS.salesPhone,
 }: {
   event: EventCard;
   compact?: boolean;
+  salesPhone?: string;
 }) {
   return (
     <article className="card-lift group flex w-full min-w-0 flex-col border border-cream-400 bg-cream-50 transition-colors duration-200 hover:border-ink-900">
@@ -693,12 +769,12 @@ function AgendaCard({
           <p className="mt-3 max-w-[350px]">{event.description}</p>
         </details>
         <div className="mt-auto border-t border-cream-300 pt-3.5">
-          <Link
-            to={event.to}
+          <EventCtaLink
+            event={event}
+            salesPhone={salesPhone}
+            label="Más información"
             className="inline-flex min-h-10 w-full items-center justify-center border border-ink-900 px-5 text-[10px] uppercase tracking-[0.16em] transition-colors hover:bg-ink-900 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink-900"
-          >
-            Más información
-          </Link>
+          />
         </div>
       </div>
     </article>
@@ -708,9 +784,11 @@ function AgendaCard({
 function AgendaFeature({
   event,
   imageSide = "top",
+  salesPhone = DEFAULT_CTA_SETTINGS.salesPhone,
 }: {
   event: EventCard;
   imageSide?: "top" | "right";
+  salesPhone?: string;
 }) {
   return (
     <article
@@ -751,12 +829,12 @@ function AgendaFeature({
           <p className="mt-3 max-w-[640px]">{event.description}</p>
         </details>
         <div className="mt-auto border-t border-cream-300 pt-5">
-          <Link
-            to={event.to}
+          <EventCtaLink
+            event={event}
+            salesPhone={salesPhone}
+            label="Más información"
             className="inline-flex min-h-11 w-full items-center justify-center bg-ink-900 px-5 text-[10px] uppercase tracking-[0.16em] text-white transition-colors hover:bg-ink-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink-900"
-          >
-            Más información
-          </Link>
+          />
         </div>
       </div>
       {imageSide === "right" ? (
@@ -1044,12 +1122,17 @@ export default function Events() {
             </div>
 
             <div className="mt-9 flex flex-wrap items-center gap-6">
-              <Link
-                to={nextEvent?.to ?? "/eventos"}
+              <EventCtaLink
+                event={nextEvent}
+                salesPhone={ctaSettings.salesPhone}
+                fallbackTo="/eventos"
                 className="inline-flex min-h-[48px] items-center bg-cream-50 px-7 text-[11px] uppercase tracking-[0.18em] text-ink-900 transition-colors hover:bg-white"
-              >
-                Más información <span className="ml-3">→</span>
-              </Link>
+                label={
+                  <>
+                    Más información <span className="ml-3">→</span>
+                  </>
+                }
+              />
             </div>
           </div>
         </div>
@@ -1211,6 +1294,7 @@ export default function Events() {
                             key={`${group.month}-${event.title}`}
                             event={event}
                             compact
+                            salesPhone={ctaSettings.salesPhone}
                           />
                         ))}
                       </div>
@@ -1483,12 +1567,17 @@ export default function Events() {
             permite, reserva ahora.
           </p>
           <div className="mt-12 flex w-full flex-col justify-center gap-4 sm:w-auto sm:flex-row">
-            <Link
-              to={nextEvent?.to ?? "/eventos/estrategia-fiscal"}
+            <EventCtaLink
+              event={nextEvent}
+              salesPhone={ctaSettings.salesPhone}
+              fallbackTo="/eventos/estrategia-fiscal"
               className="inline-flex min-h-[58px] items-center justify-center border border-ink-900 bg-ink-900 px-9 text-[11px] uppercase tracking-[0.18em] text-white transition-colors hover:bg-transparent hover:text-ink-900"
-            >
-              Reservar próximo evento <span className="ml-3">→</span>
-            </Link>
+              label={
+                <>
+                  Reservar próximo evento <span className="ml-3">→</span>
+                </>
+              }
+            />
           </div>
         </div>
       </section>

@@ -34,11 +34,25 @@ export const useAuth = () => {
 
   const logout = () => { storeLogout(); toast.success('Sesión cerrada'); navigate('/'); };
 
+  const forgotPasswordMutation = useMutation({
+    mutationFn: authApi.forgotPassword,
+    retry: 0,
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: authApi.resetPassword,
+    retry: 0,
+  });
+
   return {
     user,
     isAuthenticated,
     login,
     logout,
     isLoading: loginMutation.isPending,
+    forgotPassword: forgotPasswordMutation.mutateAsync,
+    isForgotPasswordLoading: forgotPasswordMutation.isPending,
+    resetPassword: resetPasswordMutation.mutateAsync,
+    isResetPasswordLoading: resetPasswordMutation.isPending,
   };
 };

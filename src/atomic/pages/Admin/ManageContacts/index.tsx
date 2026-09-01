@@ -53,10 +53,11 @@ function LeadsTab() {
   };
 
   const downloadCsv = () => {
-    const header = ['email', 'name', 'source', 'createdAt', 'emailedAt'];
+    const header = ['email', 'name', 'phone', 'source', 'createdAt', 'emailedAt'];
     const rows = leads.map((l) => [
       l.email,
       l.name ?? '',
+      l.phone ?? '',
       l.source,
       l.createdAt ?? '',
       l.emailedAt ?? '',
@@ -124,6 +125,7 @@ function LeadsTab() {
           <thead className="bg-ink-50 text-left text-xs uppercase tracking-wider text-ink-600">
             <tr>
               <th className="px-4 py-3">Correo</th>
+              <th className="px-4 py-3">Teléfono</th>
               <th className="px-4 py-3">Fuente</th>
               <th className="px-4 py-3">Capturado</th>
               <th className="px-4 py-3">Correo enviado</th>
@@ -132,11 +134,11 @@ function LeadsTab() {
           <tbody className="divide-y divide-ink-900/5">
             {isLoading ? (
               <tr>
-                <td colSpan={4} className="px-4 py-10 text-center text-ink-500">Cargando…</td>
+                <td colSpan={5} className="px-4 py-10 text-center text-ink-500">Cargando…</td>
               </tr>
             ) : leads.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-10 text-center text-ink-500">
+                <td colSpan={5} className="px-4 py-10 text-center text-ink-500">
                   Sin leads todavía en esta fuente.
                 </td>
               </tr>
@@ -144,6 +146,7 @@ function LeadsTab() {
               leads.map((lead) => (
                 <tr key={lead._id ?? lead.id ?? lead.email} className="text-ink-900">
                   <td className="px-4 py-3 font-medium">{lead.email}</td>
+                  <td className="px-4 py-3 text-ink-600">{lead.phone || '—'}</td>
                   <td className="px-4 py-3 text-ink-600">
                     {LEAD_SOURCE_LABELS[lead.source] ?? lead.source}
                   </td>

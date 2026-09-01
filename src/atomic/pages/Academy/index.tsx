@@ -5,7 +5,7 @@ import { useSubscription } from '@hooks/useSubscription';
 import { usePackages } from '@hooks/usePackages';
 import { useAutoUnmuteOnGesture } from '@hooks/useAutoUnmuteOnGesture';
 import diegoPortrait from '../../../../assets/eventos/LEF_img_001.png';
-import imarPortrait from '../../../../assets/eventos/LEF_img 002.png';
+import oscarPortrait from '../../../../assets/eventos/oscar-cayetano.png';
 import jazminPortrait from '../../../../assets/eventos/LEF_img 003.png';
 import jessicaPortrait from '../../../../assets/eventos/LEF_img_004.png';
 // Video hospedado en un GitHub Release del propio repo (tag `media-v1`).
@@ -61,11 +61,11 @@ const speakers = [
     position: 'object-[50%_14%]',
   },
   {
-    name: 'Imar Amor',
-    role: 'Finanzas',
-    bio: 'Licenciada en Finanzas y Contaduría Pública. Proyectos de análisis corporativo con componente internacional.',
-    image: imarPortrait,
-    position: 'object-[50%_14%]',
+    name: 'Oscar Cayetano',
+    role: 'Director OCL',
+    bio: 'Ingeniero IMA por ITESM Campus Querétaro. Coach certificado ICC y John Maxwell Team. MIT Education. "Estar ocupado no es lo mismo que avanzar".',
+    image: oscarPortrait,
+    position: 'object-[50%_12%]',
   },
   {
     name: 'Diego Díaz',
@@ -365,6 +365,17 @@ export default function Academy() {
     scrollToPricing();
   };
 
+  // "Comenzar" lleva a iniciar sesión (o al panel si ya tiene acceso) —
+  // la selección de plan queda en la sección de precios, no en un checkout directo.
+  const goToAcademyStart = () => {
+    if (hasAcademyAccess) {
+      navigate('/mi-cuenta/cursos');
+      return;
+    }
+
+    navigate('/iniciar-sesion');
+  };
+
   const scrollToPricing = () => {
     document.getElementById('academy-pricing')?.scrollIntoView({
       behavior: 'smooth',
@@ -392,7 +403,7 @@ export default function Academy() {
               Más de 120 horas de cursos especializados en estrategia fiscal mexicana, masterclass gratuitas cada 2 meses y contenido nuevo cada semana. Un solo pago con acceso anual.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <ButtonLike dark onClick={() => startAcademyCheckout(plans[1])}>Comenzar</ButtonLike>
+              <ButtonLike dark onClick={goToAcademyStart}>Comenzar</ButtonLike>
               <ButtonLike onClick={goToAcademyPurchase}>
                 {hasAcademyAccess ? 'Ir a mi panel' : 'Comprar academia'}
               </ButtonLike>

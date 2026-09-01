@@ -12,3 +12,9 @@ export const getMe = () =>
 
 export const refreshTokens = (refreshToken: string) =>
   client.post<ApiResponse<{ accessToken: string; refreshToken: string }>>('/auth/refresh', { refreshToken }).then((r) => r.data);
+
+export const forgotPassword = (email: string) =>
+  client.post<ApiResponse<{ message: string }>>('/auth/forgot-password', { email }).then((r) => r.data);
+
+export const resetPassword = (data: { token: string; email: string; password: string }) =>
+  client.post<ApiResponse<{ message: string }>>('/auth/reset-password', data).then((r) => r.data);
