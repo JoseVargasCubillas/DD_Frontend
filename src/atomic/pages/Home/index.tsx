@@ -473,10 +473,16 @@ export default function Home() {
                 <video
                   ref={videoRef}
                   src={videoSEF}
+                  // El video vive en GitHub Releases (no un CDN de video real) — en datos
+                  // móviles lentos puede tardar en cargar. Sin poster, mientras tanto se
+                  // ve una pantalla negra que parece "no funciona". El poster muestra un
+                  // fotograma real de inmediato mientras el video real sigue cargando.
+                  poster={imgEstrategia}
                   className="w-full h-full object-contain"
                   autoPlay
                   muted
                   playsInline
+                  preload="auto"
                   loop
                 />
                 {/* Overlay: solo mientras el video aún está en mute (antes del primer gesto) */}
