@@ -478,6 +478,7 @@ export default function Home() {
                   playsInline
                   loop
                   preload="auto"
+                  poster={imgEstrategia}
                   controls={videoState.needsUserPlay}
                 >
                   <source src={videoSEF} type="video/mp4" />
