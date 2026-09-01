@@ -40,6 +40,35 @@ const BOOK_SLUG_ALIASES: Record<string, string> = {
 
 const BUNDLE_SLUG = 'bundle-tres-libros';
 
+function BundleCovers() {
+  return (
+    <div className="flex h-[150px] shrink-0 items-stretch gap-2">
+      <div className="flex gap-1 overflow-hidden border border-ink-900/10 bg-cream-50 shadow-[10px_14px_28px_rgba(10,10,10,0.14)]">
+        <img
+          src={bookClaves}
+          alt="Portada 7 Claves para cobrar a tu empresa"
+          className="h-full w-[58px] object-cover"
+        />
+        <img
+          src={bookFiscalista}
+          alt="Portada 7 Secretos de un fiscalista"
+          className="h-full w-[58px] object-cover"
+        />
+      </div>
+      <div className="relative w-[58px] shrink-0 overflow-hidden border border-ink-900/10 bg-cream-50 opacity-60 grayscale">
+        <img
+          src={bookSat}
+          alt="Portada Los 7 secretos que el SAT no quiere que conozcas — no disponible, lista de espera"
+          className="h-full w-full object-cover"
+        />
+        <span className="absolute inset-x-0 bottom-0 bg-ink-900/85 px-1 py-1 text-center text-[6.5px] font-bold uppercase leading-tight tracking-[0.08em] text-white">
+          Lista de espera
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function BundleShippingNote() {
   return (
     <div className="mt-4 border border-ink-900/15 bg-white px-5 py-4">
@@ -390,13 +419,17 @@ export default function BookCheckout() {
               </div>
 
               <div className="flex gap-5 border-b border-cream-400 py-6">
-                <div className="h-[150px] w-[100px] shrink-0 overflow-hidden border border-ink-900/10 bg-cream-50 shadow-[10px_14px_28px_rgba(10,10,10,0.14)]">
-                  <img
-                    src={coverSrc}
-                    alt={`Portada de ${book.title}`}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
+                {isBundle ? (
+                  <BundleCovers />
+                ) : (
+                  <div className="h-[150px] w-[100px] shrink-0 overflow-hidden border border-ink-900/10 bg-cream-50 shadow-[10px_14px_28px_rgba(10,10,10,0.14)]">
+                    <img
+                      src={coverSrc}
+                      alt={`Portada de ${book.title}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                )}
                 <div className="min-w-0">
                   <p className="font-serif text-[24px] leading-[1.05] tracking-[-0.02em] text-ink-900">{book.title}</p>
                   <p className="mt-2 text-[13px] italic text-ink-400">{book.author} · {book.year}</p>
