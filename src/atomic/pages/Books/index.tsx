@@ -1,8 +1,13 @@
 import { Link } from 'react-router-dom';
+import { useState, type FormEvent } from 'react';
+import toast from 'react-hot-toast';
+import { subscribeNewsletter, subscribeSatWaitlist } from '@api/leads.api';
 import bookClaves from '../../../../assets/ddweb/libro-siete-claves-cobrar.png';
 import bookSat from '../../../../assets/ddweb/libro-siete-secretos-sat.png';
 import bookFiscalista from '../../../../assets/ddweb/libro-siete-secretos-fiscalista.png';
 import diegoAuthor from '../../../../assets/ddweb/diego-lentes.jpg';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const mono = 'font-mono text-[10px] uppercase tracking-[0.34em] text-ink-900/45';
 const border = 'border-ink-900/10';
@@ -96,6 +101,62 @@ function BookCover3D({ src, alt }: { src: string; alt: string }) {
 }
 
 export default function Books() {
+  const [satWaitlistEmail, setSatWaitlistEmail] = useState('');
+  const [satWaitlistSending, setSatWaitlistSending] = useState(false);
+  const [satWaitlistDone, setSatWaitlistDone] = useState(false);
+
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterSending, setNewsletterSending] = useState(false);
+  const [newsletterDone, setNewsletterDone] = useState(false);
+
+  const handleSatWaitlistSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const value = satWaitlistEmail.trim();
+    if (!value) {
+      toast.error('Escribe tu correo para anotarte en la lista de espera.');
+      return;
+    }
+    if (!EMAIL_RE.test(value)) {
+      toast.error('Ese correo no parece válido.');
+      return;
+    }
+    setSatWaitlistSending(true);
+    try {
+      await subscribeSatWaitlist(value);
+      setSatWaitlistDone(true);
+      setSatWaitlistEmail('');
+      toast.success('Listo, te avisaremos en cuanto esté disponible.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No pudimos anotarte. Intenta de nuevo.');
+    } finally {
+      setSatWaitlistSending(false);
+    }
+  };
+
+  const handleNewsletterSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const value = newsletterEmail.trim();
+    if (!value) {
+      toast.error('Escribe tu correo para suscribirte.');
+      return;
+    }
+    if (!EMAIL_RE.test(value)) {
+      toast.error('Ese correo no parece válido.');
+      return;
+    }
+    setNewsletterSending(true);
+    try {
+      await subscribeNewsletter(value);
+      setNewsletterDone(true);
+      setNewsletterEmail('');
+      toast.success('Listo, ya estás suscrito.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No pudimos suscribirte. Intenta de nuevo.');
+    } finally {
+      setNewsletterSending(false);
+    }
+  };
+
   return (
     <div className="bg-cream-200 text-ink-900">
       <section className="container-app min-h-[760px] border-b border-ink-900/10 py-10 sm:py-12 lg:min-h-[860px] lg:py-14">
@@ -209,12 +270,6 @@ export default function Books() {
                 <p className="mt-1 text-[11px] tracking-[0.22em] text-ink-900/38">MXN · Envío incluido</p>
               </div>
               <ArrowButton to="/libros/7-claves-cobrar-empresa/checkout">Comprar libro</ArrowButton>
-              <Link
-                to="/libros/7-claves-cobrar-empresa"
-                className="inline-flex min-h-11 items-center justify-center border border-ink-900 px-6 text-[10px] font-bold uppercase tracking-[0.28em] transition-colors duration-200 hover:bg-ink-900 hover:text-white"
-              >
-                Leer fragmento
-              </Link>
             </div>
 
             <div className={`${mono} mt-8 grid gap-3 border-t border-ink-900/10 pt-7 sm:grid-cols-2`}>
@@ -277,24 +332,33 @@ export default function Books() {
                 Lista de <em className="italic">espera</em> · Reimpresión 2026
               </h3>
               <p className="mt-3 max-w-[480px] text-[13px] leading-relaxed text-ink-900/62">
-                Avísame cuando vuelva a estar disponible. Mientras tanto, descarga gratis el capítulo 1 completo (35 páginas).
+                Avísame cuando vuelva a estar disponible.
               </p>
-              <form className="mt-5 flex border border-ink-900/15 bg-white">
-                <label className="sr-only" htmlFor="sat-waitlist-email">Correo electrónico</label>
-                <input id="sat-waitlist-email" placeholder="tu@correo.com" className="min-w-0 flex-1 bg-transparent px-5 py-4 text-sm outline-none" />
-                <button className="bg-ink-900 px-6 text-[10px] font-bold uppercase tracking-[0.24em] text-white transition-colors hover:bg-ink-900/85">
-                  Avisarme →
-                </button>
-              </form>
-            </div>
-
-            <div className="mt-6">
-              <Link
-                to="/libros/7-secretos-sat"
-                className="inline-flex min-h-12 items-center justify-center border border-ink-900 px-7 text-[10px] font-bold uppercase tracking-[0.28em] transition-colors duration-200 hover:bg-ink-900 hover:text-white"
-              >
-                Descargar capítulo 1 gratis →
-              </Link>
+              {satWaitlistDone ? (
+                <p className="mt-5 border border-ink-900/15 bg-white px-5 py-4 text-[13px] text-ink-700">
+                  ¡Listo! Te avisaremos por correo en cuanto esté disponible.
+                </p>
+              ) : (
+                <form onSubmit={handleSatWaitlistSubmit} className="mt-5 flex border border-ink-900/15 bg-white">
+                  <label className="sr-only" htmlFor="sat-waitlist-email">Correo electrónico</label>
+                  <input
+                    id="sat-waitlist-email"
+                    type="email"
+                    placeholder="tu@correo.com"
+                    value={satWaitlistEmail}
+                    onChange={(e) => setSatWaitlistEmail(e.target.value)}
+                    disabled={satWaitlistSending}
+                    className="min-w-0 flex-1 bg-transparent px-5 py-4 text-sm outline-none disabled:opacity-60"
+                  />
+                  <button
+                    type="submit"
+                    disabled={satWaitlistSending}
+                    className="bg-ink-900 px-6 text-[10px] font-bold uppercase tracking-[0.24em] text-white transition-colors hover:bg-ink-900/85 disabled:opacity-60"
+                  >
+                    {satWaitlistSending ? 'Enviando…' : 'Avisarme →'}
+                  </button>
+                </form>
+              )}
             </div>
 
             <div className={`${mono} mt-8 grid max-w-[590px] gap-3 border-t border-ink-900/10 pt-7 sm:grid-cols-2`}>
@@ -371,12 +435,6 @@ export default function Books() {
                 <p className="mt-1 text-[11px] tracking-[0.22em] text-white/36">MXN · Envío incluido</p>
               </div>
               <ArrowButton to="/libros/7-secretos-fiscalista/checkout" dark>Comprar libro</ArrowButton>
-              <Link
-                to="/libros/7-secretos-fiscalista"
-                className="inline-flex min-h-11 items-center justify-center border border-white/70 px-6 text-[10px] font-bold uppercase tracking-[0.28em] text-white transition-colors duration-200 hover:bg-white hover:text-ink-900"
-              >
-                Leer fragmento
-              </Link>
             </div>
 
             <div className="mt-8 grid gap-3 border-t border-white/10 pt-7 font-mono text-[10px] uppercase tracking-[0.34em] text-white/38 sm:grid-cols-2">
@@ -491,17 +549,31 @@ export default function Books() {
         <p className="mx-auto mt-7 max-w-[610px] text-[15px] leading-[1.75] text-ink-900/60">
           Cada domingo a las 7am mando una carta de tres minutos con un análisis nuevo, una estrategia y una recomendación de lectura. La reciben +38,000 empresarios. Sin spam, cancelación con un click.
         </p>
-        <form className="mx-auto mt-9 flex max-w-[560px] border border-ink-900 bg-white/30">
-          <label className="sr-only" htmlFor="books-email">Correo electrónico</label>
-          <input
-            id="books-email"
-            placeholder="tu@correo.com"
-            className="min-w-0 flex-1 bg-transparent px-6 py-4 text-sm outline-none placeholder:text-ink-900/42"
-          />
-          <button className="bg-ink-900 px-7 text-[10px] font-bold uppercase tracking-[0.24em] text-white transition-colors hover:bg-ink-900/85">
-            Suscribirme →
-          </button>
-        </form>
+        {newsletterDone ? (
+          <p className="mx-auto mt-9 max-w-[560px] border border-ink-900/15 bg-white/40 px-6 py-4 text-[13px] text-ink-700">
+            ¡Gracias! Ya estás suscrito a la carta del domingo.
+          </p>
+        ) : (
+          <form onSubmit={handleNewsletterSubmit} className="mx-auto mt-9 flex max-w-[560px] border border-ink-900 bg-white/30">
+            <label className="sr-only" htmlFor="books-email">Correo electrónico</label>
+            <input
+              id="books-email"
+              type="email"
+              placeholder="tu@correo.com"
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
+              disabled={newsletterSending}
+              className="min-w-0 flex-1 bg-transparent px-6 py-4 text-sm outline-none placeholder:text-ink-900/42 disabled:opacity-60"
+            />
+            <button
+              type="submit"
+              disabled={newsletterSending}
+              className="bg-ink-900 px-7 text-[10px] font-bold uppercase tracking-[0.24em] text-white transition-colors hover:bg-ink-900/85 disabled:opacity-60"
+            >
+              {newsletterSending ? 'Enviando…' : 'Suscribirme →'}
+            </button>
+          </form>
+        )}
       </section>
     </div>
   );

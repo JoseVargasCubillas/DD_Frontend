@@ -23,6 +23,7 @@ const LEAD_SOURCE_LABELS: Record<string, string> = {
   'guia-blindaje-sat': 'Guía SAT',
   'media-kit': 'Media Kit',
   newsletter: 'Newsletter',
+  'libro-sat-waitlist': 'Lista de espera · Libro SAT',
   contact: 'Formulario contacto',
   other: 'Otro',
 };
@@ -93,6 +94,7 @@ function LeadsTab() {
             <option value="guia-blindaje-sat">Guía SAT</option>
             <option value="media-kit">Media Kit</option>
             <option value="newsletter">Newsletter</option>
+            <option value="libro-sat-waitlist">Lista de espera · Libro SAT</option>
             <option value="contact">Formulario contacto</option>
           </select>
           <button

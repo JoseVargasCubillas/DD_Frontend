@@ -1,14 +1,17 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import toast from 'react-hot-toast';
 import { useNextCalendarEvent } from '@hooks/useNextCalendarEvent';
 import { getCalendarEventAction } from '@utils/eventCalendar';
 import { getEventImage } from '@utils/eventImages';
+import { subscribeNewsletter } from '@api/leads.api';
 import diegoPasarela from '../../../../../assets/ddweb/diego-pasarela.jpg';
 import satDigital from '../../../../../assets/ddweb/sat-cumplimiento-digital.jpg';
 import { STATIC_BLOG_POSTS, formatStaticBlogDate } from '@/data/blogPosts';
 
 const border = 'border-ink-900/10';
 const mono = 'font-mono text-[11px] uppercase tracking-[0.18em] text-ink-900/45';
+const NEWSLETTER_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /* ─────────── Countdown ─────────── */
 function useCountdown(targetMs: number | null) {
@@ -57,6 +60,34 @@ export default function BlogList() {
   // Post destacado = el primero del registry (más reciente).
   const [featured, ...rest] = STATIC_BLOG_POSTS;
   const posts = rest;
+
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterSending, setNewsletterSending] = useState(false);
+  const [newsletterDone, setNewsletterDone] = useState(false);
+
+  const handleNewsletterSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const value = newsletterEmail.trim();
+    if (!value) {
+      toast.error('Escribe tu correo para suscribirte.');
+      return;
+    }
+    if (!NEWSLETTER_EMAIL_RE.test(value)) {
+      toast.error('Ese correo no parece válido.');
+      return;
+    }
+    setNewsletterSending(true);
+    try {
+      await subscribeNewsletter(value);
+      setNewsletterDone(true);
+      setNewsletterEmail('');
+      toast.success('Listo, ya estás suscrito.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No pudimos suscribirte. Intenta de nuevo.');
+    } finally {
+      setNewsletterSending(false);
+    }
+  };
 
   // ── Próximo evento (misma lógica que Home/Navbar: fallback + stored + API) ─
   const nextEvent = useNextCalendarEvent();
@@ -272,12 +303,30 @@ export default function BlogList() {
             <p className="mt-4 text-[13px] leading-[1.65] text-ink-900/58">
               Cada domingo a las 7am: un análisis, una estrategia y una decisión que puedes tomar el lunes.
             </p>
-            <div className={`mt-5 flex border ${border}`}>
-              <input aria-label="Correo para carta del domingo" placeholder="tu@correo.com" className="min-w-0 flex-1 bg-transparent px-3 py-3 text-[12px] outline-none" />
-              <button className="bg-ink-900 px-4 font-mono text-[9px] uppercase tracking-[0.14em] text-white" type="button">
-                Suscribir
-              </button>
-            </div>
+            {newsletterDone ? (
+              <p className="mt-5 border border-ink-900/15 bg-cream-100 px-3 py-3 text-[12px] text-ink-700">
+                ¡Gracias! Ya estás suscrito.
+              </p>
+            ) : (
+              <form onSubmit={handleNewsletterSubmit} className={`mt-5 flex border ${border}`}>
+                <input
+                  aria-label="Correo para carta del domingo"
+                  type="email"
+                  placeholder="tu@correo.com"
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  disabled={newsletterSending}
+                  className="min-w-0 flex-1 bg-transparent px-3 py-3 text-[12px] outline-none disabled:opacity-60"
+                />
+                <button
+                  type="submit"
+                  disabled={newsletterSending}
+                  className="bg-ink-900 px-4 font-mono text-[9px] uppercase tracking-[0.14em] text-white disabled:opacity-60"
+                >
+                  {newsletterSending ? 'Enviando…' : 'Suscribir'}
+                </button>
+              </form>
+            )}
             <p className="mt-4 font-mono text-[9px] uppercase tracking-[0.14em] text-ink-900/45">— Sin spam · cancelación con un click</p>
           </div>
 

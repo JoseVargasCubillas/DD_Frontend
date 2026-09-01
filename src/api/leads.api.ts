@@ -26,6 +26,11 @@ export const subscribeNewsletter = (email: string, name?: string): Promise<LeadC
     .post<ApiResponse<LeadCaptureResult>>('/leads/newsletter', { email, name })
     .then((r) => r.data);
 
+export const subscribeSatWaitlist = (email: string, name?: string): Promise<LeadCaptureResult> =>
+  client
+    .post<ApiResponse<LeadCaptureResult>>('/leads/sat-waitlist', { email, name })
+    .then((r) => r.data);
+
 export const requestSatGuide = (email: string, name?: string): Promise<LeadCaptureResult> =>
   client
     .post<ApiResponse<LeadCaptureResult>>('/leads/sat-guide', { email, name })
