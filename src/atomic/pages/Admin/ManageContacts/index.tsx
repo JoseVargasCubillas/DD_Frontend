@@ -857,7 +857,7 @@ export default function ManageContacts() {
           </div>
         </div>
 
-        <div className="grid grid-cols-[28px_42px_1.45fr_1.2fr_1fr_1fr_0.7fr_0.8fr_0.8fr_28px] gap-3 border-b border-ink-900/15 px-3 py-4 text-sm font-semibold text-ink-900">
+        <div className="hidden md:grid grid-cols-[28px_42px_1.45fr_1.2fr_1fr_1fr_0.7fr_0.8fr_0.8fr_28px] gap-3 border-b border-ink-900/15 px-3 py-4 text-sm font-semibold text-ink-900">
           <span />
           <span />
           <span>Nombre</span>
@@ -878,11 +878,14 @@ export default function ManageContacts() {
           contacts.map((c) => {
             const id = String(c._id || c.id);
             const isSel = id === selectedId;
+            const addedDate = c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
+            const lastActivity = c.lastLogin ? new Date(c.lastLogin).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
+            const marketing = c.marketingStatus === 'subscribed' ? 'Subscribed' : c.marketingStatus === 'unsubscribed' ? 'Unsubscribed' : 'Never subscribed';
             return (
               <button
                 key={id}
                 onClick={() => setSelectedId(id)}
-                className={`grid w-full grid-cols-[28px_42px_1.45fr_1.2fr_1fr_1fr_0.7fr_0.8fr_0.8fr_28px] items-center gap-3 px-3 py-5 text-left text-sm transition-colors ${
+                className={`flex w-full items-start gap-3 border-b border-ink-900/5 px-3 py-4 text-left text-sm transition-colors md:grid md:grid-cols-[28px_42px_1.45fr_1.2fr_1fr_1fr_0.7fr_0.8fr_0.8fr_28px] md:items-center md:gap-3 md:py-5 md:border-0 ${
                   isSel ? 'bg-[#eeeeee]' : 'hover:bg-[#f2f2f2]'
                 }`}
               >
@@ -891,32 +894,31 @@ export default function ManageContacts() {
                   checked={allSelected || selectedIds.includes(id)}
                   onClick={(e) => e.stopPropagation()}
                   onChange={(event) => toggleContact(id, event.target.checked)}
-                  className="h-4 w-4 cursor-pointer rounded border-ink-900/20 accent-[#7977f2]"
+                  className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-ink-900/20 accent-[#7977f2] md:mt-0"
                   aria-label={`Seleccionar ${c.name}`}
                 />
-                <div className="relative h-8 w-8 rounded-full bg-ink-50 text-ink-900">
+                <div className="relative h-8 w-8 shrink-0 rounded-full bg-ink-50 text-ink-900">
                   <svg className="absolute left-2 top-1.5 h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                     <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0 1 1 0 0 1-1 1H6a1 1 0 0 1-1-1Z" />
                   </svg>
                   <span className="absolute bottom-0 right-0 flex h-3 w-3 items-center justify-center rounded-full bg-[#242424] text-[8px] text-white">✓</span>
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1 md:flex-none">
                   <p className="truncate font-medium text-ink-900">{c.name}</p>
-                  <p className="text-[11px] text-ink-500 md:hidden">{c.email}</p>
+                  <p className="truncate text-[11px] text-ink-500 md:hidden">{c.email}</p>
+                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-ink-500 md:hidden">
+                    {c.phone && <span>{c.phone}</span>}
+                    <span>{marketing}</span>
+                    <span>{addedDate}</span>
+                  </div>
                 </div>
-                <span className="truncate text-ink-700">{c.email}</span>
-                <span className="truncate text-ink-600">{c.phone || '—'}</span>
-                <span className="truncate text-ink-600">
-                  {c.marketingStatus === 'subscribed' ? 'Subscribed' : c.marketingStatus === 'unsubscribed' ? 'Unsubscribed' : 'Never subscribed'}
-                </span>
-                <span className="text-ink-700">0,00 $</span>
-                <span className="text-ink-600">
-                  {c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
-                </span>
-                <span className="text-ink-600">
-                  {c.lastLogin ? new Date(c.lastLogin).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
-                </span>
-                <span className="text-center text-lg text-ink-900">...</span>
+                <span className="hidden truncate text-ink-700 md:inline">{c.email}</span>
+                <span className="hidden truncate text-ink-600 md:inline">{c.phone || '—'}</span>
+                <span className="hidden truncate text-ink-600 md:inline">{marketing}</span>
+                <span className="hidden text-ink-700 md:inline">0,00 $</span>
+                <span className="hidden text-ink-600 md:inline">{addedDate}</span>
+                <span className="hidden text-ink-600 md:inline">{lastActivity}</span>
+                <span className="ml-auto self-center text-lg text-ink-900 md:ml-0 md:text-center">...</span>
               </button>
             );
           })

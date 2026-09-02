@@ -103,8 +103,8 @@ export default function ManageUsers() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-cream-100 border border-ink-900/15 overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-cream-100 border border-ink-900/15 overflow-hidden overflow-x-auto">
+        <table className="w-full text-sm min-w-[720px]">
           <thead>
             <tr className="border-b border-ink-900/20 bg-cream-200/60">
               {['Nombre', 'Correo', 'Rol', 'Estado', 'Registro', 'Acción'].map((h) => (
