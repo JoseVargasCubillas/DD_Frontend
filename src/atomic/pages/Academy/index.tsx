@@ -250,7 +250,7 @@ function EditorialTitle({
 }) {
   return (
     <h2
-      className={`font-serif text-[clamp(54px,7vw,80px)] font-light leading-[0.95] tracking-[-0.045em] ${
+      className={`font-serif text-[clamp(36px,7vw,80px)] font-light leading-[0.95] tracking-[-0.045em] ${
         inverted ? 'text-[#f5f2ec]' : 'text-[#0a0a0a]'
       } ${className}`}
     >
@@ -385,24 +385,24 @@ export default function Academy() {
 
   return (
     <div className={`${cream} text-[#0a0a0a]`}>
-      <section className="border-b border-[#0a0a0a]/10 px-5 pb-24 pt-16 md:px-10 lg:px-14 lg:pb-[101px] lg:pt-20">
-        <div className={`mx-auto flex max-w-[1512px] justify-between border-b ${line} pb-8 ${mono}`}>
+      <section className="border-b border-[#0a0a0a]/10 px-5 pb-16 pt-12 sm:pb-24 sm:pt-16 md:px-10 lg:px-14 lg:pb-[101px] lg:pt-20">
+        <div className={`mx-auto flex flex-wrap gap-x-4 gap-y-2 max-w-[1512px] justify-between border-b ${line} pb-6 sm:pb-8 ${mono}`}>
           <span>— Academia · Suscripción anual</span>
           <span>Contenido nuevo cada mes</span>
         </div>
 
-        <div className="mx-auto grid max-w-[1512px] items-center gap-16 pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,420px)] lg:gap-20">
+        <div className="mx-auto grid max-w-[1512px] items-center gap-10 pt-8 sm:gap-16 sm:pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,420px)] lg:gap-20">
           <div className="flex flex-col justify-center lg:min-h-[620px]">
-            <h1 className="font-serif text-[clamp(76px,10vw,144px)] font-light leading-[0.88] tracking-[-0.045em]">
+            <h1 className="font-serif text-[clamp(46px,10vw,144px)] font-light leading-[0.9] tracking-[-0.045em] sm:leading-[0.88]">
               La Academia
               <span className="block">donde</span>
               <em className="block font-normal italic">aprendes a ser</em>
               empresario.
             </h1>
-            <p className="mt-8 max-w-[580px] text-[19px] leading-[1.5] text-[#0a0a0a]/65">
+            <p className="mt-6 max-w-[580px] text-base leading-[1.5] text-[#0a0a0a]/65 sm:mt-8 sm:text-[19px]">
               Más de 120 horas de cursos especializados en estrategia fiscal mexicana, masterclass gratuitas cada 2 meses y contenido nuevo cada semana. Un solo pago con acceso anual.
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
+            <div className="mt-6 flex flex-wrap gap-3 sm:mt-8 sm:gap-4">
               <ButtonLike dark onClick={goToAcademyStart}>Comenzar</ButtonLike>
               <ButtonLike onClick={goToAcademyPurchase}>
                 {hasAcademyAccess ? 'Ir a mi panel' : 'Comprar academia'}
@@ -550,7 +550,7 @@ export default function Academy() {
               className={`group flex min-h-[420px] cursor-pointer flex-col border-b ${line} p-7 text-left transition-colors duration-300 hover:bg-[#0a0a0a] hover:text-[#f5f2ec] focus-visible:bg-[#0a0a0a] focus-visible:text-[#f5f2ec] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#6b4f2a] lg:col-span-2 lg:row-span-2 lg:min-h-[560px] lg:border-r`}
             >
               <p className={`${mono} transition-colors group-hover:text-[#f5f2ec]/55 group-focus-visible:text-[#f5f2ec]/55`}>— Curso insignia · 18 hrs</p>
-              <h3 className="mt-6 font-serif text-[clamp(34px,4vw,50px)] font-light leading-[1.03] tracking-[-0.025em]">
+              <h3 className="mt-6 font-serif text-[clamp(26px,4vw,50px)] font-light leading-[1.03] tracking-[-0.025em]">
                 Estrategia <em className="font-normal italic">Fiscal</em> 2026
               </h3>
               <p className="mt-5 max-w-[560px] text-[15px] leading-[1.65] text-[#0a0a0a]/65 transition-colors group-hover:text-[#f5f2ec]/70 group-focus-visible:text-[#f5f2ec]/70">
@@ -689,7 +689,7 @@ export default function Academy() {
           <span className={mono}>06 / Voces</span>
           <span className={mono}>01 / 12 alumnos</span>
         </div>
-        <blockquote className="mx-auto mt-16 max-w-[1200px] font-serif text-[clamp(42px,6vw,72px)] font-light leading-[1.1] tracking-[-0.03em]">
+        <blockquote className="mx-auto mt-16 max-w-[1200px] font-serif text-[clamp(28px,6vw,72px)] font-light leading-[1.15] tracking-[-0.03em] sm:leading-[1.1]">
           "La Academia ha sido la <em className="font-normal italic">mejor inversión</em> que hemos hecho con mi equipo de socios. Estrategias prácticas, <em className="font-normal italic">no teoría.</em>"
         </blockquote>
         <p className="mt-12 font-serif text-[22px] italic">— Lic. Cristian Orlando García Cruz</p>

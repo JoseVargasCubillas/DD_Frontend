@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Outlet,
   NavLink,
@@ -70,6 +70,23 @@ export default function AdminLayout() {
   const [academiaOpen, setAcademiaOpen] = useState(true);
   const [salesOpen, setSalesOpen] = useState(true);
   const [marketingOpen, setMarketingOpen] = useState(true);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Cierra el drawer al navegar en móvil
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname, location.search]);
+
+  // Bloquea scroll de body cuando el drawer está abierto en móvil
+  useEffect(() => {
+    if (mobileNavOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [mobileNavOpen]);
 
   const isProductRoute =
     location.pathname === "/admin/productos" ||
@@ -86,8 +103,22 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-cream text-ink-900 flex">
+      {/* Overlay móvil */}
+      {mobileNavOpen && (
+        <button
+          type="button"
+          aria-label="Cerrar menú"
+          onClick={() => setMobileNavOpen(false)}
+          className="fixed inset-0 z-30 cursor-pointer bg-ink-900/40 backdrop-blur-sm lg:hidden"
+        />
+      )}
       {/* ── Sidebar ───────────────────────────────────── */}
-      <aside className="w-64 shrink-0 bg-cream-100 border-r border-ink-900/15 flex flex-col">
+      <aside
+        className={
+          "fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] shrink-0 flex-col border-r border-ink-900/15 bg-cream-100 transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-64 lg:max-w-none lg:translate-x-0 " +
+          (mobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0")
+        }
+      >
         {/* Masthead */}
         <Link to="/" className="px-6 py-6 border-b border-ink-900/15 block">
           <img src={logoDD} alt="Diego Díaz" className="h-9 object-contain mb-2" />
@@ -289,15 +320,25 @@ export default function AdminLayout() {
       </aside>
 
       {/* Contenido principal */}
-      <main className="flex-1 overflow-auto">
-        <div className="sticky top-0 z-20 bg-cream/90 backdrop-blur-sm border-b border-ink-900/15 px-8 py-3 flex items-center justify-between">
+      <main className="flex-1 overflow-auto min-w-0">
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-ink-900/15 bg-cream/90 px-4 py-3 backdrop-blur-sm sm:px-6 lg:px-8">
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(true)}
+            aria-label="Abrir menú"
+            className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-ink-900/20 bg-white text-ink-900 transition-colors hover:bg-cream-200 lg:hidden"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
           <p className="text-[10px] uppercase tracking-[0.4em] text-ink-700">Panel admin</p>
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-700 animate-pulse" />
-            <span className="text-[10px] uppercase tracking-[0.3em] text-ink-600">En linea</span>
+            <span className="text-[10px] uppercase tracking-[0.3em] text-ink-600 hidden sm:inline">En linea</span>
           </div>
         </div>
-        <div className="p-8 lg:p-10">
+        <div className="p-4 sm:p-6 lg:p-10">
           <Outlet />
         </div>
       </main>

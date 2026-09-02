@@ -16,7 +16,7 @@ export default function ManageTags() {
     <div>
       <header className="mb-8">
         <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-3">Comunidad</p>
-        <h1 className="font-serif text-4xl md:text-5xl text-ink-900 leading-none">Etiquetas</h1>
+        <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-ink-900 leading-none">Etiquetas</h1>
         <p className="text-sm text-ink-600 mt-3 max-w-xl">
           Segmenta a tus contactos asignándoles etiquetas que reflejen su interés, curso, o etapa del funnel.
         </p>

@@ -100,7 +100,7 @@ export default function ManageSubscriptions() {
     <div>
       <header className="mb-8">
         <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-3">Academia</p>
-        <h1 className="font-serif text-4xl md:text-5xl text-ink-900 leading-none">Suscripciones</h1>
+        <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-ink-900 leading-none">Suscripciones</h1>
         <p className="text-sm text-ink-600 mt-3 max-w-3xl">
           Todo lo relacionado a los planes de la Academia en un solo lugar: precios, ventas por Stripe,
           asignación manual con tiempo limitado, pagos que llegan de la web y suscripciones activas.
@@ -108,7 +108,7 @@ export default function ManageSubscriptions() {
       </header>
 
       {/* Métricas */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-12">
+      <section className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4 mb-12">
         <MetricCard label="Suscripciones activas" value={String(metrics.active)} hint="active + trialing" />
         <MetricCard label="Ingresos este mes" value={fmtMoney(metrics.monthRevenue)} hint="pagos confirmados" />
         <MetricCard label="Ingresos totales" value={fmtMoney(metrics.totalRevenue)} hint="histórico" />

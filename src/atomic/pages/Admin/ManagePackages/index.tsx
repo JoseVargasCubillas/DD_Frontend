@@ -103,7 +103,7 @@ export default function ManagePackages({ hideHeader = false }: { hideHeader?: bo
           <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-3">Academia</p>
           <div className="flex items-end justify-between gap-6 flex-wrap">
             <div>
-              <h1 className="font-serif text-4xl md:text-5xl text-ink-900 leading-none">Paquetes</h1>
+              <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-ink-900 leading-none">Paquetes</h1>
               <p className="text-sm text-ink-600 mt-3 max-w-2xl">
                 Los tres productos de la Academia. Precio, cursos incluidos y beneficios (masterclass y grupos
                 de WhatsApp) se controlan aquí. Estos paquetes son los que aparecen públicamente en{' '}

@@ -48,7 +48,7 @@ export default function ManagePromotions() {
     <div>
       <header className="mb-8">
         <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-3">Academia</p>
-        <h1 className="font-serif text-4xl md:text-5xl text-ink-900 leading-none">Promociones</h1>
+        <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-ink-900 leading-none">Promociones</h1>
         <p className="text-sm text-ink-600 mt-3 max-w-2xl">
           Códigos de descuento aplicables al checkout. Pueden ser porcentaje o monto fijo, globales o
           limitados a un <b>paquete</b>, <b>oferta</b> o <b>curso</b> específico.
@@ -183,7 +183,8 @@ export default function ManagePromotions() {
       </form>
 
       {/* Listado */}
-      <div className="border border-ink-900/15 bg-cream-100">
+      <div className="border border-ink-900/15 bg-cream-100 overflow-x-auto">
+        <div className="min-w-[900px]">
         <div className="grid grid-cols-[1fr_1.4fr_1.6fr_100px_90px_100px_100px_60px] gap-3 px-5 py-3 border-b border-ink-900/15 text-[10px] uppercase tracking-[0.28em] text-ink-500">
           <span>Código</span>
           <span>Descripción</span>
@@ -238,6 +239,7 @@ export default function ManagePromotions() {
             </div>
           ))
         )}
+        </div>
       </div>
     </div>
   );

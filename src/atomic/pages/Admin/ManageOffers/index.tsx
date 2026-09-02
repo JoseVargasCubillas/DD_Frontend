@@ -34,7 +34,7 @@ export default function ManageOffers() {
         <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-3">Academia</p>
         <div className="flex items-end justify-between gap-6 flex-wrap">
           <div>
-            <h1 className="font-serif text-4xl md:text-5xl text-ink-900 leading-none">Ofertas</h1>
+            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-ink-900 leading-none">Ofertas</h1>
             <p className="text-sm text-ink-600 mt-3 max-w-2xl">
               Bundles públicos temporales (por ejemplo: <em>“3 cursos por $999”</em>). Aparecen automáticamente
               en la web mientras estén publicadas y se compran directamente por checkout. Distintas de los

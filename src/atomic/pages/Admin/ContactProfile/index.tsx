@@ -40,7 +40,7 @@ export default function ContactProfile() {
         <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-2">Expediente</p>
-            <h1 className="font-serif text-4xl md:text-5xl text-ink-900 leading-none">{contact.name}</h1>
+            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-ink-900 leading-none">{contact.name}</h1>
           </div>
           <div className="flex flex-wrap gap-2 relative">
             <button onClick={() => setEditing(true)} className="text-[10px] uppercase tracking-[0.3em] border border-ink-900/20 hover:border-ink-900 px-4 py-2.5 cursor-pointer">
