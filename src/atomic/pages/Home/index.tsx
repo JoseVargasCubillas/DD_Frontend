@@ -20,6 +20,7 @@ import {
   mergeCalendarEventSources,
   type CalendarEventSummary,
 } from "@utils/eventCalendar";
+import { waClickHandler } from "@utils/whatsapp";
 import imgEstrategia from "../../../../assets/home/002_home_Estrategia_DD.png";
 import imgFormacion from "../../../../assets/home/003_home_Formacion_DD.png";
 import imgRevision from "../../../../assets/home/004_home_Revision_DD.png";
@@ -89,7 +90,13 @@ function CalendarCardLink({
 }) {
   if (action.type === "whatsapp") {
     return (
-      <a href={action.href} target="_blank" rel="noreferrer" className={className}>
+      <a
+        href={action.href}
+        target="_blank"
+        rel="noreferrer"
+        onClick={waClickHandler("home-calendar-card")}
+        className={className}
+      >
         {children}
       </a>
     );
@@ -609,6 +616,7 @@ export default function Home() {
                       href={nextEventAction.href}
                       target="_blank"
                       rel="noreferrer"
+                      onClick={waClickHandler("home-next-event-reserve")}
                       className="btn-primary-inv"
                     >
                       Reservar mi lugar →

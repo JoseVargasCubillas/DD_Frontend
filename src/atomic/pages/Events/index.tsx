@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useReveal, useHeroReveal } from "@hooks/useReveal";
 import { useCountUp } from "@hooks/useCountUp";
 import { useEvents } from "@hooks/useEvents";
+import { waClickHandler } from "@utils/whatsapp";
 import type { Event as SiteEvent } from "@t/index";
 import eventPersonaFisicaMoral from "../../../../assets/eventos/evento-persona-fisica-moral.png";
 import eventMentalidadEmpresarial from "../../../../assets/eventos/evento-mentalidad-empresarial.png";
@@ -298,6 +299,7 @@ function EventCtaLink({
         href={whatsappHref(salesPhone, eventWhatsAppMessage(event))}
         target="_blank"
         rel="noreferrer"
+        onClick={waClickHandler("event-card-sales", eventWhatsAppMessage(event))}
         className={className}
       >
         {label}
@@ -1330,6 +1332,7 @@ export default function Events() {
                 )}
                 target="_blank"
                 rel="noreferrer"
+                onClick={waClickHandler("events-sales")}
                 className="mt-9 inline-flex min-h-[44px] w-fit items-center border border-ink-900 px-6 text-[11px] uppercase tracking-[0.16em]"
               >
                 Habla con ventas →
@@ -1355,6 +1358,7 @@ export default function Events() {
                 )}
                 target="_blank"
                 rel="noreferrer"
+                onClick={waClickHandler("events-waitlist")}
                 className="mt-8 inline-flex min-h-[44px] w-fit items-center border border-ink-900 px-5 text-[10px] uppercase tracking-[0.16em]"
               >
                 Apúntame →
@@ -1481,6 +1485,7 @@ export default function Events() {
               )}
               target="_blank"
               rel="noreferrer"
+              onClick={waClickHandler("events-faq-direct")}
               className="mt-9 inline-flex min-h-[54px] items-center border border-ink-900 px-7 text-[11px] uppercase tracking-[0.18em] text-ink-900 transition-colors hover:bg-ink-900 hover:text-white"
             >
               WhatsApp directo <span className="ml-3">→</span>

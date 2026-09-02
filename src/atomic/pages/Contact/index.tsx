@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import diegoAjedrez from '../../../../assets/ddweb/diego-ajedrez.jpg';
-import { waLink, WHATSAPP_DEFAULT_MESSAGE } from '@utils/whatsapp';
+import { waLink, WHATSAPP_DEFAULT_MESSAGE, trackWaClick } from '@utils/whatsapp';
 
 const mono = 'font-mono text-[13px] uppercase tracking-[0.14em] text-ink-900/55';
 const border = 'border-ink-900/10';
@@ -165,11 +165,15 @@ export default function Contact() {
         <div className={`mt-14 grid items-stretch gap-5 lg:grid-cols-3`}>
           {channels.map(([eyebrow, title, body, value, cta, href]) => {
             const isExternal = href?.startsWith('http') || href?.startsWith('mailto:');
+            const isWhatsapp = href?.includes('wa.me');
             const Wrapper: 'a' | 'article' = href ? 'a' : 'article';
             const wrapperProps: any = href
               ? {
                   href,
                   ...(isExternal ? { target: '_blank', rel: 'noreferrer' } : {}),
+                  ...(isWhatsapp
+                    ? { onClick: () => trackWaClick('contact-channel') }
+                    : {}),
                 }
               : {};
             return (

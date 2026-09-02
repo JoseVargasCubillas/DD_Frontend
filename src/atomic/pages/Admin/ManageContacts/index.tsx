@@ -20,6 +20,7 @@ import type { User, Tag, Course, Offer, Event as EventType } from '@t/index';
 import { useDeleteLeads, useLeadHistory, useUnifiedLeads } from '@hooks/useLeads';
 import { listAllSubscriptions } from '@api/subscriptions.api';
 import { useQuery } from '@tanstack/react-query';
+import { useWaClickStats, useWaClicks } from '@hooks/useAnalytics';
 
 const LEAD_SOURCE_LABELS: Record<string, string> = {
   'guia-blindaje-sat': 'Guía SAT',
@@ -484,11 +485,144 @@ function AcademiaSubscribersTab() {
   );
 }
 
+function WhatsappClicksTab() {
+  const { data: stats, isLoading: statsLoading } = useWaClickStats();
+  const [sourceFilter, setSourceFilter] = useState<string>('');
+  const { data: clicks = [], isLoading: listLoading } = useWaClicks(sourceFilter || undefined);
+
+  const maxDay = useMemo(() => {
+    if (!stats?.byDay?.length) return 1;
+    return Math.max(...stats.byDay.map((d) => d.count), 1);
+  }, [stats]);
+
+  const kpis = [
+    { label: 'Total clicks', value: stats?.total ?? 0 },
+    { label: 'Hoy', value: stats?.today ?? 0 },
+    { label: 'Últimos 7 días', value: stats?.last7d ?? 0 },
+    { label: 'Últimos 30 días', value: stats?.last30d ?? 0 },
+    { label: 'Visitantes únicos', value: stats?.uniqueVisitors ?? 0 },
+  ];
+
+  return (
+    <section className="space-y-6">
+      <div>
+        <h2 className="text-xl font-semibold text-ink-900">Trazabilidad de WhatsApp</h2>
+        <p className="mt-2 max-w-3xl text-sm text-ink-600">
+          Cada botón de WhatsApp del sitio registra el clic antes de abrir el chat. Aquí ves cuántas personas contactan al asesor, desde qué páginas y qué mensaje llevan preparado.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        {kpis.map((kpi) => (
+          <div key={kpi.label} className="rounded-2xl border border-ink-900/10 bg-white p-5 shadow-sm">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500">{kpi.label}</p>
+            <p className="mt-2 text-3xl font-semibold text-ink-900">
+              {statsLoading ? '—' : kpi.value.toLocaleString('es-MX')}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border border-ink-900/10 bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-ink-500">Clicks por día (30d)</h3>
+          <div className="mt-6 flex h-40 items-end gap-1">
+            {(stats?.byDay ?? []).map((day) => (
+              <div key={day.day} className="flex flex-1 flex-col items-center gap-1" title={`${day.day}: ${day.count}`}>
+                <div
+                  className="w-full rounded-t bg-ink-900/80"
+                  style={{ height: `${Math.max((day.count / maxDay) * 100, 2)}%` }}
+                />
+              </div>
+            ))}
+            {!stats?.byDay?.length && (
+              <p className="w-full text-center text-xs text-ink-500">Sin datos aún.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-ink-900/10 bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-ink-500">Fuentes con más clicks</h3>
+          <ul className="mt-4 divide-y divide-ink-900/5">
+            {(stats?.bySource ?? []).slice(0, 10).map((row) => (
+              <li key={row.source} className="flex items-center justify-between py-2 text-sm">
+                <button
+                  type="button"
+                  onClick={() => setSourceFilter(row.source === sourceFilter ? '' : row.source)}
+                  className={`cursor-pointer text-left font-medium ${sourceFilter === row.source ? 'text-ink-900 underline' : 'text-ink-800 hover:text-ink-900'}`}
+                >
+                  {row.source}
+                </button>
+                <span className="text-ink-600">
+                  {row.total.toLocaleString('es-MX')} <span className="text-ink-400">· {row.last30d} en 30d</span>
+                </span>
+              </li>
+            ))}
+            {!stats?.bySource?.length && (
+              <li className="py-3 text-xs text-ink-500">Sin clicks registrados aún.</li>
+            )}
+          </ul>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-ink-900/10 bg-white shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-900/10 px-6 py-4">
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-ink-500">Últimos clicks</h3>
+            {sourceFilter && (
+              <p className="mt-1 text-xs text-ink-600">
+                Filtrando por: <strong>{sourceFilter}</strong>{' '}
+                <button
+                  type="button"
+                  onClick={() => setSourceFilter('')}
+                  className="ml-2 cursor-pointer text-ink-900 underline"
+                >
+                  quitar filtro
+                </button>
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="bg-ink-50 text-left text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
+              <tr>
+                <th className="px-6 py-3">Fecha</th>
+                <th className="px-6 py-3">Fuente</th>
+                <th className="px-6 py-3">Página</th>
+                <th className="px-6 py-3">Mensaje</th>
+                <th className="px-6 py-3">Visitante</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink-900/5">
+              {listLoading ? (
+                <tr><td colSpan={5} className="px-6 py-10 text-center text-sm text-ink-500">Cargando…</td></tr>
+              ) : clicks.length === 0 ? (
+                <tr><td colSpan={5} className="px-6 py-10 text-center text-sm text-ink-500">Sin clicks registrados en esta fuente.</td></tr>
+              ) : (
+                clicks.slice(0, 100).map((click) => (
+                  <tr key={click.id || click._id} className="text-ink-800">
+                    <td className="whitespace-nowrap px-6 py-3 text-xs text-ink-600">{formatLeadDate(click.createdAt)}</td>
+                    <td className="px-6 py-3 font-medium">{click.source}</td>
+                    <td className="px-6 py-3 text-xs text-ink-600">{click.page || '—'}</td>
+                    <td className="max-w-[280px] truncate px-6 py-3 text-xs text-ink-600" title={click.message || ''}>{click.message || '—'}</td>
+                    <td className="px-6 py-3 font-mono text-[11px] text-ink-500">{(click.anonId || '').slice(0, 8) || '—'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function ManageContacts() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const activeTab: 'contacts' | 'tags' | 'leads' | 'academia' =
-    tabParam === 'tags' ? 'tags' : tabParam === 'leads' ? 'leads' : tabParam === 'academia' ? 'academia' : 'contacts';
+  const activeTab: 'contacts' | 'tags' | 'leads' | 'academia' | 'whatsapp' =
+    tabParam === 'tags' ? 'tags' : tabParam === 'leads' ? 'leads' : tabParam === 'academia' ? 'academia' : tabParam === 'whatsapp' ? 'whatsapp' : 'contacts';
   const [search, setSearch] = useState('');
   const [tagFilter, setTagFilter] = useState<string | undefined>();
   const [segment, setSegment] = useState('');
@@ -534,6 +668,7 @@ export default function ManageContacts() {
   const showTags = () => setSearchParams({ tab: 'tags' });
   const showLeads = () => setSearchParams({ tab: 'leads' });
   const showAcademia = () => setSearchParams({ tab: 'academia' });
+  const showWhatsapp = () => setSearchParams({ tab: 'whatsapp' });
 
   return (
     <div className="mx-auto max-w-[1180px]">
@@ -572,6 +707,13 @@ export default function ManageContacts() {
                 className={`pb-4 ${activeTab === 'academia' ? 'border-b-2 border-ink-900 text-ink-900' : 'text-ink-800 hover:text-ink-900'}`}
               >
                 Suscritos a Academia
+              </button>
+              <button
+                type="button"
+                onClick={showWhatsapp}
+                className={`pb-4 ${activeTab === 'whatsapp' ? 'border-b-2 border-ink-900 text-ink-900' : 'text-ink-800 hover:text-ink-900'}`}
+              >
+                WhatsApp
               </button>
             </nav>
           </div>
@@ -619,6 +761,8 @@ export default function ManageContacts() {
         <LeadsTab />
       ) : activeTab === 'academia' ? (
         <AcademiaSubscribersTab />
+      ) : activeTab === 'whatsapp' ? (
+        <WhatsappClicksTab />
       ) : (
       <section className="rounded-2xl border border-ink-900/10 bg-white px-5 py-7 shadow-sm">
         <div className="mb-8 flex flex-wrap items-center gap-5">
