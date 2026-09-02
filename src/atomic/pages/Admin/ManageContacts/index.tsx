@@ -318,6 +318,9 @@ interface GroupedSubscriber {
 }
 
 function AcademiaSubscribersTab() {
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('');
   const { data: subscriptions = [], isLoading } = useQuery({
     queryKey: ['subscriptions', 'admin', 'all'],
     queryFn: listAllSubscriptions,
@@ -361,13 +364,56 @@ function AcademiaSubscribersTab() {
     return Array.from(map.values());
   }, [subscriptions]);
 
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return grouped.filter((entry) => {
+      if (statusFilter && entry.status !== statusFilter) return false;
+      if (sourceFilter && !entry.sources.includes(sourceFilter)) return false;
+      if (query && !`${entry.userName} ${entry.userEmail}`.toLowerCase().includes(query)) return false;
+      return true;
+    });
+  }, [grouped, search, statusFilter, sourceFilter]);
+
   return (
     <section className="rounded-2xl border border-ink-900/10 bg-white px-5 py-7 shadow-sm">
-      <div className="mb-5">
-        <h2 className="text-lg font-semibold text-ink-900">Suscritos a Academia</h2>
-        <p className="mt-1 text-sm text-ink-600">
-          Cualquiera que alguna vez tuvo acceso a Academia — activo, vencido o cancelado. Una fila por persona.
-        </p>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-ink-900">Suscritos a Academia</h2>
+          <p className="mt-1 text-sm text-ink-600">
+            Cualquiera que alguna vez tuvo acceso a Academia — activo, vencido o cancelado. Una fila por persona.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative min-w-[220px]">
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-500">⌕</span>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nombre o correo..."
+              className="h-10 w-full rounded-full border border-ink-900/15 bg-white pl-10 pr-4 text-sm text-ink-900 outline-none placeholder:text-ink-500 focus:border-[#8b8cf6]"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="min-h-10 cursor-pointer rounded-full border border-ink-900/15 bg-white px-4 text-sm text-ink-900"
+          >
+            <option value="">Todos los estados</option>
+            {Object.entries(SUBSCRIPTION_STATUS_LABELS).map(([value, { label }]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+          <select
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value)}
+            className="min-h-10 cursor-pointer rounded-full border border-ink-900/15 bg-white px-4 text-sm text-ink-900"
+          >
+            <option value="">Todas las fuentes</option>
+            {Object.entries(SUBSCRIPTION_SOURCE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-ink-900/10">
@@ -393,8 +439,14 @@ function AcademiaSubscribersTab() {
                   Nadie se ha suscrito a Academia todavía.
                 </td>
               </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-10 text-center text-ink-500">
+                  Sin resultados para estos filtros.
+                </td>
+              </tr>
             ) : (
-              grouped.map((entry) => {
+              filtered.map((entry) => {
                 const status = SUBSCRIPTION_STATUS_LABELS[entry.status] ?? { label: entry.status, className: 'bg-ink-50 text-ink-500 border-ink-900/15' };
                 return (
                   <tr key={entry.key} className="text-ink-900">
