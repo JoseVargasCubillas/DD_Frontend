@@ -252,6 +252,7 @@ export default function Resources() {
         onClose={() => setSelectedResource(null)}
         resource="downloadable-resource"
         requireName
+        requirePhone
         title={modalCopy?.title}
         description={modalCopy?.description}
         submitLabel="Enviar y descargar"

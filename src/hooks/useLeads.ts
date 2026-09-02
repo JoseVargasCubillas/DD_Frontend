@@ -1,11 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { deleteLeads, listLeads, type Lead } from '@api/leads.api';
+import { deleteLeads, listLeads, listLeadsByEmail, listUnifiedLeads, type Lead, type UnifiedLead } from '@api/leads.api';
 
 export const useLeads = (source?: string) =>
   useQuery<Lead[]>({
     queryKey: ['leads', source ?? 'all'],
     queryFn: () => listLeads(source),
+    staleTime: 60_000,
+  });
+
+export const useLeadHistory = (email?: string) =>
+  useQuery<Lead[]>({
+    queryKey: ['leads', 'by-email', email ?? ''],
+    queryFn: () => listLeadsByEmail(email as string),
+    enabled: Boolean(email),
+    staleTime: 60_000,
+  });
+
+export const useUnifiedLeads = () =>
+  useQuery<UnifiedLead[]>({
+    queryKey: ['leads', 'unified'],
+    queryFn: listUnifiedLeads,
     staleTime: 60_000,
   });
 

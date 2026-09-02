@@ -403,13 +403,20 @@ export default function Home() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoMuted, toggleVideoMute, videoState] = useAutoUnmuteOnGesture(videoRef);
 
+  const [guideName, setGuideName] = useState("");
   const [guideEmail, setGuideEmail] = useState("");
+  const [guidePhone, setGuidePhone] = useState("");
   const [guideSubmitting, setGuideSubmitting] = useState(false);
   const [guideSent, setGuideSent] = useState(false);
 
   const handleGuideSubmit = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
+      const name = guideName.trim();
+      if (!name) {
+        toast.error("Escribe tu nombre.");
+        return;
+      }
       const email = guideEmail.trim();
       if (!email) {
         toast.error("Escribe tu correo para enviarte la guía.");
@@ -420,10 +427,15 @@ export default function Home() {
         toast.error("Ese correo no parece válido.");
         return;
       }
+      const phone = guidePhone.trim();
+      if (phone.replace(/\D/g, "").length < 8) {
+        toast.error("Escribe tu número de teléfono para contactarte.");
+        return;
+      }
 
       setGuideSubmitting(true);
       try {
-        await requestSatGuide(email);
+        await requestSatGuide(email, name, phone);
         setGuideSent(true);
         toast.success("Listo. Revisa tu bandeja de entrada.");
       } catch (err) {
@@ -434,7 +446,7 @@ export default function Home() {
         setGuideSubmitting(false);
       }
     },
-    [guideEmail],
+    [guideName, guideEmail, guidePhone],
   );
   const [testimonialIdx, setTestimonialIdx] = useState(0);
   const [testimonialFading, setTestimonialFading] = useState(false);
@@ -921,6 +933,17 @@ export default function Home() {
                   onSubmit={handleGuideSubmit}
                 >
                   <input
+                    type="text"
+                    placeholder="Tu nombre"
+                    className="input-base flex-1 h-[60px] bg-ink-800/70 border-ink-700 px-7 text-[16px]"
+                    aria-label="Nombre"
+                    value={guideName}
+                    onChange={(e) => setGuideName(e.target.value)}
+                    required
+                    disabled={guideSubmitting}
+                    autoComplete="name"
+                  />
+                  <input
                     type="email"
                     placeholder="tu@correo.com"
                     className="input-base flex-1 h-[60px] bg-ink-800/70 border-ink-700 px-7 text-[16px]"
@@ -930,6 +953,17 @@ export default function Home() {
                     required
                     disabled={guideSubmitting}
                     autoComplete="email"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Tu teléfono"
+                    className="input-base flex-1 h-[60px] bg-ink-800/70 border-ink-700 px-7 text-[16px]"
+                    aria-label="Número de teléfono"
+                    value={guidePhone}
+                    onChange={(e) => setGuidePhone(e.target.value)}
+                    required
+                    disabled={guideSubmitting}
+                    autoComplete="tel"
                   />
                   <button
                     type="submit"

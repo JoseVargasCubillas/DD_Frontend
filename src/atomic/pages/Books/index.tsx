@@ -81,6 +81,7 @@ function BookCover3D({ src, alt }: { src: string; alt: string }) {
 
 export default function Books() {
   const [satWaitlistEmail, setSatWaitlistEmail] = useState('');
+  const [satWaitlistPhone, setSatWaitlistPhone] = useState('');
   const [satWaitlistSending, setSatWaitlistSending] = useState(false);
   const [satWaitlistDone, setSatWaitlistDone] = useState(false);
 
@@ -99,11 +100,17 @@ export default function Books() {
       toast.error('Ese correo no parece válido.');
       return;
     }
+    const phone = satWaitlistPhone.trim();
+    if (phone.replace(/\D/g, '').length < 8) {
+      toast.error('Escribe tu número de teléfono para contactarte.');
+      return;
+    }
     setSatWaitlistSending(true);
     try {
-      await subscribeSatWaitlist(value);
+      await subscribeSatWaitlist(value, undefined, phone);
       setSatWaitlistDone(true);
       setSatWaitlistEmail('');
+      setSatWaitlistPhone('');
       toast.success('Listo, te avisaremos en cuanto esté disponible.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No pudimos anotarte. Intenta de nuevo.');
@@ -318,7 +325,7 @@ export default function Books() {
                   ¡Listo! Te avisaremos por correo en cuanto esté disponible.
                 </p>
               ) : (
-                <form onSubmit={handleSatWaitlistSubmit} className="mt-5 flex border border-ink-900/15 bg-white">
+                <form onSubmit={handleSatWaitlistSubmit} className="mt-5 flex flex-col border border-ink-900/15 bg-white sm:flex-row">
                   <label className="sr-only" htmlFor="sat-waitlist-email">Correo electrónico</label>
                   <input
                     id="sat-waitlist-email"
@@ -328,6 +335,16 @@ export default function Books() {
                     onChange={(e) => setSatWaitlistEmail(e.target.value)}
                     disabled={satWaitlistSending}
                     className="min-w-0 flex-1 bg-transparent px-5 py-4 text-sm outline-none disabled:opacity-60"
+                  />
+                  <label className="sr-only" htmlFor="sat-waitlist-phone">Número de teléfono</label>
+                  <input
+                    id="sat-waitlist-phone"
+                    type="tel"
+                    placeholder="Tu teléfono"
+                    value={satWaitlistPhone}
+                    onChange={(e) => setSatWaitlistPhone(e.target.value)}
+                    disabled={satWaitlistSending}
+                    className="min-w-0 flex-1 border-t border-ink-900/15 bg-transparent px-5 py-4 text-sm outline-none disabled:opacity-60 sm:border-l sm:border-t-0"
                   />
                   <button
                     type="submit"
