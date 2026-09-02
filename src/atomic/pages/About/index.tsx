@@ -410,6 +410,7 @@ export default function About() {
         open={mediaKitOpen}
         onClose={() => setMediaKitOpen(false)}
         resource="media-kit"
+        requirePhone
         submit={requestMediaKit}
         fallbackDownloadUrl="https://github.com/JoseVargasCubillas/DD_Frontend/releases/download/media-v1/DDMedia-Kit.pdf"
         fallbackFilename="Diego-Diaz-Media-Kit.pdf"

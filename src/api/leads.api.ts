@@ -26,6 +26,19 @@ export interface BulkDeleteLeadsResult {
   missing: string[];
 }
 
+export interface UnifiedLead {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string;
+  sources: string[];
+  reasons: string[];
+  userId?: string;
+  leadIds: string[];
+  firstSeenAt: string;
+  lastActivityAt: string;
+}
+
 export const subscribeNewsletter = (
   email: string,
   name?: string,
@@ -35,19 +48,19 @@ export const subscribeNewsletter = (
     .post<ApiResponse<LeadCaptureResult>>('/leads/newsletter', { email, name, origin })
     .then((r) => r.data);
 
-export const subscribeSatWaitlist = (email: string, name?: string): Promise<LeadCaptureResult> =>
+export const subscribeSatWaitlist = (email: string, name?: string, phone?: string): Promise<LeadCaptureResult> =>
   client
-    .post<ApiResponse<LeadCaptureResult>>('/leads/sat-waitlist', { email, name })
+    .post<ApiResponse<LeadCaptureResult>>('/leads/sat-waitlist', { email, name, phone })
     .then((r) => r.data);
 
-export const requestSatGuide = (email: string, name?: string): Promise<LeadCaptureResult> =>
+export const requestSatGuide = (email: string, name?: string, phone?: string): Promise<LeadCaptureResult> =>
   client
-    .post<ApiResponse<LeadCaptureResult>>('/leads/sat-guide', { email, name })
+    .post<ApiResponse<LeadCaptureResult>>('/leads/sat-guide', { email, name, phone })
     .then((r) => r.data);
 
-export const requestMediaKit = (email: string, name?: string): Promise<LeadCaptureResult> =>
+export const requestMediaKit = (email: string, name?: string, phone?: string): Promise<LeadCaptureResult> =>
   client
-    .post<ApiResponse<LeadCaptureResult>>('/leads/media-kit', { email, name })
+    .post<ApiResponse<LeadCaptureResult>>('/leads/media-kit', { email, name, phone })
     .then((r) => r.data);
 
 export const requestEstrategiaFiscalDossier = (
@@ -77,6 +90,12 @@ export const requestDownloadableResource = (input: {
 
 export const listLeads = (source?: string): Promise<Lead[]> =>
   client.get<ApiResponse<Lead[]>>('/leads', source ? { source } : undefined).then((r) => r.data);
+
+export const listLeadsByEmail = (email: string): Promise<Lead[]> =>
+  client.get<ApiResponse<Lead[]>>('/leads', { email }).then((r) => r.data);
+
+export const listUnifiedLeads = (): Promise<UnifiedLead[]> =>
+  client.get<ApiResponse<UnifiedLead[]>>('/leads/unified').then((r) => r.data);
 
 export const deleteLead = (id: string): Promise<{ id: string }> =>
   client.delete<ApiResponse<{ id: string }>>(`/leads/${id}`).then((r) => r.data);

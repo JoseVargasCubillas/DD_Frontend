@@ -17,7 +17,9 @@ import { useEvents, useAssignUsersToEvent, useDeregisterUsersFromEvent } from '@
 import { useOffers, useAssignOffer, useBulkRevokeOffer } from '@hooks/useOffers';
 import type { ImportContactInput, ImportContactsResult } from '@api/users.api';
 import type { User, Tag, Course, Offer, Event as EventType } from '@t/index';
-import { useDeleteLeads, useLeads } from '@hooks/useLeads';
+import { useDeleteLeads, useLeadHistory, useUnifiedLeads } from '@hooks/useLeads';
+import { listAllSubscriptions } from '@api/subscriptions.api';
+import { useQuery } from '@tanstack/react-query';
 
 const LEAD_SOURCE_LABELS: Record<string, string> = {
   'guia-blindaje-sat': 'Guía SAT',
@@ -28,6 +30,7 @@ const LEAD_SOURCE_LABELS: Record<string, string> = {
   'libro-sat-waitlist': 'Lista de espera · Libro SAT',
   contact: 'Formulario contacto',
   other: 'Otro',
+  'compra-incompleta': 'Intento de compra',
 };
 
 const formatLeadDate = (value?: string | null) => {
@@ -44,49 +47,55 @@ const formatLeadDate = (value?: string | null) => {
 };
 
 function LeadsTab() {
-  const [source, setSource] = useState<string>('newsletter');
-  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
-  const [deleteTarget, setDeleteTarget] = useState<string[] | null>(null);
-  const { data: leads = [], isLoading } = useLeads(source || undefined);
+  const [source, setSource] = useState<string>('');
+  const [selectedEntryIds, setSelectedEntryIds] = useState<string[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<{ entryIds: string[]; leadIds: string[] } | null>(null);
+  const { data: allLeads = [], isLoading } = useUnifiedLeads();
   const deleteLeadsMutation = useDeleteLeads();
-  const campaignHref = source === 'newsletter'
-    ? '/admin/email?segment=newsletter-leads'
-    : source
+
+  const leads = source ? allLeads.filter((lead) => lead.sources.includes(source)) : allLeads;
+  const campaignHref = source && source !== 'compra-incompleta'
     ? `/admin/email?segment=${encodeURIComponent(`lead-source:${source}`)}`
     : '/admin/email?segment=guide-leads';
-  const visibleLeadIds = leads
-    .map((lead) => String(lead._id ?? lead.id ?? ''))
-    .filter(Boolean);
-  const allVisibleSelected = visibleLeadIds.length > 0 && visibleLeadIds.every((id) => selectedLeadIds.includes(id));
+
+  // Solo las filas puramente de la tabla `leads` (sin userId) se pueden
+  // seleccionar/borrar desde aquí — borrar una fila con userId implicaría
+  // borrar una cuenta de usuario real, que no es lo que hace este botón.
+  const selectableEntries = leads.filter((entry) => !entry.userId && entry.leadIds.length > 0);
+  const visibleEntryIds = selectableEntries.map((entry) => entry.id);
+  const allVisibleSelected = visibleEntryIds.length > 0 && visibleEntryIds.every((id) => selectedEntryIds.includes(id));
 
   useEffect(() => {
-    setSelectedLeadIds([]);
+    setSelectedEntryIds([]);
   }, [source]);
 
   useEffect(() => {
-    setSelectedLeadIds((current) => current.filter((id) => visibleLeadIds.includes(id)));
-  }, [visibleLeadIds.join('|')]);
+    setSelectedEntryIds((current) => current.filter((id) => visibleEntryIds.includes(id)));
+  }, [visibleEntryIds.join('|')]);
 
   const toggleAllLeads = (checked: boolean) => {
-    setSelectedLeadIds(checked ? visibleLeadIds : []);
+    setSelectedEntryIds(checked ? visibleEntryIds : []);
   };
 
   const toggleLead = (id: string, checked: boolean) => {
-    setSelectedLeadIds((current) =>
+    setSelectedEntryIds((current) =>
       checked ? Array.from(new Set([...current, id])) : current.filter((item) => item !== id),
     );
   };
 
-  const confirmDelete = (ids: string[]) => {
-    if (ids.length === 0) return;
-    setDeleteTarget(ids);
+  const confirmDelete = (entryIds: string[]) => {
+    if (entryIds.length === 0) return;
+    const leadIds = leads
+      .filter((entry) => entryIds.includes(entry.id))
+      .flatMap((entry) => entry.leadIds);
+    setDeleteTarget({ entryIds, leadIds });
   };
 
   const finishDelete = () => {
-    const ids = deleteTarget ?? [];
-    deleteLeadsMutation.mutate(ids, {
+    const leadIds = deleteTarget?.leadIds ?? [];
+    deleteLeadsMutation.mutate(leadIds, {
       onSuccess: () => {
-        setSelectedLeadIds((current) => current.filter((id) => !ids.includes(id)));
+        setSelectedEntryIds((current) => current.filter((id) => !(deleteTarget?.entryIds ?? []).includes(id)));
         setDeleteTarget(null);
       },
     });
@@ -98,14 +107,14 @@ function LeadsTab() {
   };
 
   const downloadCsv = () => {
-    const header = ['email', 'name', 'phone', 'source', 'createdAt', 'emailedAt'];
+    const header = ['email', 'name', 'phone', 'motivos', 'primeraVez', 'ultimaActividad'];
     const rows = leads.map((l) => [
       l.email,
       l.name ?? '',
       l.phone ?? '',
-      l.source,
-      l.createdAt ?? '',
-      l.emailedAt ?? '',
+      l.reasons.join(' | '),
+      l.firstSeenAt ?? '',
+      l.lastActivityAt ?? '',
     ]);
     const csv = [header, ...rows]
       .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
@@ -123,9 +132,9 @@ function LeadsTab() {
     <section className="rounded-2xl border border-ink-900/10 bg-white px-5 py-7 shadow-sm">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-ink-900">Leads capturados</h2>
+          <h2 className="text-lg font-semibold text-ink-900">Leads</h2>
           <p className="mt-1 text-sm text-ink-600">
-            Administra mailing, descargas y formularios por fuente. Los suscritos al newsletter viven separados de los leads de descarga.
+            Cualquiera que interactuó pero no ha comprado — descargas, newsletter e intentos de compra sin completar. En cuanto compran, desaparecen de aquí.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -135,6 +144,7 @@ function LeadsTab() {
             className="min-h-10 cursor-pointer rounded-full border border-ink-900/15 bg-white px-4 text-sm text-ink-900"
           >
             <option value="">Todas las fuentes</option>
+            <option value="compra-incompleta">Intento de compra</option>
             <option value="guia-blindaje-sat">Guía SAT</option>
             <option value="media-kit">Media Kit</option>
             <option value="newsletter">Lead suscrito · Mailing</option>
@@ -145,8 +155,8 @@ function LeadsTab() {
           </select>
           <button
             type="button"
-            onClick={() => confirmDelete(selectedLeadIds)}
-            disabled={!selectedLeadIds.length || deleteLeadsMutation.isPending}
+            onClick={() => confirmDelete(selectedEntryIds)}
+            disabled={!selectedEntryIds.length || deleteLeadsMutation.isPending}
             className="min-h-10 cursor-pointer rounded-full border border-red-200 bg-red-50 px-4 text-sm font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Borrar seleccionados
@@ -167,12 +177,14 @@ function LeadsTab() {
           >
             Descargar CSV
           </button>
-          <Link
-            to={campaignHref}
-            className="min-h-10 inline-flex items-center rounded-full bg-[#2f2f2f] px-4 text-sm font-semibold text-white hover:bg-ink-900"
-          >
-            Enviar campaña ↗
-          </Link>
+          {source && source !== 'compra-incompleta' && (
+            <Link
+              to={campaignHref}
+              className="min-h-10 inline-flex items-center rounded-full bg-[#2f2f2f] px-4 text-sm font-semibold text-white hover:bg-ink-900"
+            >
+              Enviar campaña ↗
+            </Link>
+          )}
         </div>
       </div>
 
@@ -185,70 +197,76 @@ function LeadsTab() {
                   type="checkbox"
                   checked={allVisibleSelected}
                   onChange={(e) => toggleAllLeads(e.target.checked)}
-                  disabled={!visibleLeadIds.length}
+                  disabled={!visibleEntryIds.length}
                   aria-label="Seleccionar todos los leads visibles"
                   className="h-4 w-4 cursor-pointer accent-ink-900 disabled:cursor-not-allowed"
                 />
               </th>
+              <th className="px-4 py-3">Nombre</th>
               <th className="px-4 py-3">Correo</th>
               <th className="px-4 py-3">Teléfono</th>
-              <th className="px-4 py-3">Fuente</th>
-              <th className="px-4 py-3">Capturado</th>
-              <th className="px-4 py-3">Correo enviado</th>
+              <th className="px-4 py-3">Motivo(s)</th>
+              <th className="px-4 py-3">Visto la primera vez</th>
+              <th className="px-4 py-3">Última actividad</th>
               <th className="px-4 py-3 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink-900/5">
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-ink-500">Cargando…</td>
+                <td colSpan={8} className="px-4 py-10 text-center text-ink-500">Cargando…</td>
               </tr>
             ) : leads.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-ink-500">
+                <td colSpan={8} className="px-4 py-10 text-center text-ink-500">
                   Sin leads todavía en esta fuente.
                 </td>
               </tr>
             ) : (
-              leads.map((lead) => {
-                const leadId = String(lead._id ?? lead.id ?? '');
+              leads.map((entry) => {
+                const selectable = !entry.userId && entry.leadIds.length > 0;
                 return (
-                  <tr key={leadId || lead.email} className="text-ink-900">
+                  <tr key={entry.id} className="text-ink-900">
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
-                        checked={leadId ? selectedLeadIds.includes(leadId) : false}
-                        onChange={(e) => leadId && toggleLead(leadId, e.target.checked)}
-                        disabled={!leadId}
-                        aria-label={`Seleccionar ${lead.email}`}
+                        checked={selectable ? selectedEntryIds.includes(entry.id) : false}
+                        onChange={(e) => selectable && toggleLead(entry.id, e.target.checked)}
+                        disabled={!selectable}
+                        aria-label={`Seleccionar ${entry.email}`}
                         className="h-4 w-4 cursor-pointer accent-ink-900 disabled:cursor-not-allowed"
                       />
                     </td>
-                    <td className="px-4 py-3 font-medium">{lead.email}</td>
-                    <td className="px-4 py-3 text-ink-600">{lead.phone || '—'}</td>
-                    <td className="px-4 py-3 text-ink-600">
-                      {LEAD_SOURCE_LABELS[lead.source] ?? lead.source}
-                    </td>
-                    <td className="px-4 py-3 text-ink-600">{formatLeadDate(lead.createdAt)}</td>
+                    <td className="px-4 py-3 font-medium">{entry.name || '—'}</td>
+                    <td className="px-4 py-3">{entry.email}</td>
+                    <td className="px-4 py-3 text-ink-600">{entry.phone || '—'}</td>
                     <td className="px-4 py-3">
-                      {lead.emailedAt ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-700">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          {formatLeadDate(lead.emailedAt)}
-                        </span>
-                      ) : (
-                        <span className="text-ink-500">Pendiente</span>
-                      )}
+                      <div className="flex flex-wrap gap-1">
+                        {entry.reasons.map((reason) => (
+                          <span
+                            key={reason}
+                            className="inline-flex items-center rounded-full border border-ink-900/15 bg-ink-50 px-2.5 py-0.5 text-xs text-ink-700"
+                          >
+                            {reason}
+                          </span>
+                        ))}
+                      </div>
                     </td>
+                    <td className="px-4 py-3 text-ink-600">{formatLeadDate(entry.firstSeenAt)}</td>
+                    <td className="px-4 py-3 text-ink-600">{formatLeadDate(entry.lastActivityAt)}</td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => leadId && confirmDelete([leadId])}
-                        disabled={!leadId || deleteLeadsMutation.isPending}
-                        className="cursor-pointer text-sm font-semibold text-red-600 underline underline-offset-4 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Borrar
-                      </button>
+                      {selectable ? (
+                        <button
+                          type="button"
+                          onClick={() => confirmDelete([entry.id])}
+                          disabled={deleteLeadsMutation.isPending}
+                          className="cursor-pointer text-sm font-semibold text-red-600 underline underline-offset-4 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Borrar
+                        </button>
+                      ) : (
+                        <span className="text-xs text-ink-400">Cuenta registrada</span>
+                      )}
                     </td>
                   </tr>
                 );
@@ -260,7 +278,7 @@ function LeadsTab() {
       {deleteTarget && (
         <BulkConfirmModal
           title="Borrar leads"
-          message={`¿Eliminar ${deleteTarget.length} lead${deleteTarget.length === 1 ? '' : 's'}? Esta acción no se puede deshacer.`}
+          message={`¿Eliminar ${deleteTarget.entryIds.length} lead${deleteTarget.entryIds.length === 1 ? '' : 's'}? Esta acción no se puede deshacer.`}
           confirmLabel="Borrar"
           isPending={deleteLeadsMutation.isPending}
           onClose={() => setDeleteTarget(null)}
@@ -271,11 +289,154 @@ function LeadsTab() {
   );
 }
 
+const SUBSCRIPTION_STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  active: { label: 'Activa', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  trialing: { label: 'Prueba', className: 'bg-sky-50 text-sky-700 border-sky-200' },
+  canceled: { label: 'Vencida/Cancelada', className: 'bg-ink-50 text-ink-500 border-ink-900/15' },
+  past_due: { label: 'Pago atrasado', className: 'bg-amber-50 text-amber-700 border-amber-200' },
+};
+
+// Cuando una persona tiene mas de una suscripcion (varios productos de una
+// migracion vieja, o varias ofertas compradas), se le muestra el estado "mas
+// vivo" de todas — activa gana sobre vencida, por ejemplo.
+const SUBSCRIPTION_STATUS_PRIORITY = ['active', 'trialing', 'past_due', 'canceled'];
+
+const SUBSCRIPTION_SOURCE_LABELS: Record<string, string> = {
+  order: 'Compra',
+  manual_admin: 'Asignado a mano',
+  stripe: 'Stripe (legacy)',
+};
+
+interface GroupedSubscriber {
+  key: string;
+  userName: string;
+  userEmail: string;
+  products: string[];
+  status: string;
+  latestPeriodEnd: string;
+  sources: string[];
+}
+
+function AcademiaSubscribersTab() {
+  const { data: subscriptions = [], isLoading } = useQuery({
+    queryKey: ['subscriptions', 'admin', 'all'],
+    queryFn: listAllSubscriptions,
+  });
+
+  // Una persona puede tener varias filas de Subscription (varios productos
+  // migrados, o varias ofertas compradas) — se agrupan en una sola fila por
+  // persona en vez de repetir su nombre/correo una vez por producto.
+  const grouped = useMemo<GroupedSubscriber[]>(() => {
+    const map = new Map<string, GroupedSubscriber>();
+    for (const sub of subscriptions as any[]) {
+      const key = sub.user || sub.userEmail || sub.userName || String(sub._id ?? sub.id);
+      const product = sub.offerTitle || sub.packageName || sub.plan || '—';
+      const existing = map.get(key);
+      if (existing) {
+        if (!existing.products.includes(product)) existing.products.push(product);
+        if (!existing.userName && sub.userName) existing.userName = sub.userName;
+        if (!existing.userEmail && sub.userEmail) existing.userEmail = sub.userEmail;
+        if (!existing.sources.includes(sub.source)) existing.sources.push(sub.source);
+        if (
+          SUBSCRIPTION_STATUS_PRIORITY.indexOf(sub.status) >= 0 &&
+          SUBSCRIPTION_STATUS_PRIORITY.indexOf(sub.status) < SUBSCRIPTION_STATUS_PRIORITY.indexOf(existing.status)
+        ) {
+          existing.status = sub.status;
+        }
+        if (new Date(sub.currentPeriodEnd).getTime() > new Date(existing.latestPeriodEnd).getTime()) {
+          existing.latestPeriodEnd = sub.currentPeriodEnd;
+        }
+        continue;
+      }
+      map.set(key, {
+        key,
+        userName: sub.userName || '',
+        userEmail: sub.userEmail || '',
+        products: [product],
+        status: sub.status,
+        latestPeriodEnd: sub.currentPeriodEnd,
+        sources: [sub.source],
+      });
+    }
+    return Array.from(map.values());
+  }, [subscriptions]);
+
+  return (
+    <section className="rounded-2xl border border-ink-900/10 bg-white px-5 py-7 shadow-sm">
+      <div className="mb-5">
+        <h2 className="text-lg font-semibold text-ink-900">Suscritos a Academia</h2>
+        <p className="mt-1 text-sm text-ink-600">
+          Cualquiera que alguna vez tuvo acceso a Academia — activo, vencido o cancelado. Una fila por persona.
+        </p>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-ink-900/10">
+        <table className="min-w-full text-sm">
+          <thead className="bg-ink-50 text-left text-xs uppercase tracking-wider text-ink-600">
+            <tr>
+              <th className="px-4 py-3">Nombre</th>
+              <th className="px-4 py-3">Correo</th>
+              <th className="px-4 py-3">Productos</th>
+              <th className="px-4 py-3">Estado</th>
+              <th className="px-4 py-3">Vence el</th>
+              <th className="px-4 py-3">Fuente</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-ink-900/5">
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-10 text-center text-ink-500">Cargando…</td>
+              </tr>
+            ) : grouped.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-10 text-center text-ink-500">
+                  Nadie se ha suscrito a Academia todavía.
+                </td>
+              </tr>
+            ) : (
+              grouped.map((entry) => {
+                const status = SUBSCRIPTION_STATUS_LABELS[entry.status] ?? { label: entry.status, className: 'bg-ink-50 text-ink-500 border-ink-900/15' };
+                return (
+                  <tr key={entry.key} className="text-ink-900">
+                    <td className="px-4 py-3 font-medium">{entry.userName || '—'}</td>
+                    <td className="px-4 py-3">{entry.userEmail || '—'}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {entry.products.map((product) => (
+                          <span
+                            key={product}
+                            className="inline-flex items-center rounded-full border border-ink-900/15 bg-ink-50 px-2.5 py-0.5 text-xs text-ink-700"
+                          >
+                            {product}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs ${status.className}`}>
+                        {status.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-ink-600">{formatLeadDate(entry.latestPeriodEnd)}</td>
+                    <td className="px-4 py-3 text-ink-600">
+                      {entry.sources.map((source) => SUBSCRIPTION_SOURCE_LABELS[source] ?? source).join(', ')}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 export default function ManageContacts() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const activeTab: 'contacts' | 'tags' | 'leads' =
-    tabParam === 'tags' ? 'tags' : tabParam === 'leads' ? 'leads' : 'contacts';
+  const activeTab: 'contacts' | 'tags' | 'leads' | 'academia' =
+    tabParam === 'tags' ? 'tags' : tabParam === 'leads' ? 'leads' : tabParam === 'academia' ? 'academia' : 'contacts';
   const [search, setSearch] = useState('');
   const [tagFilter, setTagFilter] = useState<string | undefined>();
   const [segment, setSegment] = useState('');
@@ -320,6 +481,7 @@ export default function ManageContacts() {
 
   const showTags = () => setSearchParams({ tab: 'tags' });
   const showLeads = () => setSearchParams({ tab: 'leads' });
+  const showAcademia = () => setSearchParams({ tab: 'academia' });
 
   return (
     <div className="mx-auto max-w-[1180px]">
@@ -351,6 +513,13 @@ export default function ManageContacts() {
                 className={`pb-4 ${activeTab === 'leads' ? 'border-b-2 border-ink-900 text-ink-900' : 'text-ink-800 hover:text-ink-900'}`}
               >
                 Leads
+              </button>
+              <button
+                type="button"
+                onClick={showAcademia}
+                className={`pb-4 ${activeTab === 'academia' ? 'border-b-2 border-ink-900 text-ink-900' : 'text-ink-800 hover:text-ink-900'}`}
+              >
+                Suscritos a Academia
               </button>
             </nav>
           </div>
@@ -396,6 +565,8 @@ export default function ManageContacts() {
         <ManageTagsTab tags={tags} onSelectTag={(tagId) => showContacts(tagId)} />
       ) : activeTab === 'leads' ? (
         <LeadsTab />
+      ) : activeTab === 'academia' ? (
+        <AcademiaSubscribersTab />
       ) : (
       <section className="rounded-2xl border border-ink-900/10 bg-white px-5 py-7 shadow-sm">
         <div className="mb-8 flex flex-wrap items-center gap-5">
@@ -490,11 +661,12 @@ export default function ManageContacts() {
           </div>
         </div>
 
-        <div className="grid grid-cols-[28px_42px_1.45fr_1.2fr_1fr_0.7fr_0.8fr_0.8fr_28px] gap-3 border-b border-ink-900/15 px-3 py-4 text-sm font-semibold text-ink-900">
+        <div className="grid grid-cols-[28px_42px_1.45fr_1.2fr_1fr_1fr_0.7fr_0.8fr_0.8fr_28px] gap-3 border-b border-ink-900/15 px-3 py-4 text-sm font-semibold text-ink-900">
           <span />
           <span />
           <span>Nombre</span>
           <span>Correo</span>
+          <span>Teléfono</span>
           <span>Email Marketing</span>
           <span>Lifetime Value</span>
           <span>Added date</span>
@@ -514,7 +686,7 @@ export default function ManageContacts() {
               <button
                 key={id}
                 onClick={() => setSelectedId(id)}
-                className={`grid w-full grid-cols-[28px_42px_1.45fr_1.2fr_1fr_0.7fr_0.8fr_0.8fr_28px] items-center gap-3 px-3 py-5 text-left text-sm transition-colors ${
+                className={`grid w-full grid-cols-[28px_42px_1.45fr_1.2fr_1fr_1fr_0.7fr_0.8fr_0.8fr_28px] items-center gap-3 px-3 py-5 text-left text-sm transition-colors ${
                   isSel ? 'bg-[#eeeeee]' : 'hover:bg-[#f2f2f2]'
                 }`}
               >
@@ -537,6 +709,7 @@ export default function ManageContacts() {
                   <p className="text-[11px] text-ink-500 md:hidden">{c.email}</p>
                 </div>
                 <span className="truncate text-ink-700">{c.email}</span>
+                <span className="truncate text-ink-600">{c.phone || '—'}</span>
                 <span className="truncate text-ink-600">
                   {c.marketingStatus === 'subscribed' ? 'Subscribed' : c.marketingStatus === 'unsubscribed' ? 'Unsubscribed' : 'Never subscribed'}
                 </span>
@@ -1415,6 +1588,8 @@ function ContactDrawer({ contact, tags, onClose }: { contact: User; tags: Tag[];
   const userTags = tags.filter((t) => userTagIds.includes(t._id));
   const available = tags.filter((t) => !userTagIds.includes(t._id));
 
+  const { data: leadHistory = [] } = useLeadHistory(contact.email);
+
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="flex-1 bg-ink-900/40" onClick={onClose} />
@@ -1522,6 +1697,22 @@ function ContactDrawer({ contact, tags, onClose }: { contact: User; tags: Tag[];
               <option value="">Asignar etiqueta…</option>
               {available.map((t) => <option key={t._id} value={t._id}>{t.name}</option>)}
             </select>
+          </div>
+
+          <div className="mt-7">
+            <p className="text-[10px] uppercase tracking-[0.32em] text-ink-500 mb-2">Historial de formularios</p>
+            {leadHistory.length === 0 ? (
+              <p className="text-xs text-ink-500">Sin formularios registrados.</p>
+            ) : (
+              <ul className="space-y-2">
+                {leadHistory.map((l) => (
+                  <li key={l.id} className="flex items-center justify-between gap-3 border border-ink-900/10 bg-cream-200 px-3 py-2 text-xs">
+                    <span className="font-medium text-ink-900">{LEAD_SOURCE_LABELS[l.source] ?? l.source}</span>
+                    <span className="text-ink-500">{formatLeadDate(l.createdAt)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </aside>
