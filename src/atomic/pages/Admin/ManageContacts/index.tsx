@@ -605,7 +605,7 @@ function WhatsappClicksTab() {
                     <td className="whitespace-nowrap px-6 py-3 text-xs text-ink-600">{formatLeadDate(click.createdAt)}</td>
                     <td className="px-6 py-3 font-medium">{click.source}</td>
                     <td className="px-6 py-3 text-xs text-ink-600">{click.page || '—'}</td>
-                    <td className="max-w-[280px] truncate px-6 py-3 text-xs text-ink-600" title={click.message || ''}>{click.message || '—'}</td>
+                    <td className="max-w-[420px] whitespace-pre-wrap break-words px-6 py-3 text-xs text-ink-700" title={click.message || ''}>{click.message || '—'}</td>
                     <td className="px-6 py-3 font-mono text-[11px] text-ink-500">{(click.anonId || '').slice(0, 8) || '—'}</td>
                   </tr>
                 ))
