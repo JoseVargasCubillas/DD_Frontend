@@ -18,3 +18,6 @@ export const forgotPassword = (email: string) =>
 
 export const resetPassword = (data: { token: string; email: string; password: string }) =>
   client.post<ApiResponse<{ message: string }>>('/auth/reset-password', data).then((r) => r.data);
+
+export const changePassword = (data: { currentPassword: string; newPassword: string }) =>
+  client.post<ApiResponse<{ message: string }>>('/auth/change-password', data).then((r) => r.data);

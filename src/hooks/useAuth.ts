@@ -20,6 +20,12 @@ export const useAuth = () => {
     onSuccess: (data) => {
       setAuth(data);
       toast.success(`Bienvenido, ${data.user.name}`);
+      // Si el admin recien creo la cuenta o hizo reset, forzamos cambio de
+      // contrasena antes de dejar navegar al panel/cliente.
+      if ((data.user as any)?.mustChangePassword) {
+        navigate('/mi-cuenta/cambiar-contrasena?forzado=1');
+        return;
+      }
       // Si venimos de un flujo interrumpido (ej. "inicia sesion para
       // continuar tu compra" en el checkout de libros), regresa ahi en vez
       // del destino generico por rol — solo se acepta una ruta relativa

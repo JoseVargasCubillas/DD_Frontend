@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import * as usersApi from '@api/users.api';
 import { useUpdateProfile } from '@hooks/useUsers';
 import { useAuthStore } from '@store/authStore';
@@ -81,6 +82,21 @@ export default function Profile() {
           {!isDirty && <span className="text-[10px] uppercase tracking-[0.3em] text-ink-500 font-serif italic">sin cambios</span>}
         </div>
       </form>
+
+      <div className="border-t border-ink-900/15 pt-8">
+        <p className="text-[10px] uppercase tracking-[0.4em] text-ink-700 mb-2">Seguridad</p>
+        <h2 className="font-serif text-2xl text-ink-900">Contraseña</h2>
+        <p className="font-serif italic text-ink-600 mt-1 text-sm">
+          Actualiza tu contraseña cada cierto tiempo o si sospechas que alguien más tuvo acceso a tu cuenta.
+        </p>
+        <Link
+          to="/mi-cuenta/cambiar-contrasena"
+          className="mt-4 inline-flex items-center gap-2 border border-ink-900/25 px-5 py-3 text-[10px] uppercase tracking-[0.3em] text-ink-900 hover:bg-ink-900 hover:text-cream transition-colors cursor-pointer"
+        >
+          Cambiar contraseña
+          <span>→</span>
+        </Link>
+      </div>
     </div>
   );
 }

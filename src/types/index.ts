@@ -31,6 +31,7 @@ export interface User {
   signInCount?: number;
   isActive: boolean;
   isEmailVerified: boolean;
+  mustChangePassword?: boolean;
   lastLogin?: string;
   createdAt: string;
 }
@@ -348,7 +349,7 @@ export interface PaginatedResponse<T> {
 }
 
 export interface AuthResult {
-  user: Pick<User, "id" | "name" | "email" | "role">;
+  user: Pick<User, "id" | "name" | "email" | "role" | "mustChangePassword">;
   accessToken: string;
   refreshToken: string;
 }

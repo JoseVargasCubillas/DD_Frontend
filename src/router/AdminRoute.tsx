@@ -11,5 +11,6 @@ export default function AdminRoute({ children }: Props) {
     return <Navigate to={`/iniciar-sesion?redirect=${redirect}`} replace />;
   }
   if (user.role !== 'admin') return <Navigate to="/" replace />;
+  if (user.mustChangePassword) return <Navigate to="/mi-cuenta/cambiar-contrasena?forzado=1" replace />;
   return <>{children}</>;
 }

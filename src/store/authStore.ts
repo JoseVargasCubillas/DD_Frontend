@@ -4,7 +4,7 @@ import type { User, AuthResult } from '@t/index';
 import { queryClient } from '@utils/queryClient';
 
 interface AuthState {
-  user: Pick<User, 'id' | 'name' | 'email' | 'role'> | null;
+  user: Pick<User, 'id' | 'name' | 'email' | 'role' | 'mustChangePassword'> | null;
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;

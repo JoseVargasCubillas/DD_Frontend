@@ -34,6 +34,7 @@ const ForgotPassword = lazy(() => import("@pages/Auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("@pages/Auth/ResetPassword"));
 const MyCourses = lazy(() => import("@pages/Dashboard/MyCourses"));
 const Profile = lazy(() => import("@pages/Dashboard/Profile"));
+const ChangePassword = lazy(() => import("@pages/Dashboard/ChangePassword"));
 const Checkout = lazy(() => import("@pages/Checkout"));
 const EventCheckout = lazy(() => import("@pages/Events/EventCheckout"));
 const AdminDashboard = lazy(() => import("@pages/Admin/AdminDashboard"));
@@ -133,6 +134,7 @@ export const router = createBrowserRouter([
       { path: "/mi-cuenta", element: <MyCourses /> },
       { path: "/mi-cuenta/cursos", element: <MyCourses /> },
       { path: "/mi-cuenta/perfil", element: <Profile /> },
+      { path: "/mi-cuenta/cambiar-contrasena", element: <ChangePassword /> },
     ],
   },
   {
