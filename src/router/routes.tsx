@@ -63,7 +63,16 @@ const Privacidad = lazy(() => import("@pages/LegalDocuments/Privacidad"));
 const Faq = lazy(() => import("@pages/LegalDocuments/Faq"));
 const Receipt = lazy(() => import("@pages/Receipt"));
 const ReceiptOrder = lazy(() => import("@pages/ReceiptOrder"));
+const TerminosArquitectura = lazy(() => import("@pages/LegalDocuments/TerminosArquitectura"));
 export const router = createBrowserRouter([
+  // Ruta legal privada — solo por link directo, no aparece en navbar, footer
+  // ni sitemap. El componente inyecta <meta name="robots" content="noindex"> al
+  // montarse para evitar indexacion en buscadores.
+  {
+    path: "/legal/arquitectura-integral-diaz-lara",
+    element: <TerminosArquitectura />,
+    errorElement: <RouterErrorBoundary />,
+  },
   {
     element: <MainLayout />,
     errorElement: <RouterErrorBoundary />,
