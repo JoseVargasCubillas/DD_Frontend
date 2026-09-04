@@ -99,7 +99,14 @@ export default function SalesPayments() {
     staleTime: 30 * 1000,
   });
   const transactions = useMemo(() => {
-    return [...ordersToTransactions(orders, contacts), ...subscriptionsToTransactions(adminSubs)].sort(
+    // Las suscripciones de Academia con orderId ("order-backed", ver
+    // grantAcademiaAccess en el backend) son el mismo pago que ya aparece como
+    // Order — solo se incluyen aqui las que NO tienen Order detras (legado de
+    // Stripe Billing o acceso asignado a mano), para no contar el mismo pago dos veces.
+    const standaloneSubscriptionTransactions = subscriptionsToTransactions(adminSubs).filter(
+      (transaction) => transaction.kind !== "order",
+    );
+    return [...ordersToTransactions(orders, contacts), ...standaloneSubscriptionTransactions].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
   }, [orders, contacts, adminSubs]);
@@ -914,6 +921,23 @@ function MetricCard({
   );
 }
 
+const TRANSACTION_STATUS_STYLES: Record<SalesTransaction["status"], string> = {
+  completed: "bg-emerald-100 text-emerald-800",
+  refunded: "bg-ink-900/10 text-ink-600",
+  failed: "bg-amber-100 text-amber-800",
+};
+
+function TransactionStatusBadge({ status }: { status: SalesTransaction["status"] }) {
+  const label = TRANSACTION_STATUSES.find(([value]) => value === status)?.[1] ?? status;
+  return (
+    <span
+      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${TRANSACTION_STATUS_STYLES[status]}`}
+    >
+      {label}
+    </span>
+  );
+}
+
 function SimpleTransactionsTable({
   transactions,
   detailed,
@@ -937,6 +961,7 @@ function SimpleTransactionsTable({
             <th className="py-3 font-medium">Monto</th>
             <th className="py-3 font-medium">Título</th>
             {detailed && <th className="py-3 font-medium">Cliente</th>}
+            {detailed && <th className="py-3 font-medium">Estado</th>}
             <th className="py-3 font-medium">Fecha</th>
             {detailed && <th className="py-3" />}
           </tr>
@@ -957,6 +982,11 @@ function SimpleTransactionsTable({
                     {item.customer}
                   </strong>
                   {item.email}
+                </td>
+              )}
+              {detailed && (
+                <td className="py-5">
+                  <TransactionStatusBadge status={item.status} />
                 </td>
               )}
               <td className="py-5 text-ink-600">{formatDate(item.date)}</td>
