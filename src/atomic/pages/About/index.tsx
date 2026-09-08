@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useHeroReveal, useReveal } from '@hooks/useReveal';
 import LeadCaptureModal from '@molecules/LeadCaptureModal';
 import { requestMediaKit } from '@api/leads.api';
@@ -197,6 +198,18 @@ export default function About() {
   const [showAllPress, setShowAllPress] = useState(false);
   const [mediaKitOpen, setMediaKitOpen] = useState(false);
   const visiblePress = showAllPress ? press : press.slice(0, 8);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!location.hash) return;
+    const id = location.hash.slice(1);
+    // pequeño delay para que las secciones se monten
+    const t = setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+    return () => clearTimeout(t);
+  }, [location.hash, location.pathname]);
 
   return (
     <div className="bg-cream-50 text-ink-900">

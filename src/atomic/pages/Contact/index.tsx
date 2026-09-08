@@ -51,8 +51,8 @@ const intentions: Array<[string, string, string, string, IntentionLink]> = [
   [
     '04', 'Prensa & medios',
     'Entrevistas, columnas de opinión, conferencias keynote.',
-    'prensa@diegodiaz.mx',
-    { href: 'mailto:prensa@diegodiaz.mx', mail: true },
+    'Ver Diego en medios ↗',
+    { href: '/prensa#prensa' },
   ],
   [
     '05', 'Otro asunto',
