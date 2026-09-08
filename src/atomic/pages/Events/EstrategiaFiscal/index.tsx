@@ -813,7 +813,6 @@ export default function EstrategiaFiscalLanding() {
                   ['Estacionamiento', 'Valet parking incluido con identificación'],
                   ['Hotel aliado', 'JW Marriott · tarifa especial para asistentes'],
                   ['Transporte público', 'Metro Observatorio + shuttle Santa Fe'],
-                  ['Incluye', 'Coffee + comida + material'],
                 ].map(([term, detail]) => (
                   <div key={term} className="grid grid-cols-[112px_minmax(0,1fr)] gap-5 border-b border-cream-400 py-3 last:border-b-0">
                     <dt className="text-[8px] uppercase tracking-[0.34em] text-ink-300">{term}</dt>
