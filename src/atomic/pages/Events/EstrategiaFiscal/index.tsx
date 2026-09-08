@@ -801,18 +801,18 @@ export default function EstrategiaFiscalLanding() {
           <div className="mt-[52px] overflow-hidden border border-cream-400 md:grid md:min-h-[402px] md:grid-cols-[0.46fr_0.54fr]">
             <div className="min-h-[332px] bg-cream-200 px-8 py-12 md:min-h-[402px] lg:px-[32px]">
               <h3 className="text-[clamp(30px,3.4vw,42px)] font-normal leading-[0.95] tracking-[-0.045em] text-ink-900">
-                WTC Ciudad
-                <span className="block font-serif italic tracking-[-0.055em]">de México</span>
+                JW Marriott
+                <span className="block font-serif italic tracking-[-0.055em]">Santa Fe</span>
                 <span className="mt-2 block font-serif text-[16px] italic tracking-[-0.03em] text-ink-400">
-                  Nápoles, Benito Juárez
+                  Santa Fe, Cuajimalpa · CDMX
                 </span>
               </h3>
               <dl className="mt-[52px] space-y-0 border-y border-cream-400">
                 {[
-                  ['Dirección', 'Montecito 38, piso 35'],
-                  ['Estacionamiento', 'Incluido identificación'],
-                  ['Hotel aliado', 'Tarifa especial sin confirmación'],
-                  ['Transporte público', 'Metro San Antonio · L7'],
+                  ['Dirección', 'Av. Santa Fe 160, Santa Fe, Cuajimalpa'],
+                  ['Estacionamiento', 'Valet parking incluido con identificación'],
+                  ['Hotel aliado', 'JW Marriott · tarifa especial para asistentes'],
+                  ['Transporte público', 'Metro Observatorio + shuttle Santa Fe'],
                   ['Incluye', 'Coffee + comida + material'],
                 ].map(([term, detail]) => (
                   <div key={term} className="grid grid-cols-[112px_minmax(0,1fr)] gap-5 border-b border-cream-400 py-3 last:border-b-0">
@@ -824,8 +824,8 @@ export default function EstrategiaFiscalLanding() {
             </div>
             <div className="min-h-[360px] bg-white md:min-h-[402px]">
               <iframe
-                title="Mapa WTC Ciudad de México"
-                src="https://www.google.com/maps?q=WTC%20Ciudad%20de%20Mexico%20Montecito%2038&output=embed"
+                title="Mapa JW Marriott Santa Fe"
+                src="https://www.google.com/maps?q=JW%20Marriott%20Hotel%20Mexico%20City%20Santa%20Fe&output=embed"
                 className="h-[360px] w-full border-0 md:h-[402px]"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"

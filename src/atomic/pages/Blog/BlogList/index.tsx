@@ -36,7 +36,7 @@ function useCountdown(targetMs: number | null) {
 
 const monthShort = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const formatEventDate = (iso?: string) => {
-  if (!iso) return '15 Jun 2026 · WTC CDMX';
+  if (!iso) return '15 Jun 2026 · JW Marriott Santa Fe';
   const d = new Date(iso);
   return `${String(d.getDate()).padStart(2, '0')} ${monthShort[d.getMonth()]} ${d.getFullYear()}`;
 };
