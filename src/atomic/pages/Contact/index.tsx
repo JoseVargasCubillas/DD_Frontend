@@ -1,16 +1,65 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import diegoAjedrez from '../../../../assets/ddweb/diego-ajedrez.jpg';
-import { waLink, WHATSAPP_DEFAULT_MESSAGE, trackWaClick } from '@utils/whatsapp';
+import { waLink, WHATSAPP_DEFAULT_MESSAGE, WHATSAPP_PHONE, trackWaClick } from '@utils/whatsapp';
+
+const formatWaDisplay = (raw: string): string => {
+  // 5214421143667 → +52 1 442 114 3667
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 13 && digits.startsWith('521')) {
+    return `+52 1 ${digits.slice(3, 6)} ${digits.slice(6, 9)} ${digits.slice(9)}`;
+  }
+  return `+${digits}`;
+};
+const WA_DISPLAY = formatWaDisplay(WHATSAPP_PHONE);
 
 const mono = 'font-mono text-[13px] uppercase tracking-[0.14em] text-ink-900/55';
 const border = 'border-ink-900/10';
 
-const intentions = [
-  ['01', 'Asistir a un evento', 'Reservar cupo, dudas de logística, traer un equipo, recibir agenda completa.', '/ eventos'],
-  ['02', 'Academia & cursos', 'Programas en línea, formación a equipo y certificaciones internas.', '/ academia'],
-  ['03', 'Consultoría Díaz Lara', 'Reestructura fiscal, holdings, defensa SAT, planeación patrimonial.', 'diaz-lara.mx ↗'],
-  ['04', 'Prensa & medios', 'Entrevistas, columnas de opinión, conferencias keynote.', 'prensa@'],
-  ['05', 'Otro asunto', 'Colaboraciones, propuestas, podcast, alianzas o mentorías.', 'hola@'],
+// Mensajes por intencion — cuando la card apunta a WhatsApp o al form, el
+// mensaje ya carga con el contexto para que Diego lo lea de una.
+const intentionMessages: Record<string, string> = {
+  'Asistir a un evento': 'Hola Diego, quiero información sobre un evento (reservar cupo, logística o agenda).',
+  'Academia & cursos': 'Hola Diego, tengo dudas sobre la Academia y los cursos (programas, formación de equipo o certificaciones).',
+  'Consultoría Díaz Lara': 'Hola Diego, me interesa la consultoría de Díaz Lara (reestructura fiscal, holdings, defensa SAT o planeación patrimonial).',
+  'Prensa & medios': 'Hola Diego, escribo desde medios (entrevista, columna o conferencia keynote).',
+  'Otro asunto': 'Hola Diego, quiero platicarte otro asunto (colaboración, propuesta, podcast, alianza o mentoría).',
+};
+
+// Cada card de intencion es un link real que navega a la seccion correspondiente
+// del sitio (o a un canal externo). El "route" es el texto que se muestra abajo.
+type IntentionLink = { external?: boolean; wa?: boolean; mail?: boolean; href: string };
+const intentions: Array<[string, string, string, string, IntentionLink]> = [
+  [
+    '01', 'Asistir a un evento',
+    'Reservar cupo, dudas de logística, traer un equipo, recibir agenda completa.',
+    '/ eventos',
+    { href: '/eventos' },
+  ],
+  [
+    '02', 'Academia & cursos',
+    'Programas en línea, formación a equipo y certificaciones internas.',
+    '/ academia',
+    { href: '/academia' },
+  ],
+  [
+    '03', 'Consultoría Díaz Lara',
+    'Reestructura fiscal, holdings, defensa SAT, planeación patrimonial.',
+    'diaz-lara.mx ↗',
+    { href: '/diaz-lara' },
+  ],
+  [
+    '04', 'Prensa & medios',
+    'Entrevistas, columnas de opinión, conferencias keynote.',
+    'prensa@diegodiaz.mx',
+    { href: 'mailto:prensa@diegodiaz.mx', mail: true },
+  ],
+  [
+    '05', 'Otro asunto',
+    'Colaboraciones, propuestas, podcast, alianzas o mentorías.',
+    'WhatsApp directo ↗',
+    { href: waLink(intentionMessages['Otro asunto']), external: true, wa: true },
+  ],
 ];
 
 const responseTimes = [
@@ -21,24 +70,26 @@ const responseTimes = [
 ];
 
 const channels: Array<[string, string, string, string, string, string?]> = [
-  ['— Canal 01 · Más rápido', 'WhatsApp', 'Para asuntos urgentes, cierres de cupo, dudas concretas. Te responde Diego o su jefa de gabinete.', '+52 1 442 114 3667', 'Abrir conversación →', waLink(WHATSAPP_DEFAULT_MESSAGE)],
+  ['— Canal 01 · Más rápido', 'WhatsApp', 'Para asuntos urgentes, cierres de cupo, dudas concretas. Te responde Diego o su jefa de gabinete.', WA_DISPLAY, 'Abrir conversación →', waLink(WHATSAPP_DEFAULT_MESSAGE)],
   ['— Canal 02', 'Por correo', 'Para asuntos formales, propuestas, prensa, documentación adjunta o cuando el detalle importa.', 'hola@diegodiaz.mx', 'Redactar correo →', 'mailto:hola@diegodiaz.mx'],
-  ['— Canal 03', 'Llamada agendada', '30 minutos con la jefa de gabinete para mapear si Diego es la persona correcta para ayudarte.', 'Agenda privada', 'Agendar llamada →', '/contacto#formulario'],
+  ['— Canal 03', 'Llamada agendada', '30 minutos con la jefa de gabinete para mapear si Diego es la persona correcta para ayudarte.', 'Agenda privada', 'Agendar llamada →', waLink('Hola Diego, me gustaría agendar una llamada de 30 min para valorar si podemos trabajar juntos.')],
 ];
 
-const pressResources = [
-  ['Dossier biográfico (PDF)', 'PDF · 2.4 MB ↓'],
-  ['Fotografías en alta resolución', 'ZIP · 18 fotos ↓'],
-  ['Agenda pública 2026', 'Ver →'],
-  ['Solicitud de entrevista', 'Prensa@ →'],
-  ['Solicitud de ponencia / keynote', 'Formulario →'],
+// Cada recurso de prensa apunta ahora a un canal real (mailto prensa o
+// WhatsApp con contexto) en vez de un href="#".
+const pressResources: Array<[string, string, string]> = [
+  ['Dossier biográfico (PDF)', 'Solicitar por prensa@ →', 'mailto:prensa@diegodiaz.mx?subject=Solicitud%20de%20dossier%20biogr%C3%A1fico'],
+  ['Fotografías en alta resolución', 'Solicitar por prensa@ →', 'mailto:prensa@diegodiaz.mx?subject=Solicitud%20de%20fotograf%C3%ADas%20en%20alta%20resoluci%C3%B3n'],
+  ['Agenda pública 2026', 'Ver eventos →', '/eventos'],
+  ['Solicitud de entrevista', 'Prensa@ →', 'mailto:prensa@diegodiaz.mx?subject=Solicitud%20de%20entrevista'],
+  ['Solicitud de ponencia / keynote', 'Prensa@ →', 'mailto:prensa@diegodiaz.mx?subject=Solicitud%20de%20ponencia%20%2F%20keynote'],
 ];
 
-const socialLinks = [
-  ['Red 01', '@diegodiazmr', 'LinkedIn · 84.2K seguidores', 'Seguir →'],
-  ['Red 02', '@diego.diaz.mx', 'Instagram · 32.5K seguidores', 'Seguir →'],
-  ['Red 03', '@DDiazFiscal', 'X / Twitter · 18.9K seguidores', 'Seguir →'],
-  ['Red 04', 'El Estratega', 'YouTube · 12.4K suscriptores', 'Suscribirme →'],
+const socialLinks: Array<[string, string, string, string, string]> = [
+  ['Red 01', '@diegodiazmr', 'LinkedIn · 84.2K seguidores', 'Seguir →', 'https://www.linkedin.com/in/diegodiazmr/'],
+  ['Red 02', '@diego.diaz.mx', 'Instagram · 32.5K seguidores', 'Seguir →', 'https://www.instagram.com/diego.diaz.mx/'],
+  ['Red 03', '@DDiazFiscal', 'X / Twitter · 18.9K seguidores', 'Seguir →', 'https://x.com/DDiazFiscal'],
+  ['Red 04', 'El Estratega', 'YouTube · 12.4K suscriptores', 'Suscribirme →', 'https://www.youtube.com/@ElEstratega'],
 ];
 
 export default function Contact() {
@@ -83,38 +134,61 @@ export default function Contact() {
           <span className={`${mono} hidden md:block`}>5 intenciones · elige 1</span>
         </div>
         <div className={`mt-14 grid items-stretch gap-4 md:grid-cols-2 lg:grid-cols-5`}>
-          {intentions.map(([n, title, body, route]) => (
-            <button
-              key={title}
-              type="button"
-              onClick={() => setIntent(title)}
-              className={`group flex aspect-square w-full min-w-0 cursor-pointer flex-col border ${border} bg-cream-50 p-5 text-left text-ink-900 transition-colors duration-300 hover:border-ink-900 hover:bg-ink-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900/35`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-900/45 transition-colors duration-300 group-hover:text-white/55">
-                  — Intención {n}
-                </span>
-                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-ink-900/10 text-[13px] leading-none text-ink-900/45 transition-colors duration-300 group-hover:border-white/35 group-hover:bg-white group-hover:text-ink-900">
-                  +
-                </span>
-              </div>
-              <h3 className="mt-6 max-w-[185px] font-serif text-[clamp(23px,1.9vw,27px)] leading-[1.02] tracking-[-0.04em]">
-                {title.includes(' & ') ? (
-                  <>
-                    {title.split(' & ')[0]} <span className="font-serif italic">&</span><br />{title.split(' & ')[1]}
-                  </>
-                ) : title.includes('Díaz Lara') ? (
-                  <>
-                    Consultoría Díaz<br />Lara
-                  </>
-                ) : title}
-              </h3>
-              <p className="mt-4 text-[13px] leading-[1.45] text-ink-900/62 transition-colors duration-300 group-hover:text-white/68">{body}</p>
-              <p className="mt-auto border-t border-ink-900/10 pt-4 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-900/45 transition-colors duration-300 group-hover:border-white/15 group-hover:text-white/60">
-                → {route}
-              </p>
-            </button>
-          ))}
+          {intentions.map(([n, title, body, route, link]) => {
+            const cardClass = `group flex aspect-square w-full min-w-0 cursor-pointer flex-col border ${border} bg-cream-50 p-5 text-left text-ink-900 no-underline transition-colors duration-300 hover:border-ink-900 hover:bg-ink-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900/35`;
+            const content = (
+              <>
+                <div className="flex items-start justify-between gap-4">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-900/45 transition-colors duration-300 group-hover:text-white/55">
+                    — Intención {n}
+                  </span>
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-ink-900/10 text-[13px] leading-none text-ink-900/45 transition-colors duration-300 group-hover:border-white/35 group-hover:bg-white group-hover:text-ink-900">
+                    +
+                  </span>
+                </div>
+                <h3 className="mt-6 max-w-[185px] font-serif text-[clamp(23px,1.9vw,27px)] leading-[1.02] tracking-[-0.04em]">
+                  {title.includes(' & ') ? (
+                    <>
+                      {title.split(' & ')[0]} <span className="font-serif italic">&</span><br />{title.split(' & ')[1]}
+                    </>
+                  ) : title.includes('Díaz Lara') ? (
+                    <>
+                      Consultoría Díaz<br />Lara
+                    </>
+                  ) : title}
+                </h3>
+                <p className="mt-4 text-[13px] leading-[1.45] text-ink-900/62 transition-colors duration-300 group-hover:text-white/68">{body}</p>
+                <p className="mt-auto border-t border-ink-900/10 pt-4 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-900/45 transition-colors duration-300 group-hover:border-white/15 group-hover:text-white/60">
+                  → {route}
+                </p>
+              </>
+            );
+            const onClick = () => {
+              setIntent(title);
+              if (link.wa) trackWaClick(`contact-intention-${n}`, { message: intentionMessages[title] });
+            };
+            const isInternal = link.href.startsWith('/') && !link.external;
+            if (isInternal) {
+              return (
+                <Link key={title} to={link.href} onClick={onClick} className={cardClass} aria-label={`${title} — ${route}`}>
+                  {content}
+                </Link>
+              );
+            }
+            return (
+              <a
+                key={title}
+                href={link.href}
+                onClick={onClick}
+                target={link.external ? '_blank' : undefined}
+                rel={link.external ? 'noreferrer noopener' : undefined}
+                className={cardClass}
+                aria-label={`${title} — ${route}`}
+              >
+                {content}
+              </a>
+            );
+          })}
         </div>
       </section>
 
@@ -286,18 +360,23 @@ export default function Contact() {
         </div>
 
         <div className={`border ${border}`}>
-          {pressResources.map(([title, action]) => (
-            <a
-              key={title}
-              href={action.toLowerCase().includes('prensa') ? 'mailto:prensa@diegodiaz.mx' : '#'}
-              className={`group grid min-h-[70px] items-center gap-4 border-b ${border} px-7 py-5 transition-colors duration-300 last:border-b-0 hover:bg-ink-900 hover:text-white md:grid-cols-[1fr_auto]`}
-            >
-              <span className="font-serif text-[18px] italic leading-tight">{title}</span>
-              <span className="font-mono text-[12px] uppercase tracking-[0.16em] text-ink-900 transition-colors duration-300 group-hover:text-white">
-                {action}
-              </span>
-            </a>
-          ))}
+          {pressResources.map(([title, action, href]) => {
+            const isInternal = href.startsWith('/');
+            const inner = (
+              <>
+                <span className="font-serif text-[18px] italic leading-tight">{title}</span>
+                <span className="font-mono text-[12px] uppercase tracking-[0.16em] text-ink-900 transition-colors duration-300 group-hover:text-white">
+                  {action}
+                </span>
+              </>
+            );
+            const cls = `group grid min-h-[70px] items-center gap-4 border-b ${border} px-7 py-5 transition-colors duration-300 last:border-b-0 hover:bg-ink-900 hover:text-white md:grid-cols-[1fr_auto]`;
+            return isInternal ? (
+              <Link key={title} to={href} className={cls}>{inner}</Link>
+            ) : (
+              <a key={title} href={href} className={cls}>{inner}</a>
+            );
+          })}
         </div>
       </section>
 
@@ -322,10 +401,12 @@ export default function Contact() {
           </div>
 
           <div className="mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {socialLinks.map(([network, handle, detail, cta]) => (
+            {socialLinks.map(([network, handle, detail, cta, url]) => (
               <a
                 key={handle}
-                href="#"
+                href={url}
+                target="_blank"
+                rel="noreferrer noopener"
                 className={`group flex min-h-[170px] cursor-pointer flex-col border ${border} bg-cream-50 p-7 text-ink-900 transition-colors duration-300 hover:border-ink-900 hover:bg-ink-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900/35`}
                 aria-label={`${cta.replace(' →', '')} ${handle}`}
               >
