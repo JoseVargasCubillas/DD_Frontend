@@ -826,7 +826,7 @@ export default function EstrategiaFiscalLanding() {
               <iframe
                 title="Mapa JW Marriott Santa Fe"
                 src="https://www.google.com/maps?q=JW%20Marriott%20Hotel%20Mexico%20City%20Santa%20Fe&output=embed"
-                className="h-[360px] w-full border-0 md:h-[402px]"
+                className="block h-full min-h-[360px] w-full border-0 md:min-h-[402px]"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               />
