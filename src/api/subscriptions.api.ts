@@ -16,7 +16,6 @@ export interface AdminSubscriptionRow extends Subscription {
   price?: number | null;
   currency?: string | null;
   createdAt?: string;
-  source?: 'order' | 'stripe' | 'manual_admin';
 }
 
 export const listAllSubscriptions = (): Promise<AdminSubscriptionRow[]> =>

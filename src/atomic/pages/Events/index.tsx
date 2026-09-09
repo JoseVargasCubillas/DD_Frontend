@@ -78,6 +78,11 @@ const DEPRECATED_EVENT_SLUGS = new Set([
   "equipos-creativos",
   "blindaje-patrimonial",
   "estrategia-rockefeller",
+  // Ocultamos la Cumbre de Prospección Digital del calendario hasta que
+  // vuelva a haber una edición programada. La landing sigue accesible por
+  // URL directa (/eventos/cumbre-sistema-prospeccion-digital) para quienes
+  // ya tienen el link.
+  "cumbre-sistema-prospeccion-digital",
 ]);
 
 const LEGACY_PLACEHOLDER_PHONES = new Set([
@@ -880,7 +885,9 @@ export default function Events() {
       mergeCalendarGroups(eventGroups, dynamicGroups)
         .map((group) => ({
           ...group,
-          events: group.events.filter(isUpcomingEventCard),
+          events: group.events
+            .filter((event) => !DEPRECATED_EVENT_SLUGS.has(getEventCardSlug(event)))
+            .filter(isUpcomingEventCard),
         }))
         .filter((group) => group.events.length > 0),
     [dynamicGroups],

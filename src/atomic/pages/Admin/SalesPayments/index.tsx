@@ -40,7 +40,6 @@ interface SubscriptionRow {
   offer: string;
   createdAt: string;
   contactId?: string;
-  isManual: boolean;
 }
 
 type SalesRange =
@@ -476,7 +475,7 @@ function SubscriptionsTab({
     )
     .filter((item) => !excludedStatuses.has(item.status));
   const monthlyRecurringRevenue = subscriptions.reduce(
-    (sum, item) => sum + (item.isManual ? 0 : item.amount),
+    (sum, item) => sum + item.amount,
     0,
   );
   const newLast30Days = subscriptions.filter(
@@ -1341,10 +1340,7 @@ function ordersToTransactions(
 
 function subscriptionsToTransactions(subs: AdminSubscriptionRow[]): SalesTransaction[] {
   return subs
-    // Acceso otorgado a mano por un admin (assignPackageToUser / importacion,
-    // ver source en listAllSubscriptions) no es un pago real — no debe
-    // aparecer como transaccion ni contar en ingresos/mejores clientes/ofertas.
-    .filter((sub) => sub.price && sub.source !== 'manual_admin')
+    .filter((sub) => sub.price)
     .map((sub) => {
       const id = String(sub._id || sub.id || crypto.randomUUID());
       const title = sub.offerTitle || sub.packageName || `Academia ${sub.plan}`;
@@ -1494,9 +1490,6 @@ function adminSubscriptionsToRows(subs: AdminSubscriptionRow[]): SubscriptionRow
     offer: sub.offerTitle || sub.packageName || sub.plan || "Academia",
     createdAt: sub.createdAt || sub.startDate || sub.currentPeriodEnd,
     contactId: sub.user,
-    // Acceso otorgado a mano por un admin (ver source en listAllSubscriptions):
-    // es una suscripcion real pero no un pago, no debe sumar a ingresos recurrentes.
-    isManual: sub.source === "manual_admin",
   }));
 }
 
