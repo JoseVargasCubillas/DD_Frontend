@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useCartStore } from '@store/cartStore';
 import { waLink, trackWaClick } from '@utils/whatsapp';
 import prospeccionHero from '../../../../../assets/eventos/prospeccion-digital-hero.png';
 
@@ -33,7 +34,39 @@ const WA_MESSAGE =
 
 const reserveHref = waLink(WA_MESSAGE);
 
+type Ticket = {
+  refId: string;
+  eyebrow: string;
+  label: string;
+  price: string;
+  priceValue: number;
+  primary: boolean;
+};
+
+const tickets: Ticket[] = [
+  {
+    refId: 'prospeccion-digital-lista',
+    eyebrow: 'Precio Lista',
+    label: 'Cumbre Sistema de Prospección Digital',
+    price: '$14,997',
+    priceValue: 14997,
+    primary: true,
+  },
+  {
+    refId: 'prospeccion-digital-invitado',
+    eyebrow: 'Invitado Adicional',
+    label: 'Cumbre Sistema de Prospección Digital · invitado',
+    price: '$7,498.50',
+    priceValue: 7498.5,
+    primary: false,
+  },
+];
+
 export default function ProspeccionDigitalLanding() {
+  const navigate = useNavigate();
+  const addItem = useCartStore((s) => s.addItem);
+  const clearCart = useCartStore((s) => s.clear);
+
   useEffect(() => {
     const prev = document.title;
     document.title = 'Sistema de Prospección Digital — Cumbre · Diego Díaz';
@@ -46,6 +79,26 @@ export default function ProspeccionDigitalLanding() {
       meta.remove();
     };
   }, []);
+
+  const scrollToInversion = () => {
+    const el = document.getElementById('inversion');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const buyTicket = (ticket: Ticket) => {
+    clearCart();
+    addItem({
+      id: `event-${ticket.refId}`,
+      type: 'event',
+      refId: ticket.refId,
+      title: ticket.label,
+      price: ticket.priceValue,
+      quantity: 1,
+      currency: 'MXN',
+      paymentType: 'one_time',
+    });
+    navigate('/eventos/checkout');
+  };
 
   return (
     <div className="bg-cream-50 text-ink-900">
@@ -89,15 +142,13 @@ export default function ProspeccionDigitalLanding() {
             convertir prospectos de alto valor.
           </p>
 
-          <a
-            href={reserveHref}
-            target="_blank"
-            rel="noreferrer noopener"
-            onClick={() => trackWaClick('prospeccion-hero-cta', { message: WA_MESSAGE })}
-            className="mt-10 inline-flex items-center gap-3 border border-white bg-white px-8 py-4 font-mono text-[12px] uppercase tracking-[0.14em] text-ink-900 transition-colors duration-300 hover:bg-transparent hover:text-white"
+          <button
+            type="button"
+            onClick={scrollToInversion}
+            className="mt-10 inline-flex items-center gap-3 border border-white bg-white px-8 py-4 font-mono text-[12px] uppercase tracking-[0.14em] text-ink-900 transition-colors duration-300 hover:bg-transparent hover:text-white cursor-pointer"
           >
-            Quiero mi lugar <span aria-hidden="true">→</span>
-          </a>
+            Quiero mi lugar <span aria-hidden="true">↓</span>
+          </button>
         </div>
       </section>
 
@@ -181,31 +232,64 @@ export default function ProspeccionDigitalLanding() {
       </section>
 
       {/* ── 05 · INVERSIÓN ────────────────────────────────────────── */}
-      <section className="bg-cream-200 py-20 lg:py-24">
+      <section id="inversion" className="scroll-mt-24 bg-cream-200 py-20 lg:py-24">
         <div className="container-app">
           <p className={marker}>Inversión</p>
           <div className="mt-10 grid gap-6 md:grid-cols-2">
-            <div className="flex items-center justify-between gap-6 border border-ink-900 bg-ink-900 p-8 text-white transition-transform duration-500 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
-              <div>
-                <p className="font-serif text-[16px] italic">Precio Lista</p>
-                <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.1em] text-white/55">IVA incluido</p>
-              </div>
-              <p className="whitespace-nowrap text-right font-sans text-[clamp(36px,4.4vw,52px)] font-bold tracking-[-0.015em]">
-                $14,997
-                <sup className="ml-1 align-middle font-mono text-[13px] font-normal">MXN</sup>
-              </p>
-            </div>
-            <div className="flex items-center justify-between gap-6 border border-ink-900 bg-cream-50 p-8 transition-transform duration-500 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(10,10,10,0.14)]">
-              <div>
-                <p className="font-serif text-[16px] italic">Invitado Adicional</p>
-                <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-500">IVA incluido</p>
-              </div>
-              <p className="whitespace-nowrap text-right font-sans text-[clamp(36px,4.4vw,52px)] font-bold tracking-[-0.015em]">
-                $7,498.50
-                <sup className="ml-1 align-middle font-mono text-[13px] font-normal">MXN</sup>
-              </p>
-            </div>
+            {tickets.map((ticket) => {
+              const dark = ticket.primary;
+              return (
+                <div
+                  key={ticket.refId}
+                  className={`flex flex-col justify-between gap-6 border border-ink-900 p-8 transition-transform duration-500 hover:-translate-y-1 ${
+                    dark
+                      ? 'bg-ink-900 text-white hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)]'
+                      : 'bg-cream-50 text-ink-900 hover:shadow-[0_20px_40px_rgba(10,10,10,0.14)]'
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-6">
+                    <div>
+                      <p className="font-serif text-[16px] italic">{ticket.eyebrow}</p>
+                      <p
+                        className={`mt-2 font-mono text-[11px] uppercase tracking-[0.1em] ${
+                          dark ? 'text-white/55' : 'text-ink-500'
+                        }`}
+                      >
+                        IVA incluido
+                      </p>
+                    </div>
+                    <p className="whitespace-nowrap text-right font-sans text-[clamp(36px,4.4vw,52px)] font-bold tracking-[-0.015em]">
+                      {ticket.price}
+                      <sup className="ml-1 align-middle font-mono text-[13px] font-normal">MXN</sup>
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => buyTicket(ticket)}
+                    className={`inline-flex cursor-pointer items-center justify-center gap-3 border px-8 py-4 font-mono text-[12px] uppercase tracking-[0.14em] transition-colors duration-300 ${
+                      dark
+                        ? 'border-white bg-white text-ink-900 hover:bg-transparent hover:text-white'
+                        : 'border-ink-900 bg-ink-900 text-white hover:bg-transparent hover:text-ink-900'
+                    }`}
+                  >
+                    Comprar ahora <span aria-hidden="true">→</span>
+                  </button>
+                </div>
+              );
+            })}
           </div>
+          <p className="mt-8 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-500">
+            ¿Prefieres coordinar por WhatsApp?{' '}
+            <a
+              href={reserveHref}
+              target="_blank"
+              rel="noreferrer noopener"
+              onClick={() => trackWaClick('prospeccion-inversion-wa', { message: WA_MESSAGE })}
+              className="underline underline-offset-4 hover:text-ink-900"
+            >
+              Escríbenos aquí →
+            </a>
+          </p>
         </div>
       </section>
 
@@ -218,15 +302,13 @@ export default function ProspeccionDigitalLanding() {
             circuito de conversión y una campaña lista para implementarse.
           </blockquote>
           <div className="mt-12">
-            <a
-              href={reserveHref}
-              target="_blank"
-              rel="noreferrer noopener"
-              onClick={() => trackWaClick('prospeccion-final-cta', { message: WA_MESSAGE })}
-              className="inline-flex items-center gap-3 border border-white bg-white px-8 py-4 font-mono text-[12px] uppercase tracking-[0.14em] text-ink-900 transition-colors duration-300 hover:bg-transparent hover:text-white"
+            <button
+              type="button"
+              onClick={scrollToInversion}
+              className="inline-flex cursor-pointer items-center gap-3 border border-white bg-white px-8 py-4 font-mono text-[12px] uppercase tracking-[0.14em] text-ink-900 transition-colors duration-300 hover:bg-transparent hover:text-white"
             >
-              Reservar mi lugar <span aria-hidden="true">→</span>
-            </a>
+              Reservar mi lugar <span aria-hidden="true">↑</span>
+            </button>
           </div>
           <p className="mt-10 font-mono text-[11px] uppercase tracking-[0.14em] text-white/45">
             Sistema de Prospección Digital · 4 y 5 de septiembre
