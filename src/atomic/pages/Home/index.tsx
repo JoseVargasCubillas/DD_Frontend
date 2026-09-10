@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from "react";
 import toast from "react-hot-toast";
 import HeroSection from "@organisms/HeroSection";
@@ -29,7 +30,7 @@ import imgRockefeller from "../../../../assets/home/006_home_rockefeller_DD.png"
 
 // Assets
 import imgBio from "../../../../assets/home/007_home_bios_DD.png";
-import imgGuia from "../../../../assets/home/010_home_guía_DD.png";
+import imgGuia from "../../../../assets/home/010_home_iniciativa_fiscal_2027_DD.png";
 import logoAzteca from "../../../../assets/home/008_home_logo1_DD.png";
 import logoLider from "../../../../assets/home/009_home_logo2_DD.png";
 import logoMilenio from "../../../../assets/home/010_home_logo3_DD.png";
@@ -312,6 +313,21 @@ const TESTIMONIALS = [
 
 /* ═══════════════════════════════════════════════ */
 export default function Home() {
+  const location = useLocation();
+  // Deep-link a #iniciativa-fiscal-2027 (para publicaciones de Instagram que
+  // deben llevar directo al bloque de descarga de la iniciativa fiscal). El
+  // scroll espera un frame porque los AnimateIn tardan en montar la seccion.
+  useEffect(() => {
+    const hash = location.hash?.replace('#', '');
+    if (!hash) return;
+    const scroll = () => {
+      const el = document.getElementById(hash);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    const timer = window.setTimeout(scroll, 250);
+    return () => window.clearTimeout(timer);
+  }, [location.hash]);
+
   const { data: eventsData } = useEvents({ limit: 100, status: "upcoming" });
   const [storedEvents, setStoredEvents] = useState<CalendarEventSummary[]>(
     loadStoredCalendarEvents,
@@ -916,7 +932,7 @@ export default function Home() {
       </section>
 
       {/* ── 06 Guía SAT (dark) ──────────────────── */}
-      <section className="bg-ink-900 overflow-hidden">
+      <section id="iniciativa-fiscal-2027" className="bg-ink-900 overflow-hidden scroll-mt-24">
         <div className="container-app relative min-h-[720px] pt-8 pb-20 lg:min-h-[805px] lg:pt-2 lg:pb-0">
           <div className="relative z-10 max-w-[820px] pt-10 lg:pt-[68px]">
             <AnimateIn variant="slide-right">
@@ -924,11 +940,11 @@ export default function Home() {
                 <p className="section-label-inv">05 / Lectura recomendada</p>
 
                 <h2 className="mt-14 text-[clamp(44px,6vw,82px)] font-normal leading-[1.08] text-white">
-                  Hoy te regalamos.
+                  Iniciativa Fiscal 2027:
                   <br />
-                  <em className="font-serif italic">La mejor guía para</em>
+                  <em className="font-serif italic">15 cambios que ya</em>
                   <br />
-                  <em className="font-serif italic">blindarte del SAT.</em>
+                  <em className="font-serif italic">debes tener en el radar.</em>
                 </h2>
 
                 <p className="mt-14 text-[clamp(16px,1.4vw,21px)] text-ink-100 leading-[1.25] max-w-[760px]">
@@ -989,11 +1005,11 @@ export default function Home() {
                 )}
 
                 <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] uppercase tracking-[0.25em] text-ink-400">
-                  <span className="whitespace-nowrap">40 páginas</span>
+                  <span className="whitespace-nowrap">Iniciativa 2027</span>
                   <span aria-hidden="true">·</span>
                   <span className="whitespace-nowrap">PDF</span>
                   <span aria-hidden="true">·</span>
-                  <span className="whitespace-nowrap">Versión 2026</span>
+                  <span className="whitespace-nowrap">15 puntos clave</span>
                 </div>
               </div>
             </AnimateIn>
@@ -1005,7 +1021,7 @@ export default function Home() {
               <div className="flex justify-center lg:justify-end">
                 <BookTilt
                   src={imgGuia}
-                  alt="Guía para blindarte del SAT"
+                  alt="Iniciativa Fiscal 2027 — Guía de 15 cambios clave"
                   imgClassName="w-full max-w-[420px] lg:max-w-[540px] xl:max-w-[600px] object-contain"
                 />
               </div>
