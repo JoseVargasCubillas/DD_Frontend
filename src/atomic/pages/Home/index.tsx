@@ -442,7 +442,7 @@ export default function Home() {
       }
       const email = guideEmail.trim();
       if (!email) {
-        toast.error("Escribe tu correo para enviarte la guía.");
+        toast.error("Escribe tu correo para enviarte el documento.");
         return;
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -463,7 +463,7 @@ export default function Home() {
         toast.success("Listo. Revisa tu bandeja de entrada.");
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "No pudimos enviarte la guía.";
+          err instanceof Error ? err.message : "No pudimos enviarte el documento.";
         toast.error(message);
       } finally {
         setGuideSubmitting(false);
@@ -948,7 +948,7 @@ export default function Home() {
                 </h2>
 
                 <p className="mt-14 text-[clamp(16px,1.4vw,21px)] text-ink-100 leading-[1.25] max-w-[760px]">
-                  Descarga gratuita. Recibe la guía en tu email en menos de un
+                  Descarga gratuita. Recibe el documento en tu email en menos de un
                   minuto. Sin spam, y cancelación con un click.
                 </p>
 
@@ -1000,7 +1000,7 @@ export default function Home() {
 
                 {guideSent && (
                   <p className="mt-4 text-[13px] text-cream-100/80">
-                    Enviamos la guía a <span className="text-white">{guideEmail}</span>. Revisa la bandeja de entrada y la carpeta de promociones.
+                    Enviamos el documento a <span className="text-white">{guideEmail}</span>. Revisa la bandeja de entrada y la carpeta de promociones.
                   </p>
                 )}
 
@@ -1021,7 +1021,7 @@ export default function Home() {
               <div className="flex justify-center lg:justify-end">
                 <BookTilt
                   src={imgGuia}
-                  alt="Iniciativa Fiscal 2027 — Guía de 15 cambios clave"
+                  alt="Iniciativa Fiscal 2027 — Documento con 15 cambios clave"
                   imgClassName="w-full max-w-[420px] lg:max-w-[540px] xl:max-w-[600px] object-contain"
                 />
               </div>
