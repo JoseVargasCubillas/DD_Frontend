@@ -1225,7 +1225,7 @@ function TopOffers({ offers }: { offers: ReturnType<typeof summarizeOffers> }) {
     <div className="mt-6 space-y-4">
       {offers.slice(0, 5).map((offer, index) => (
         <div
-          key={offer.title}
+          key={`${offer.title || 'sin-titulo'}-${index}`}
           className="flex items-center justify-between gap-4 rounded-xl border border-ink-900/10 p-4"
         >
           <div>
@@ -1257,11 +1257,17 @@ function TopCustomers({
     );
   }
 
+  // key estable: contactId → email → name+total+index para evitar colisiones
+  // cuando hay varios "Cliente no asociado / sin-email" (mismo email vacio) y
+  // React deja fragmentos del render anterior al cambiar de filtro.
+  const keyFor = (c: (typeof top)[number], idx: number) =>
+    c.contactId || c.email || `__c-${idx}-${c.name}-${c.total}`;
+
   return (
     <div className="mt-6">
       <div className="grid gap-4 text-center sm:grid-cols-3">
         {top.slice(0, 3).map((customer, index) => (
-          <div key={customer.email}>
+          <div key={keyFor(customer, index)}>
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-ink-900/20 bg-white">
               <UserIcon />
             </div>
@@ -1279,7 +1285,10 @@ function TopCustomers({
         ))}
       </div>
       {top[3] && (
-        <div className="mt-6 flex items-center justify-between border-t border-ink-900/10 py-4 text-sm">
+        <div
+          key={keyFor(top[3], 3)}
+          className="mt-6 flex items-center justify-between border-t border-ink-900/10 py-4 text-sm"
+        >
           <span>4</span>
           <span className="flex items-center gap-3">
             <UserIcon /> {top[3].name}
