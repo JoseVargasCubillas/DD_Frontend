@@ -59,6 +59,7 @@ const ManagePromotions = lazy(() => import("@pages/Admin/ManagePromotions"));
 const ManageSubscriptions = lazy(() => import("@pages/Admin/ManageSubscriptions"));
 const DiazLara = lazy(() => import("@pages/DiazLara"));
 const ManageEmail = lazy(() => import("@pages/Admin/ManageEmail"));
+const ManageWhatsApp = lazy(() => import("@pages/Admin/ManageWhatsApp"));
 const BookCheckout = lazy(() => import("@pages/Books/BookCheckout"));
 const Books = lazy(() => import("@pages/Books"));
 const Terminos = lazy(() => import("@pages/LegalDocuments/Terminos"));
@@ -184,6 +185,7 @@ export const router = createBrowserRouter([
       { path: "/admin/ofertas", element: <Navigate to="/admin/suscripciones" replace /> },
       { path: "/admin/ventas/paquetes", element: <Navigate to="/admin/suscripciones" replace /> },
       { path: "/admin/email", element: <ManageEmail /> },
+      { path: "/admin/whatsapp", element: <ManageWhatsApp /> },
     ],
   },
 ]);

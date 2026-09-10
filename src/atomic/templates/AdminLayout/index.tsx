@@ -31,6 +31,7 @@ const SALES_ITEMS = [
 
 const MARKETING_ITEMS = [
   { label: "Email campaigns", to: "/admin/email" },
+  { label: "WhatsApp broadcast", to: "/admin/whatsapp" },
 ] as const;
 
 const subLinkClass = (isActive: boolean) =>
@@ -99,7 +100,9 @@ export default function AdminLayout() {
     location.pathname.startsWith("/admin/promociones") ||
     location.pathname.startsWith("/admin/suscripciones");
   const isSalesRoute = location.pathname.startsWith("/admin/ventas");
-  const isMarketingRoute = location.pathname.startsWith("/admin/email");
+  const isMarketingRoute =
+    location.pathname.startsWith("/admin/email") ||
+    location.pathname.startsWith("/admin/whatsapp");
 
   return (
     <div className="min-h-screen bg-cream text-ink-900 flex">
