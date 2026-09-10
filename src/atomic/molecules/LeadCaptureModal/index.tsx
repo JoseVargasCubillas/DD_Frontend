@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { triggerLeadDownload } from '@api/leads.api';
 
 type Resource = 'media-kit' | 'sat-guide';
 
@@ -57,20 +58,14 @@ export default function LeadCaptureModal({
           | undefined;
         setSent(true);
         const url = result?.downloadUrl ?? fallbackDownloadUrl;
-        if (result?.emailStatus === 'pending' && url) {
-          toast.success('Descargamos tu documento. También te llegará por correo pronto.');
-        } else {
-          toast.success('Listo. Revisa tu bandeja de entrada.');
-        }
+        // SIEMPRE descargar: nunca dejar al usuario sin el archivo.
         if (url) {
-          const link = document.createElement('a');
-          link.href = url;
-          if (fallbackFilename) link.download = fallbackFilename;
-          link.rel = 'noopener noreferrer';
-          link.target = '_blank';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          await triggerLeadDownload(url, fallbackFilename);
+        }
+        if (result?.emailStatus === 'pending') {
+          toast.success('Descargamos tu documento. Te llegará por correo pronto.');
+        } else {
+          toast.success('Descargamos tu documento. También lo enviamos a tu bandeja de entrada.');
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'No pudimos procesar tu solicitud.';

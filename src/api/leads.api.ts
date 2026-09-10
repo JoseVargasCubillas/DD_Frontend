@@ -39,20 +39,41 @@ export const requestMediaKit = (email: string, name?: string): Promise<LeadCaptu
     .then((r) => r.data);
 
 /**
- * Dispara la descarga directa del recurso — se usa como fallback cuando el
- * correo del lead quedó en estado `pending`. Abre el PDF en una pestaña
- * nueva para que el navegador lo descargue o lo muestre inline.
+ * Dispara la descarga directa del recurso. Usa `fetch` + Blob para
+ * garantizar la descarga incluso después de un `await` (donde `a.click()`
+ * sobre una URL remota puede ser bloqueado por el popup blocker o
+ * ignorado por perder el gesto del usuario).
+ *
+ * Fallback: si el fetch falla (CORS, red), abre la URL en una pestaña
+ * nueva como último recurso.
  */
-export const triggerLeadDownload = (downloadUrl: string, filename?: string): void => {
+export const triggerLeadDownload = async (
+  downloadUrl: string,
+  filename?: string,
+): Promise<void> => {
   if (typeof window === 'undefined') return;
-  const a = document.createElement('a');
-  a.href = downloadUrl;
-  a.target = '_blank';
-  a.rel = 'noopener noreferrer';
-  if (filename) a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  try {
+    const res = await fetch(downloadUrl, { credentials: 'omit' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename ?? 'documento.pdf';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    // Libera el object URL despues del click.
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  } catch (err) {
+    console.warn('[triggerLeadDownload] blob fetch failed, abriendo en pestaña nueva:', err);
+    try {
+      window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+    } catch {
+      /* noop */
+    }
+  }
 };
 
 export const listLeads = (source?: string): Promise<Lead[]> =>

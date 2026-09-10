@@ -421,13 +421,16 @@ export default function Home() {
       try {
         const result = await requestSatGuide(email);
         setGuideSent(true);
-        if (result.emailStatus === "pending" && result.downloadUrl) {
-          // Fallback: SMTP saturado o caído. Guardamos el lead y entregamos
-          // el PDF directo para no dejar al usuario sin el documento.
-          triggerLeadDownload(result.downloadUrl, "Iniciativa-Fiscal-2027-Diego-Diaz.pdf");
-          toast.success("Descargamos tu documento. También te lo enviaremos por correo pronto.");
+        // SIEMPRE entregar el PDF: nunca dejar al usuario sin el documento
+        // aunque el correo haya salido, se haya encolado o esté pendiente.
+        const downloadUrl =
+          result.downloadUrl ??
+          `${window.location.origin.replace(/\/$/, "")}/api/v1/leads/download/iniciativa-fiscal-2027`;
+        triggerLeadDownload(downloadUrl, "Iniciativa-Fiscal-2027-Diego-Diaz.pdf");
+        if (result.emailStatus === "pending") {
+          toast.success("Descargamos tu documento. Te llegará una copia por correo pronto.");
         } else {
-          toast.success("Listo. Revisa tu bandeja de entrada.");
+          toast.success("Descargamos tu documento. También lo enviamos a tu bandeja de entrada.");
         }
       } catch (err) {
         const message =
