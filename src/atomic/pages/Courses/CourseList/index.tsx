@@ -77,18 +77,18 @@ export default function CourseList() {
             </div>
 
             <div className="grid grid-cols-3 border border-ink-900/10 bg-white">
-              <div className="border-r border-ink-900/10 p-5">
-                <p className="font-serif text-[42px] leading-none">{courses.length}</p>
+              <div className="border-r border-ink-900/10 p-3 sm:p-5">
+                <p className="font-serif text-[28px] leading-none sm:text-[42px]">{courses.length}</p>
                 <p className="mt-2 font-mono text-[9px] uppercase tracking-[0.2em] text-ink-400">Cursos</p>
               </div>
-              <div className="border-r border-ink-900/10 p-5">
-                <p className="font-serif text-[42px] leading-none">
+              <div className="border-r border-ink-900/10 p-3 sm:p-5">
+                <p className="font-serif text-[28px] leading-none sm:text-[42px]">
                   {courses.reduce((sum, course) => sum + getLessonCount(course), 0)}
                 </p>
                 <p className="mt-2 font-mono text-[9px] uppercase tracking-[0.2em] text-ink-400">Sesiones</p>
               </div>
-              <div className="p-5">
-                <p className="font-serif text-[42px] leading-none">{categories.length - 1}</p>
+              <div className="p-3 sm:p-5">
+                <p className="font-serif text-[28px] leading-none sm:text-[42px]">{categories.length - 1}</p>
                 <p className="mt-2 font-mono text-[9px] uppercase tracking-[0.2em] text-ink-400">Categorías</p>
               </div>
             </div>

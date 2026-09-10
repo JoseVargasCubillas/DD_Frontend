@@ -131,13 +131,13 @@ export default function DiazLara() {
                       </a>
                     </div>
 
-                    <div className="mt-7 grid grid-cols-3 border-t border-cream-400 pt-6">
+                    <div className="mt-7 grid grid-cols-1 border-t border-cream-400 pt-6 sm:grid-cols-3">
                       {[
                         ['Defensa', 'Fiscal'],
                         ['Estructuras', 'Legales'],
                         ['Dictamen', 'y Patrimonio'],
                       ].map(([val, label]) => (
-                        <div key={val} className="border-r border-cream-300 px-4 last:border-r-0">
+                        <div key={val} className="border-b border-cream-300 py-3 px-4 last:border-b-0 sm:border-b-0 sm:border-r sm:py-0 sm:last:border-r-0">
                           <p className="text-[13px] font-normal leading-none tracking-[-0.02em] text-ink-900">{val}</p>
                           <p className="mt-1.5 text-[9px] uppercase tracking-[0.14em] text-ink-400">{label}</p>
                         </div>

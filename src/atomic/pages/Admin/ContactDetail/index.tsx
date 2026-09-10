@@ -76,11 +76,11 @@ export default function ContactDetail() {
 
             {tab === 'lifecycle' && (
               <div className="p-6">
-                <div className="grid grid-cols-3 border border-cream-300 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 border border-cream-300 mb-6">
                   {[['Antigüedad', `${lifespanDays} días`], ['Compras', contact.totalOffers.toString()], ['Ingresos netos', `$${contact.lifetimeValue.toLocaleString('es-MX')} MXN`]].map(([k, v], i) => (
-                    <div key={k} className={`px-4 py-5 text-center ${i < 2 ? 'border-r border-cream-300' : ''}`}>
+                    <div key={k} className={`px-4 py-5 text-center border-b border-cream-300 last:border-b-0 sm:border-b-0 ${i < 2 ? 'sm:border-r sm:border-cream-300' : ''}`}>
                       <p className="section-label text-ink-500">{k}</p>
-                      <p className="font-heading text-2xl font-bold mt-2">{v}</p>
+                      <p className="font-heading text-2xl font-bold mt-2 break-words">{v}</p>
                     </div>
                   ))}
                 </div>
