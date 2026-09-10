@@ -8,7 +8,7 @@ import { useAutoUnmuteOnGesture } from "@hooks/useAutoUnmuteOnGesture";
 import { useEvents } from "@hooks/useEvents";
 import { useInView } from "@hooks/useInView";
 import { useNowTick } from "@hooks/useNowTick";
-import { requestSatGuide } from "@api/leads.api";
+import { requestSatGuide, triggerLeadDownload } from "@api/leads.api";
 import {
   FALLBACK_CALENDAR_EVENTS,
   getCalendarEventAction,
@@ -458,9 +458,19 @@ export default function Home() {
 
       setGuideSubmitting(true);
       try {
-        await requestSatGuide(email, name, phone);
+        const result = await requestSatGuide(email, name, phone);
         setGuideSent(true);
-        toast.success("Listo. Revisa tu bandeja de entrada.");
+        // SIEMPRE entregar el PDF: nunca dejar al usuario sin el documento
+        // aunque el correo haya salido, se haya encolado o esté pendiente.
+        const downloadUrl =
+          result.downloadUrl ??
+          `${window.location.origin.replace(/\/$/, "")}/api/v1/leads/download/iniciativa-fiscal-2027`;
+        await triggerLeadDownload(downloadUrl, "Iniciativa-Fiscal-2027-Diego-Diaz.pdf");
+        if (result.emailStatus === "pending") {
+          toast.success("Descargamos tu documento. Te llegará una copia por correo pronto.");
+        } else {
+          toast.success("Descargamos tu documento. También lo enviamos a tu bandeja de entrada.");
+        }
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "No pudimos enviarte el documento.";

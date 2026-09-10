@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { triggerLeadDownload } from '@api/leads.api';
 
 type Resource = 'media-kit' | 'sat-guide' | 'estrategia-fiscal-dossier' | 'downloadable-resource';
 
@@ -7,7 +8,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   resource: Resource;
-  submit: (email: string, name?: string, phone?: string) => Promise<{ downloadUrl?: string } | void | unknown>;
+  submit: (email: string, name?: string, phone?: string) => Promise<{ downloadUrl?: string; emailStatus?: 'delivered' | 'pending' } | void | unknown>;
   title?: string;
   description?: string;
   submitLabel?: string;
@@ -73,20 +74,18 @@ export default function LeadCaptureModal({
           cleanName || undefined,
           cleanPhone || undefined,
         )) as
-          | { downloadUrl?: string }
+          | { downloadUrl?: string; emailStatus?: 'delivered' | 'pending' }
           | undefined;
         setSent(true);
-        toast.success('Listo. Revisa tu bandeja de entrada.');
         const url = result?.downloadUrl ?? fallbackDownloadUrl;
+        // SIEMPRE descargar: nunca dejar al usuario sin el archivo.
         if (url) {
-          const link = document.createElement('a');
-          link.href = url;
-          if (fallbackFilename) link.download = fallbackFilename;
-          link.rel = 'noopener noreferrer';
-          link.target = '_blank';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          await triggerLeadDownload(url, fallbackFilename);
+        }
+        if (result?.emailStatus === 'pending') {
+          toast.success('Descargamos tu documento. Te llegará por correo pronto.');
+        } else {
+          toast.success('Descargamos tu documento. También lo enviamos a tu bandeja de entrada.');
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'No pudimos procesar tu solicitud.';
