@@ -20,6 +20,7 @@ export interface SegmentCounts {
   leads: number;
   guideLeads?: number;
   guiaSat?: number;
+  iniciativaFiscal2027?: number;
   newsletterLeads?: number;
 }
 

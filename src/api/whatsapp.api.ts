@@ -20,6 +20,7 @@ export interface WhatsappSegmentCounts {
   leads: number;
   guideLeads?: number;
   guiaSat?: number;
+  iniciativaFiscal2027?: number;
   newsletterLeads?: number;
   configured: boolean;
 }

@@ -14,7 +14,8 @@ type Segment =
   | 'leads'
   | 'newsletter-leads'
   | 'guide-leads'
-  | 'lead-source:guia-blindaje-sat';
+  | 'lead-source:guia-blindaje-sat'
+  | 'lead-source:iniciativa-fiscal-2027';
 
 interface SegmentOption {
   id: Segment;
@@ -28,6 +29,7 @@ const SEGMENT_OPTIONS: SegmentOption[] = [
   { id: 'leads', label: 'Leads (usuarios)', description: 'Cuentas sin compra' },
   { id: 'newsletter-leads', label: 'Suscriptores Mailing', description: 'Correos del footer, blog y formularios de mailing (no es lo mismo que Academia)' },
   { id: 'lead-source:guia-blindaje-sat', label: 'Leads · Guía SAT', description: 'Descargaron la guía desde el Home' },
+  { id: 'lead-source:iniciativa-fiscal-2027', label: 'Leads · Iniciativa Fiscal 2027', description: 'Descargaron el documento de Iniciativa Fiscal 2027' },
   { id: 'guide-leads', label: 'Leads editoriales', description: 'Descargas de recursos y media kit' },
   { id: 'all', label: 'Todos los contactos', description: 'Toda la base de datos activa' },
 ];
@@ -137,6 +139,8 @@ export default function ManageEmail() {
       ? segments?.guideLeads
       : segment === 'lead-source:guia-blindaje-sat'
       ? segments?.guiaSat
+      : segment === 'lead-source:iniciativa-fiscal-2027'
+      ? segments?.iniciativaFiscal2027
       : contactList.length;
 
   const canSend = subject.trim().length > 0 && body.trim().length > 0;
@@ -186,6 +190,7 @@ export default function ManageEmail() {
         <CountBadge count={segments?.leads} label="Leads usuarios" />
         <CountBadge count={segments?.newsletterLeads} label="Suscriptores Mailing" />
         <CountBadge count={segments?.guiaSat} label="Leads Guía SAT" />
+        <CountBadge count={segments?.iniciativaFiscal2027} label="Leads Iniciativa 2027" />
         <CountBadge count={segments?.guideLeads} label="Leads editoriales" />
       </div>
       <p className="-mt-4 text-[11px] text-ink-400">

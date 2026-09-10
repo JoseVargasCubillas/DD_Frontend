@@ -10,7 +10,8 @@ type Segment =
   | 'leads'
   | 'newsletter-leads'
   | 'guide-leads'
-  | 'lead-source:guia-blindaje-sat';
+  | 'lead-source:guia-blindaje-sat'
+  | 'lead-source:iniciativa-fiscal-2027';
 
 interface SegmentOption {
   id: Segment;
@@ -24,6 +25,7 @@ const SEGMENT_OPTIONS: SegmentOption[] = [
   { id: 'leads', label: 'Leads (usuarios)', description: 'Cuentas sin compra' },
   { id: 'newsletter-leads', label: 'Suscriptores Mailing', description: 'Correos del footer, blog y formularios' },
   { id: 'lead-source:guia-blindaje-sat', label: 'Leads · Guia SAT', description: 'Descargaron la guia desde el Home' },
+  { id: 'lead-source:iniciativa-fiscal-2027', label: 'Leads · Iniciativa Fiscal 2027', description: 'Descargaron el documento de Iniciativa Fiscal 2027' },
   { id: 'guide-leads', label: 'Leads editoriales', description: 'Descargas de recursos y media kit' },
   { id: 'all', label: 'Todos los contactos', description: 'Toda la base de datos activa' },
 ];
@@ -64,6 +66,7 @@ export default function ManageWhatsApp() {
     if (segment === 'leads') return s.leads;
     if (segment === 'newsletter-leads') return s.newsletterLeads;
     if (segment === 'lead-source:guia-blindaje-sat') return s.guiaSat;
+    if (segment === 'lead-source:iniciativa-fiscal-2027') return s.iniciativaFiscal2027;
     if (segment === 'guide-leads') return s.guideLeads;
     return undefined;
   }, [segment, segmentsQ.data]);

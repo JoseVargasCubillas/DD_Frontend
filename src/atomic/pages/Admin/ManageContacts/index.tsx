@@ -24,6 +24,7 @@ import { useWaClickStats, useWaClicks } from '@hooks/useAnalytics';
 
 const LEAD_SOURCE_LABELS: Record<string, string> = {
   'guia-blindaje-sat': 'Guía SAT',
+  'iniciativa-fiscal-2027': 'Iniciativa Fiscal 2027',
   'media-kit': 'Media Kit',
   newsletter: 'Lead suscrito · Mailing',
   'centro-recursos': 'Centro de recursos',
@@ -147,6 +148,7 @@ function LeadsTab() {
             <option value="">Todas las fuentes</option>
             <option value="compra-incompleta">Intento de compra</option>
             <option value="guia-blindaje-sat">Guía SAT</option>
+            <option value="iniciativa-fiscal-2027">Iniciativa Fiscal 2027</option>
             <option value="media-kit">Media Kit</option>
             <option value="newsletter">Lead suscrito · Mailing</option>
             <option value="centro-recursos">Centro de recursos</option>
