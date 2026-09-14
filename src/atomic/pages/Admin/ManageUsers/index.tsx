@@ -1,9 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useUsers, useToggleUserActive, useAdminCreateUser } from '@hooks/useUsers';
+import { usePackages, useAssignPackage } from '@hooks/usePackages';
+import { upsertManualSubscription } from '@utils/manualSubscriptions';
 import type { User } from '@t/index';
 
 interface NewUserForm { name: string; email: string; role: 'user' | 'admin' }
+
+const SUBSCRIPTION_DURATION_OPTIONS: { days: number; label: string; sub: string }[] = [
+  { days: 30, label: '1 mes', sub: '30 días de acceso' },
+  { days: 90, label: '90 días', sub: '3 meses de acceso' },
+  { days: 365, label: '1 año', sub: '365 días de acceso' },
+];
 
 export default function ManageUsers() {
   const [search, setSearch] = useState('');
@@ -12,6 +20,19 @@ export default function ManageUsers() {
   const { data, isLoading } = useUsers({ page, limit: 20, search: search || undefined });
   const toggle = useToggleUserActive();
   const create = useAdminCreateUser();
+  const assignPackage = useAssignPackage();
+  const { data: allPackages = [] } = usePackages();
+  const activePackages = useMemo(() => allPackages.filter((p) => p.isActive), [allPackages]);
+
+  const [assignSubscription, setAssignSubscription] = useState(false);
+  const [selectedPackageId, setSelectedPackageId] = useState<string>('');
+  const [subscriptionDurationDays, setSubscriptionDurationDays] = useState<number>(365);
+
+  useEffect(() => {
+    if (!selectedPackageId && activePackages.length > 0) {
+      setSelectedPackageId(activePackages[0]._id);
+    }
+  }, [activePackages, selectedPackageId]);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<NewUserForm>({
     defaultValues: { role: 'user' },
@@ -19,9 +40,46 @@ export default function ManageUsers() {
 
   const onCreate = (form: NewUserForm) => {
     create.mutate(form, {
-      onSuccess: () => { reset(); setShowNew(false); },
+      onSuccess: (data) => {
+        const done = () => { reset(); setShowNew(false); setAssignSubscription(false); };
+        const pkg = activePackages.find((p) => p._id === selectedPackageId);
+        if (assignSubscription && selectedPackageId && pkg && data?.user?._id) {
+          const userId = data.user._id;
+          assignPackage.mutate(
+            { userId, packageId: selectedPackageId, durationDays: subscriptionDurationDays },
+            {
+              onSuccess: () => {
+                const start = new Date();
+                const end = new Date(start.getTime() + subscriptionDurationDays * 86400000);
+                upsertManualSubscription({
+                  userId,
+                  userName: form.name,
+                  userEmail: form.email,
+                  packageId: pkg._id,
+                  packageName: pkg.name,
+                  packageTier: pkg.tier,
+                  price: pkg.price,
+                  currency: pkg.currency,
+                  durationDays: subscriptionDurationDays,
+                  startDate: start.toISOString(),
+                  currentPeriodEnd: end.toISOString(),
+                  status: 'active',
+                  source: 'manual_admin',
+                });
+                done();
+              },
+              onError: done,
+            },
+          );
+        } else {
+          done();
+        }
+      },
     });
   };
+
+  const selectedPackage = activePackages.find((p) => p._id === selectedPackageId);
+  const isSaving = create.isPending || assignPackage.isPending;
 
   const users = data?.data ?? [];
   const total = data?.pagination?.total ?? 0;
@@ -50,42 +108,141 @@ export default function ManageUsers() {
       {showNew && (
         <form
           onSubmit={handleSubmit(onCreate)}
-          className="bg-cream-100 border border-ink-900/20 p-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-5 items-end"
+          className="bg-cream-100 border border-ink-900/20 p-6 space-y-5"
         >
-          <div className="flex flex-col gap-1.5 lg:col-span-1">
-            <label className="text-[10px] uppercase tracking-[0.3em] text-ink-700">Nombre</label>
-            <input
-              type="text"
-              className="ink-input"
-              placeholder="Nombre completo"
-              {...register('name', { required: 'Requerido' })}
-            />
-            {errors.name && <p className="text-[11px] text-red-700 italic font-serif">{errors.name.message}</p>}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 items-end">
+            <div className="flex flex-col gap-1.5 lg:col-span-1">
+              <label className="text-[10px] uppercase tracking-[0.3em] text-ink-700">Nombre</label>
+              <input
+                type="text"
+                className="ink-input"
+                placeholder="Nombre completo"
+                {...register('name', { required: 'Requerido' })}
+              />
+              {errors.name && <p className="text-[11px] text-red-700 italic font-serif">{errors.name.message}</p>}
+            </div>
+            <div className="flex flex-col gap-1.5 lg:col-span-1">
+              <label className="text-[10px] uppercase tracking-[0.3em] text-ink-700">Correo</label>
+              <input
+                type="email"
+                className="ink-input"
+                placeholder="cliente@ejemplo.com"
+                {...register('email', { required: 'Requerido' })}
+              />
+              {errors.email && <p className="text-[11px] text-red-700 italic font-serif">{errors.email.message}</p>}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase tracking-[0.3em] text-ink-700">Rol</label>
+              <select className="ink-input" {...register('role')}>
+                <option value="user">Suscriptor</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="btn-broadsheet h-[52px] lg:col-span-1"
+            >
+              {isSaving ? 'Creando…' : 'Enviar credenciales →'}
+            </button>
           </div>
-          <div className="flex flex-col gap-1.5 lg:col-span-1">
-            <label className="text-[10px] uppercase tracking-[0.3em] text-ink-700">Correo</label>
-            <input
-              type="email"
-              className="ink-input"
-              placeholder="cliente@ejemplo.com"
-              {...register('email', { required: 'Requerido' })}
-            />
-            {errors.email && <p className="text-[11px] text-red-700 italic font-serif">{errors.email.message}</p>}
+
+          {/* Suscripción a la Academia */}
+          <div className="border-t border-ink-900/15 pt-5">
+            <label className="flex cursor-pointer items-center gap-3 text-sm text-ink-900">
+              <input
+                type="checkbox"
+                checked={assignSubscription}
+                onChange={(e) => setAssignSubscription(e.target.checked)}
+                className="h-4 w-4 cursor-pointer accent-ink-900"
+              />
+              <span className="text-[10px] uppercase tracking-[0.3em] text-ink-700">
+                Asignar suscripción a la Academia
+              </span>
+            </label>
+
+            {assignSubscription && (
+              <div className="mt-4 space-y-4">
+                {activePackages.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-ink-900/15 bg-cream p-4 text-center text-sm text-ink-600">
+                    No hay paquetes activos. Crea uno en <span className="underline">Ventas · Paquetes</span>.
+                  </div>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <p className="mb-2 text-[10px] uppercase tracking-[0.32em] text-ink-500">Paquete</p>
+                      <div className="max-h-48 space-y-2 overflow-y-auto border border-ink-900/15 bg-cream p-2">
+                        {activePackages.map((p) => (
+                          <label
+                            key={p._id}
+                            className={`flex cursor-pointer items-start gap-3 border p-3 transition-colors ${
+                              selectedPackageId === p._id
+                                ? 'border-ink-900 bg-cream-200'
+                                : 'border-transparent hover:bg-cream-200/60'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="new-user-pkg"
+                              value={p._id}
+                              checked={selectedPackageId === p._id}
+                              onChange={() => setSelectedPackageId(p._id)}
+                              className="mt-1 shrink-0"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="font-serif text-base text-ink-900">{p.name}</p>
+                              <p className="mt-0.5 text-xs text-ink-500">
+                                {p.courseIds.length} cursos{p.tier ? ` · ${p.tier}` : ''}
+                              </p>
+                            </div>
+                            <p className="shrink-0 font-serif text-base text-ink-900">${p.price}</p>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="mb-2 text-[10px] uppercase tracking-[0.32em] text-ink-500">Duración</p>
+                      <div className="space-y-2">
+                        {SUBSCRIPTION_DURATION_OPTIONS.map((opt) => (
+                          <label
+                            key={opt.days}
+                            className={`flex cursor-pointer items-center gap-3 border p-3 transition-colors ${
+                              subscriptionDurationDays === opt.days
+                                ? 'border-ink-900 bg-cream-200'
+                                : 'border-ink-900/15 hover:bg-cream-200/60'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="new-user-duration"
+                              value={opt.days}
+                              checked={subscriptionDurationDays === opt.days}
+                              onChange={() => setSubscriptionDurationDays(opt.days)}
+                              className="shrink-0"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="font-serif text-base text-ink-900">{opt.label}</p>
+                              <p className="text-xs text-ink-500">{opt.sub}</p>
+                            </div>
+                            <p className="text-[10px] uppercase tracking-[0.3em] text-ink-500">{opt.days} días</p>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedPackage && activePackages.length > 0 && (
+                  <p className="text-xs text-ink-500">
+                    Se registrará como venta manual de{' '}
+                    <span className="text-ink-900">{selectedPackage.name}</span> por{' '}
+                    <span className="text-ink-900">${selectedPackage.price}</span> con {subscriptionDurationDays} días de vigencia.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] uppercase tracking-[0.3em] text-ink-700">Rol</label>
-            <select className="ink-input" {...register('role')}>
-              <option value="user">Suscriptor</option>
-              <option value="admin">Administrador</option>
-            </select>
-          </div>
-          <button
-            type="submit"
-            disabled={create.isPending}
-            className="btn-broadsheet h-[52px] lg:col-span-1"
-          >
-            {create.isPending ? 'Creando…' : 'Enviar credenciales →'}
-          </button>
         </form>
       )}
 
