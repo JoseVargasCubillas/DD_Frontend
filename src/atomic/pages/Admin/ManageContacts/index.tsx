@@ -66,22 +66,42 @@ const CATEGORY_LABELS: Record<'archivo' | 'suscripcion' | 'motivo' | 'compra' | 
   otro: 'Otros',
 };
 
-type LeadPeriodKey = 'today' | 'week' | 'month' | 'total';
+type LeadPeriodKey = 'today' | 'week' | 'month' | 'total' | 'custom';
 const LEAD_PERIOD_TABS: { key: LeadPeriodKey; label: string }[] = [
   { key: 'today', label: 'Hoy' },
   { key: 'week', label: '7 días' },
   { key: 'month', label: '30 días' },
   { key: 'total', label: 'Total' },
+  { key: 'custom', label: 'Rango' },
 ];
 
-const startOfLeadPeriod = (period: LeadPeriodKey): number => {
-  const now = new Date();
+// Devuelve [inicio, fin] en ms para un preset. 'custom' se resuelve fuera.
+const boundsForPeriod = (
+  period: Exclude<LeadPeriodKey, 'custom'>,
+  now = Date.now(),
+): [number, number] => {
+  const nowDate = new Date(now);
   if (period === 'today') {
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    return [new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate()).getTime(), now];
   }
-  if (period === 'week') return now.getTime() - 7 * 86_400_000;
-  if (period === 'month') return now.getTime() - 30 * 86_400_000;
-  return 0;
+  if (period === 'week') return [now - 7 * 86_400_000, now];
+  if (period === 'month') return [now - 30 * 86_400_000, now];
+  return [0, now];
+};
+
+// Convierte 'YYYY-MM-DD' a inicio del día local (ms).
+const startOfDay = (iso: string): number => {
+  if (!iso) return 0;
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return 0;
+  return new Date(y, m - 1, d).getTime();
+};
+// Convierte 'YYYY-MM-DD' a fin del día local (ms).
+const endOfDay = (iso: string): number => {
+  if (!iso) return Number.POSITIVE_INFINITY;
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return Number.POSITIVE_INFINITY;
+  return new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
 };
 
 const formatLeadDate = (value?: string | null) => {
@@ -103,24 +123,26 @@ function LeadStatsPanel({
   onPeriodChange,
   source,
   onSourceChange,
+  customFrom,
+  customTo,
+  onCustomFromChange,
+  onCustomToChange,
 }: {
   leads: import('@api/leads.api').UnifiedLead[];
   period: LeadPeriodKey;
   onPeriodChange: (p: LeadPeriodKey) => void;
   source: string;
   onSourceChange: (s: string) => void;
+  customFrom: string;
+  customTo: string;
+  onCustomFromChange: (v: string) => void;
+  onCustomToChange: (v: string) => void;
 }) {
   // Cada lead unificado puede tener varias fuentes. Contamos por cada fuente
-  // que cae dentro del período (usando lastActivityAt cuando aplica y
-  // firstSeenAt como fallback global). El total del período cuenta cada lead
+  // que cae dentro del período. El total del período cuenta cada lead
   // unificado UNA sola vez si al menos una de sus fuentes entró en el rango.
   const stats = useMemo(() => {
     const now = Date.now();
-    const bounds = {
-      today: startOfLeadPeriod('today'),
-      week: startOfLeadPeriod('week'),
-      month: startOfLeadPeriod('month'),
-    };
     const empty = (): {
       total: number;
       bySource: Record<string, number>;
@@ -131,15 +153,28 @@ function LeadStatsPanel({
       byCategory: { archivo: 0, suscripcion: 0, motivo: 0, compra: 0, otro: 0 },
     });
     const buckets: Record<LeadPeriodKey, ReturnType<typeof empty>> = {
-      today: empty(), week: empty(), month: empty(), total: empty(),
+      today: empty(), week: empty(), month: empty(), total: empty(), custom: empty(),
     };
+    const presetBounds: Record<Exclude<LeadPeriodKey, 'custom'>, [number, number]> = {
+      today: boundsForPeriod('today', now),
+      week: boundsForPeriod('week', now),
+      month: boundsForPeriod('month', now),
+      total: boundsForPeriod('total', now),
+    };
+    const customBounds: [number, number] = [
+      customFrom ? startOfDay(customFrom) : 0,
+      customTo ? endOfDay(customTo) : now,
+    ];
+
     for (const l of leads) {
       const activityTs = new Date(l.lastActivityAt || l.firstSeenAt).getTime();
-      if (Number.isNaN(activityTs) || activityTs > now) continue;
-      const periods: LeadPeriodKey[] = ['total'];
-      if (activityTs >= bounds.month) periods.push('month');
-      if (activityTs >= bounds.week) periods.push('week');
-      if (activityTs >= bounds.today) periods.push('today');
+      if (Number.isNaN(activityTs)) continue;
+      const periods: LeadPeriodKey[] = [];
+      for (const key of ['today', 'week', 'month', 'total'] as const) {
+        const [from, to] = presetBounds[key];
+        if (activityTs >= from && activityTs <= to) periods.push(key);
+      }
+      if (activityTs >= customBounds[0] && activityTs <= customBounds[1]) periods.push('custom');
       for (const p of periods) {
         buckets[p].total += 1;
         for (const src of l.sources) {
@@ -149,7 +184,7 @@ function LeadStatsPanel({
       }
     }
     return buckets;
-  }, [leads]);
+  }, [leads, customFrom, customTo]);
 
   const active = stats[period];
   const sourceEntries = Object.entries(active.bySource).sort((a, b) => b[1] - a[1]);
@@ -176,6 +211,51 @@ function LeadStatsPanel({
           );
         })}
       </div>
+
+      {period === 'custom' && (
+        <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-ink-900/10 bg-white p-4">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="lead-from" className="text-[10px] uppercase tracking-[0.28em] text-ink-500">Desde</label>
+            <input
+              id="lead-from"
+              type="date"
+              value={customFrom}
+              max={customTo || undefined}
+              onChange={(e) => onCustomFromChange(e.target.value)}
+              className="min-h-10 rounded-lg border border-ink-900/15 bg-white px-3 text-sm text-ink-900"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="lead-to" className="text-[10px] uppercase tracking-[0.28em] text-ink-500">Hasta</label>
+            <input
+              id="lead-to"
+              type="date"
+              value={customTo}
+              min={customFrom || undefined}
+              onChange={(e) => onCustomToChange(e.target.value)}
+              className="min-h-10 rounded-lg border border-ink-900/15 bg-white px-3 text-sm text-ink-900"
+            />
+          </div>
+          {(customFrom || customTo) && (
+            <button
+              type="button"
+              onClick={() => { onCustomFromChange(''); onCustomToChange(''); }}
+              className="min-h-10 cursor-pointer rounded-full border border-ink-900/15 bg-white px-4 text-xs font-medium text-ink-700 hover:border-ink-900/40"
+            >
+              Limpiar
+            </button>
+          )}
+          <p className="text-xs text-ink-500">
+            {customFrom && customTo
+              ? `Mostrando del ${customFrom} al ${customTo}.`
+              : customFrom
+                ? `Desde ${customFrom} hasta hoy.`
+                : customTo
+                  ? `Hasta ${customTo}.`
+                  : 'Elige un rango de fechas.'}
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {(['archivo', 'suscripcion', 'motivo', 'compra', 'otro'] as const).map((cat) => (
@@ -216,12 +296,34 @@ function LeadStatsPanel({
 function LeadsTab() {
   const [source, setSource] = useState<string>('');
   const [period, setPeriod] = useState<LeadPeriodKey>('week');
+  const [customFrom, setCustomFrom] = useState<string>('');
+  const [customTo, setCustomTo] = useState<string>('');
   const [selectedEntryIds, setSelectedEntryIds] = useState<string[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<{ entryIds: string[]; leadIds: string[] } | null>(null);
   const { data: allLeads = [], isLoading } = useUnifiedLeads();
   const deleteLeadsMutation = useDeleteLeads();
 
-  const leads = source ? allLeads.filter((lead) => lead.sources.includes(source)) : allLeads;
+  // Filtro de rango temporal aplicado tambien a la tabla y al CSV, para que
+  // "veo/exporto lo que cuenta el panel" sea siempre consistente.
+  const periodBounds = useMemo((): [number, number] => {
+    const now = Date.now();
+    if (period === 'custom') {
+      return [customFrom ? startOfDay(customFrom) : 0, customTo ? endOfDay(customTo) : now];
+    }
+    return boundsForPeriod(period, now);
+  }, [period, customFrom, customTo]);
+
+  const leadsByPeriod = useMemo(() => {
+    // 'total' sin filtro adicional para no descartar leads sin fecha valida.
+    if (period === 'total') return allLeads;
+    return allLeads.filter((l) => {
+      const ts = new Date(l.lastActivityAt || l.firstSeenAt).getTime();
+      if (Number.isNaN(ts)) return false;
+      return ts >= periodBounds[0] && ts <= periodBounds[1];
+    });
+  }, [allLeads, period, periodBounds]);
+
+  const leads = source ? leadsByPeriod.filter((lead) => lead.sources.includes(source)) : leadsByPeriod;
   const campaignHref = source && source !== 'compra-incompleta'
     ? `/admin/email?segment=${encodeURIComponent(`lead-source:${source}`)}`
     : '/admin/email?segment=guide-leads';
@@ -363,6 +465,10 @@ function LeadsTab() {
         onPeriodChange={setPeriod}
         source={source}
         onSourceChange={setSource}
+        customFrom={customFrom}
+        customTo={customTo}
+        onCustomFromChange={setCustomFrom}
+        onCustomToChange={setCustomTo}
       />
 
       <div className="overflow-x-auto rounded-xl border border-ink-900/10">
