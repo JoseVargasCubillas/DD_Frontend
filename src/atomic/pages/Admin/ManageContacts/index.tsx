@@ -15,9 +15,17 @@ import { useCreateTag, useDeleteTag, useTags, useUpdateTag } from '@hooks/useTag
 import { useCourses } from '@hooks/useCourses';
 import { useEvents, useAssignUsersToEvent, useDeregisterUsersFromEvent } from '@hooks/useEvents';
 import { useOffers, useAssignOffer, useBulkRevokeOffer } from '@hooks/useOffers';
+import { usePackages, useAssignPackage } from '@hooks/usePackages';
+import { upsertManualSubscription } from '@utils/manualSubscriptions';
 import type { ImportContactInput, ImportContactsResult } from '@api/users.api';
-import type { User, Tag, Course, Offer, Event as EventType } from '@t/index';
+import type { User, Tag, Course, Offer, Event as EventType, Package } from '@t/index';
 import { useDeleteLeads, useLeadHistory, useUnifiedLeads } from '@hooks/useLeads';
+
+const SUBSCRIPTION_DURATION_OPTIONS: { days: number; label: string; sub: string }[] = [
+  { days: 30, label: '1 mes', sub: '30 días de acceso' },
+  { days: 90, label: '90 días', sub: '3 meses de acceso' },
+  { days: 365, label: '1 año', sub: '365 días de acceso' },
+];
 import { listAllSubscriptions } from '@api/subscriptions.api';
 import { useQuery } from '@tanstack/react-query';
 import { useWaClickStats, useWaClicks } from '@hooks/useAnalytics';
@@ -35,6 +43,47 @@ const LEAD_SOURCE_LABELS: Record<string, string> = {
   'compra-incompleta': 'Intento de compra',
 };
 
+// Categoriza cada fuente para el desglose de conteo (archivo / suscripcion / motivo).
+const LEAD_SOURCE_CATEGORY: Record<string, 'archivo' | 'suscripcion' | 'motivo' | 'compra'> = {
+  'guia-blindaje-sat': 'archivo',
+  'iniciativa-fiscal-2027': 'archivo',
+  'media-kit': 'archivo',
+  'centro-recursos': 'archivo',
+  'estrategia-fiscal-dossier': 'archivo',
+  'libro-sat-waitlist': 'archivo',
+  newsletter: 'suscripcion',
+  contact: 'motivo',
+  'compra-incompleta': 'compra',
+};
+const leadCategoryOf = (source: string): 'archivo' | 'suscripcion' | 'motivo' | 'compra' | 'otro' =>
+  LEAD_SOURCE_CATEGORY[source] ?? 'otro';
+
+const CATEGORY_LABELS: Record<'archivo' | 'suscripcion' | 'motivo' | 'compra' | 'otro', string> = {
+  archivo: 'Archivos descargados',
+  suscripcion: 'Suscripciones',
+  motivo: 'Contactos por motivo',
+  compra: 'Intentos de compra',
+  otro: 'Otros',
+};
+
+type LeadPeriodKey = 'today' | 'week' | 'month' | 'total';
+const LEAD_PERIOD_TABS: { key: LeadPeriodKey; label: string }[] = [
+  { key: 'today', label: 'Hoy' },
+  { key: 'week', label: '7 días' },
+  { key: 'month', label: '30 días' },
+  { key: 'total', label: 'Total' },
+];
+
+const startOfLeadPeriod = (period: LeadPeriodKey): number => {
+  const now = new Date();
+  if (period === 'today') {
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  }
+  if (period === 'week') return now.getTime() - 7 * 86_400_000;
+  if (period === 'month') return now.getTime() - 30 * 86_400_000;
+  return 0;
+};
+
 const formatLeadDate = (value?: string | null) => {
   if (!value) return '—';
   const date = new Date(value);
@@ -48,8 +97,125 @@ const formatLeadDate = (value?: string | null) => {
   }).format(date);
 };
 
+function LeadStatsPanel({
+  leads,
+  period,
+  onPeriodChange,
+  source,
+  onSourceChange,
+}: {
+  leads: import('@api/leads.api').UnifiedLead[];
+  period: LeadPeriodKey;
+  onPeriodChange: (p: LeadPeriodKey) => void;
+  source: string;
+  onSourceChange: (s: string) => void;
+}) {
+  // Cada lead unificado puede tener varias fuentes. Contamos por cada fuente
+  // que cae dentro del período (usando lastActivityAt cuando aplica y
+  // firstSeenAt como fallback global). El total del período cuenta cada lead
+  // unificado UNA sola vez si al menos una de sus fuentes entró en el rango.
+  const stats = useMemo(() => {
+    const now = Date.now();
+    const bounds = {
+      today: startOfLeadPeriod('today'),
+      week: startOfLeadPeriod('week'),
+      month: startOfLeadPeriod('month'),
+    };
+    const empty = (): {
+      total: number;
+      bySource: Record<string, number>;
+      byCategory: Record<'archivo' | 'suscripcion' | 'motivo' | 'compra' | 'otro', number>;
+    } => ({
+      total: 0,
+      bySource: {},
+      byCategory: { archivo: 0, suscripcion: 0, motivo: 0, compra: 0, otro: 0 },
+    });
+    const buckets: Record<LeadPeriodKey, ReturnType<typeof empty>> = {
+      today: empty(), week: empty(), month: empty(), total: empty(),
+    };
+    for (const l of leads) {
+      const activityTs = new Date(l.lastActivityAt || l.firstSeenAt).getTime();
+      if (Number.isNaN(activityTs) || activityTs > now) continue;
+      const periods: LeadPeriodKey[] = ['total'];
+      if (activityTs >= bounds.month) periods.push('month');
+      if (activityTs >= bounds.week) periods.push('week');
+      if (activityTs >= bounds.today) periods.push('today');
+      for (const p of periods) {
+        buckets[p].total += 1;
+        for (const src of l.sources) {
+          buckets[p].bySource[src] = (buckets[p].bySource[src] ?? 0) + 1;
+          buckets[p].byCategory[leadCategoryOf(src)] += 1;
+        }
+      }
+    }
+    return buckets;
+  }, [leads]);
+
+  const active = stats[period];
+  const sourceEntries = Object.entries(active.bySource).sort((a, b) => b[1] - a[1]);
+
+  return (
+    <div className="mb-6 rounded-2xl border border-ink-900/10 bg-ink-50/40 p-5">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {LEAD_PERIOD_TABS.map((tab) => {
+          const activeTab = period === tab.key;
+          const count = stats[tab.key].total;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => onPeriodChange(tab.key)}
+              className={`min-h-9 cursor-pointer rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                activeTab
+                  ? 'border-ink-900 bg-ink-900 text-white'
+                  : 'border-ink-900/15 bg-white text-ink-700 hover:border-ink-900/40'
+              }`}
+            >
+              {tab.label} · {count}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        {(['archivo', 'suscripcion', 'motivo', 'compra', 'otro'] as const).map((cat) => (
+          <div key={cat} className="rounded-xl border border-ink-900/10 bg-white p-4">
+            <p className="text-[10px] uppercase tracking-[0.28em] text-ink-500">{CATEGORY_LABELS[cat]}</p>
+            <p className="mt-2 font-serif text-3xl text-ink-900">{active.byCategory[cat]}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4">
+        <p className="mb-2 text-[10px] uppercase tracking-[0.28em] text-ink-500">Desglose por fuente</p>
+        {sourceEntries.length === 0 ? (
+          <p className="text-sm text-ink-500">Sin registros en este período.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {sourceEntries.map(([src, count]) => (
+              <button
+                key={src}
+                type="button"
+                onClick={() => onSourceChange(source === src ? '' : src)}
+                className={`min-h-8 cursor-pointer rounded-full border px-3 text-xs transition-colors ${
+                  source === src
+                    ? 'border-ink-900 bg-ink-900 text-white'
+                    : 'border-ink-900/15 bg-white text-ink-700 hover:border-ink-900/40'
+                }`}
+              >
+                {LEAD_SOURCE_LABELS[src] ?? src} · {count}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function LeadsTab() {
   const [source, setSource] = useState<string>('');
+  const [period, setPeriod] = useState<LeadPeriodKey>('week');
   const [selectedEntryIds, setSelectedEntryIds] = useState<string[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<{ entryIds: string[]; leadIds: string[] } | null>(null);
   const { data: allLeads = [], isLoading } = useUnifiedLeads();
@@ -190,6 +356,14 @@ function LeadsTab() {
           )}
         </div>
       </div>
+
+      <LeadStatsPanel
+        leads={allLeads}
+        period={period}
+        onPeriodChange={setPeriod}
+        source={source}
+        onSourceChange={setSource}
+      />
 
       <div className="overflow-x-auto rounded-xl border border-ink-900/10">
         <table className="min-w-full text-sm">
@@ -2125,8 +2299,11 @@ function ImportContactsModal({ mode, onClose }: { mode: 'import' | 'migrate'; on
 // ───────────────────────────────────────────────────────────────
 function AddContactModal({ onClose }: { onClose: () => void }) {
   const create = useAdminCreateUser();
+  const assignPackage = useAssignPackage();
   const { data: tags = [] } = useTags();
   const { data: coursesData } = useCourses({ includeAll: true, limit: 200 } as any);
+  const { data: allPackages = [] } = usePackages();
+  const activePackages = useMemo(() => allPackages.filter((p) => p.isActive), [allPackages]);
   const courses = coursesData?.data ?? [];
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -2134,15 +2311,26 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
   const [grantOffers, setGrantOffers] = useState(false);
   const [addTags, setAddTags] = useState(false);
   const [subscribeMarketing, setSubscribeMarketing] = useState(false);
+  const [assignSubscription, setAssignSubscription] = useState(false);
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [selectedPackageId, setSelectedPackageId] = useState<string>('');
+  const [subscriptionDurationDays, setSubscriptionDurationDays] = useState<number>(365);
+
+  useEffect(() => {
+    if (!selectedPackageId && activePackages.length > 0) {
+      setSelectedPackageId(activePackages[0]._id);
+    }
+  }, [activePackages, selectedPackageId]);
 
   const name = `${firstName} ${lastName}`.trim();
-  const canSave = Boolean(name && email);
+  const canSave = Boolean(name && email) && (!assignSubscription || Boolean(selectedPackageId));
+  const isSaving = create.isPending || assignPackage.isPending;
+  const selectedPackage = activePackages.find((p) => p._id === selectedPackageId);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-6">
-      <div className="w-full max-w-[560px] rounded-2xl bg-white p-6 shadow-2xl" style={{ animation: 'paper-unfold 260ms ease-out both' }}>
+      <div className="w-full max-w-[560px] max-h-[92vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl" style={{ animation: 'paper-unfold 260ms ease-out both' }}>
         <div className="mb-6 flex items-center justify-between">
           <h3 className="text-2xl font-semibold text-[#242424]">New Contact</h3>
           <button type="button" onClick={onClose} className="min-h-11 min-w-11 cursor-pointer text-2xl text-[#242424]" aria-label="Close new contact">×</button>
@@ -2159,7 +2347,45 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
               courseIds: grantOffers ? selectedCourseIds : [],
               tagIds: addTags ? selectedTagIds : [],
               marketingStatus: subscribeMarketing ? 'subscribed' : 'never_subscribed',
-            }, { onSuccess: onClose });
+            }, {
+              onSuccess: (data) => {
+                if (assignSubscription && selectedPackageId && selectedPackage && data?.user?._id) {
+                  const userId = data.user._id;
+                  assignPackage.mutate(
+                    { userId, packageId: selectedPackageId, durationDays: subscriptionDurationDays },
+                    {
+                      onSuccess: () => {
+                        const start = new Date();
+                        const end = new Date(start.getTime() + subscriptionDurationDays * 86400000);
+                        upsertManualSubscription({
+                          userId,
+                          userName: name,
+                          userEmail: email,
+                          packageId: selectedPackage._id,
+                          packageName: selectedPackage.name,
+                          packageTier: selectedPackage.tier,
+                          price: selectedPackage.price,
+                          currency: selectedPackage.currency,
+                          durationDays: subscriptionDurationDays,
+                          startDate: start.toISOString(),
+                          currentPeriodEnd: end.toISOString(),
+                          status: 'active',
+                          source: 'manual_admin',
+                        });
+                        onClose();
+                      },
+                      onError: () => {
+                        // El usuario ya se creó; cerramos igual y dejamos que el admin
+                        // reintente la asignación desde el perfil del contacto.
+                        onClose();
+                      },
+                    },
+                  );
+                } else {
+                  onClose();
+                }
+              },
+            });
           }}
           className="space-y-5"
         >
@@ -2220,6 +2446,90 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
             )}
 
             <KajabiToggle checked={subscribeMarketing} onChange={setSubscribeMarketing} label="Subscribe to marketing emails" />
+
+            <KajabiToggle checked={assignSubscription} onChange={setAssignSubscription} label="Asignar suscripción a la Academia" />
+            {assignSubscription && (
+              <div className="pl-6 space-y-4">
+                {activePackages.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-ink-900/15 bg-cream-100 p-4 text-center text-sm text-ink-600">
+                    No hay paquetes activos.{' '}
+                    <Link to="/admin/ventas/paquetes" className="underline">Crea uno aquí</Link>.
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <p className="mb-2 text-[10px] uppercase tracking-[0.32em] text-ink-500">Paquete</p>
+                      <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-ink-900/15 bg-cream-100 p-2">
+                        {activePackages.map((p) => (
+                          <label
+                            key={p._id}
+                            className={`flex cursor-pointer items-start gap-3 border p-3 transition-colors ${
+                              selectedPackageId === p._id
+                                ? 'border-ink-900 bg-cream-200'
+                                : 'border-transparent hover:bg-cream-200/60'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="new-contact-pkg"
+                              value={p._id}
+                              checked={selectedPackageId === p._id}
+                              onChange={() => setSelectedPackageId(p._id)}
+                              className="mt-1 shrink-0"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="font-serif text-base text-ink-900">{p.name}</p>
+                              <p className="mt-0.5 text-xs text-ink-500">
+                                {p.courseIds.length} cursos{p.tier ? ` · ${p.tier}` : ''}
+                              </p>
+                            </div>
+                            <p className="shrink-0 font-serif text-base text-ink-900">${p.price}</p>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="mb-2 text-[10px] uppercase tracking-[0.32em] text-ink-500">Duración</p>
+                      <div className="space-y-2">
+                        {SUBSCRIPTION_DURATION_OPTIONS.map((opt) => (
+                          <label
+                            key={opt.days}
+                            className={`flex cursor-pointer items-center gap-3 border p-3 transition-colors ${
+                              subscriptionDurationDays === opt.days
+                                ? 'border-ink-900 bg-cream-200'
+                                : 'border-ink-900/15 hover:bg-cream-200/60'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="new-contact-duration"
+                              value={opt.days}
+                              checked={subscriptionDurationDays === opt.days}
+                              onChange={() => setSubscriptionDurationDays(opt.days)}
+                              className="shrink-0"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="font-serif text-base text-ink-900">{opt.label}</p>
+                              <p className="text-xs text-ink-500">{opt.sub}</p>
+                            </div>
+                            <p className="text-[10px] uppercase tracking-[0.3em] text-ink-500">{opt.days} días</p>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {selectedPackage && (
+                      <p className="border-t border-ink-900/10 pt-3 text-xs text-ink-500">
+                        Se registrará como venta manual de{' '}
+                        <span className="text-ink-900">{selectedPackage.name}</span> por{' '}
+                        <span className="text-ink-900">${selectedPackage.price}</span> con {subscriptionDurationDays} días de vigencia.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 pt-1">
@@ -2228,10 +2538,10 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
             </button>
             <button
               type="submit"
-              disabled={!canSave || create.isPending}
+              disabled={!canSave || isSaving}
               className="min-h-11 cursor-pointer rounded-full bg-[#242424] px-6 text-sm font-semibold text-white transition-colors hover:bg-black disabled:cursor-default disabled:bg-[#eeeeee] disabled:text-[#aaa]"
             >
-              {create.isPending ? 'Saving...' : 'Save'}
+              {isSaving ? 'Saving...' : 'Save'}
             </button>
           </div>
         </form>
