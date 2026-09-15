@@ -31,8 +31,13 @@ export const useAuth = () => {
       // del destino generico por rol — solo se acepta una ruta relativa
       // propia, nunca una URL externa.
       const redirect = searchParams.get('redirect');
+      const isAdmin = data.user.role === 'admin';
       const isSafeRedirect = Boolean(redirect) && redirect!.startsWith('/') && !redirect!.startsWith('//');
-      navigate(isSafeRedirect ? redirect! : data.user.role === 'admin' ? '/admin' : '/mi-cuenta');
+      // Un admin que quiso entrar a /mi-cuenta o /iniciar-sesion no debe
+      // aterrizar en la vista de cliente — siempre lo mandamos a /admin.
+      // Cualquier otra ruta segura (ej. /libros/checkout/...) sigue valida.
+      const redirectFitsRole = isSafeRedirect && !(isAdmin && /^\/mi-cuenta(\/|$|\?)/.test(redirect!));
+      navigate(redirectFitsRole ? redirect! : isAdmin ? '/admin' : '/mi-cuenta');
     },
     onError: (error) => {
       const message = error instanceof Error ? error.message : 'Credenciales incorrectas';
