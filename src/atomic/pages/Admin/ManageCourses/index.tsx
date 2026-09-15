@@ -1133,7 +1133,7 @@ const DRIVE_IMPORT_EXAMPLE = `{
   ]
 }`;
 const FINAL_DRIVE_FOLDER_URL =
-  "https://drive.google.com/drive/folders/1CQ-5aT1PW_Rse0y1M0tMHvc0OmQPQFFb?usp=sharing";
+  "https://drive.google.com/drive/folders/1CQ-5aT1PW_Rse0y1M0tMHvc0OmQPQFFb?usp=drive_link";
 
 function DriveImportDialog({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
