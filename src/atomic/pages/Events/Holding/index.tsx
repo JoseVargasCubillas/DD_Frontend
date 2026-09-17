@@ -8,7 +8,7 @@ const HOLDING_CHECKOUT_ITEM: OrderItem & { id: string } = {
   type: "event",
   refId: "holding-masterclass-2026",
   title: "Holding · El legado de los empresarios",
-  price: 4997,
+  price: 1997,
   quantity: 1,
   currency: "MXN",
   paymentType: "one_time",
@@ -344,7 +344,7 @@ export default function HoldingLanding() {
             <span className="mr-3 align-[0.65em] font-sans text-[18px] font-bold uppercase tracking-[0.26em] text-cream-200/55">
               MXN
             </span>
-            $4,997
+            $1,997
           </p>
           <button
             type="button"
