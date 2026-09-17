@@ -41,6 +41,29 @@ const LEAD_SOURCE_LABELS: Record<string, string> = {
   contact: 'Formulario contacto',
   other: 'Otro',
   'compra-incompleta': 'Intento de compra',
+  // Centro de Recursos — un ítem por archivo para que el desglose no
+  // apile todas las descargas bajo el mismo paraguas.
+  'centro-recursos:ingresos-exentos-isr': 'Centro Recursos · Ingresos exentos de ISR',
+  'centro-recursos:si-tu-agenda-se-ve-asi': 'Centro Recursos · Si tu agenda se ve así',
+  'centro-recursos:guia-para-blindarte-del-sat': 'Centro Recursos · Guía para blindarte del SAT',
+  'centro-recursos:partes-relacionadas': 'Centro Recursos · Partes relacionadas',
+};
+
+// Devuelve una etiqueta legible tolerando el prefijo `centro-recursos:*`
+// (nuevo esquema con identificador por archivo). Si no reconoce el sub-id,
+// intenta formatear su slug y cae al genérico "Centro de recursos".
+const resolveLeadSourceLabel = (source: string): string => {
+  const direct = LEAD_SOURCE_LABELS[source];
+  if (direct) return direct;
+  if (source.startsWith('centro-recursos:')) {
+    const sub = source.slice('centro-recursos:'.length);
+    const pretty = sub
+      .split('-')
+      .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+      .join(' ');
+    return `Centro Recursos · ${pretty}`;
+  }
+  return source;
 };
 
 // Categoriza cada fuente para el desglose de conteo (archivo / suscripcion / motivo).
@@ -55,8 +78,13 @@ const LEAD_SOURCE_CATEGORY: Record<string, 'archivo' | 'suscripcion' | 'motivo' 
   contact: 'motivo',
   'compra-incompleta': 'compra',
 };
-const leadCategoryOf = (source: string): 'archivo' | 'suscripcion' | 'motivo' | 'compra' | 'otro' =>
-  LEAD_SOURCE_CATEGORY[source] ?? 'otro';
+const leadCategoryOf = (source: string): 'archivo' | 'suscripcion' | 'motivo' | 'compra' | 'otro' => {
+  const direct = LEAD_SOURCE_CATEGORY[source];
+  if (direct) return direct;
+  // Todo lo del Centro de Recursos (con o sin subclave) cuenta como archivo.
+  if (source.startsWith('centro-recursos:')) return 'archivo';
+  return 'otro';
+};
 
 const CATEGORY_LABELS: Record<'archivo' | 'suscripcion' | 'motivo' | 'compra' | 'otro', string> = {
   archivo: 'Archivos descargados',
@@ -283,7 +311,7 @@ function LeadStatsPanel({
                     : 'border-ink-900/15 bg-white text-ink-700 hover:border-ink-900/40'
                 }`}
               >
-                {LEAD_SOURCE_LABELS[src] ?? src} · {count}
+                {resolveLeadSourceLabel(src)} · {count}
               </button>
             ))}
           </div>
@@ -323,7 +351,18 @@ function LeadsTab() {
     });
   }, [allLeads, period, periodBounds]);
 
-  const leads = source ? leadsByPeriod.filter((lead) => lead.sources.includes(source)) : leadsByPeriod;
+  // El source guardado en las filas del Centro de Recursos es
+  // `centro-recursos:<resourceId>`. Cuando el usuario filtra por el
+  // paraguas genérico "centro-recursos" queremos incluir todos los
+  // sub-recursos; para un sub-recurso específico usamos igualdad exacta.
+  const leadMatchesSource = (leadSources: string[]): boolean => {
+    if (!source) return true;
+    if (source === 'centro-recursos') {
+      return leadSources.some((s) => s === 'centro-recursos' || s.startsWith('centro-recursos:'));
+    }
+    return leadSources.includes(source);
+  };
+  const leads = source ? leadsByPeriod.filter((lead) => leadMatchesSource(lead.sources)) : leadsByPeriod;
   const campaignHref = source && source !== 'compra-incompleta'
     ? `/admin/email?segment=${encodeURIComponent(`lead-source:${source}`)}`
     : '/admin/email?segment=guide-leads';
@@ -419,7 +458,13 @@ function LeadsTab() {
             <option value="iniciativa-fiscal-2027">Iniciativa Fiscal 2027</option>
             <option value="media-kit">Media Kit</option>
             <option value="newsletter">Lead suscrito · Mailing</option>
-            <option value="centro-recursos">Centro de recursos</option>
+            <optgroup label="Centro de Recursos">
+              <option value="centro-recursos">— Todos los archivos</option>
+              <option value="centro-recursos:ingresos-exentos-isr">Ingresos exentos de ISR</option>
+              <option value="centro-recursos:si-tu-agenda-se-ve-asi">Si tu agenda se ve así</option>
+              <option value="centro-recursos:guia-para-blindarte-del-sat">Guía para blindarte del SAT</option>
+              <option value="centro-recursos:partes-relacionadas">Partes relacionadas</option>
+            </optgroup>
             <option value="estrategia-fiscal-dossier">Dossier Estrategia Fiscal</option>
             <option value="libro-sat-waitlist">Lista de espera · Libro SAT</option>
             <option value="contact">Formulario contacto</option>
@@ -2187,7 +2232,16 @@ function ContactDrawer({ contact, tags, onClose }: { contact: User; tags: Tag[];
               <ul className="space-y-2">
                 {leadHistory.map((l) => (
                   <li key={l.id} className="flex items-center justify-between gap-3 border border-ink-900/10 bg-cream-200 px-3 py-2 text-xs">
-                    <span className="font-medium text-ink-900">{LEAD_SOURCE_LABELS[l.source] ?? l.source}</span>
+                    <span className="font-medium text-ink-900">{(() => {
+                      // Si es un centro-recursos, mostrar el subid derivado del meta
+                      // para no repetir "Centro de recursos" en cada fila.
+                      if (l.source === 'centro-recursos') {
+                        const meta = (l.meta ?? {}) as Record<string, unknown>;
+                        const resourceId = typeof meta.resourceId === 'string' ? meta.resourceId : '';
+                        if (resourceId) return resolveLeadSourceLabel(`centro-recursos:${resourceId}`);
+                      }
+                      return resolveLeadSourceLabel(l.source);
+                    })()}</span>
                     <span className="text-ink-500">{formatLeadDate(l.createdAt)}</span>
                   </li>
                 ))}
