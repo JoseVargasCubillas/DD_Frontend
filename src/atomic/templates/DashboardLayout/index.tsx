@@ -2,6 +2,7 @@ import { Outlet, NavLink, useNavigate, ScrollRestoration } from 'react-router-do
 import { useAuth } from '@hooks/useAuth';
 import Navbar from '@organisms/Navbar';
 import Footer from '@organisms/Footer';
+import WhatsAppBubble from '@organisms/WhatsAppBubble';
 
 const MENU = [
   { to: '/mi-cuenta/cursos', label: 'Mis cursos' },
@@ -71,6 +72,7 @@ export default function DashboardLayout() {
       </main>
 
       <Footer />
+      <WhatsAppBubble />
     </div>
   );
 }

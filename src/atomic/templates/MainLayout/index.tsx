@@ -2,6 +2,7 @@ import { Outlet, ScrollRestoration } from 'react-router-dom';
 import Navbar from '@organisms/Navbar';
 import Footer from '@organisms/Footer';
 import GlobalMotion from '@organisms/GlobalMotion';
+import WhatsAppBubble from '@organisms/WhatsAppBubble';
 
 export default function MainLayout() {
   return (
@@ -13,6 +14,7 @@ export default function MainLayout() {
         <Outlet />
       </main>
       <Footer />
+      <WhatsAppBubble />
     </div>
   );
 }
