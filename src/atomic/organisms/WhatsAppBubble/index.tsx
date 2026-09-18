@@ -19,8 +19,6 @@ const HIDE_ON_PREFIXES = [
 const SCROLL_GESTURE_THRESHOLD = 2;
 const SCROLL_Y_FALLBACK_MULT = 1.4; // 1.4x viewport height
 
-const SESSION_SHOWN_KEY = 'dd-wa-bubble-shown';
-
 type ChatOption = {
   id: string;
   emoji: string;
@@ -90,22 +88,8 @@ export default function WhatsAppBubble() {
     if (typeof window === 'undefined') return;
     if (visible) return;
 
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
     const reveal = () => {
       setVisible(true);
-      // Ping unico por sesion para medir cuantos usuarios llegaron a verla.
-      try {
-        if (window.sessionStorage.getItem(SESSION_SHOWN_KEY) !== '1') {
-          window.sessionStorage.setItem(SESSION_SHOWN_KEY, '1');
-          trackWaClick('bubble-shown', {
-            page: window.location.pathname,
-            meta: { reduceMotion },
-          });
-        }
-      } catch {
-        // sessionStorage bloqueado — no hacemos nada.
-      }
     };
 
     const onScroll = () => {
@@ -148,15 +132,9 @@ export default function WhatsAppBubble() {
   if (hidden) return null;
 
   const handleToggle = () => {
-    setOpen((prev) => {
-      const next = !prev;
-      if (next) {
-        trackWaClick('bubble-open', {
-          page: window.location.pathname,
-        });
-      }
-      return next;
-    });
+    // Solo alterna el widget; el tracking se dispara UNICAMENTE cuando
+    // el usuario elige una de las opciones (mensaje concreto a WhatsApp).
+    setOpen((prev) => !prev);
   };
 
   const handleOptionClick = (option: ChatOption) => {
