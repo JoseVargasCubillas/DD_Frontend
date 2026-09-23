@@ -21,6 +21,9 @@ const EstrategiaFiscalLanding = lazy(
 );
 const HoldingLanding = lazy(() => import("@pages/Events/Holding"));
 const ComoCobrarLanding = lazy(() => import("@pages/Events/ComoCobrar"));
+const EmprendedorVsCeoLanding = lazy(
+  () => import("@pages/Events/EmprendedorVsCeo"),
+);
 const ProspeccionDigitalLanding = lazy(
   () => import("@pages/Events/ProspeccionDigital"),
 );
@@ -98,6 +101,18 @@ export const router = createBrowserRouter([
       { path: "/eventos/holding-noviembre", element: <HoldingLanding /> },
       { path: "/eventos/como-cobrar", element: <ComoCobrarLanding /> },
       { path: "/eventos/como-cobrar-como-ceo", element: <ComoCobrarLanding /> },
+      {
+        path: "/eventos/emprendedor-vs-ceo",
+        element: <EmprendedorVsCeoLanding />,
+      },
+      {
+        path: "/eventos/tablero-del-ceo",
+        element: <EmprendedorVsCeoLanding />,
+      },
+      {
+        path: "/eventos/el-emprendedor-vs-el-ceo",
+        element: <EmprendedorVsCeoLanding />,
+      },
       {
         path: "/eventos/cumbre-sistema-prospeccion-digital",
         element: <ProspeccionDigitalLanding />,
