@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "@store/cartStore";
+import HubspotForm from "@molecules/HubspotForm";
 import type { OrderItem } from "@t/index";
 import holdingPoster from "../../../../../assets/eventos/evento-holding.png";
 
@@ -356,6 +357,32 @@ export default function HoldingLanding() {
           <p className="mt-7 font-serif text-[15px] italic text-cream-200/55">
             - Acceso completo . material descargable . sesión en vivo.
           </p>
+        </div>
+      </section>
+
+      {/* ============ FORMULARIO — Info y lista de interés (HubSpot) ============ */}
+      <section
+        id="holding-formulario"
+        className="scroll-mt-24 border-t border-ink-900/10 bg-cream px-5 py-24 text-ink-900 sm:px-8 lg:px-12 lg:py-28"
+      >
+        <div className="mx-auto grid max-w-[1180px] items-start gap-14 lg:grid-cols-[1fr_1.15fr] lg:gap-20">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-ink-900/55">
+              - Déjanos tus datos
+            </p>
+            <h2 className="mt-6 font-serif text-[38px] font-normal leading-[1.05] tracking-[-0.03em] sm:text-[52px] lg:text-[60px]">
+              Quiero recibir <span className="italic">más información.</span>
+            </h2>
+            <p className="mt-7 max-w-[440px] font-serif text-[16px] italic leading-[1.65] text-ink-900/70">
+              Te contactamos para resolver cualquier duda de estructura, agenda y modalidad, y para reservarte cupo cuando abramos la siguiente edición.
+            </p>
+          </div>
+          <div className="border border-ink-900/10 bg-cream-100 p-7 sm:p-10 lg:p-12">
+            <HubspotForm
+              portalId="49215056"
+              formId="559c571f-dbee-4945-81f8-1329f8d41ffe"
+            />
+          </div>
         </div>
       </section>
     </main>

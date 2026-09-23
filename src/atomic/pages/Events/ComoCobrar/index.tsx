@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import HubspotForm from "@molecules/HubspotForm";
 import heroBackground from "../../../../../assets/eventos/fondo-como-cobrar-ceo.png";
 
 const blocks = [
@@ -306,32 +307,25 @@ export default function ComoCobrarLanding() {
 
       <section
         id="registro"
-        className="scroll-mt-24 border-t border-cream-400 bg-cream-200 px-5 py-24 text-center sm:px-8 lg:px-12 lg:py-32"
+        className="scroll-mt-24 border-t border-cream-400 bg-cream-200 px-5 py-24 sm:px-8 lg:px-12 lg:py-32"
       >
-        <div className="mx-auto max-w-[960px]">
-          <p className="text-[10px] font-bold uppercase tracking-[0.34em] text-ink-300">
-            04 / Registro
-          </p>
-          <h2 className="mt-7 font-serif text-[clamp(56px,7vw,96px)] font-normal leading-[0.94] tracking-[-0.06em]">
-            Reserva tu <span className="italic">lugar.</span>
-          </h2>
-          <p className="mx-auto mt-7 max-w-[620px] text-[16px] leading-[1.75] text-ink-500">
-            De momento dejamos esta landing almacenada como pieza independiente.
-            Cuando el evento exista en calendario, este bloque puede conectarse
-            al formulario o checkout definitivo sin rehacer el diseño.
-          </p>
-          <div className="mx-auto mt-10 grid max-w-[620px] gap-3 border border-cream-400 bg-cream-50 p-5 sm:grid-cols-[1fr_auto]">
-            <input
-              aria-label="Correo para registro"
-              placeholder="tu correo"
-              className="min-h-12 border border-cream-400 bg-white px-4 text-[14px] outline-none placeholder:text-ink-300 focus:border-ink-900"
+        <div className="mx-auto grid max-w-[1180px] items-start gap-14 lg:grid-cols-[1fr_1.15fr] lg:gap-20">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.34em] text-ink-300">
+              04 / Registro
+            </p>
+            <h2 className="mt-7 font-serif text-[clamp(48px,6vw,80px)] font-normal leading-[0.98] tracking-[-0.05em]">
+              Reserva tu <span className="italic">lugar.</span>
+            </h2>
+            <p className="mt-7 max-w-[440px] font-serif text-[16px] italic leading-[1.65] text-ink-500">
+              Déjanos tus datos y te enviamos fechas, sede y todo lo que necesitas para asegurar tu lugar en Cómo Cobrar como CEO.
+            </p>
+          </div>
+          <div className="border border-cream-400 bg-cream-50 p-7 sm:p-10 lg:p-12">
+            <HubspotForm
+              portalId="49215056"
+              formId="c1169b79-18f9-4138-a777-d156f1b0b227"
             />
-            <Link
-              to="/contacto"
-              className="inline-flex min-h-12 items-center justify-center bg-ink-900 px-6 text-[11px] font-bold uppercase tracking-[0.2em] text-white transition hover:bg-[#765b32]"
-            >
-              Pedir acceso →
-            </Link>
           </div>
         </div>
       </section>

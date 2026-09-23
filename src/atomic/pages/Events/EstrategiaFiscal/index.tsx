@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import LeadCaptureModal from '@molecules/LeadCaptureModal';
+import HubspotForm from '@molecules/HubspotForm';
 import { requestEstrategiaFiscalDossier } from '@api/leads.api';
 import { useNavigate } from 'react-router-dom';
 import { useAutoUnmuteOnGesture } from '@hooks/useAutoUnmuteOnGesture';
@@ -1015,6 +1016,32 @@ export default function EstrategiaFiscalLanding() {
             <span>Reservar mi lugar</span>
             <span aria-hidden="true">→</span>
           </button>
+        </div>
+      </section>
+
+      {/* ============ FORMULARIO — Info y lista de interés (HubSpot) ============ */}
+      <section
+        id="estrategia-fiscal-formulario"
+        className="scroll-mt-24 border-t border-ink-900/10 bg-cream px-5 py-24 text-ink-900 sm:px-8 lg:px-12 lg:py-28"
+      >
+        <div className="mx-auto grid max-w-[1180px] items-start gap-14 lg:grid-cols-[1fr_1.15fr] lg:gap-20">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-ink-900/55">
+              - Recibe información
+            </p>
+            <h2 className="mt-6 font-serif text-[38px] font-normal leading-[1.05] tracking-[-0.03em] sm:text-[52px] lg:text-[60px]">
+              Quiero saber más del <span className="italic">seminario.</span>
+            </h2>
+            <p className="mt-7 max-w-[440px] font-serif text-[16px] italic leading-[1.65] text-ink-900/70">
+              Déjanos tus datos y te contactamos con fechas, sedes y el temario detallado del seminario de Estrategia Fiscal.
+            </p>
+          </div>
+          <div className="border border-ink-900/10 bg-cream-100 p-7 sm:p-10 lg:p-12">
+            <HubspotForm
+              portalId="49215056"
+              formId="650e06f8-3f73-48b9-9b2c-e9d8b64dd128"
+            />
+          </div>
         </div>
       </section>
 

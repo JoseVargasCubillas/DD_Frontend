@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import HubspotForm from '@molecules/HubspotForm';
 import { useEvents } from '@hooks/useEvents';
 import { useNowTick } from '@hooks/useNowTick';
 import {
@@ -29,8 +30,6 @@ import {
 
 const ENABLE_EVENT_API_SYNC = import.meta.env.VITE_EVENTS_API_SYNC !== 'false';
 
-const HUBSPOT_SCRIPT_ID = 'hs-form-embed-49215056';
-const HUBSPOT_SCRIPT_SRC = 'https://js.hsforms.net/forms/embed/developer/49215056.js';
 const HUBSPOT_PORTAL_ID = '49215056';
 const HUBSPOT_FORM_ID = '5057ba2a-b64d-4073-967d-2c61c652dc77';
 
@@ -182,21 +181,7 @@ const llevas = [
   { n: '04', text: 'El', it: 'costo real de operar sin sistema.' },
 ];
 
-// Carga el script del embed de HubSpot una unica vez por documento.
-function useHubspotEmbed() {
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    if (document.getElementById(HUBSPOT_SCRIPT_ID)) return;
-    const script = document.createElement('script');
-    script.id = HUBSPOT_SCRIPT_ID;
-    script.src = HUBSPOT_SCRIPT_SRC;
-    script.defer = true;
-    document.body.appendChild(script);
-  }, []);
-}
-
 export default function EmprendedorVsCeoLanding() {
-  useHubspotEmbed();
   const formRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToRegistro = () => {
@@ -814,117 +799,11 @@ export default function EmprendedorVsCeoLanding() {
             </h3>
 
             {/* Embed oficial de HubSpot — el script global hidrata este div */}
-            <div
-              className="hs-form-html dd-hs-form"
-              data-region="na1"
-              data-form-id={HUBSPOT_FORM_ID}
-              data-portal-id={HUBSPOT_PORTAL_ID}
-            />
+            <HubspotForm portalId={HUBSPOT_PORTAL_ID} formId={HUBSPOT_FORM_ID} />
 
             <div className="mt-6 border-t border-ink-900/10 pt-5 text-center font-serif text-[13px] italic text-ink-600">
               — Recibirás el enlace de acceso en menos de 5 minutos.
             </div>
-
-            {/* Ajustes visuales minimos para el markup que inyecta HubSpot,
-                sin romper su comportamiento */}
-            <style>{`
-              .dd-hs-form form { display:flex; flex-direction:column; gap:22px; }
-              .dd-hs-form .hs-form-field { display:flex; flex-direction:column; }
-              .dd-hs-form label {
-                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-                font-size: 9px;
-                font-weight: 500;
-                letter-spacing: 0.20em;
-                text-transform: uppercase;
-                color: #6b6258;
-                margin-bottom: 8px;
-              }
-              .dd-hs-form .hs-form-required { color: #6b4f2a; margin-left: 4px; }
-              .dd-hs-form input[type="text"],
-              .dd-hs-form input[type="email"],
-              .dd-hs-form input[type="tel"],
-              .dd-hs-form input[type="number"],
-              .dd-hs-form select,
-              .dd-hs-form textarea {
-                width: 100%;
-                font-family: 'Libre Baskerville', Baskerville, Georgia, serif;
-                font-size: 16px;
-                color: #0a0a0a;
-                background: transparent;
-                border: 0;
-                border-bottom: 1px solid rgba(10,10,10,0.32);
-                padding: 4px 0 10px;
-                outline: none;
-                transition: border-color 260ms ease;
-                -webkit-appearance: none;
-                appearance: none;
-                border-radius: 0;
-              }
-              .dd-hs-form input:focus,
-              .dd-hs-form select:focus,
-              .dd-hs-form textarea:focus { border-bottom-color: #0a0a0a; }
-              .dd-hs-form input::placeholder,
-              .dd-hs-form textarea::placeholder { color: #6b6258; font-style: italic; }
-              .dd-hs-form select {
-                cursor: pointer;
-                background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%236b6258' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-                background-repeat: no-repeat;
-                background-position: right 4px center;
-                padding-right: 24px;
-              }
-              .dd-hs-form ul.hs-error-msgs { list-style: none; padding: 0; margin: 8px 0 0; }
-              .dd-hs-form .hs-error-msg,
-              .dd-hs-form .hs-error-msgs label {
-                font-family: 'Libre Baskerville', Baskerville, Georgia, serif;
-                font-size: 11px;
-                font-style: italic;
-                letter-spacing: 0;
-                text-transform: none;
-                color: #b91c1c;
-                margin: 0;
-              }
-              .dd-hs-form .hs-form-booleancheckbox-display,
-              .dd-hs-form .legal-consent-container label {
-                display: flex;
-                gap: 10px;
-                align-items: flex-start;
-                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-                font-size: 11.5px;
-                letter-spacing: 0;
-                text-transform: none;
-                color: #2a2a2a;
-                cursor: pointer;
-                line-height: 1.55;
-              }
-              .dd-hs-form input[type="checkbox"] { accent-color: #0a0a0a; margin-top: 2px; }
-              .dd-hs-form .hs-submit { margin-top: 6px; }
-              .dd-hs-form .hs-button, .dd-hs-form input[type="submit"] {
-                width: 100%;
-                padding: 18px 32px;
-                background: #0a0a0a;
-                color: #f5f2ec;
-                border: 1px solid #0a0a0a;
-                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-                font-size: 11.5px;
-                font-weight: 500;
-                letter-spacing: 0.24em;
-                text-transform: uppercase;
-                cursor: pointer;
-                transition: background 300ms ease, transform 300ms cubic-bezier(.16,1,.3,1), box-shadow 300ms ease;
-              }
-              .dd-hs-form .hs-button:hover, .dd-hs-form input[type="submit"]:hover {
-                background: #6b4f2a;
-                border-color: #6b4f2a;
-                transform: translateY(-2px);
-                box-shadow: 0 12px 30px rgba(0,0,0,0.22);
-              }
-              .dd-hs-form .submitted-message {
-                font-family: 'Libre Baskerville', Baskerville, Georgia, serif;
-                font-size: 17px;
-                line-height: 1.5;
-                color: #0a0a0a;
-              }
-            `}</style>
           </div>
         </div>
       </section>
