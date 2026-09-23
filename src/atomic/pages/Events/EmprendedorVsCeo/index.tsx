@@ -1,4 +1,14 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEvents } from '@hooks/useEvents';
+import { useNowTick } from '@hooks/useNowTick';
+import {
+  FALLBACK_CALENDAR_EVENTS,
+  getNextEmprendedorVsCeoEvent,
+  isEmprendedorVsCeoEvent,
+  loadStoredCalendarEvents,
+  mergeCalendarEventSources,
+  type CalendarEventSummary,
+} from '@utils/eventCalendar';
 
 /**
  * Landing "El emprendedor vs. el CEO" — clase gratuita por Zoom.
@@ -10,18 +20,51 @@ import { useEffect, useRef } from 'react';
  * script del embed se carga una sola vez por sesion; el elemento
  * `.hs-form-html` se renderiza dentro del contenedor y HubSpot lo
  * hidrata al detectar el script.
+ *
+ * La fecha se sincroniza con el calendario editorial (utils/eventCalendar):
+ * usa el proximo evento cuyo slug coincide con "emprendedor-vs-ceo" o
+ * "tablero-del-ceo" — mismo patron que la landing de Estrategia Fiscal.
+ * Actualizar `startDate` en FALLBACK_CALENDAR_EVENTS o desde el admin.
  */
+
+const ENABLE_EVENT_API_SYNC = import.meta.env.VITE_EVENTS_API_SYNC !== 'false';
 
 const HUBSPOT_SCRIPT_ID = 'hs-form-embed-49215056';
 const HUBSPOT_SCRIPT_SRC = 'https://js.hsforms.net/forms/embed/developer/49215056.js';
 const HUBSPOT_PORTAL_ID = '49215056';
 const HUBSPOT_FORM_ID = '5057ba2a-b64d-4073-967d-2c61c652dc77';
 
-const metaItems: [string, string][] = [
-  ['Fecha', '10 de noviembre · 2026'],
-  ['Modalidad', 'Zoom en vivo'],
-  ['Inversión', 'Gratuita'],
-];
+const FALLBACK_EMPRENDEDOR_VS_CEO: CalendarEventSummary =
+  FALLBACK_CALENDAR_EVENTS.find(isEmprendedorVsCeoEvent) ?? FALLBACK_CALENDAR_EVENTS[0];
+
+// "10 de noviembre · 2026" — usado en el bloque de meta del hero.
+const formatMetaDate = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Fecha por definir';
+  const day = new Intl.DateTimeFormat('es-MX', {
+    day: 'numeric',
+    month: 'long',
+  }).format(date);
+  return `${day} · ${date.getFullYear()}`;
+};
+
+// "10 de noviembre" — usado en el cierre editorial.
+const formatSentenceDate = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'próximamente';
+  return new Intl.DateTimeFormat('es-MX', {
+    day: 'numeric',
+    month: 'long',
+  }).format(date);
+};
+
+// "Zoom en vivo" / "Presencial" — respeta modality del calendario.
+const formatMetaModality = (event: CalendarEventSummary) => {
+  if (event.modality === 'online') return 'Zoom en vivo';
+  if (event.modality === 'hybrid') return 'Híbrido';
+  if (event.modality === 'in-person') return 'Presencial';
+  return event.location || 'Zoom en vivo';
+};
 
 const emprendedorItems = [
   'Ventas del mes',
@@ -159,6 +202,54 @@ export default function EmprendedorVsCeoLanding() {
   const scrollToRegistro = () => {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  // Sincroniza la fecha con el calendario editorial (mismo patron que la
+  // landing de Estrategia Fiscal). Fuentes: FALLBACK + API + admin (local).
+  const nowTick = useNowTick(30_000);
+  const [storedEvents, setStoredEvents] = useState<CalendarEventSummary[]>(
+    loadStoredCalendarEvents,
+  );
+  const { data: eventsData } = useEvents(
+    ENABLE_EVENT_API_SYNC
+      ? { limit: 100, status: 'upcoming' }
+      : { limit: 0, status: 'upcoming' },
+  );
+
+  useEffect(() => {
+    const refresh = () => setStoredEvents(loadStoredCalendarEvents());
+    window.addEventListener('storage', refresh);
+    window.addEventListener('dd-events-updated', refresh);
+    window.addEventListener('focus', refresh);
+    return () => {
+      window.removeEventListener('storage', refresh);
+      window.removeEventListener('dd-events-updated', refresh);
+      window.removeEventListener('focus', refresh);
+    };
+  }, []);
+
+  const currentEvent = useMemo<CalendarEventSummary>(() => {
+    const candidates = mergeCalendarEventSources(
+      FALLBACK_CALENDAR_EVENTS,
+      (eventsData?.data as CalendarEventSummary[] | undefined) ?? [],
+      storedEvents,
+    );
+    return (
+      getNextEmprendedorVsCeoEvent(candidates, nowTick) ??
+      FALLBACK_EMPRENDEDOR_VS_CEO
+    );
+  }, [eventsData?.data, storedEvents, nowTick]);
+
+  const currentEventDate = currentEvent.startDate || FALLBACK_EMPRENDEDOR_VS_CEO.startDate;
+  const metaDateLabel = formatMetaDate(currentEventDate);
+  const sentenceDateLabel = formatSentenceDate(currentEventDate);
+  const metaModalityLabel = formatMetaModality(currentEvent);
+  const yearLabel = String(new Date(currentEventDate).getFullYear() || new Date().getFullYear());
+
+  const metaItems: [string, string][] = [
+    ['Fecha', metaDateLabel],
+    ['Modalidad', metaModalityLabel],
+    ['Inversión', 'Gratuita'],
+  ];
 
   return (
     <main className="overflow-hidden bg-cream text-ink-900">
@@ -339,7 +430,7 @@ export default function EmprendedorVsCeoLanding() {
           {/* Columna texto */}
           <div className="relative">
             <div className="mb-10 flex flex-col gap-3 border-b border-cream/15 pb-5 text-[10px] font-medium uppercase tracking-[0.30em] text-cream/50 sm:flex-row sm:items-center sm:justify-between">
-              <span><span className="text-[#c49454]">— 00</span> Evento gratuito · 2026</span>
+              <span><span className="text-[#c49454]">— 00</span> Evento gratuito · {yearLabel}</span>
               <span>Diego Díaz · Estratega fiscal</span>
             </div>
 
@@ -416,7 +507,7 @@ export default function EmprendedorVsCeoLanding() {
         </span>
         <span>Vía Zoom · En vivo</span>
         <span className="mx-3 text-cream/25">·</span>
-        <span>10 de noviembre · 2026</span>
+        <span>{metaDateLabel}</span>
       </div>
 
       {/* ============ PROBLEMA ============ */}
@@ -861,7 +952,7 @@ export default function EmprendedorVsCeoLanding() {
             </span>
           </h2>
           <div className="mt-11 font-serif text-[16px] italic text-cream/65 sm:text-[18px]">
-            — La clase empieza el 10 de noviembre.
+            — La clase empieza el {sentenceDateLabel}.
           </div>
         </div>
       </section>

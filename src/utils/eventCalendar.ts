@@ -184,6 +184,21 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     modality: "in-person",
   },
   {
+    title: "El emprendedor vs. el CEO",
+    slug: "emprendedor-vs-ceo-noviembre",
+    shortDescription:
+      "Clase gratuita por Zoom sobre la mentalidad y el tablero del CEO para dueños de empresa que quieren dirigir en lugar de operar.",
+    description:
+      "Clase gratuita por Zoom sobre la mentalidad y el tablero del CEO para dueños de empresa que quieren dirigir en lugar de operar.",
+    location: "Zoom",
+    onlineUrl: "/eventos/emprendedor-vs-ceo",
+    startDate: "2026-11-10T19:00:00-06:00",
+    capacity: 500,
+    registeredCount: 0,
+    status: "upcoming",
+    modality: "online",
+  },
+  {
     title: "4E Código Rockefeller",
     slug: "4e-codigo-rockefeller",
     shortDescription:
@@ -316,6 +331,27 @@ export const getNextEstrategiaFiscalEvent = (
   now = Date.now(),
 ) => getNextUpcomingCalendarEvent(events.filter(isEstrategiaFiscalEvent), now);
 
+export const isEmprendedorVsCeoEvent = (
+  event: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl">,
+) => {
+  const slug = (event.slug || "").toLowerCase();
+  const title = (event.title || "").toLowerCase();
+  const onlineUrl = (event.onlineUrl || "").toLowerCase();
+  return (
+    slug.includes("emprendedor-vs-ceo") ||
+    slug.includes("tablero-del-ceo") ||
+    title.includes("emprendedor vs") ||
+    title.includes("tablero del ceo") ||
+    onlineUrl.includes("/emprendedor-vs-ceo") ||
+    onlineUrl.includes("/tablero-del-ceo")
+  );
+};
+
+export const getNextEmprendedorVsCeoEvent = (
+  events: CalendarEventSummary[],
+  now = Date.now(),
+) => getNextUpcomingCalendarEvent(events.filter(isEmprendedorVsCeoEvent), now);
+
 // Clasifica un evento del calendario en una etiqueta de formato ("Seminario",
 // "Cumbre", etc.) a partir de su slug/título — la misma taxonomía que ya se
 // usa a mano en la página de Eventos, centralizada aquí para reutilizarla
@@ -347,6 +383,7 @@ export const getCalendarEventType = (
   if (key.includes("mentalidad")) return "Seminario";
   if (key.includes("holding") || key.includes("persona-fisica") || key.includes("persona física")) return "Webinar";
   if (key.includes("como-cobrar") || key.includes("como cobrar")) return "Seminario";
+  if (key.includes("emprendedor-vs-ceo") || key.includes("tablero-del-ceo") || key.includes("emprendedor vs")) return "Webinar";
   return "Evento";
 };
 
@@ -373,6 +410,7 @@ export const hasDedicatedCalendarLanding = (
   event: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl" | "id" | "_id">,
 ) => {
   if (isEstrategiaFiscalEvent(event)) return true;
+  if (isEmprendedorVsCeoEvent(event)) return true;
   const slug = (event.slug || "").toLowerCase();
   const title = event.title.trim().toLowerCase();
   if (slug.startsWith("holding") || title === "holding") return true;
@@ -413,6 +451,14 @@ export const getCalendarEventPath = (
     title.includes("taller de estrategia fiscal")
   ) {
     return "/eventos/estrategia-fiscal";
+  }
+  if (
+    event.slug.includes("emprendedor-vs-ceo") ||
+    event.slug.includes("tablero-del-ceo") ||
+    title.includes("emprendedor vs") ||
+    title.includes("tablero del ceo")
+  ) {
+    return "/eventos/emprendedor-vs-ceo";
   }
   if (
     event.slug.includes("como-cobrar") ||
