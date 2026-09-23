@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import HubspotForm from "@molecules/HubspotForm";
+import { HUBSPOT_FORMS } from "@utils/hubspotForms";
 import heroBackground from "../../../../../assets/eventos/fondo-como-cobrar-ceo.png";
 
 const blocks = [
@@ -323,8 +324,8 @@ export default function ComoCobrarLanding() {
           </div>
           <div className="border border-cream-400 bg-cream-50 p-7 sm:p-10 lg:p-12">
             <HubspotForm
-              portalId="49215056"
-              formId="c1169b79-18f9-4138-a777-d156f1b0b227"
+              portalId={HUBSPOT_FORMS.comoCobrarComoCeo.portalId}
+              formId={HUBSPOT_FORMS.comoCobrarComoCeo.formId}
             />
           </div>
         </div>

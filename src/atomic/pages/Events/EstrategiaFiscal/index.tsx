@@ -1,6 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import LeadCaptureModal from '@molecules/LeadCaptureModal';
 import HubspotForm from '@molecules/HubspotForm';
+import { HUBSPOT_FORMS } from '@utils/hubspotForms';
 import { requestEstrategiaFiscalDossier } from '@api/leads.api';
 import { useNavigate } from 'react-router-dom';
 import { useAutoUnmuteOnGesture } from '@hooks/useAutoUnmuteOnGesture';
@@ -1038,8 +1039,8 @@ export default function EstrategiaFiscalLanding() {
           </div>
           <div className="border border-ink-900/10 bg-cream-100 p-7 sm:p-10 lg:p-12">
             <HubspotForm
-              portalId="49215056"
-              formId="650e06f8-3f73-48b9-9b2c-e9d8b64dd128"
+              portalId={HUBSPOT_FORMS.estrategiaFiscal.portalId}
+              formId={HUBSPOT_FORMS.estrategiaFiscal.formId}
             />
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import HubspotForm from '@molecules/HubspotForm';
+import { HUBSPOT_FORMS } from '@utils/hubspotForms';
 import { useEvents } from '@hooks/useEvents';
 import { useNowTick } from '@hooks/useNowTick';
 import {
@@ -30,8 +31,8 @@ import {
 
 const ENABLE_EVENT_API_SYNC = import.meta.env.VITE_EVENTS_API_SYNC !== 'false';
 
-const HUBSPOT_PORTAL_ID = '49215056';
-const HUBSPOT_FORM_ID = '5057ba2a-b64d-4073-967d-2c61c652dc77';
+const HUBSPOT_PORTAL_ID = HUBSPOT_FORMS.emprendedorVsCeo.portalId;
+const HUBSPOT_FORM_ID = HUBSPOT_FORMS.emprendedorVsCeo.formId;
 
 const FALLBACK_EMPRENDEDOR_VS_CEO: CalendarEventSummary =
   FALLBACK_CALENDAR_EVENTS.find(isEmprendedorVsCeoEvent) ?? FALLBACK_CALENDAR_EVENTS[0];

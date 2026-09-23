@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "@store/cartStore";
 import HubspotForm from "@molecules/HubspotForm";
+import { HUBSPOT_FORMS } from "@utils/hubspotForms";
 import type { OrderItem } from "@t/index";
 import holdingPoster from "../../../../../assets/eventos/evento-holding.png";
 
@@ -379,8 +380,8 @@ export default function HoldingLanding() {
           </div>
           <div className="border border-ink-900/10 bg-cream-100 p-7 sm:p-10 lg:p-12">
             <HubspotForm
-              portalId="49215056"
-              formId="559c571f-dbee-4945-81f8-1329f8d41ffe"
+              portalId={HUBSPOT_FORMS.holding.portalId}
+              formId={HUBSPOT_FORMS.holding.formId}
             />
           </div>
         </div>
