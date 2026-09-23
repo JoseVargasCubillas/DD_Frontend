@@ -164,7 +164,7 @@ export default function EmprendedorVsCeoLanding() {
     <main className="overflow-hidden bg-cream text-ink-900">
       {/* ============ HERO ============ */}
       <section className="relative overflow-hidden bg-ink-900 text-cream">
-        <div className="relative z-[2] border-b border-cream/10 bg-cream px-5 py-3 text-center text-[10px] font-medium uppercase tracking-[0.26em] text-ink-900 sm:px-8">
+        <div className="relative z-[3] border-b border-cream/10 bg-cream px-5 py-3 text-center text-[10px] font-medium uppercase tracking-[0.26em] text-ink-900 sm:px-8">
           <span className="mr-3 inline-block border border-ink-900 px-2 py-0.5 text-[9px] tracking-[0.22em]">
             Clase gratuita
           </span>
@@ -173,8 +173,42 @@ export default function EmprendedorVsCeoLanding() {
           <span>10 de noviembre · 2026</span>
         </div>
 
-        {/* Glow decorativo */}
-        <div className="pointer-events-none absolute right-[-160px] top-[-120px] h-[720px] w-[720px] rounded-full bg-[#8a6a3d]/25 blur-3xl" />
+        {/* Fondo: piezas de ajedrez editoriales */}
+        <picture aria-hidden="true">
+          <source
+            media="(min-width: 768px)"
+            srcSet="/eventos/ceo-ajedrez-hero.webp"
+            type="image/webp"
+          />
+          <img
+            src="/eventos/ceo-ajedrez-hero-sm.webp"
+            alt=""
+            loading="eager"
+            decoding="async"
+            className="pointer-events-none absolute inset-0 z-[1] h-full w-full select-none object-cover object-right opacity-[0.28] mix-blend-screen md:object-[right_center] md:opacity-40"
+          />
+        </picture>
+        {/* Gradiente lateral para asegurar contraste sobre el texto */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-[1]"
+          style={{
+            background:
+              'linear-gradient(90deg, rgba(10,10,10,0.96) 0%, rgba(10,10,10,0.82) 42%, rgba(10,10,10,0.35) 78%, rgba(10,10,10,0.15) 100%)',
+          }}
+        />
+        {/* Grano suave para textura editorial */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-[1] opacity-[0.06] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.6'/></svg>\")",
+          }}
+        />
+
+        {/* Glow decorativo dorado */}
+        <div className="pointer-events-none absolute right-[-160px] top-[-120px] z-[1] h-[720px] w-[720px] rounded-full bg-[#8a6a3d]/25 blur-3xl" />
 
         <div className="relative z-[2] mx-auto max-w-[1312px] px-5 py-20 sm:px-8 sm:py-24 lg:px-16 lg:py-28">
           <div className="mb-10 flex flex-col gap-3 border-b border-cream/20 pb-5 text-[10px] font-medium uppercase tracking-[0.30em] text-cream/55 sm:flex-row sm:items-center sm:justify-between">
@@ -190,7 +224,7 @@ export default function EmprendedorVsCeoLanding() {
             </span>
           </h1>
 
-          <p className="mt-8 max-w-[640px] text-[15.5px] leading-[1.7] text-cream/80">
+          <p className="mt-8 max-w-[640px] text-[15.5px] leading-[1.7] text-cream/85 [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
             La diferencia entre <strong className="font-medium text-cream">facturar más</strong> y realmente crecer no
             está en el esfuerzo. Está en el sistema. Una clase por Zoom para dueños de empresa que quieren pasar de
             administrar operación a dirigir un negocio.
@@ -199,7 +233,7 @@ export default function EmprendedorVsCeoLanding() {
           <div className="mt-11 grid gap-6 border-y border-cream/20 py-6 sm:grid-cols-3">
             {metaItems.map(([label, value]) => (
               <div key={label}>
-                <p className="text-[9.5px] font-medium uppercase tracking-[0.24em] text-cream/50">— {label}</p>
+                <p className="text-[9.5px] font-medium uppercase tracking-[0.24em] text-cream/60">— {label}</p>
                 <p className="mt-2 font-serif text-[18px] italic text-cream">{value}</p>
               </div>
             ))}
@@ -208,7 +242,7 @@ export default function EmprendedorVsCeoLanding() {
           <button
             type="button"
             onClick={scrollToRegistro}
-            className="mt-11 inline-flex min-h-14 items-center gap-6 border border-cream bg-cream px-9 text-[11.5px] font-medium uppercase tracking-[0.24em] text-ink-900 transition-all duration-300 hover:-translate-y-0.5 hover:gap-8 hover:bg-cream-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cream"
+            className="mt-11 inline-flex min-h-14 cursor-pointer items-center gap-6 border border-cream bg-cream px-9 text-[11.5px] font-medium uppercase tracking-[0.24em] text-ink-900 transition-all duration-300 hover:-translate-y-0.5 hover:gap-8 hover:bg-cream-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cream"
           >
             Reservar mi lugar gratis
             <span className="font-serif text-[16px] italic normal-case tracking-normal">→</span>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { waLink, trackWaClick, WHATSAPP_PHONE } from '@utils/whatsapp';
 
 // Rutas donde la burbuja NO debe aparecer para no distraer del checkout
@@ -10,29 +10,6 @@ const HIDE_ON_PREFIXES = [
   '/libros/', // BookCheckout vive en /libros/:slug/checkout
   '/pago-exito',
   '/pago-cancelado',
-];
-
-// En estas rutas la burbuja NO abre chat de WhatsApp; en su lugar
-// aparece un CTA compacto que empuja hacia el evento correspondiente.
-// El objetivo es no competir con la conversion propia de la landing.
-type EventBubble = {
-  routes: string[];
-  label: string;
-  href: string;
-  source: string;
-};
-
-const EVENT_BUBBLES: EventBubble[] = [
-  {
-    routes: [
-      '/eventos/emprendedor-vs-ceo',
-      '/eventos/tablero-del-ceo',
-      '/eventos/el-emprendedor-vs-el-ceo',
-    ],
-    label: 'Reserva tu lugar gratis',
-    href: '/eventos/emprendedor-vs-ceo#registro',
-    source: 'bubble-event-ceo',
-  },
 ];
 
 // Umbral de "segundo scroll" — el usuario ya recorrio ~1 pantalla y
@@ -104,9 +81,6 @@ export default function WhatsAppBubble() {
   const lastGestureAtRef = useRef(0);
 
   const hidden = HIDE_ON_PREFIXES.some((prefix) => location.pathname.startsWith(prefix));
-  const eventBubble = EVENT_BUBBLES.find((b) =>
-    b.routes.some((r) => location.pathname === r || location.pathname.startsWith(`${r}/`)),
-  );
 
   // Detecta el "segundo scroll" para revelar la burbuja con animacion.
   useEffect(() => {
@@ -156,73 +130,6 @@ export default function WhatsAppBubble() {
   }, [open]);
 
   if (hidden) return null;
-
-  // Variante especial: en landings de evento la burbuja se convierte en
-  // una pill de CTA hacia el registro/checkout del evento, en lugar de
-  // abrir el chat de WhatsApp (para no competir con el formulario propio).
-  if (eventBubble) {
-    return (
-      <>
-        <style>{`
-          @keyframes ddWaCtaIn {
-            0%   { opacity:0; transform: translateY(28px) scale(.9); }
-            100% { opacity:1; transform: translateY(0)    scale(1);  }
-          }
-          @keyframes ddWaCtaPulse {
-            0%   { box-shadow: 0 0 0 0 rgba(138,106,61,.55); }
-            100% { box-shadow: 0 0 0 18px rgba(138,106,61,0); }
-          }
-          @media (prefers-reduced-motion: reduce) {
-            .dd-wa-cta { animation: none !important; }
-            .dd-wa-cta::after { animation: none !important; }
-          }
-        `}</style>
-        <Link
-          to={eventBubble.href}
-          onClick={() =>
-            trackWaClick(eventBubble.source, {
-              page: window.location.pathname,
-            })
-          }
-          aria-label={eventBubble.label}
-          className="dd-wa-cta group fixed z-[80] inline-flex cursor-pointer items-center gap-4 border border-cream/20 text-cream shadow-[0_18px_42px_rgba(10,10,10,0.45),0_4px_10px_rgba(0,0,0,0.25)] transition-all duration-300 hover:-translate-y-0.5 hover:gap-6 hover:bg-[#6b4f2a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a6a3d]"
-          style={{
-            bottom: '24px',
-            right: '24px',
-            padding: '14px 22px',
-            backgroundColor: '#0a0a0a',
-            fontSize: '11px',
-            fontWeight: 500,
-            letterSpacing: '0.22em',
-            textTransform: 'uppercase',
-            opacity: visible ? 1 : 0,
-            pointerEvents: visible ? 'auto' : 'none',
-            animation: visible ? 'ddWaCtaIn 620ms cubic-bezier(.16,1,.3,1) both' : undefined,
-          }}
-        >
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0"
-            style={{
-              animation: visible ? 'ddWaCtaPulse 2.4s ease-out infinite' : undefined,
-            }}
-          />
-          <span
-            aria-hidden="true"
-            className="inline-block h-2 w-2 rounded-full"
-            style={{ backgroundColor: '#8a6a3d', boxShadow: '0 0 0 3px rgba(138,106,61,.35)' }}
-          />
-          <span>{eventBubble.label}</span>
-          <span
-            aria-hidden="true"
-            className="font-serif text-[15px] italic normal-case tracking-normal transition-transform group-hover:translate-x-1"
-          >
-            →
-          </span>
-        </Link>
-      </>
-    );
-  }
 
   const handleToggle = () => {
     // Solo alterna el widget; el tracking se dispara UNICAMENTE cuando
