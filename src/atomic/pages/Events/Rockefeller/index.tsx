@@ -3,8 +3,8 @@ import HubspotForm from '@molecules/HubspotForm';
 import { HUBSPOT_FORMS } from '@utils/hubspotForms';
 import { useEvents } from '@hooks/useEvents';
 import { useNowTick } from '@hooks/useNowTick';
-import diegoPortrait from '../../../../assets/eventos/LEF_img_001.png';
-import oscarPortrait from '../../../../assets/eventos/oscar-cayetano.png';
+import diegoPortrait from '../../../../../assets/eventos/LEF_img_001.png';
+import oscarPortrait from '../../../../../assets/eventos/oscar-cayetano.png';
 import {
   FALLBACK_CALENDAR_EVENTS,
   getNextRockefellerEvent,
