@@ -3,6 +3,8 @@ import HubspotForm from '@molecules/HubspotForm';
 import { HUBSPOT_FORMS } from '@utils/hubspotForms';
 import { useEvents } from '@hooks/useEvents';
 import { useNowTick } from '@hooks/useNowTick';
+import diegoPortrait from '../../../../assets/eventos/LEF_img_001.png';
+import oscarPortrait from '../../../../assets/eventos/oscar-cayetano.png';
 import {
   FALLBACK_CALENDAR_EVENTS,
   getNextRockefellerEvent,
@@ -87,6 +89,7 @@ type Facilitador = {
   italic: string;
   bio: string;
   initials: string;
+  photo: string;
 };
 
 const facilitadores: Facilitador[] = [
@@ -96,6 +99,7 @@ const facilitadores: Facilitador[] = [
     italic: 'Cayetano.',
     bio: 'Ingeniero Mecánico Administrador por el Tecnológico de Monterrey y Director de OCL México, representante en México de marcas alemanas de herramentales de precisión. Coach Ejecutivo Certificado por la ICC y Maxwell Leadership, con diploma en Comunicación Persuasiva por el MIT. Consultor de liderazgo con Díaz Lara. Combina su experiencia técnica e industrial con su labor como autor y consultor en liderazgo enfocado en formar líderes con visión y propósito.',
     initials: 'ÓC',
+    photo: oscarPortrait,
   },
   {
     role: '— Estratega fiscal · Empresario',
@@ -103,6 +107,7 @@ const facilitadores: Facilitador[] = [
     italic: 'Díaz.',
     bio: 'Un emprendedor que transformó su firma contable en una empresa multimillonaria con más de 50 colaboradores. Su experiencia va más allá de los libros: vivió en carne propia los desafíos fiscales y legales del emprendimiento, superando embargos y obstáculos financieros. Hoy, comparte sus aprendizajes para que tú evites esos errores y avances más rápido.',
     initials: 'DD',
+    photo: diegoPortrait,
   },
 ];
 
@@ -431,19 +436,30 @@ export default function RockefellerLanding() {
                       'radial-gradient(circle at 40% 40%, rgba(180,150,110,0.30) 0%, transparent 55%), linear-gradient(135deg, #2a2620 0%, #1a1611 50%, #0a0a0a 100%)',
                   }}
                 >
+                  <img
+                    src={fac.photo}
+                    alt={`${fac.name} ${fac.italic}`}
+                    loading="lazy"
+                    decoding="async"
+                    className="absolute inset-0 h-full w-full object-cover object-[center_top]"
+                    style={{ filter: 'grayscale(0.15) contrast(1.02)' }}
+                  />
+                  {/* Overlay editorial para integrar la foto al lenguaje oscuro */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0"
+                    style={{
+                      background:
+                        'linear-gradient(180deg, rgba(10,10,10,0.20) 0%, rgba(10,10,10,0.05) 40%, rgba(10,10,10,0.85) 100%)',
+                    }}
+                  />
                   <span
                     aria-hidden="true"
-                    className="absolute right-5 top-5 text-[9px] font-medium uppercase tracking-[0.24em] text-cream/35"
+                    className="absolute right-5 top-5 z-[1] text-[9px] font-medium uppercase tracking-[0.24em] text-cream/60"
                   >
-                    — Foto
+                    — Facilitador
                   </span>
-                  <span
-                    aria-hidden="true"
-                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-serif text-[130px] italic leading-none text-cream/[0.08]"
-                  >
-                    {fac.initials}
-                  </span>
-                  <span className="relative z-[1] pb-5 pl-6 font-serif text-[16px] italic text-cream/55">
+                  <span className="relative z-[1] pb-5 pl-6 font-serif text-[16px] italic text-cream/80">
                     {fac.name} {fac.italic}
                   </span>
                 </div>
