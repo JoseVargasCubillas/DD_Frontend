@@ -60,6 +60,13 @@ export const HUBSPOT_FORMS = {
     landing: "/eventos/como-cobrar-como-ceo",
     previewUrl: "https://taukw.share.hsforms.com/2wRabeRj5QTind9FW8bCyJw",
   },
+  rockefeller: {
+    formId: "2fe02947-b452-4695-89c3-fb08c97055d2",
+    portalId: HUBSPOT_PORTAL_ID,
+    region: "na1",
+    landing: "/eventos/rockefeller",
+    previewUrl: "https://taukw.share.hsforms.com/2L-ApR7RSRpWJw_sIyXBV0g",
+  },
 
   // ==================================================
   // RESERVADOS — landings aun no construidas.
@@ -74,15 +81,6 @@ export const HUBSPOT_FORMS = {
     previewUrl: "https://taukw.share.hsforms.com/2IPmaAXeyRiKDQbMEtb6uMg",
     notes:
       "Reservado para la landing de 'Revisión estratégica'. El evento hoy solo existe como tarjeta del calendario (slug: revision-estrategica).",
-  },
-  rockefeller: {
-    formId: "2fe02947-b452-4695-89c3-fb08c97055d2",
-    portalId: HUBSPOT_PORTAL_ID,
-    region: "na1",
-    landing: null,
-    previewUrl: "https://taukw.share.hsforms.com/2L-ApR7RSRpWJw_sIyXBV0g",
-    notes:
-      "Reservado para la landing de '4E Código Rockefeller'. El evento hoy solo existe como tarjeta del calendario (slug: 4e-codigo-rockefeller).",
   },
 } as const satisfies Record<string, HubspotFormEntry>;
 

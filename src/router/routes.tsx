@@ -27,6 +27,7 @@ const EmprendedorVsCeoLanding = lazy(
 const ProspeccionDigitalLanding = lazy(
   () => import("@pages/Events/ProspeccionDigital"),
 );
+const RockefellerLanding = lazy(() => import("@pages/Events/Rockefeller"));
 
 const EventDetail = lazy(() => import("@pages/Events/EventDetail"));
 const BlogList = lazy(() => import("@pages/Blog/BlogList"));
@@ -118,6 +119,9 @@ export const router = createBrowserRouter([
         element: <ProspeccionDigitalLanding />,
       },
       { path: "/eventos/prospeccion-digital", element: <ProspeccionDigitalLanding /> },
+      { path: "/eventos/rockefeller", element: <RockefellerLanding /> },
+      { path: "/eventos/estrategia-rockefeller", element: <RockefellerLanding /> },
+      { path: "/eventos/4e-codigo-rockefeller", element: <RockefellerLanding /> },
       { path: "/eventos/checkout", element: <EventCheckout /> },
       { path: "/eventos/:slug", element: <EventDetail /> },
       { path: "/blog", element: <BlogList /> },

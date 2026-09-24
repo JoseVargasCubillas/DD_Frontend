@@ -352,6 +352,28 @@ export const getNextEmprendedorVsCeoEvent = (
   now = Date.now(),
 ) => getNextUpcomingCalendarEvent(events.filter(isEmprendedorVsCeoEvent), now);
 
+export const isRockefellerEvent = (
+  event: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl">,
+) => {
+  const slug = (event.slug || "").toLowerCase();
+  const title = (event.title || "").toLowerCase();
+  const onlineUrl = (event.onlineUrl || "").toLowerCase();
+  return (
+    slug.includes("rockefeller") ||
+    slug.includes("4e-codigo") ||
+    title.includes("rockefeller") ||
+    title.includes("código rockefeller") ||
+    title.includes("codigo rockefeller") ||
+    onlineUrl.includes("/rockefeller") ||
+    onlineUrl.includes("/4e-codigo-rockefeller")
+  );
+};
+
+export const getNextRockefellerEvent = (
+  events: CalendarEventSummary[],
+  now = Date.now(),
+) => getNextUpcomingCalendarEvent(events.filter(isRockefellerEvent), now);
+
 // Clasifica un evento del calendario en una etiqueta de formato ("Seminario",
 // "Cumbre", etc.) a partir de su slug/título — la misma taxonomía que ya se
 // usa a mano en la página de Eventos, centralizada aquí para reutilizarla
@@ -411,6 +433,7 @@ export const hasDedicatedCalendarLanding = (
 ) => {
   if (isEstrategiaFiscalEvent(event)) return true;
   if (isEmprendedorVsCeoEvent(event)) return true;
+  if (isRockefellerEvent(event)) return true;
   const slug = (event.slug || "").toLowerCase();
   const title = event.title.trim().toLowerCase();
   if (slug.startsWith("holding") || title === "holding") return true;
@@ -466,6 +489,15 @@ export const getCalendarEventPath = (
     title.includes("cobrar como ceo")
   ) {
     return "/eventos/como-cobrar-como-ceo";
+  }
+  if (
+    event.slug.includes("rockefeller") ||
+    event.slug.includes("4e-codigo") ||
+    title.includes("rockefeller") ||
+    title.includes("código rockefeller") ||
+    title.includes("codigo rockefeller")
+  ) {
+    return "/eventos/rockefeller";
   }
   if (event.slug.startsWith("holding") || title === "holding") return "/eventos/holding";
   if (event.onlineUrl?.startsWith("/")) return event.onlineUrl;
