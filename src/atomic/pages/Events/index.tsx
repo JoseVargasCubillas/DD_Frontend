@@ -220,6 +220,17 @@ const isTallerEstrategiaFiscalEvent = (event: Pick<SiteEvent, "slug" | "title">)
   event.slug.includes("taller-estrategia-fiscal") ||
   event.title.trim().toLowerCase().includes("taller de estrategia fiscal");
 
+const isRockefellerEventCard = (event: Pick<SiteEvent, "slug" | "title">) => {
+  const title = event.title.trim().toLowerCase();
+  return (
+    event.slug.includes("rockefeller") ||
+    event.slug.includes("4e-codigo") ||
+    title.includes("rockefeller") ||
+    title.includes("código rockefeller") ||
+    title.includes("codigo rockefeller")
+  );
+};
+
 const isComoCobrarEvent = (event: Pick<SiteEvent, "slug" | "title">) => {
   const title = event.title.trim().toLowerCase();
   return (
@@ -252,7 +263,9 @@ const cardFromApiEvent = (event: SiteEvent): EventCard => {
       ? "/eventos/estrategia-fiscal"
       : isHoldingEvent(event)
         ? "/eventos/holding"
-        : event.onlineUrl || `/eventos/${event.slug}`,
+        : isRockefellerEventCard(event)
+          ? "/eventos/rockefeller"
+          : event.onlineUrl || `/eventos/${event.slug}`,
     image: event.thumbnail,
     cta: event.status === "ongoing" ? "Entrar ahora" : "¡Estoy listo!",
     isFeatured: event.isFeatured,
@@ -271,6 +284,12 @@ const DEDICATED_LANDING_PATHS = new Set([
   "/eventos/holding",
   "/eventos/como-cobrar",
   "/eventos/como-cobrar-como-ceo",
+  "/eventos/emprendedor-vs-ceo",
+  "/eventos/tablero-del-ceo",
+  "/eventos/el-emprendedor-vs-el-ceo",
+  "/eventos/rockefeller",
+  "/eventos/estrategia-rockefeller",
+  "/eventos/4e-codigo-rockefeller",
 ]);
 
 const hasRealEventLanding = (event?: EventCard | null) => {
