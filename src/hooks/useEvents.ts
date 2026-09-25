@@ -49,6 +49,17 @@ export const useUpdateEvent = () => {
   });
 };
 
+export const useDeleteEvent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => eventsApi.deleteEvent(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+    },
+  });
+};
+
 export const useAssignUsersToEvent = () => {
   const queryClient = useQueryClient();
 

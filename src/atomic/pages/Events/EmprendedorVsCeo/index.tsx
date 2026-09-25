@@ -197,8 +197,8 @@ export default function EmprendedorVsCeoLanding() {
   );
   const { data: eventsData } = useEvents(
     ENABLE_EVENT_API_SYNC
-      ? { limit: 100, status: 'upcoming' }
-      : { limit: 0, status: 'upcoming' },
+      ? { limit: 200, status: 'all' }
+      : { limit: 0, status: 'all' },
   );
 
   useEffect(() => {

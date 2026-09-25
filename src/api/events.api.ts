@@ -13,6 +13,9 @@ export const createEvent = (data: Partial<Event>): Promise<Event> =>
 export const updateEvent = (id: string, data: Partial<Event>): Promise<Event> =>
   client.put<ApiResponse<Event>>(`/events/${id}`, data).then((r) => r.data);
 
+export const deleteEvent = (id: string): Promise<void> =>
+  client.delete<ApiResponse<{ id: string }>>(`/events/${id}`).then(() => undefined);
+
 export const uploadEventImage = (
   file: File,
 ): Promise<{ url: string; filename: string; size: number; mimeType: string }> => {

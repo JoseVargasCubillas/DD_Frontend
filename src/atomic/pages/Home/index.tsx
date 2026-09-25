@@ -329,7 +329,7 @@ export default function Home() {
     return () => window.clearTimeout(timer);
   }, [location.hash]);
 
-  const { data: eventsData } = useEvents({ limit: 100, status: "upcoming" });
+  const { data: eventsData } = useEvents({ limit: 200, status: "all" });
   const [storedEvents, setStoredEvents] = useState<CalendarEventSummary[]>(
     loadStoredCalendarEvents,
   );

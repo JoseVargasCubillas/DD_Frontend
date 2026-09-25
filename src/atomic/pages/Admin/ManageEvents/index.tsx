@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import * as eventsApi from "@api/events.api";
-import { useCreateEvent, useEvents, useUpdateEvent } from "@hooks/useEvents";
+import { useCreateEvent, useDeleteEvent, useEvents, useUpdateEvent } from "@hooks/useEvents";
 import { isEstrategiaFiscalEvent, isWhatsAppOnlyEvent } from "@utils/eventCalendar";
 import type { Event } from "@t/index";
 import eventPersonaFisicaMoral from "../../../../../assets/eventos/evento-persona-fisica-moral.png";
@@ -710,11 +710,13 @@ const eventFromForm = (form: EventForm, id: string): Event => ({
 
 export default function ManageEvents() {
   const { data, isLoading } = useEvents({
-    limit: 100,
+    limit: 200,
+    status: "all",
     enabled: ENABLE_EVENT_API_SYNC,
   });
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
+  const deleteEventMutation = useDeleteEvent();
   const apiEvents = useMemo(
     () => (data?.data ?? []).filter((event) => !DEPRECATED_EVENT_SLUGS.has(event.slug)),
     [data?.data],
@@ -906,6 +908,30 @@ const selectedIsNew = selectedId === "new";
     toast.success("Evento oculto");
   };
 
+  // Elimina de verdad un evento guardado (base de datos o copia local). Los
+  // eventos base del calendario (seed) viven en el código: sólo se pueden ocultar.
+  const deleteSelected = async () => {
+    if (!form.id || selectedIsSeed) return;
+    const confirmed = window.confirm(
+      `¿Eliminar "${form.title}" definitivamente? Esta acción no se puede deshacer.`,
+    );
+    if (!confirmed) return;
+
+    try {
+      if (!selectedIsLocal && ENABLE_EVENT_API_SYNC) {
+        await deleteEventMutation.mutateAsync(form.id);
+      }
+      const nextLocalEvents = localEvents.filter((event) => getEventId(event) !== form.id);
+      if (!setStoredEvents(nextLocalEvents)) return;
+      setLocalEvents(nextLocalEvents);
+      setSelectedId("new");
+      setForm(DEFAULT_FORM);
+      toast.success("Evento eliminado");
+    } catch {
+      toast.error("No se pudo eliminar el evento");
+    }
+  };
+
   const readFile = async (file?: File) => {
     if (!file) return;
     try {
@@ -1028,6 +1054,17 @@ const selectedIsNew = selectedId === "new";
               className="mt-8 flex min-h-10 items-center gap-2 text-sm text-red-600"
             >
               <TrashIcon /> Ocultar bloque
+            </button>
+          )}
+
+          {!selectedIsNew && !selectedIsSeed && (
+            <button
+              type="button"
+              onClick={deleteSelected}
+              disabled={deleteEventMutation.isPending}
+              className="mt-2 flex min-h-10 items-center gap-2 text-sm font-semibold text-red-700 disabled:opacity-50"
+            >
+              <TrashIcon /> Eliminar evento
             </button>
           )}
 

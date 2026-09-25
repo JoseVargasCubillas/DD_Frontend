@@ -309,6 +309,25 @@ export const isUpcomingCalendarEvent = (
   return !Number.isNaN(time) && time >= now;
 };
 
+const normalizeTitle = (value: string) =>
+  (value || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+
+// Misma edición = mismo título y mismo día (CDMX), aunque el slug difiera:
+// un evento creado en el admin a partir de uno del calendario no debe duplicarlo.
+export const calendarEventKey = (title: string, startDate: string | Date) => {
+  const date = new Date(startDate);
+  const day = Number.isNaN(date.getTime())
+    ? String(startDate)
+    : new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City" }).format(date);
+  return `${day}|${normalizeTitle(title)}`;
+};
+
+// Las fuentes van de menor a mayor prioridad (fallback, API, admin local): ante
+// el mismo slug, o la misma edición (título + día), gana la última.
 export const mergeCalendarEventSources = (
   ...sources: Array<CalendarEventSummary[]>
 ) => {
@@ -317,7 +336,11 @@ export const mergeCalendarEventSources = (
     if (DEPRECATED_EVENT_SLUGS.has(event.slug)) return;
     bySlug.set(event.slug, event);
   });
-  return Array.from(bySlug.values());
+  const byEdition = new Map<string, CalendarEventSummary>();
+  Array.from(bySlug.values()).forEach((event) => {
+    byEdition.set(calendarEventKey(event.title, event.startDate), event);
+  });
+  return Array.from(byEdition.values());
 };
 
 export const getNextUpcomingCalendarEvent = (

@@ -19,7 +19,7 @@ import {
  * la fecha del evento vigente.
  */
 export function useNextCalendarEvent(): CalendarEventSummary {
-  const { data: eventsData } = useEvents({ limit: 100, status: 'upcoming' });
+  const { data: eventsData } = useEvents({ limit: 200, status: 'all' });
   const [storedEvents, setStoredEvents] = useState<CalendarEventSummary[]>(
     loadStoredCalendarEvents,
   );
@@ -59,7 +59,7 @@ export function useNextCalendarEvent(): CalendarEventSummary {
 export function useEventEdition(
   matches: (event: CalendarEventSummary) => boolean,
 ): CalendarEventSummary | undefined {
-  const { data: eventsData } = useEvents({ limit: 100, status: 'upcoming' });
+  const { data: eventsData } = useEvents({ limit: 200, status: 'all' });
   const [storedEvents, setStoredEvents] = useState<CalendarEventSummary[]>(
     loadStoredCalendarEvents,
   );

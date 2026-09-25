@@ -41,7 +41,7 @@ export default function Navbar() {
   const [storedEvents, setStoredEvents] = useState<CalendarEventSummary[]>(
     loadStoredCalendarEvents,
   );
-  const { data: eventsData } = useEvents({ limit: 100, status: 'upcoming' });
+  const { data: eventsData } = useEvents({ limit: 200, status: 'all' });
 
   const academyHref = isAuthenticated
     ? (user?.role === 'admin' ? '/admin' : '/mi-cuenta')

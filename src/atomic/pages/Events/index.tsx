@@ -5,6 +5,7 @@ import { useCountUp } from "@hooks/useCountUp";
 import { useEvents } from "@hooks/useEvents";
 import { waClickHandler } from "@utils/whatsapp";
 import {
+  calendarEventKey,
   isEstrategiaFiscalEvent,
   isWhatsAppOnlyEvent,
   VENUE_TO_BE_CONFIRMED,
@@ -443,21 +444,24 @@ const groupEventCards = (events: EventCard[]) => {
   return Object.entries(grouped).map(([month, events]) => ({ month, events }));
 };
 
+// Misma edición = mismo título y día (aunque el slug difiera, p.ej. un evento
+// creado en el admin a partir de uno del calendario): gana la card dinámica.
+const getEventCardKey = (event: EventCard) =>
+  event.rawDate
+    ? calendarEventKey([event.title, event.titleSerif].filter(Boolean).join(" "), event.rawDate)
+    : getEventCardSlug(event);
+
 const mergeCalendarGroups = (
   baseGroups: Array<{ month: string; events: EventCard[] }>,
   dynamicGroups: Array<{ month: string; events: EventCard[] }>,
 ) => {
-  const bySlug = new Map<string, EventCard>();
+  const byEdition = new Map<string, EventCard>();
 
-  baseGroups
+  [...baseGroups, ...dynamicGroups]
     .flatMap((group) => group.events)
-    .forEach((event) => bySlug.set(getEventCardSlug(event), event));
+    .forEach((event) => byEdition.set(getEventCardKey(event), event));
 
-  dynamicGroups
-    .flatMap((group) => group.events)
-    .forEach((event) => bySlug.set(getEventCardSlug(event), event));
-
-  const events = Array.from(bySlug.values()).sort((a, b) => {
+  const events = Array.from(byEdition.values()).sort((a, b) => {
     const first = a.rawDate ? new Date(a.rawDate).getTime() : Number.MAX_SAFE_INTEGER;
     const second = b.rawDate ? new Date(b.rawDate).getTime() : Number.MAX_SAFE_INTEGER;
     return first - second;
@@ -960,7 +964,8 @@ function AgendaPanel({ children }: { children: ReactNode }) {
 
 export default function Events() {
   const { data: eventsData } = useEvents({
-    limit: 100,
+    limit: 200,
+    status: "all",
     enabled: ENABLE_EVENT_API_SYNC,
   });
   const ctaSettings = useMemo(() => loadCtaSettings(), []);
@@ -973,6 +978,15 @@ export default function Events() {
     return Array.from(bySlug.values());
   }, [eventsData?.data, storedEvents]);
   const dynamicGroups = useMemo(() => groupApiEvents(apiEvents), [apiEvents]);
+  // Eventos ocultos desde el admin (status "canceled"): también ocultan la card
+  // base del calendario que tenga el mismo slug o la misma edición.
+  const hiddenEvents = useMemo(() => {
+    const hidden = apiEvents.filter((event) => event.status === "canceled");
+    return {
+      slugs: new Set(hidden.map((event) => event.slug)),
+      keys: new Set(hidden.map((event) => calendarEventKey(event.title, event.startDate))),
+    };
+  }, [apiEvents]);
   const calendarGroups = useMemo(
     () =>
       applyEventSeriesRules(
@@ -981,11 +995,16 @@ export default function Events() {
             ...group,
             events: group.events
               .filter((event) => !DEPRECATED_EVENT_SLUGS.has(getEventCardSlug(event)))
+              .filter(
+                (event) =>
+                  !hiddenEvents.slugs.has(getEventCardSlug(event)) &&
+                  !hiddenEvents.keys.has(getEventCardKey(event)),
+              )
               .filter(isUpcomingEventCard),
           }))
           .filter((group) => group.events.length > 0),
       ),
-    [dynamicGroups],
+    [dynamicGroups, hiddenEvents],
   );
   const allCalendarEvents = calendarGroups.flatMap((group) => group.events);
   const featuredEvent =
