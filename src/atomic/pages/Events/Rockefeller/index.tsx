@@ -248,7 +248,7 @@ export default function RockefellerLanding() {
         {/* Foto skyline de fondo */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[0] overflow-hidden">
           <img
-            src="/eventos/rockefeller-hero.webp"
+            src="/event-media/rockefeller-hero.webp"
             alt=""
             loading="eager"
             decoding="async"

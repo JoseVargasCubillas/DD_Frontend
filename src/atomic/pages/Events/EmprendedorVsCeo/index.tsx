@@ -472,7 +472,7 @@ export default function EmprendedorVsCeoLanding() {
               }}
             />
             <img
-              src="/eventos/ceo-ajedrez-hero.webp"
+              src="/event-media/ceo-ajedrez-hero.webp"
               alt="Piezas de ajedrez iluminadas — metáfora del tablero del CEO"
               loading="eager"
               decoding="async"
