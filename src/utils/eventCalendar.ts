@@ -15,7 +15,7 @@ export type CalendarEventSummary = Pick<
   | "registeredCount"
   | "status"
 > &
-  Partial<Pick<SiteEvent, "modality" | "endDate" | "thumbnail" | "type" | "id" | "_id">>;
+  Partial<Pick<SiteEvent, "modality" | "endDate" | "thumbnail" | "type" | "id" | "_id" | "whatsappOnly">>;
 
 export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
   {
@@ -67,10 +67,10 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     title: "Taller de estrategia fiscal",
     slug: "taller-estrategia-fiscal-online-septiembre",
     shortDescription:
-      "Taller online para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
+      "Taller online por Zoom para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
     description:
-      "Taller online para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
-    location: "Online",
+      "Taller online por Zoom para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
+    location: "Zoom",
     onlineUrl: "/eventos/estrategia-fiscal",
     startDate: "2026-09-11T09:07:00-06:00",
     capacity: 100,
@@ -122,6 +122,21 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     registeredCount: 0,
     status: "upcoming",
     modality: "in-person",
+  },
+  {
+    title: "Taller de estrategia fiscal",
+    slug: "taller-estrategia-fiscal-online-octubre",
+    shortDescription:
+      "Taller online por Zoom para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
+    description:
+      "Taller online por Zoom para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
+    location: "Zoom",
+    onlineUrl: "/eventos/estrategia-fiscal",
+    startDate: "2026-10-16T09:07:00-06:00",
+    capacity: 100,
+    registeredCount: 0,
+    status: "upcoming",
+    modality: "online",
   },
   {
     title: "Taller de estrategia fiscal",
@@ -247,10 +262,10 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     title: "Taller de estrategia fiscal",
     slug: "taller-estrategia-fiscal-online-diciembre",
     shortDescription:
-      "Último taller online del año para cerrar decisiones fiscales y preparar la estructura del siguiente ciclo.",
+      "Último taller online por Zoom del año para cerrar decisiones fiscales y preparar la estructura del siguiente ciclo.",
     description:
-      "Último taller online del año para cerrar decisiones fiscales y preparar la estructura del siguiente ciclo.",
-    location: "Online",
+      "Último taller online por Zoom del año para cerrar decisiones fiscales y preparar la estructura del siguiente ciclo.",
+    location: "Zoom",
     onlineUrl: "/eventos/estrategia-fiscal",
     startDate: "2026-12-10T09:07:00-06:00",
     capacity: 100,
@@ -331,6 +346,99 @@ export const getNextEstrategiaFiscalEvent = (
   now = Date.now(),
 ) => getNextUpcomingCalendarEvent(events.filter(isEstrategiaFiscalEvent), now);
 
+export const VENUE_TO_BE_CONFIRMED = "Sede por confirmar";
+
+// Sólo se conoce la sede de la próxima edición presencial de Estrategia
+// Fiscal; las presenciales posteriores todavía no tienen sede definida, así
+// que no se debe mostrar la ciudad que traigan por defecto.
+export const hasConfirmedVenue = (
+  event: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl" | "modality" | "startDate" | "status">,
+  events: CalendarEventSummary[],
+  now = Date.now(),
+) => {
+  if (event.modality === "online" || !isEstrategiaFiscalEvent(event)) return true;
+  const nextInPerson = getNextUpcomingCalendarEvent(
+    events.filter((item) => isEstrategiaFiscalEvent(item) && item.modality !== "online"),
+    now,
+  );
+  return nextInPerson?.slug === event.slug;
+};
+
+export const ONLINE_PLATFORM_LABEL = "Zoom";
+
+// Los eventos online se transmiten por Zoom: si la sede viene vacía o
+// genérica ("Online"), se muestra la plataforma.
+export const getCalendarEventLocation = (
+  event: CalendarEventSummary,
+  events: CalendarEventSummary[],
+  now = Date.now(),
+) => {
+  if (event.modality === "online") {
+    const location = (event.location || "").trim();
+    return !location || /^online$/i.test(location) ? ONLINE_PLATFORM_LABEL : location;
+  }
+  return hasConfirmedVenue(event, events, now) ? event.location : VENUE_TO_BE_CONFIRMED;
+};
+
+// "Viernes 16 de octubre de 2026"; con fecha de fin en otro día, un rango:
+// "4 al 5 de septiembre de 2026".
+export const formatEventDateLabel = (value: string | Date, endValue?: string | Date | null) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const tz = "America/Mexico_City";
+  const part = (d: Date, options: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat("es-MX", { ...options, timeZone: tz }).format(d);
+
+  const end = endValue ? new Date(endValue) : null;
+  if (end && !Number.isNaN(end.getTime())) {
+    const dayKey = (d: Date) => part(d, { day: "numeric", month: "numeric", year: "numeric" });
+    if (dayKey(end) !== dayKey(date)) {
+      const sameMonth =
+        part(date, { month: "numeric", year: "numeric" }) === part(end, { month: "numeric", year: "numeric" });
+      return sameMonth
+        ? `${part(date, { day: "numeric" })} al ${part(end, { day: "numeric" })} de ${part(end, { month: "long" })} de ${part(end, { year: "numeric" })}`
+        : `${part(date, { day: "numeric", month: "long" })} al ${part(end, { day: "numeric", month: "long" })} de ${part(end, { year: "numeric" })}`;
+    }
+  }
+
+  const label = part(date, { weekday: "long", day: "numeric", month: "long", year: "numeric" }).replace(",", "");
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
+
+const mexicoCityPart = (date: Date, options: Intl.DateTimeFormatOptions) =>
+  new Intl.DateTimeFormat("es-MX", { ...options, timeZone: "America/Mexico_City" }).format(date);
+
+// "09:00" (24 h, hora de CDMX).
+export const formatEventTimeLabel = (value: string | Date) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return mexicoCityPart(date, { hour: "2-digit", minute: "2-digit", hour12: false });
+};
+
+// "23 de octubre de 2026 · 09:00"
+export const formatEventDateTimeLabel = (value: string | Date) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${mexicoCityPart(date, { day: "numeric", month: "long", year: "numeric" })} · ${formatEventTimeLabel(date)}`;
+};
+
+// "23 oct"
+export const formatEventShortDate = (value: string | Date) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return mexicoCityPart(date, { day: "numeric", month: "short" }).replace(".", "");
+};
+
+// "Online · Zoom" / "Presencial · CDMX" / "Híbrido · CDMX".
+export const formatEventFormatLabel = (
+  modality: CalendarEventSummary["modality"],
+  location: string,
+) => {
+  if (modality === "online") return `Online · ${ONLINE_PLATFORM_LABEL}`;
+  const label = modality === "hybrid" ? "Híbrido" : "Presencial";
+  return location ? `${label} · ${location}` : label;
+};
+
 export const isEmprendedorVsCeoEvent = (
   event: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl">,
 ) => {
@@ -368,6 +476,14 @@ export const isRockefellerEvent = (
     onlineUrl.includes("/4e-codigo-rockefeller")
   );
 };
+
+export const isHoldingEvent = (event: Pick<CalendarEventSummary, "slug" | "title">) =>
+  (event.slug || "").toLowerCase().startsWith("holding") ||
+  (event.title || "").trim().toLowerCase() === "holding";
+
+export const isProspeccionDigitalEvent = (event: Pick<CalendarEventSummary, "slug" | "title">) =>
+  (event.slug || "").toLowerCase().includes("prospeccion") ||
+  (event.title || "").toLowerCase().includes("prospección digital");
 
 export const getNextRockefellerEvent = (
   events: CalendarEventSummary[],
@@ -424,13 +540,19 @@ export const getCalendarEventStatus = (
 // Número de WhatsApp para eventos que aún no tienen landing propia.
 const EVENT_WHATSAPP_PHONE = "5214421143667";
 
+// Eventos que se atienden por WhatsApp en vez de tener landing: se decide en
+// el admin con la casilla "Atender solo por WhatsApp" (event.whatsappOnly).
+export const isWhatsAppOnlyEvent = (event: { whatsappOnly?: boolean }) =>
+  event.whatsappOnly === true;
+
 // Sólo Estrategia Fiscal / Holding / Como Cobrar tienen landing diseñada a
 // mano. Cualquier otro evento sólo tiene landing real si existe de verdad en
 // el backend (viene de la API o lo creó el admin, por eso trae id/_id) — de
 // lo contrario mandar a `/eventos/:slug` mostraría una página rota.
 export const hasDedicatedCalendarLanding = (
-  event: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl" | "id" | "_id">,
+  event: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl" | "id" | "_id" | "whatsappOnly">,
 ) => {
+  if (isWhatsAppOnlyEvent(event)) return false;
   if (isEstrategiaFiscalEvent(event)) return true;
   if (isEmprendedorVsCeoEvent(event)) return true;
   if (isRockefellerEvent(event)) return true;
@@ -455,7 +577,7 @@ export const getEventWhatsAppLink = (event: Pick<CalendarEventSummary, "title">)
 // Resuelve a dónde debe apuntar el botón de un evento del calendario: su
 // landing real si existe, o WhatsApp con el nombre del evento si no.
 export const getCalendarEventAction = (
-  event?: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl" | "id" | "_id"> | null,
+  event?: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl" | "id" | "_id" | "whatsappOnly"> | null,
 ): { type: "internal" | "whatsapp"; href: string } => {
   if (!event) return { type: "internal", href: "/eventos" };
   if (hasDedicatedCalendarLanding(event)) {
@@ -469,11 +591,12 @@ export const getCalendarEventPath = (
 ) => {
   if (!event) return "/eventos";
   const title = event.title.trim().toLowerCase();
-  if (
-    event.slug.includes("taller-estrategia-fiscal") ||
-    title.includes("taller de estrategia fiscal")
-  ) {
-    return "/eventos/estrategia-fiscal";
+  if (isEstrategiaFiscalEvent(event)) {
+    // ?evento fija qué edición (online / presencial) abre la landing; sin él
+    // la landing muestra la próxima por fecha.
+    return event.slug
+      ? `/eventos/estrategia-fiscal?evento=${encodeURIComponent(event.slug)}`
+      : "/eventos/estrategia-fiscal";
   }
   if (
     event.slug.includes("emprendedor-vs-ceo") ||
@@ -499,7 +622,11 @@ export const getCalendarEventPath = (
   ) {
     return "/eventos/rockefeller";
   }
-  if (event.slug.startsWith("holding") || title === "holding") return "/eventos/holding";
+  if (event.slug.startsWith("holding") || title === "holding") {
+    return event.slug
+      ? `/eventos/holding?evento=${encodeURIComponent(event.slug)}`
+      : "/eventos/holding";
+  }
   if (event.onlineUrl?.startsWith("/")) return event.onlineUrl;
   return `/eventos/${event.slug}`;
 };

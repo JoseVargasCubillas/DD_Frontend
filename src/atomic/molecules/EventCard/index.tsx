@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Event } from '@t/index';
-import { formatDate } from '@utils/formatters';
+import { formatEventShortDate } from '@utils/eventCalendar';
 
 interface EventCardProps { event: Event }
 
@@ -42,7 +42,7 @@ export default function EventCard({ event }: EventCardProps) {
       <div className="p-5 flex flex-col gap-3 flex-1">
         {/* Meta */}
         <div className="flex flex-wrap items-center gap-2 text-[9px] uppercase tracking-[0.25em] text-ink-400">
-          {event.startDate && <span>{formatDate(event.startDate, 'dd MMM')}</span>}
+          {event.startDate && <span>{formatEventShortDate(event.startDate)}</span>}
           {event.location  && <><span>·</span><span>{event.location}</span></>}
           {modalityLabel   && <><span>·</span><span>{modalityLabel}</span></>}
           {event.type      && <><span>·</span><span>{event.type}</span></>}

@@ -17,6 +17,9 @@ const checkoutRefs = (items: OrderItem[]) =>
     title: item.title,
     price: item.price,
     quantity: item.quantity ?? 1,
+    // Sólo texto de presentación (el precio lo fija el backend): fecha y formato de la edición.
+    eventDate: item.eventDate,
+    eventFormat: item.eventFormat,
   }));
 
 export const createPaymentIntent = (
@@ -34,6 +37,13 @@ export const createPaymentIntent = (
     })
     .then((r) => r.data);
 
+// Avisa al backend que Stripe ya cobro; el backend lo verifica contra Stripe.
+// Best effort: complementa al webhook (que sigue siendo la fuente principal).
+export const confirmPaymentIntent = (paymentIntentId: string) =>
+  client
+    .post<ApiResponse<{ status: string }>>('/payments/confirm', { paymentIntentId })
+    .then((r) => r.data);
+
 export const getOrders = (): Promise<Order[]> =>
   client.get<ApiResponse<Order[]>>('/payments/orders').then((r) => r.data);
 
@@ -45,7 +55,7 @@ export const listAllOrders = (): Promise<Order[]> =>
 
 export interface OrderReceipt {
   id: string;
-  items: { title: string; price: number; quantity: number }[];
+  items: { title: string; price: number; quantity: number; eventDate?: string; eventFormat?: string }[];
   subtotal: number;
   tax: number;
   shippingCost: number;

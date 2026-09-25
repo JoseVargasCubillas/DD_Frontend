@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import * as eventsApi from "@api/events.api";
 import { useCreateEvent, useEvents, useUpdateEvent } from "@hooks/useEvents";
+import { isEstrategiaFiscalEvent, isWhatsAppOnlyEvent } from "@utils/eventCalendar";
 import type { Event } from "@t/index";
 import eventPersonaFisicaMoral from "../../../../../assets/eventos/evento-persona-fisica-moral.png";
 import eventMentalidadEmpresarial from "../../../../../assets/eventos/evento-mentalidad-empresarial.png";
@@ -38,6 +39,7 @@ type EventForm = {
   capacity: string;
   status: Event["status"];
   isFeatured: boolean;
+  whatsappOnly: boolean;
   buttonText: string;
   buttonUrl: string;
   titleColor: string;
@@ -87,6 +89,7 @@ const DEFAULT_FORM: EventForm = {
   capacity: "80",
   status: "upcoming",
   isFeatured: false,
+  whatsappOnly: false,
   buttonText: "¡Estoy listo!",
   buttonUrl: "/eventos",
   titleColor: "#2C2C2C",
@@ -186,13 +189,13 @@ const SEEDED_CALENDAR_EVENTS = [
     title: "Taller de Estrategia Fiscal",
     slug: "taller-estrategia-fiscal-online-septiembre",
     shortDescription:
-      "Taller online para revisar estructura fiscal, riesgos y decisiones urgentes.",
+      "Taller online por Zoom para revisar estructura fiscal, riesgos y decisiones urgentes.",
     description:
-      "Taller online para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
+      "Taller online por Zoom para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
     thumbnail: eventTallerFiscal,
     type: "workshop",
     modality: "online",
-    location: "Online",
+    location: "Zoom",
     onlineUrl: "/eventos/estrategia-fiscal",
     startDate: "2026-09-11T09:07:00-06:00",
     endDate: "2026-09-11T13:00:00-06:00",
@@ -265,6 +268,29 @@ const SEEDED_CALENDAR_EVENTS = [
     onlineUrl: "/eventos/estrategia-fiscal",
     startDate: "2026-09-25T09:07:00-06:00",
     endDate: "2026-09-25T17:00:00-06:00",
+    price: 0,
+    capacity: 100,
+    registeredCount: 0,
+    status: "upcoming",
+    instructor: "admin",
+    isFeatured: false,
+    agenda: [],
+  },
+  {
+    id: "seed-taller-estrategia-fiscal-online-octubre",
+    title: "Taller de Estrategia Fiscal",
+    slug: "taller-estrategia-fiscal-online-octubre",
+    shortDescription:
+      "Taller online por Zoom para revisar estructura fiscal, riesgos y decisiones urgentes.",
+    description:
+      "Taller online por Zoom para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
+    thumbnail: eventTallerFiscal,
+    type: "workshop",
+    modality: "online",
+    location: "Zoom",
+    onlineUrl: "/eventos/estrategia-fiscal",
+    startDate: "2026-10-16T09:07:00-06:00",
+    endDate: "2026-10-16T13:00:00-06:00",
     price: 0,
     capacity: 100,
     registeredCount: 0,
@@ -439,13 +465,13 @@ const SEEDED_CALENDAR_EVENTS = [
     title: "Taller de Estrategia Fiscal",
     slug: "taller-estrategia-fiscal-online-diciembre",
     shortDescription:
-      "Último taller online del año para preparar la estructura del siguiente ciclo.",
+      "Último taller online por Zoom del año para preparar la estructura del siguiente ciclo.",
     description:
-      "Último taller online del año para cerrar decisiones fiscales y preparar la estructura del siguiente ciclo.",
+      "Último taller online por Zoom del año para cerrar decisiones fiscales y preparar la estructura del siguiente ciclo.",
     thumbnail: eventTallerFiscal,
     type: "workshop",
     modality: "online",
-    location: "Online",
+    location: "Zoom",
     onlineUrl: "/eventos/estrategia-fiscal",
     startDate: "2026-12-10T09:07:00-06:00",
     endDate: "2026-12-10T13:00:00-06:00",
@@ -624,6 +650,7 @@ const formFromEvent = (event: Event): EventForm => ({
   capacity: String(event.capacity ?? 80),
   status: event.status,
   isFeatured: Boolean(event.isFeatured),
+  whatsappOnly: isWhatsAppOnlyEvent(event),
   buttonText: "¡Estoy listo!",
   buttonUrl: event.onlineUrl || `/eventos/${event.slug}`,
   titleColor: "#2C2C2C",
@@ -651,6 +678,7 @@ const buildPayload = (form: EventForm): Partial<Event> => ({
   registeredCount: 0,
   status: form.status,
   isFeatured: form.isFeatured,
+  whatsappOnly: form.whatsappOnly,
   agenda: [],
 });
 
@@ -676,6 +704,7 @@ const eventFromForm = (form: EventForm, id: string): Event => ({
   status: form.status,
   instructor: "admin",
   isFeatured: form.isFeatured,
+  whatsappOnly: form.whatsappOnly,
   agenda: [],
 });
 
@@ -1209,6 +1238,30 @@ const selectedIsNew = selectedId === "new";
               </select>
             </Field>
 
+            <div className="rounded-xl border border-ink-900/10 bg-cream-100 px-4 py-3 text-xs leading-relaxed text-ink-600 sm:col-span-2">
+              {isEstrategiaFiscalEvent({
+                slug: form.slug,
+                title: form.title,
+                onlineUrl: form.buttonUrl,
+              }) ? (
+                <>
+                  <strong className="text-ink-900">Detectado como Estrategia Fiscal.</strong>{" "}
+                  Se abrirá en /eventos/estrategia-fiscal?evento={form.slug || "…"}.{" "}
+                  {form.modality === "online"
+                    ? "Modalidad Online: la landing mostrará solo el ticket Online."
+                    : form.modality === "hybrid"
+                      ? "Modalidad Híbrido: la landing mostrará Online, General y VIP."
+                      : "Modalidad Presencial: la landing mostrará General y VIP. La sede se publica solo si es la próxima presencial; si no, aparece como “Sede por confirmar”."}
+                </>
+              ) : (
+                <>
+                  <strong className="text-ink-900">Evento genérico.</strong> Para que el sistema lo
+                  trate como Estrategia Fiscal, el título o el slug deben incluir “estrategia fiscal”
+                  (o el enlace del botón debe ser /eventos/estrategia-fiscal).
+                </>
+              )}
+            </div>
+
             <Field label="Tipo de cobro">
               <select
                 value={form.paymentType}
@@ -1285,6 +1338,20 @@ const selectedIsNew = selectedId === "new";
                 ))}
               </select>
             </Field>
+
+            <label className="flex items-center justify-between gap-3 rounded-xl border border-ink-900/10 px-4 py-3 text-sm">
+              <span>
+                <span className="block font-semibold">Atender solo por WhatsApp</span>
+                <span className="mt-1 block text-xs text-ink-500">
+                  La tarjeta y el enlace directo del evento abren WhatsApp en lugar de su página.
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                checked={form.whatsappOnly}
+                onChange={(event) => update("whatsappOnly", event.target.checked)}
+              />
+            </label>
 
             <label className="flex items-center justify-between gap-3 rounded-xl border border-ink-900/10 px-4 py-3 text-sm">
               <span>

@@ -12,6 +12,7 @@ import { requestSatGuide, triggerLeadDownload } from "@api/leads.api";
 import {
   FALLBACK_CALENDAR_EVENTS,
   getCalendarEventAction,
+  getCalendarEventLocation,
   getCalendarEventStatus,
   getCalendarEventTime,
   getCalendarEventType,
@@ -373,7 +374,9 @@ export default function Home() {
             event.thumbnail ||
             HOME_CALENDAR_FALLBACK_IMAGES[index % HOME_CALENDAR_FALLBACK_IMAGES.length],
           date: formatHomeEventDate(event.startDate),
-          location: event.location || (event.modality === "online" ? "Online" : ""),
+          location:
+            getCalendarEventLocation(event, calendarCandidates, nowTick) ||
+            (event.modality === "online" ? "Online" : ""),
           type: getCalendarEventType(event),
           titleLine1,
           titleLine2,
@@ -603,7 +606,7 @@ export default function Home() {
                       Sede
                     </p>
                     <p className="text-white text-sm">
-                      {nextEvent.location || "Por definir"}
+                      {getCalendarEventLocation(nextEvent, calendarCandidates, nowTick) || "Por definir"}
                     </p>
                   </div>
                   <div className="p-4">

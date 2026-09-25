@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useCartStore } from '@store/cartStore';
-import { createPaymentIntent } from '@api/payments.api';
+import { confirmPaymentIntent, createPaymentIntent } from '@api/payments.api';
 import { formatCurrency } from '@utils/formatters';
 import { hasStripePublishableKey, stripeMissingKeyMessage, stripePromise } from '@utils/stripe';
 import type { OrderItem } from '@t/index';
@@ -128,6 +128,22 @@ function ReceiptConfirmation({
                 <span className="text-[11px] uppercase tracking-[0.18em] text-ink-300">Ticket</span>
                 <span className="font-serif text-[15px] text-right">{items.map((i) => i.title).join(', ')}</span>
               </div>
+              {items.some((i) => i.eventFormat) && (
+                <div className="flex items-center justify-between py-5">
+                  <span className="text-[11px] uppercase tracking-[0.18em] text-ink-300">Formato</span>
+                  <span className="font-serif text-[15px] text-right">
+                    {items.map((i) => i.eventFormat).filter(Boolean).join(', ')}
+                  </span>
+                </div>
+              )}
+              {items.some((i) => i.eventDate) && (
+                <div className="flex items-center justify-between py-5">
+                  <span className="text-[11px] uppercase tracking-[0.18em] text-ink-300">Fecha</span>
+                  <span className="font-serif text-[15px] text-right">
+                    {items.map((i) => i.eventDate).filter(Boolean).join(', ')}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between py-5">
                 <span className="text-[11px] uppercase tracking-[0.18em] text-ink-300">Método de pago</span>
                 <span className="font-serif text-[15px]">{isDemo ? 'Modo local (demo)' : 'Tarjeta bancaria · Stripe'}</span>
@@ -191,6 +207,11 @@ export default function EventCheckout() {
   };
 
   const handleSuccess = () => {
+    // Confirma la orden sin depender sólo del webhook de Stripe (que no llega en
+    // local sin `stripe listen`): el backend verifica el pago con Stripe y manda el recibo.
+    if (clientSecret && !clientSecret.startsWith('demo_')) {
+      confirmPaymentIntent(clientSecret.split('_secret_')[0]).catch(() => undefined);
+    }
     setConfirmedItems(items);
     clear();
     setSuccess(true);
@@ -282,6 +303,22 @@ export default function EventCheckout() {
                     <div className="min-w-0">
                       <p className="font-serif text-[16px] leading-tight text-ink-900">{item.title}</p>
                       <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-ink-300">Pago único</p>
+                      {(item.eventFormat || item.eventDate) && (
+                        <dl className="mt-4 space-y-1.5 text-[12px] leading-[1.3] text-ink-700">
+                          {item.eventFormat && (
+                            <div className="flex gap-3">
+                              <dt className="w-[60px] shrink-0 text-[9px] uppercase tracking-[0.2em] text-ink-300">Formato</dt>
+                              <dd className="font-semibold">{item.eventFormat}</dd>
+                            </div>
+                          )}
+                          {item.eventDate && (
+                            <div className="flex gap-3">
+                              <dt className="w-[60px] shrink-0 text-[9px] uppercase tracking-[0.2em] text-ink-300">Fecha</dt>
+                              <dd className="font-semibold">{item.eventDate}</dd>
+                            </div>
+                          )}
+                        </dl>
+                      )}
                     </div>
                     <p className="whitespace-nowrap font-serif text-[15px] text-ink-900">{formatCurrency(item.price)}</p>
                   </div>

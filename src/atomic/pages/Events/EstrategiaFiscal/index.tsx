@@ -3,16 +3,23 @@ import LeadCaptureModal from '@molecules/LeadCaptureModal';
 import HubspotForm from '@molecules/HubspotForm';
 import { HUBSPOT_FORMS } from '@utils/hubspotForms';
 import { requestEstrategiaFiscalDossier } from '@api/leads.api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAutoUnmuteOnGesture } from '@hooks/useAutoUnmuteOnGesture';
 import { useEvents } from '@hooks/useEvents';
 import { useNowTick } from '@hooks/useNowTick';
 import { useCartStore } from '@store/cartStore';
 import {
   FALLBACK_CALENDAR_EVENTS,
+  formatEventDateLabel,
+  formatEventFormatLabel,
+  getCalendarEventLocation,
   getNextEstrategiaFiscalEvent,
+  hasConfirmedVenue,
+  isEstrategiaFiscalEvent,
+  isUpcomingCalendarEvent,
   loadStoredCalendarEvents,
   mergeCalendarEventSources,
+  VENUE_TO_BE_CONFIRMED,
   type CalendarEventSummary,
 } from '@utils/eventCalendar';
 import heroDiego from '../../../../../assets/home/007_home_bios_DD.png';
@@ -203,9 +210,27 @@ const speakers = [
   },
 ];
 
-const tickets = [
+type TicketModality = NonNullable<SiteEvent['modality']>;
+
+// Cada ticket declara en qué modalidades del evento se vende:
+//  - online      → sólo el ticket Online
+//  - in-person   → General + VIP
+//  - hybrid      → los tres
+const tickets: Array<{
+  eyebrow: string;
+  withLocation?: boolean;
+  price: string;
+  priceValue: number;
+  refId: string;
+  note: string;
+  variant: 'early' | 'general' | 'vip';
+  cta: string;
+  modalities: TicketModality[];
+  items: string[];
+}> = [
   {
-    eyebrow: 'Online',
+    eyebrow: 'Online · Zoom',
+    modalities: ['online', 'hybrid'],
     price: '$4,997',
     priceValue: 4997,
     refId: 'estrategia-fiscal-online',
@@ -213,13 +238,15 @@ const tickets = [
     variant: 'early',
     cta: 'Comprar Online',
     items: [
-      'Transmisión en vivo de los 6 bloques',
+      'Transmisión en vivo por Zoom de los 6 bloques',
       '09:00 a 14:00 hrs (aprox.)',
       'Grabación disponible por tiempo limitado',
     ],
   },
   {
-    eyebrow: 'General · CDMX',
+    eyebrow: 'General',
+    withLocation: true,
+    modalities: ['in-person', 'hybrid'],
     price: '$7,997',
     priceValue: 7997,
     refId: 'estrategia-fiscal-general',
@@ -233,7 +260,9 @@ const tickets = [
     ],
   },
   {
-    eyebrow: 'VIP · CDMX',
+    eyebrow: 'VIP',
+    withLocation: true,
+    modalities: ['in-person', 'hybrid'],
     price: '$24,997',
     priceValue: 24997,
     refId: 'estrategia-fiscal-vip',
@@ -441,6 +470,8 @@ export default function EstrategiaFiscalLanding() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [, , videoState] = useAutoUnmuteOnGesture(videoRef);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedSlug = searchParams.get('evento');
   const addItem = useCartStore((s) => s.addItem);
   const clearCart = useCartStore((s) => s.clear);
   const nowTick = useNowTick(30_000);
@@ -466,23 +497,47 @@ export default function EstrategiaFiscalLanding() {
     };
   }, []);
 
-  // Próximo taller de Estrategia Fiscal (online, CDMX, Monterrey — cualquier variante).
+  const efCandidates = useMemo(
+    () =>
+      mergeCalendarEventSources(
+        FALLBACK_CALENDAR_EVENTS,
+        (eventsData?.data as CalendarEventSummary[] | undefined) ?? [],
+        storedEvents,
+      ).filter(isEstrategiaFiscalEvent),
+    [eventsData?.data, storedEvents],
+  );
+
+  // Edición que abre la landing: la que pide ?evento=<slug> (cada card del
+  // calendario manda la suya) o, sin parámetro / si ya pasó, el próximo taller
+  // de Estrategia Fiscal (online, CDMX, Monterrey — cualquier variante).
   // Se recomputa cada 30s con nowTick: cuando la fecha del actual pasa, salta
   // automáticamente al siguiente de la lista.
   const currentEvent = useMemo<CalendarEventSummary>(() => {
-    const candidates = mergeCalendarEventSources(
-      FALLBACK_CALENDAR_EVENTS,
-      (eventsData?.data as CalendarEventSummary[] | undefined) ?? [],
-      storedEvents,
-    );
+    const requested = requestedSlug
+      ? efCandidates.find(
+          (event) => event.slug === requestedSlug && isUpcomingCalendarEvent(event, nowTick),
+        )
+      : undefined;
     return (
-      getNextEstrategiaFiscalEvent(candidates, nowTick) ??
+      requested ??
+      getNextEstrategiaFiscalEvent(efCandidates, nowTick) ??
       FALLBACK_ESTRATEGIA_FISCAL
     );
-  }, [eventsData?.data, storedEvents, nowTick]);
+  }, [efCandidates, requestedSlug, nowTick]);
+
+  // Sólo la próxima edición presencial tiene sede conocida; las posteriores
+  // se muestran como "Sede por confirmar".
+  const venueConfirmed = hasConfirmedVenue(currentEvent, efCandidates, nowTick);
+  const isOnlineEvent = currentEvent.modality === 'online';
+  // El bloque de sede (JW Marriott) es el de CDMX: sólo aplica si la sede está
+  // confirmada y es CDMX.
+  const showVenueDetails =
+    venueConfirmed && /cdmx|ciudad de m[eé]xico/i.test(currentEvent.location || '');
 
   const currentEventDate = currentEvent.startDate || FALLBACK_ESTRATEGIA_FISCAL.startDate;
-  const currentEventLocation = currentEvent.location || FALLBACK_ESTRATEGIA_FISCAL.location;
+  const currentEventLocation =
+    getCalendarEventLocation(currentEvent, efCandidates, nowTick) ||
+    FALLBACK_ESTRATEGIA_FISCAL.location;
   const currentEventDescription =
     currentEvent.shortDescription ||
     currentEvent.description ||
@@ -490,6 +545,17 @@ export default function EstrategiaFiscalLanding() {
     '';
   const currentEventCalloutDate = formatCalloutDate(currentEventDate);
   const currentEventModality = formatModality(currentEvent.modality);
+  const visibleTickets = useMemo(
+    () => tickets.filter((ticket) => ticket.modalities.includes(currentEvent.modality ?? 'in-person')),
+    [currentEvent.modality],
+  );
+  const primaryTicket =
+    visibleTickets.find((ticket) => ticket.variant === 'general') ?? visibleTickets[0];
+  const currentEventDateLabel = formatEventDateLabel(currentEventDate, currentEvent.endDate);
+  const ticketLabel = (ticket: (typeof tickets)[number]) =>
+    ticket.withLocation && venueConfirmed
+      ? `${ticket.eyebrow} · ${currentEventLocation}`
+      : ticket.eyebrow;
   const currentEventTime = formatLandingTime(currentEventDate);
   const currentEventEndTime =
     currentEvent.endDate && !Number.isNaN(new Date(currentEvent.endDate).getTime())
@@ -532,11 +598,15 @@ export default function EstrategiaFiscalLanding() {
       id: `event-${ticket.refId}`,
       type: 'event',
       refId: ticket.refId,
-      title: `Taller de Estrategia Fiscal · ${ticket.eyebrow}`,
+      title: `Taller de Estrategia Fiscal · ${ticketLabel(ticket)}`,
       price: ticket.priceValue,
       quantity: 1,
       currency: 'MXN',
       paymentType: 'one_time',
+      eventDate: currentEventDateLabel,
+      eventFormat: ticket.withLocation
+        ? formatEventFormatLabel('in-person', currentEventLocation)
+        : formatEventFormatLabel('online', currentEventLocation),
     });
     navigate('/eventos/checkout');
   };
@@ -782,6 +852,7 @@ export default function EstrategiaFiscalLanding() {
         </div>
       </section>
 
+      {!isOnlineEvent && (
       <section id="sede" className="border-t border-cream-400 bg-cream-200">
         <div className="mx-auto max-w-[1344px] px-5 py-20 sm:px-8 md:py-[96px] lg:px-10 lg:py-[100px]">
           <div className="grid items-end border-b border-cream-400 md:grid-cols-[96px_minmax(0,1fr)_100px] lg:grid-cols-[128px_minmax(0,1fr)_120px]">
@@ -800,41 +871,58 @@ export default function EstrategiaFiscalLanding() {
             </p>
           </div>
 
-          <div className="mt-[52px] overflow-hidden border border-cream-400 md:grid md:min-h-[402px] md:grid-cols-[0.46fr_0.54fr]">
-            <div className="min-h-[332px] bg-cream-200 px-8 py-12 md:min-h-[402px] lg:px-[32px]">
-              <h3 className="text-[clamp(30px,3.4vw,42px)] font-normal leading-[0.95] tracking-[-0.045em] text-ink-900">
-                JW Marriott
-                <span className="block font-serif italic tracking-[-0.055em]">Santa Fe</span>
-                <span className="mt-2 block font-serif text-[16px] italic tracking-[-0.03em] text-ink-400">
-                  Santa Fe, Cuajimalpa · CDMX
-                </span>
-              </h3>
-              <dl className="mt-[52px] space-y-0 border-y border-cream-400">
-                {[
-                  ['Dirección', 'Av. Santa Fe 160, Santa Fe, Cuajimalpa'],
-                  ['Estacionamiento', 'Valet parking incluido con identificación'],
-                  ['Hotel aliado', 'JW Marriott · tarifa especial para asistentes'],
-                  ['Transporte público', 'Metro Observatorio + shuttle Santa Fe'],
-                ].map(([term, detail]) => (
-                  <div key={term} className="grid grid-cols-[112px_minmax(0,1fr)] gap-5 border-b border-cream-400 py-3 last:border-b-0">
-                    <dt className="text-[8px] uppercase tracking-[0.34em] text-ink-300">{term}</dt>
-                    <dd className="text-[12px] font-semibold leading-[1.25] tracking-[-0.02em] text-ink-900">{detail}</dd>
-                  </div>
-                ))}
-              </dl>
+          {showVenueDetails ? (
+            <div className="mt-[52px] overflow-hidden border border-cream-400 md:grid md:min-h-[402px] md:grid-cols-[0.46fr_0.54fr]">
+              <div className="min-h-[332px] bg-cream-200 px-8 py-12 md:min-h-[402px] lg:px-[32px]">
+                <h3 className="text-[clamp(30px,3.4vw,42px)] font-normal leading-[0.95] tracking-[-0.045em] text-ink-900">
+                  JW Marriott
+                  <span className="block font-serif italic tracking-[-0.055em]">Santa Fe</span>
+                  <span className="mt-2 block font-serif text-[16px] italic tracking-[-0.03em] text-ink-400">
+                    Santa Fe, Cuajimalpa · CDMX
+                  </span>
+                </h3>
+                <dl className="mt-[52px] space-y-0 border-y border-cream-400">
+                  {[
+                    ['Dirección', 'Av. Santa Fe 160, Santa Fe, Cuajimalpa'],
+                    ['Estacionamiento', 'Valet parking incluido con identificación'],
+                    ['Hotel aliado', 'JW Marriott · tarifa especial para asistentes'],
+                    ['Transporte público', 'Metro Observatorio + shuttle Santa Fe'],
+                  ].map(([term, detail]) => (
+                    <div key={term} className="grid grid-cols-[112px_minmax(0,1fr)] gap-5 border-b border-cream-400 py-3 last:border-b-0">
+                      <dt className="text-[8px] uppercase tracking-[0.34em] text-ink-300">{term}</dt>
+                      <dd className="text-[12px] font-semibold leading-[1.25] tracking-[-0.02em] text-ink-900">{detail}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+              <div className="min-h-[360px] bg-white md:min-h-[402px]">
+                <iframe
+                  title="Mapa JW Marriott Santa Fe"
+                  src="https://www.google.com/maps?q=JW%20Marriott%20Hotel%20Mexico%20City%20Santa%20Fe&output=embed"
+                  className="block h-full min-h-[360px] w-full border-0 md:min-h-[402px]"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
             </div>
-            <div className="min-h-[360px] bg-white md:min-h-[402px]">
-              <iframe
-                title="Mapa JW Marriott Santa Fe"
-                src="https://www.google.com/maps?q=JW%20Marriott%20Hotel%20Mexico%20City%20Santa%20Fe&output=embed"
-                className="block h-full min-h-[360px] w-full border-0 md:min-h-[402px]"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
+          ) : (
+            <div className="mt-[52px] border border-cream-400 bg-cream-200 px-8 py-12 md:px-[32px]">
+              <p className="text-[9px] uppercase tracking-[0.34em] text-ink-300">— {VENUE_TO_BE_CONFIRMED}</p>
+              <p className="mt-5 max-w-[520px] text-[15px] leading-[1.4] tracking-[-0.01em] text-ink-500">
+                La sede de esta edición aún no está confirmada. Déjanos tus datos en el
+                formulario y te avisamos en cuanto se anuncie.
+              </p>
+              <a
+                href="#estrategia-fiscal-formulario"
+                className="mt-8 inline-flex min-h-[44px] items-center border border-ink-900 px-5 text-[10px] uppercase tracking-[0.16em] text-ink-900 transition-colors hover:bg-ink-900 hover:text-white"
+              >
+                Avisarme de la sede
+              </a>
             </div>
-          </div>
+          )}
         </div>
       </section>
+      )}
 
       <section id="formatos" className="border-t border-cream-400 bg-cream-50">
         <div className="mx-auto max-w-[1344px] px-5 py-20 sm:px-8 md:py-[76px] lg:px-10">
@@ -845,7 +933,11 @@ export default function EstrategiaFiscalLanding() {
               Inversion
             </p>
             <h2 className="text-center text-[clamp(56px,6.1vw,66px)] font-normal leading-[0.84] tracking-[-0.05em] text-ink-900">
-              Tres formatos.
+              {visibleTickets.length === 1
+                ? 'Un formato.'
+                : visibleTickets.length === 2
+                  ? 'Dos formatos.'
+                  : 'Tres formatos.'}
               <span className="block font-serif tracking-[-0.06em]">Una experiencia.</span>
             </h2>
             <p className="hidden text-right text-[9px] uppercase tracking-[0.28em] text-ink-300 md:mb-[70px] md:block">
@@ -859,17 +951,27 @@ export default function EstrategiaFiscalLanding() {
             <div className="hidden md:block" />
           </div>
 
-          <div className="mx-auto mt-[50px] grid max-w-[1240px] grid-cols-1 overflow-visible border border-cream-400 md:grid-cols-3">
-            {tickets.map((ticket) => {
+          <div
+            className={`mx-auto mt-[50px] grid grid-cols-1 overflow-visible border border-cream-400 ${
+              visibleTickets.length === 1
+                ? 'max-w-[620px]'
+                : visibleTickets.length === 2
+                  ? 'max-w-[900px] md:grid-cols-2'
+                  : 'max-w-[1240px] md:grid-cols-3'
+            }`}
+          >
+            {visibleTickets.map((ticket, index) => {
               const isGeneral = ticket.variant === 'general';
+              // Un ticket solo (evento online) sobre fondo claro se pierde: va en negro.
+              const isDark = isGeneral || visibleTickets.length === 1;
               return (
                 <article
-                  key={ticket.eyebrow}
+                  key={ticket.refId}
                   className={`card-lift relative z-0 flex min-h-[600px] flex-col border-cream-400 px-[34px] pb-[40px] pt-[56px] hover:z-10 md:min-h-[688px] md:px-[40px] ${
-                    isGeneral
-                      ? 'bg-[#050505] pt-[88px] text-white'
+                    isDark
+                      ? `bg-[#050505] text-white ${isGeneral ? 'pt-[88px]' : ''}`
                       : 'bg-cream-50 text-ink-900'
-                  } ${ticket.variant !== 'early' ? 'border-t md:border-l md:border-t-0' : ''}`}
+                  } ${index > 0 ? 'border-t md:border-l md:border-t-0' : ''}`}
                 >
                   {isGeneral && (
                     <div className="absolute inset-x-0 top-0 flex h-[31px] items-center justify-center bg-[#78562a] text-[9px] uppercase tracking-[0.42em] text-cream-50">
@@ -877,23 +979,35 @@ export default function EstrategiaFiscalLanding() {
                     </div>
                   )}
 
-                  <p className={`text-[10px] uppercase tracking-[0.34em] ${isGeneral ? 'text-white/45' : 'text-ink-300'}`}>
-                    — {ticket.eyebrow}
+                  <p className={`text-[10px] uppercase tracking-[0.34em] ${isDark ? 'text-white/45' : 'text-ink-300'}`}>
+                    — {ticketLabel(ticket)}
                   </p>
 
                   <h3 className="mt-5 text-[clamp(46px,5.4vw,64px)] font-normal leading-none tracking-[-0.055em]">
                     {ticket.price}
                   </h3>
-                  <p className={`mt-4 text-[9px] uppercase tracking-[0.28em] ${isGeneral ? 'text-white/35' : 'text-ink-300'}`}>
+                  <p className={`mt-4 text-[9px] uppercase tracking-[0.28em] ${isDark ? 'text-white/35' : 'text-ink-300'}`}>
                     {ticket.note}
                   </p>
 
-                  <ul className={`mt-[54px] divide-y ${isGeneral ? 'divide-white/12' : 'divide-cream-400'}`}>
+                  <dl className={`mt-8 divide-y border-y ${isDark ? 'divide-white/12 border-white/12' : 'divide-cream-400 border-cream-400'}`}>
+                    {[
+                      ['Fecha', currentEventDateLabel],
+                      ['Formato', ticket.withLocation ? formatEventFormatLabel('in-person', currentEventLocation) : formatEventFormatLabel('online', currentEventLocation)],
+                    ].map(([term, value]) => (
+                      <div key={term} className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 py-[10px]">
+                        <dt className={`text-[8px] uppercase tracking-[0.3em] ${isDark ? 'text-white/40' : 'text-ink-300'}`}>{term}</dt>
+                        <dd className={`text-[12px] font-semibold leading-[1.25] ${isDark ? 'text-white' : 'text-ink-900'}`}>{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+
+                  <ul className={`mt-[28px] divide-y ${isDark ? 'divide-white/12' : 'divide-cream-400'}`}>
                     {ticket.items.map((item) => (
                       <li
                         key={item}
                         className={`grid grid-cols-[22px_minmax(0,1fr)] gap-3 py-[14px] text-[13px] font-normal leading-[1.25] tracking-[-0.01em] ${
-                          isGeneral ? 'text-white/70' : 'text-ink-500'
+                          isDark ? 'text-white/70' : 'text-ink-500'
                         }`}
                       >
                         <span aria-hidden="true">→</span>
@@ -906,7 +1020,7 @@ export default function EstrategiaFiscalLanding() {
                     type="button"
                     onClick={() => buyTicket(ticket)}
                     className={`mt-auto flex min-h-[54px] w-fit cursor-pointer items-center justify-between gap-4 border px-5 text-[10px] uppercase tracking-[0.16em] transition-colors ${
-                      isGeneral
+                      isDark
                         ? 'border-cream-50 bg-cream-50 text-ink-900 hover:bg-white'
                         : 'border-ink-900 text-ink-900 hover:bg-ink-900 hover:text-white'
                     }`}
@@ -1011,7 +1125,7 @@ export default function EstrategiaFiscalLanding() {
 
           <button
             type="button"
-            onClick={() => buyTicket(tickets[1])}
+            onClick={() => primaryTicket && buyTicket(primaryTicket)}
             className="mt-[40px] flex min-h-[36px] w-[153px] cursor-pointer items-center justify-between bg-cream-50 px-[20px] text-[9px] uppercase tracking-[0.18em] text-ink-900 transition-colors hover:bg-white"
           >
             <span>Reservar mi lugar</span>

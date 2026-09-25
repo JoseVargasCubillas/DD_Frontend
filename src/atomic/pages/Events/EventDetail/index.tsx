@@ -1,10 +1,19 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as eventsApi from '@api/events.api';
 import Spinner from '@atoms/Spinner';
 import { useCartStore } from '@store/cartStore';
-import { formatDate, formatCurrency } from '@utils/formatters';
+import { formatCurrency } from '@utils/formatters';
+import {
+  FALLBACK_CALENDAR_EVENTS,
+  getEventWhatsAppLink,
+  isWhatsAppOnlyEvent,
+  formatEventDateLabel,
+  formatEventDateTimeLabel,
+  formatEventFormatLabel,
+  formatEventTimeLabel,
+} from '@utils/eventCalendar';
 import type { Event as SiteEvent } from '@t/index';
 
 const EVENT_STORAGE_KEY = 'dd-admin-events';
@@ -35,17 +44,13 @@ const TYPE: Record<SiteEvent['type'], string> = {
 
 // Derive computed values outside JSX to avoid TS 5.9 TSX parser issues
 function deriveInfo(ev: SiteEvent) {
-  const sd = new Date(ev.startDate);
-  const ed = new Date(ev.endDate);
-  const sameDay = sd.toDateString() === ed.toDateString();
+  const sameDay = formatEventDateLabel(ev.startDate) === formatEventDateLabel(ev.endDate || ev.startDate);
 
-  const dateLabel = sameDay
-    ? formatDate(ev.startDate, 'EEEE dd MMMM yyyy')
-    : formatDate(ev.startDate, 'dd MMM') + ' al ' + formatDate(ev.endDate, 'dd MMM yyyy');
+  const dateLabel = formatEventDateLabel(ev.startDate, ev.endDate);
 
-  const timeLabel = sameDay
-    ? formatDate(ev.startDate, 'HH:mm') + ' - ' + formatDate(ev.endDate, 'HH:mm')
-    : '';
+  const timeLabel = sameDay && ev.endDate
+    ? formatEventTimeLabel(ev.startDate) + ' - ' + formatEventTimeLabel(ev.endDate)
+    : 'Inicio ' + formatEventTimeLabel(ev.startDate) + ' hrs';
 
   const isFree = ev.price === 0;
   const spotsLeft = ev.capacity > 0 ? ev.capacity - ev.registeredCount : null;
@@ -111,6 +116,27 @@ export default function EventDetail() {
   const event: SiteEvent | null = localEvent ?? apiEvent ?? null;
   const info = useMemo(() => (event ? deriveInfo(event) : null), [event]);
 
+  // Igual que las tarjetas del calendario: un evento sin landing real se
+  // atiende por WhatsApp. Aplica a los marcados "sólo WhatsApp" y a los que
+  // están en el calendario pero no existen en la base de datos (antes daban
+  // "Evento no encontrado"). Un slug desconocido sigue sin encontrarse.
+  const calendarEvent = useMemo(
+    () => FALLBACK_CALENDAR_EVENTS.find((item) => item.slug === slug),
+    [slug],
+  );
+  // Espera a que cargue el evento para leer su casilla "Atender solo por WhatsApp" (admin).
+  const redirectToWhatsApp =
+    !isLoading &&
+    ((event && isWhatsAppOnlyEvent(event)) ||
+      (!event && Boolean(calendarEvent)));
+  useEffect(() => {
+    if (redirectToWhatsApp) {
+      window.location.replace(
+        getEventWhatsAppLink({ title: event?.title ?? calendarEvent?.title ?? '' }),
+      );
+    }
+  }, [redirectToWhatsApp, calendarEvent, event?.title]);
+
   const registerMutation = useMutation({
     mutationFn: () => eventsApi.registerToEvent(event!._id ?? event!.id!),
     onSuccess: () => { setRegistered(true); queryClient.invalidateQueries({ queryKey: ['event', slug] }); },
@@ -130,9 +156,13 @@ export default function EventDetail() {
       quantity: 1,
       currency: 'MXN',
       paymentType: 'one_time',
+      eventDate: formatEventDateLabel(event.startDate, event.endDate),
+      eventFormat: formatEventFormatLabel(event.modality, event.location),
     });
     navigate('/eventos/checkout');
   };
+
+  if (redirectToWhatsApp) return null;
 
   if (isLoading && !event) {
     return <div className="flex min-h-[60vh] items-center justify-center"><Spinner size="lg" /></div>;
@@ -163,8 +193,8 @@ export default function EventDetail() {
     { label: 'Tipo', value: TYPE[event.type] },
     { label: 'Modalidad', value: MODALITY[event.modality] },
     event.location ? { label: 'Ubicacion', value: event.location } : null,
-    { label: 'Inicio', value: formatDate(event.startDate, 'dd MMMM yyyy - HH:mm') },
-    { label: 'Cierre', value: formatDate(event.endDate, 'dd MMMM yyyy - HH:mm') },
+    { label: 'Inicio', value: formatEventDateTimeLabel(event.startDate) },
+    { label: 'Cierre', value: formatEventDateTimeLabel(event.endDate) },
     event.registeredCount > 0 ? { label: 'Registrados', value: event.registeredCount + ' personas' } : null,
   ].filter(Boolean) as Array<{ label: string; value: string }>;
 

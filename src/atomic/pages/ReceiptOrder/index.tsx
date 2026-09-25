@@ -19,6 +19,8 @@ export default function ReceiptOrder() {
   if (isError || !receipt) return <ReceiptNotFound />;
 
   const ticketTitle = receipt.items.map((i) => i.title).join(', ');
+  const eventFormat = receipt.items.map((i) => i.eventFormat).filter(Boolean).join(', ');
+  const eventDate = receipt.items.map((i) => i.eventDate).filter(Boolean).join(', ');
 
   return (
     <ReceiptShell
@@ -44,6 +46,8 @@ export default function ReceiptOrder() {
       <DetailRows
         rows={[
           [receipt.items.length > 1 ? 'Artículos' : 'Producto', ticketTitle],
+          ...(eventFormat ? ([['Formato', eventFormat]] as [string, string][]) : []),
+          ...(eventDate ? ([['Fecha', eventDate]] as [string, string][]) : []),
           ['Correo', receipt.customerEmail],
           ['Monto', `${formatCurrency(receipt.total, receipt.currency)} ${receipt.currency}`],
           ...(receipt.tax > 0 ? ([['IVA', `${formatCurrency(receipt.tax, receipt.currency)} ${receipt.currency}`]] as [string, string][]) : []),

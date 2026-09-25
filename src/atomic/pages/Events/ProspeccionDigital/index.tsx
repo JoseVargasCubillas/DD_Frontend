@@ -1,3 +1,9 @@
+import { useEventEdition } from '@hooks/useNextCalendarEvent';
+import {
+  formatEventDateLabel,
+  formatEventFormatLabel,
+  isProspeccionDigitalEvent,
+} from '@utils/eventCalendar';
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '@store/cartStore';
@@ -66,6 +72,9 @@ export default function ProspeccionDigitalLanding() {
   const navigate = useNavigate();
   const addItem = useCartStore((s) => s.addItem);
   const clearCart = useCartStore((s) => s.clear);
+  // Si hay una edición próxima en el calendario, su fecha/sede van al checkout;
+  // si no, se conservan los datos fijos de esta landing.
+  const edition = useEventEdition(isProspeccionDigitalEvent);
 
   useEffect(() => {
     const prev = document.title;
@@ -96,6 +105,8 @@ export default function ProspeccionDigitalLanding() {
       quantity: 1,
       currency: 'MXN',
       paymentType: 'one_time',
+      eventDate: edition ? formatEventDateLabel(edition.startDate, edition.endDate) : '4 y 5 de septiembre',
+      eventFormat: edition ? formatEventFormatLabel(edition.modality, edition.location) : 'Presencial · CDMX',
     });
     navigate('/eventos/checkout');
   };

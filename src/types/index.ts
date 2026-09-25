@@ -230,6 +230,7 @@ export interface Event {
   status: EventStatus;
   instructor: User | string;
   isFeatured: boolean;
+  whatsappOnly?: boolean;
   agenda: { time: string; topic: string; speaker: string }[];
 }
 
@@ -278,6 +279,10 @@ export interface OrderItem {
   currency?: string;
   paymentType?: PaymentType;
   stripePriceId?: string;
+  // Sólo para tickets de evento: se muestran en checkout/recibo para distinguir
+  // qué edición se compró (no viajan al backend).
+  eventDate?: string;
+  eventFormat?: string;
 }
 
 export interface ShippingAddress {

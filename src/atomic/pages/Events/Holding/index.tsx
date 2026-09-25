@@ -2,6 +2,12 @@ import { useNavigate } from "react-router-dom";
 import { useCartStore } from "@store/cartStore";
 import HubspotForm from "@molecules/HubspotForm";
 import { HUBSPOT_FORMS } from "@utils/hubspotForms";
+import { useEventEdition } from "@hooks/useNextCalendarEvent";
+import {
+  formatEventDateLabel,
+  formatEventFormatLabel,
+  isHoldingEvent,
+} from "@utils/eventCalendar";
 import type { OrderItem } from "@t/index";
 import holdingPoster from "../../../../../assets/eventos/evento-holding.png";
 
@@ -100,12 +106,6 @@ const syllabus = [
   },
 ];
 
-const metaItems = [
-  ["Fecha", "Martes 22 de septiembre."],
-  ["Modalidad", "Vía online."],
-  ["Cupo", "Limitado."],
-];
-
 function SectionHeader({
   title,
   italic,
@@ -165,6 +165,24 @@ export default function HoldingLanding() {
   const addItem = useCartStore((state) => state.addItem);
   const clearCart = useCartStore((state) => state.clear);
 
+  // Edición vigente (?evento=<slug> o la próxima por fecha): de ahí salen la
+  // fecha y modalidad que se ven en la landing, el checkout y el recibo.
+  const edition = useEventEdition(isHoldingEvent);
+  const editionDate = edition ? formatEventDateLabel(edition.startDate, edition.endDate) : "";
+  const editionFormat = edition
+    ? formatEventFormatLabel(edition.modality, edition.location)
+    : "";
+  const metaItems = [
+    ["Fecha", editionDate ? `${editionDate}.` : "Próxima fecha por confirmar."],
+    [
+      "Modalidad",
+      edition?.modality && edition.modality !== "online"
+        ? `${editionFormat}.`
+        : "Vía online · Zoom.",
+    ],
+    ["Cupo", "Limitado."],
+  ];
+
   const scrollToInvestment = () => {
     document.getElementById("holding-asegura-tu-lugar")?.scrollIntoView({
       behavior: "smooth",
@@ -174,7 +192,11 @@ export default function HoldingLanding() {
 
   const startHoldingCheckout = () => {
     clearCart();
-    addItem(HOLDING_CHECKOUT_ITEM);
+    addItem({
+      ...HOLDING_CHECKOUT_ITEM,
+      ...(editionDate && { eventDate: editionDate }),
+      eventFormat: editionFormat || "Online · Zoom",
+    });
     navigate("/eventos/checkout");
   };
 

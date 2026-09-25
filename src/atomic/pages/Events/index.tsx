@@ -4,6 +4,11 @@ import { useReveal, useHeroReveal } from "@hooks/useReveal";
 import { useCountUp } from "@hooks/useCountUp";
 import { useEvents } from "@hooks/useEvents";
 import { waClickHandler } from "@utils/whatsapp";
+import {
+  isEstrategiaFiscalEvent,
+  isWhatsAppOnlyEvent,
+  VENUE_TO_BE_CONFIRMED,
+} from "@utils/eventCalendar";
 import type { Event as SiteEvent } from "@t/index";
 import eventPersonaFisicaMoral from "../../../../assets/eventos/evento-persona-fisica-moral.png";
 import eventMentalidadEmpresarial from "../../../../assets/eventos/evento-mentalidad-empresarial.png";
@@ -37,6 +42,8 @@ interface EventCard {
   cta?: string;
   isFeatured?: boolean;
   slug?: string;
+  modality?: SiteEvent["modality"];
+  whatsappOnly?: boolean;
   id?: string;
   _id?: string;
 }
@@ -216,9 +223,12 @@ const splitTitle = (title: string) => {
 const isHoldingEvent = (event: Pick<SiteEvent, "slug" | "title">) =>
   event.slug.startsWith("holding") || event.title.trim().toLowerCase() === "holding";
 
-const isTallerEstrategiaFiscalEvent = (event: Pick<SiteEvent, "slug" | "title">) =>
-  event.slug.includes("taller-estrategia-fiscal") ||
-  event.title.trim().toLowerCase().includes("taller de estrategia fiscal");
+// Misma regla que usa la landing (slug, título o enlace con "estrategia fiscal"),
+// para que un evento creado en el admin no aparezca en la landing pero con la
+// card apuntando a otro lado.
+const isTallerEstrategiaFiscalEvent = (
+  event: Pick<SiteEvent, "slug" | "title" | "onlineUrl">,
+) => isEstrategiaFiscalEvent(event);
 
 const isRockefellerEventCard = (event: Pick<SiteEvent, "slug" | "title">) => {
   const title = event.title.trim().toLowerCase();
@@ -254,7 +264,9 @@ const cardFromApiEvent = (event: SiteEvent): EventCard => {
     rawDate: event.startDate,
     location:
       event.modality === "online"
-        ? "Online"
+        ? event.location && !/^online$/i.test(event.location.trim())
+          ? event.location
+          : "Zoom"
         : event.location ||
           (event.modality === "hybrid" ? "Híbrido" : "Por definir"),
     to: isComoCobrarEvent(event)
@@ -270,6 +282,8 @@ const cardFromApiEvent = (event: SiteEvent): EventCard => {
     cta: event.status === "ongoing" ? "Entrar ahora" : "¡Estoy listo!",
     isFeatured: event.isFeatured,
     slug: event.slug,
+    modality: event.modality,
+    whatsappOnly: event.whatsappOnly,
     id: event.id,
     _id: event._id,
   };
@@ -294,7 +308,8 @@ const DEDICATED_LANDING_PATHS = new Set([
 
 const hasRealEventLanding = (event?: EventCard | null) => {
   if (!event) return false;
-  if (DEDICATED_LANDING_PATHS.has(event.to)) return true;
+  if (isWhatsAppOnlyEvent(event)) return false;
+  if (DEDICATED_LANDING_PATHS.has(event.to.split("?")[0])) return true;
   if (event.to?.startsWith("http")) return true; // link externo propio (p. ej. Zoom) ya capturado
   return Boolean(event.id || event._id);
 };
@@ -340,9 +355,53 @@ function EventCtaLink({
 const getEventCardSlug = (event: EventCard) =>
   event.slug ||
   (() => {
-    const parts = event.to.split("/").filter(Boolean);
+    const parts = event.to.split("?")[0].split("/").filter(Boolean);
     return parts[parts.length - 1] ?? "";
   })();
+
+const ESTRATEGIA_FISCAL_PATH = "/eventos/estrategia-fiscal";
+
+const isEstrategiaFiscalCard = (event: EventCard) =>
+  event.to.split("?")[0] === ESTRATEGIA_FISCAL_PATH;
+
+const isOnlineCard = (event: EventCard) =>
+  event.modality
+    ? event.modality === "online"
+    : /^(online|zoom)$/i.test(event.location.trim());
+
+// Cada edición de una serie (Estrategia Fiscal, Holding) comparte la misma
+// landing; ?evento le dice cuál abrir. Además, sólo la próxima edición
+// presencial de Estrategia Fiscal tiene sede conocida: las presenciales
+// posteriores se muestran como "Sede por confirmar".
+// Recibe las cards ya ordenadas por fecha y filtradas a próximas.
+const HOLDING_PATH = "/eventos/holding";
+
+const applyEventSeriesRules = (
+  groups: Array<{ month: string; events: EventCard[] }>,
+) => {
+  const nextInPersonSlug = groups
+    .flatMap((group) => group.events)
+    .find((event) => isEstrategiaFiscalCard(event) && !isOnlineCard(event))?.slug;
+
+  return groups.map((group) => ({
+    ...group,
+    events: group.events.map((event) => {
+      const path = event.to.split("?")[0];
+      const slug = getEventCardSlug(event);
+      if (!slug) return event;
+      if (path === HOLDING_PATH) {
+        return { ...event, to: `${HOLDING_PATH}?evento=${encodeURIComponent(slug)}` };
+      }
+      if (!isEstrategiaFiscalCard(event)) return event;
+      const hiddenVenue = !isOnlineCard(event) && slug !== nextInPersonSlug;
+      return {
+        ...event,
+        to: `${ESTRATEGIA_FISCAL_PATH}?evento=${encodeURIComponent(slug)}`,
+        location: hiddenVenue ? VENUE_TO_BE_CONFIRMED : event.location,
+      };
+    }),
+  }));
+};
 
 const isUpcomingEventCard = (event: EventCard) => {
   if (!event.rawDate) return true;
@@ -467,11 +526,11 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         title: "Taller de",
         titleSerif: "Estrategia Fiscal",
         description:
-          "Taller online para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
+          "Taller online por Zoom para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
         price: "$0 MXN",
         date: "11 Septiembre 2026",
         rawDate: "2026-09-11T09:07:00-06:00",
-        location: "Online",
+        location: "Zoom",
         image: eventTallerFiscal,
         slug: "taller-estrategia-fiscal-online-septiembre",
         to: "/eventos/estrategia-fiscal",
@@ -527,6 +586,21 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
   {
     month: "Octubre 2026",
     events: [
+      {
+        eyebrow: "Workshop",
+        title: "Taller de",
+        titleSerif: "Estrategia Fiscal",
+        description:
+          "Taller online por Zoom para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
+        price: "$0 MXN",
+        date: "16 Octubre 2026",
+        rawDate: "2026-10-16T09:07:00-06:00",
+        location: "Zoom",
+        image: eventTallerFiscal,
+        slug: "taller-estrategia-fiscal-online-octubre",
+        to: "/eventos/estrategia-fiscal",
+        cta: "¡Estoy listo!",
+      },
       {
         eyebrow: "Workshop",
         title: "Taller de",
@@ -647,11 +721,11 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         title: "Taller de",
         titleSerif: "Estrategia Fiscal",
         description:
-          "Último taller online del año para cerrar decisiones fiscales y preparar la estructura del siguiente ciclo.",
+          "Último taller online por Zoom del año para cerrar decisiones fiscales y preparar la estructura del siguiente ciclo.",
         price: "$0 MXN",
         date: "10 Diciembre 2026",
         rawDate: "2026-12-10T09:07:00-06:00",
-        location: "Online",
+        location: "Zoom",
         image: eventTallerFiscal,
         slug: "taller-estrategia-fiscal-online-diciembre",
         to: "/eventos/estrategia-fiscal",
@@ -901,14 +975,16 @@ export default function Events() {
   const dynamicGroups = useMemo(() => groupApiEvents(apiEvents), [apiEvents]);
   const calendarGroups = useMemo(
     () =>
-      mergeCalendarGroups(eventGroups, dynamicGroups)
-        .map((group) => ({
-          ...group,
-          events: group.events
-            .filter((event) => !DEPRECATED_EVENT_SLUGS.has(getEventCardSlug(event)))
-            .filter(isUpcomingEventCard),
-        }))
-        .filter((group) => group.events.length > 0),
+      applyEventSeriesRules(
+        mergeCalendarGroups(eventGroups, dynamicGroups)
+          .map((group) => ({
+            ...group,
+            events: group.events
+              .filter((event) => !DEPRECATED_EVENT_SLUGS.has(getEventCardSlug(event)))
+              .filter(isUpcomingEventCard),
+          }))
+          .filter((group) => group.events.length > 0),
+      ),
     [dynamicGroups],
   );
   const allCalendarEvents = calendarGroups.flatMap((group) => group.events);
@@ -984,8 +1060,11 @@ export default function Events() {
 
   const countEvents = useCountUp(allCalendarEvents.length || 7);
   const countCities = useCountUp(
-    new Set(allCalendarEvents.map((event) => event.location).filter(Boolean))
-      .size || 5,
+    new Set(
+      allCalendarEvents
+        .map((event) => event.location)
+        .filter((location) => location && location !== VENUE_TO_BE_CONFIRMED),
+    ).size || 5,
   );
   const countSpots = useCountUp(1450);
 
