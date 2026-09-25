@@ -862,12 +862,14 @@ const selectedIsNew = selectedId === "new";
     toast.success("CTAs de asesor actualizados");
   };
 
-  const hideSelected = async () => {
+  // Oculta o vuelve a mostrar el evento seleccionado (status "canceled" = oculto).
+  const setSelectedVisibility = async (visible: boolean) => {
     if (!form.id) return;
+    const nextStatus = visible ? ("upcoming" as const) : ("canceled" as const);
 
     if (ENABLE_EVENT_API_SYNC) {
       try {
-        const payload = { ...buildPayload(form), status: "canceled" as const };
+        const payload = { ...buildPayload(form), status: nextStatus };
         const payloadSlug = String(payload.slug ?? toSlug(form.title));
         const existingApiEvent = apiEvents.find((event) => event.slug === payloadSlug);
         const existingApiId = existingApiEvent ? getEventId(existingApiEvent) : "";
@@ -886,15 +888,15 @@ const selectedIsNew = selectedId === "new";
         setLocalEvents(nextLocalEvents);
         if (savedId) setSelectedId(savedId);
         setForm(formFromEvent(savedEvent));
-        toast.success("Evento oculto en base de datos");
+        toast.success(visible ? "Evento visible en base de datos" : "Evento oculto en base de datos");
       } catch {
-        toast.error("No se pudo ocultar el evento");
+        toast.error(visible ? "No se pudo mostrar el evento" : "No se pudo ocultar el evento");
       }
       return;
     }
 
     const hiddenEvent = eventFromForm(
-      { ...form, status: "canceled" },
+      { ...form, status: nextStatus },
       selectedIsSeed ? `local-${form.slug || toSlug(form.title)}` : form.id,
     );
     const nextLocalEvents = [
@@ -905,7 +907,7 @@ const selectedIsNew = selectedId === "new";
     setLocalEvents(nextLocalEvents);
     setSelectedId(getEventId(hiddenEvent));
     setForm(formFromEvent(hiddenEvent));
-    toast.success("Evento oculto");
+    toast.success(visible ? "Evento visible" : "Evento oculto");
   };
 
   // Elimina de verdad un evento guardado (base de datos o copia local). Los
@@ -1050,10 +1052,20 @@ const selectedIsNew = selectedId === "new";
           {!selectedIsNew && (
             <button
               type="button"
-              onClick={hideSelected}
-              className="mt-8 flex min-h-10 items-center gap-2 text-sm text-red-600"
+              onClick={() => setSelectedVisibility(form.status === "canceled")}
+              className={`mt-8 flex min-h-10 items-center gap-2 text-sm ${
+                form.status === "canceled" ? "font-semibold text-green-700" : "text-red-600"
+              }`}
             >
-              <TrashIcon /> Ocultar bloque
+              {form.status === "canceled" ? (
+                <>
+                  <EyeIcon /> Mostrar bloque
+                </>
+              ) : (
+                <>
+                  <TrashIcon /> Ocultar bloque
+                </>
+              )}
             </button>
           )}
 
@@ -1499,6 +1511,20 @@ function MegaphoneIcon() {
         strokeWidth="1.7"
         d="M7 14l2 5h3l-2-4"
       />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="h-4 w-4">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.7"
+        d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"
+      />
+      <circle cx="12" cy="12" r="2.6" strokeWidth="1.7" />
     </svg>
   );
 }
