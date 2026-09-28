@@ -205,7 +205,12 @@ function LeadStatsPanel({
       if (activityTs >= customBounds[0] && activityTs <= customBounds[1]) periods.push('custom');
       for (const p of periods) {
         buckets[p].total += 1;
-        for (const src of l.sources) {
+        // Solo contamos al lead en su fuente PRIMARIA (la de su primer
+        // registro cronologico) para que un mismo email nunca aparezca
+        // doblado en el desglose bySource/byCategory. `sources[0]` sirve
+        // como fallback si el backend todavia no serializa primarySource.
+        const src = l.primarySource || l.sources[0];
+        if (src) {
           buckets[p].bySource[src] = (buckets[p].bySource[src] ?? 0) + 1;
           buckets[p].byCategory[leadCategoryOf(src)] += 1;
         }

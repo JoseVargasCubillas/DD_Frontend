@@ -40,6 +40,12 @@ export interface UnifiedLead {
   phone?: string;
   sources: string[];
   reasons: string[];
+  /** Source de la primera actividad cronologica de este email — se usa
+   *  en el desglose de conteo para no doble-contar leads que descargaron
+   *  mas de un recurso. Fallback: sources[0] cuando el backend no lo
+   *  serializa aun (post-deploy este campo siempre existira). */
+  primarySource?: string;
+  primaryReason?: string;
   userId?: string;
   leadIds: string[];
   firstSeenAt: string;
