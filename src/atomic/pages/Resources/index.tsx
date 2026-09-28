@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import toast from 'react-hot-toast';
 import LeadCaptureModal from '@molecules/LeadCaptureModal';
 import { requestDownloadableResource } from '@api/leads.api';
 import phoneMockup from '../../../../assets/resources/calculadora-celular.png';
@@ -25,6 +24,8 @@ type Resource = {
 
 const playStoreUrl =
   'https://play.google.com/store/apps/details?id=com.calculadorafiscal&pcampaignid=web_share';
+const appStoreUrl =
+  'https://apps.apple.com/mx/app/calculadora-fiscal/id6499599084?l=en-GB';
 
 const resources: Resource[] = [
   {
@@ -210,10 +211,11 @@ export default function Resources() {
                   style={{ height: 44 }}
                 />
               </a>
-              <button
-                type="button"
-                onClick={() => toast('App Store está en mantenimiento y pronto volverá a estar disponible.')}
-                aria-label="App Store en mantenimiento"
+              <a
+                href={appStoreUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Descargar Calculadora Fiscal en App Store"
                 className="inline-flex min-h-11 cursor-pointer transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-ink-900 focus:ring-offset-2"
               >
                 <img
@@ -222,7 +224,7 @@ export default function Resources() {
                   className="w-auto"
                   style={{ height: 44 }}
                 />
-              </button>
+              </a>
             </div>
           </div>
         </div>
