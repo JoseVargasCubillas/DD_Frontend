@@ -340,12 +340,15 @@ export const isUpcomingCalendarEvent = (
   return !Number.isNaN(time) && time >= now;
 };
 
-const normalizeTitle = (value: string) =>
-  (value || "")
+const normalizeTitle = (value: string) => {
+  const normalized = (value || "")
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "");
+
+  return normalized.includes("estrategiafiscal") ? "estrategiafiscal" : normalized;
+};
 
 // Misma edición = mismo título y mismo día (CDMX), aunque el slug difiera:
 // un evento creado en el admin a partir de uno del calendario no debe duplicarlo.
