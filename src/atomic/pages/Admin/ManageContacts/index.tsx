@@ -114,24 +114,40 @@ const formatLeadDate = (value?: string | null) => {
   }).format(date);
 };
 
+type LeadDatePeriod = DatePeriod | { mode: 'today' } | { mode: 'last7days' };
+
+const isLeadDateInPeriod = (value: string, period: LeadDatePeriod): boolean => {
+  if (period.mode === 'month' || period.mode === 'range') {
+    return isDateInPeriod(value, period);
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (period.mode === 'last7days') {
+    start.setDate(start.getDate() - 6);
+  }
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  return date >= start && date <= end;
+};
+
 function LeadStatsPanel({
   leads,
+  periodLeads,
   period,
   onPeriodChange,
   source,
   onSourceChange,
 }: {
   leads: import('@api/leads.api').UnifiedLead[];
-  period: DatePeriod;
-  onPeriodChange: (period: DatePeriod) => void;
+  periodLeads: import('@api/leads.api').UnifiedLead[];
+  period: LeadDatePeriod;
+  onPeriodChange: (period: LeadDatePeriod) => void;
   source: string;
   onSourceChange: (s: string) => void;
 }) {
-  const periodLeads = useMemo(
-    () => leads.filter((lead) => isDateInPeriod(lead.firstSeenAt, period)),
-    [leads, period],
-  );
-
   const stats = useMemo(() => {
     const bucket: {
       total: number;
@@ -168,10 +184,42 @@ function LeadStatsPanel({
   }, [leads]);
 
   const sourceEntries = Object.entries(stats.bySource).sort((a, b) => b[1] - a[1]);
+  const datePeriodValue =
+    period.mode === 'month' || period.mode === 'range' ? period : defaultDatePeriod();
+  const activeDateMode =
+    period.mode === 'month' || period.mode === 'range' ? period.mode : null;
 
   return (
     <div className="mb-6 rounded-2xl border border-ink-900/10 bg-ink-50/40 p-5">
-      <DatePeriodFilter value={period} onChange={onPeriodChange} idPrefix="leads" />
+      <div className="mb-3 flex flex-wrap gap-2" aria-label="Periodos rápidos de leads">
+        {([
+          ['today', 'Hoy'],
+          ['last7days', 'Últimos 7 días'],
+        ] as const).map(([mode, label]) => {
+          const active = period.mode === mode;
+          return (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => onPeriodChange({ mode })}
+              aria-pressed={active}
+              className={`min-h-11 cursor-pointer rounded-lg border px-4 text-sm font-semibold transition-colors ${
+                active
+                  ? 'border-ink-900 bg-ink-900 text-white'
+                  : 'border-ink-900/20 bg-white text-ink-700 hover:bg-cream-100'
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      <DatePeriodFilter
+        value={datePeriodValue}
+        onChange={onPeriodChange}
+        idPrefix="leads"
+        activeMode={activeDateMode}
+      />
 
       <div className="mt-4 border-t border-ink-900/10 pt-4">
         <p className="mb-2 text-[10px] uppercase tracking-[0.28em] text-ink-500">
@@ -189,7 +237,7 @@ function LeadStatsPanel({
               key={month}
               type="button"
               onClick={() => onPeriodChange({ mode: 'month', month })}
-              className={`min-h-9 cursor-pointer rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+              className={`min-h-11 cursor-pointer rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
                 active
                   ? 'border-ink-900 bg-ink-900 text-white'
                   : 'border-ink-900/15 bg-white text-ink-700 hover:border-ink-900/40'
@@ -222,7 +270,7 @@ function LeadStatsPanel({
                 key={src}
                 type="button"
                 onClick={() => onSourceChange(source === src ? '' : src)}
-                className={`min-h-8 cursor-pointer rounded-full border px-3 text-xs transition-colors ${
+                className={`min-h-11 cursor-pointer rounded-full border px-3 text-xs transition-colors ${
                   source === src
                     ? 'border-ink-900 bg-ink-900 text-white'
                     : 'border-ink-900/15 bg-white text-ink-700 hover:border-ink-900/40'
@@ -240,7 +288,7 @@ function LeadStatsPanel({
 
 function LeadsTab() {
   const [source, setSource] = useState<string>('');
-  const [period, setPeriod] = useState<DatePeriod>(() => defaultDatePeriod());
+  const [period, setPeriod] = useState<LeadDatePeriod>(() => defaultDatePeriod());
   const [selectedEntryIds, setSelectedEntryIds] = useState<string[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<{ entryIds: string[]; leadIds: string[] } | null>(null);
   const { data: allLeads = [], isLoading } = useUnifiedLeads();
@@ -249,7 +297,7 @@ function LeadsTab() {
   // Filtro de rango temporal aplicado tambien a la tabla y al CSV, para que
   // "veo/exporto lo que cuenta el panel" sea siempre consistente.
   const leadsByPeriod = useMemo(
-    () => allLeads.filter((lead) => isDateInPeriod(lead.firstSeenAt, period)),
+    () => allLeads.filter((lead) => isLeadDateInPeriod(lead.firstSeenAt, period)),
     [allLeads, period],
   );
 
@@ -265,9 +313,6 @@ function LeadsTab() {
     return leadSources.includes(source);
   };
   const leads = source ? leadsByPeriod.filter((lead) => leadMatchesSource(lead.sources)) : leadsByPeriod;
-  const campaignHref = source && source !== 'compra-incompleta'
-    ? `/admin/email?segment=${encodeURIComponent(`lead-source:${source}`)}`
-    : '/admin/email?segment=guide-leads';
 
   // Solo las filas puramente de la tabla `leads` (sin userId) se pueden
   // seleccionar/borrar desde aquí — borrar una fila con userId implicaría
@@ -395,19 +440,12 @@ function LeadsTab() {
           >
             Descargar CSV
           </button>
-          {source && source !== 'compra-incompleta' && (
-            <Link
-              to={campaignHref}
-              className="min-h-10 inline-flex items-center rounded-full bg-[#2f2f2f] px-4 text-sm font-semibold text-white hover:bg-ink-900"
-            >
-              Enviar campaña ↗
-            </Link>
-          )}
         </div>
       </div>
 
       <LeadStatsPanel
         leads={allLeads}
+        periodLeads={leadsByPeriod}
         period={period}
         onPeriodChange={setPeriod}
         source={source}

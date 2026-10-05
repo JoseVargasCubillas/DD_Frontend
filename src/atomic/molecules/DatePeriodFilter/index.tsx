@@ -9,12 +9,14 @@ interface DatePeriodFilterProps {
   value: DatePeriod;
   onChange: (value: DatePeriod) => void;
   idPrefix: string;
+  activeMode?: DatePeriod['mode'] | null;
 }
 
 export default function DatePeriodFilter({
   value,
   onChange,
   idPrefix,
+  activeMode = value.mode,
 }: DatePeriodFilterProps) {
   const today = new Date();
   const fallbackFrom = toLocalDateInput(new Date(today.getFullYear(), today.getMonth(), 1));
@@ -31,9 +33,9 @@ export default function DatePeriodFilter({
               month: value.mode === 'month' ? value.month : currentMonthValue(),
             })
           }
-          aria-pressed={value.mode === 'month'}
+          aria-pressed={activeMode === 'month'}
           className={`cursor-pointer px-4 font-semibold transition-colors ${
-            value.mode === 'month'
+            activeMode === 'month'
               ? 'bg-ink-900 text-cream'
               : 'bg-white text-ink-700 hover:bg-cream-100'
           }`}
@@ -49,9 +51,9 @@ export default function DatePeriodFilter({
               to: value.mode === 'range' ? value.to : fallbackTo,
             })
           }
-          aria-pressed={value.mode === 'range'}
+          aria-pressed={activeMode === 'range'}
           className={`cursor-pointer border-l border-ink-900/20 px-4 font-semibold transition-colors ${
-            value.mode === 'range'
+            activeMode === 'range'
               ? 'bg-ink-900 text-cream'
               : 'bg-white text-ink-700 hover:bg-cream-100'
           }`}
@@ -60,7 +62,7 @@ export default function DatePeriodFilter({
         </button>
       </div>
 
-      {value.mode === 'month' ? (
+      {activeMode === 'month' && value.mode === 'month' ? (
         <label className="grid gap-1 text-xs font-semibold text-ink-600" htmlFor={`${idPrefix}-month`}>
           Mes del reporte
           <input
@@ -71,7 +73,7 @@ export default function DatePeriodFilter({
             className="min-h-11 cursor-pointer rounded-lg border border-ink-900/20 bg-white px-3 text-sm font-normal text-ink-900 outline-none focus:border-ink-900 focus:ring-2 focus:ring-ink-900/10"
           />
         </label>
-      ) : (
+      ) : activeMode === 'range' && value.mode === 'range' ? (
         <>
           <label className="grid gap-1 text-xs font-semibold text-ink-600" htmlFor={`${idPrefix}-from`}>
             Desde
@@ -96,11 +98,13 @@ export default function DatePeriodFilter({
             />
           </label>
         </>
-      )}
+      ) : null}
 
-      <p className="min-h-11 self-end rounded-lg bg-ink-900/5 px-4 py-3 text-sm capitalize text-ink-600">
-        {formatDatePeriodLabel(value)}
-      </p>
+      {activeMode && (
+        <p className="min-h-11 self-end rounded-lg bg-ink-900/5 px-4 py-3 text-sm capitalize text-ink-600">
+          {formatDatePeriodLabel(value)}
+        </p>
+      )}
     </div>
   );
 }
