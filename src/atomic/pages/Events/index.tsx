@@ -6,6 +6,7 @@ import { useEvents } from "@hooks/useEvents";
 import { waClickHandler } from "@utils/whatsapp";
 import {
   calendarEventKey,
+  formatEventShortDateRange,
   getCalendarEventAction,
   getCalendarEventActionLabel,
   isEstrategiaFiscalEvent,
@@ -200,16 +201,6 @@ const TYPE_LABEL: Record<SiteEvent["type"], string> = {
 const monthName = (date: Date, format: "short" | "long" = "long") =>
   new Intl.DateTimeFormat("es-MX", { month: format }).format(date);
 
-const formatEventDate = (value: string) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Fecha por definir";
-  return new Intl.DateTimeFormat("es-MX", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(date);
-};
-
 const formatCurrency = (value: number) =>
   value <= 0
     ? "Gratis"
@@ -240,7 +231,9 @@ const cardFromApiEvent = (event: SiteEvent): EventCard => {
     titleSerif: titleParts.titleSerif,
     description: event.shortDescription || event.description,
     price: formatCurrency(price),
-    date: formatEventDate(event.startDate),
+    date:
+      formatEventShortDateRange(event.startDate, event.endDate) ||
+      "Fecha por definir",
     rawDate: event.startDate,
     location:
       event.modality === "online"

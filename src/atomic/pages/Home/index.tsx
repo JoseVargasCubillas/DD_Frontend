@@ -11,6 +11,7 @@ import { useNowTick } from "@hooks/useNowTick";
 import { requestSatGuide, triggerLeadDownload } from "@api/leads.api";
 import {
   FALLBACK_CALENDAR_EVENTS,
+  formatEventShortDateRange,
   getCalendarEventAction,
   getCalendarEventActionLabel,
   getCalendarEventLocation,
@@ -67,18 +68,6 @@ const HOME_CALENDAR_FALLBACK_IMAGES = [
   imgCreativos,
   imgRockefeller,
 ];
-
-const formatHomeEventDate = (value: string) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Por definir";
-  return new Intl.DateTimeFormat("es-MX", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  })
-    .format(date)
-    .replace(".", "");
-};
 
 // Envuelve una tarjeta de evento con el destino correcto: su landing (interna)
 // si existe de verdad, o WhatsApp (nueva pestaña) si el evento todavía no
@@ -383,7 +372,9 @@ export default function Home() {
               : HOME_CALENDAR_FALLBACK_IMAGES[
                   index % HOME_CALENDAR_FALLBACK_IMAGES.length
                 ]),
-          date: formatHomeEventDate(event.startDate),
+          date:
+            formatEventShortDateRange(event.startDate, event.endDate) ||
+            "Por definir",
           location:
             getCalendarEventLocation(event, calendarCandidates, nowTick) ||
             (event.modality === "online" ? "Online" : ""),
@@ -608,7 +599,10 @@ export default function Home() {
                       Fecha
                     </p>
                     <p className="text-white text-sm">
-                      {formatHomeEventDate(nextEvent.startDate)}
+                      {formatEventShortDateRange(
+                        nextEvent.startDate,
+                        nextEvent.endDate,
+                      ) || "Por definir"}
                     </p>
                   </div>
                   <div className="p-4">

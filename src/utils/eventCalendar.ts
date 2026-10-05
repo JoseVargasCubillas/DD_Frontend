@@ -473,6 +473,73 @@ export const formatEventDateLabel = (value: string | Date, endValue?: string | D
 const mexicoCityPart = (date: Date, options: Intl.DateTimeFormatOptions) =>
   new Intl.DateTimeFormat("es-MX", { ...options, timeZone: "America/Mexico_City" }).format(date);
 
+type MexicoCityDateParts = {
+  day: number;
+  month: number;
+  year: number;
+  monthLabel: string;
+};
+
+const getMexicoCityDateParts = (date: Date): MexicoCityDateParts | null => {
+  if (Number.isNaN(date.getTime())) return null;
+
+  const numericParts = new Intl.DateTimeFormat("en-CA", {
+    day: "numeric",
+    month: "numeric",
+    year: "numeric",
+    timeZone: "America/Mexico_City",
+  }).formatToParts(date);
+  const getNumericPart = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(numericParts.find((part) => part.type === type)?.value);
+  const day = getNumericPart("day");
+  const month = getNumericPart("month");
+  const year = getNumericPart("year");
+
+  if (![day, month, year].every(Number.isFinite)) return null;
+
+  return {
+    day,
+    month,
+    year,
+    monthLabel: mexicoCityPart(date, { month: "short" }).replace(".", ""),
+  };
+};
+
+const formatShortDateRange = (
+  value: string | Date,
+  endValue: string | Date | null | undefined,
+  includeYear: boolean,
+) => {
+  const start = getMexicoCityDateParts(new Date(value));
+  if (!start) return "";
+
+  const yearSuffix = includeYear ? ` ${start.year}` : "";
+  const singleDayLabel = `${start.day} ${start.monthLabel}${yearSuffix}`;
+  if (!endValue) return singleDayLabel;
+
+  const end = getMexicoCityDateParts(new Date(endValue));
+  if (!end) return singleDayLabel;
+
+  const startDayNumber = Date.UTC(start.year, start.month - 1, start.day);
+  const endDayNumber = Date.UTC(end.year, end.month - 1, end.day);
+  if (endDayNumber <= startDayNumber) return singleDayLabel;
+
+  const sameMonth = start.month === end.month && start.year === end.year;
+  const endYearSuffix = includeYear ? ` ${end.year}` : "";
+  if (!sameMonth) {
+    return `${start.day} ${start.monthLabel} al ${end.day} ${end.monthLabel}${endYearSuffix}`;
+  }
+
+  const separator = endDayNumber - startDayNumber === 86400000 ? "y" : "al";
+  return `${start.day} ${separator} ${end.day} ${end.monthLabel}${endYearSuffix}`;
+};
+
+// "23 oct 2026" / "23 y 24 oct 2026" / "30 oct al 1 nov 2026".
+export const formatEventShortDateRange = (
+  value: string | Date,
+  endValue?: string | Date | null,
+) => formatShortDateRange(value, endValue, true);
+
 // "09:00" (24 h, hora de CDMX).
 export const formatEventTimeLabel = (value: string | Date) => {
   const date = new Date(value);
@@ -487,12 +554,11 @@ export const formatEventDateTimeLabel = (value: string | Date) => {
   return `${mexicoCityPart(date, { day: "numeric", month: "long", year: "numeric" })} · ${formatEventTimeLabel(date)}`;
 };
 
-// "23 oct"
-export const formatEventShortDate = (value: string | Date) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return mexicoCityPart(date, { day: "numeric", month: "short" }).replace(".", "");
-};
+// "23 oct" / "23 y 24 oct" / "30 oct al 1 nov".
+export const formatEventShortDate = (
+  value: string | Date,
+  endValue?: string | Date | null,
+) => formatShortDateRange(value, endValue, false);
 
 // "Online · Zoom" / "Presencial · CDMX" / "Híbrido · CDMX".
 export const formatEventFormatLabel = (

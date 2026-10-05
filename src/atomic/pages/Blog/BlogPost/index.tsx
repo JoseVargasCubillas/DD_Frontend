@@ -5,7 +5,11 @@ import * as blogApi from '@api/blog.api';
 import Spinner from '@atoms/Spinner';
 import { formatDate } from '@utils/formatters';
 import { useNextCalendarEvent } from '@hooks/useNextCalendarEvent';
-import { getCalendarEventAction, getCalendarEventActionLabel } from '@utils/eventCalendar';
+import {
+  formatEventShortDateRange,
+  getCalendarEventAction,
+  getCalendarEventActionLabel,
+} from '@utils/eventCalendar';
 import { getEventImage } from '@utils/eventImages';
 import { sanitizeHtml } from '@utils/sanitizeHtml';
 import { findStaticBlogPost, formatStaticBlogDate, STATIC_BLOG_POSTS } from '@/data/blogPosts';
@@ -33,13 +37,6 @@ function useCountdown(targetMs: number | null) {
   return time;
 }
 
-const monthShort = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-const formatEventDate = (iso?: string) => {
-  if (!iso) return '15 Jun 2026 · JW Marriott Santa Fe';
-  const d = new Date(iso);
-  return `${String(d.getDate()).padStart(2, '0')} ${monthShort[d.getMonth()]} ${d.getFullYear()}`;
-};
-
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const localPost = slug ? findStaticBlogPost(slug) : undefined;
@@ -62,7 +59,7 @@ export default function BlogPost() {
   const countdown = useCountdown(eventTargetMs);
   const eventAction = getCalendarEventAction(nextEvent);
   const eventTitle = nextEvent.title;
-  const eventDateLabel = `${formatEventDate(nextEvent.startDate)}${nextEvent.location ? ` · ${nextEvent.location}` : ''}`;
+  const eventDateLabel = `${formatEventShortDateRange(nextEvent.startDate, nextEvent.endDate)}${nextEvent.location ? ` · ${nextEvent.location}` : ''}`;
   const eventImage = getEventImage(nextEvent);
 
   if (!localPost && isLoading) {

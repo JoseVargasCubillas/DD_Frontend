@@ -2,7 +2,11 @@ import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import { useNextCalendarEvent } from '@hooks/useNextCalendarEvent';
-import { getCalendarEventAction, getCalendarEventActionLabel } from '@utils/eventCalendar';
+import {
+  formatEventShortDateRange,
+  getCalendarEventAction,
+  getCalendarEventActionLabel,
+} from '@utils/eventCalendar';
 import { getEventImage } from '@utils/eventImages';
 import { subscribeNewsletter } from '@api/leads.api';
 import diegoPasarela from '../../../../../assets/ddweb/diego-pasarela.jpg';
@@ -33,13 +37,6 @@ function useCountdown(targetMs: number | null) {
   }, [targetMs]);
   return time;
 }
-
-const monthShort = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-const formatEventDate = (iso?: string) => {
-  if (!iso) return '15 Jun 2026 · JW Marriott Santa Fe';
-  const d = new Date(iso);
-  return `${String(d.getDate()).padStart(2, '0')} ${monthShort[d.getMonth()]} ${d.getFullYear()}`;
-};
 
 const mostRead = [
   ['"El SAT no es tu enemigo"', 'Versión texto del video viral', '12,050 lecturas · 6 min'],
@@ -101,7 +98,7 @@ export default function BlogList() {
   const countdown = useCountdown(eventTargetMs);
   const eventAction = getCalendarEventAction(nextEvent);
   const eventTitle = nextEvent.title;
-  const eventDateLabel = `${formatEventDate(nextEvent.startDate)}${nextEvent.location ? ` · ${nextEvent.location}` : ''}`;
+  const eventDateLabel = `${formatEventShortDateRange(nextEvent.startDate, nextEvent.endDate)}${nextEvent.location ? ` · ${nextEvent.location}` : ''}`;
   const eventImage = getEventImage(nextEvent);
 
   return (
