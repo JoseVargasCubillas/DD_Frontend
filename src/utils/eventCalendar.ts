@@ -184,15 +184,16 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     modality: "in-person",
   },
   {
-    title: "Evento Miembros Cumbre",
-    slug: "evento-miembros-cumbre-octubre-2026",
+    title: "Coaching para el liderazgo",
+    slug: "coaching-para-el-liderazgo",
     shortDescription:
-      "Encuentro presencial para miembros Cumbre enfocado en comunidad, estrategia y ejecución empresarial.",
+      "Dos días para fortalecer dirección, criterio y liderazgo empresarial.",
     description:
-      "Encuentro presencial para miembros Cumbre enfocado en comunidad, estrategia y ejecución empresarial.",
+      "Dos días para fortalecer dirección, criterio y liderazgo empresarial con herramientas de ejecución.",
     location: "CDMX",
     onlineUrl: "https://www.youtube.com/@YoSoyDiegoDiaz",
     startDate: "2026-10-23T09:07:00-06:00",
+    endDate: "2026-10-24T17:00:00-06:00",
     capacity: 100,
     registeredCount: 0,
     status: "upcoming",

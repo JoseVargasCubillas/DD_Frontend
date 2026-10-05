@@ -20,6 +20,7 @@ import eventTallerFiscal from "../../../../assets/eventos/evento-taller-estrateg
 import eventMastermindPanama from "../../../../assets/eventos/evento-mastermind-panama.png";
 import eventHolding from "../../../../assets/eventos/evento-holding.png";
 import eventFiscalCdmx from "../../../../assets/eventos/evento-estrategia-fiscal-cdmx.png";
+import eventCoaching from "../../../../assets/eventos/evento-coaching-liderazgo.png";
 import eventFiscalMonterrey from "../../../../assets/eventos/evento-estrategia-fiscal-monterrey.png";
 import eventRockefeller from "../../../../assets/eventos/evento-rockefeller.png";
 import eventMaestriaEscenica from "../../../../assets/eventos/evento-maestria-escenica.png";
@@ -634,17 +635,17 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         cta: "¡Estoy listo!",
       },
       {
-        eyebrow: "Cumbre",
-        title: "Evento Miembros",
-        titleSerif: "Cumbre",
+        eyebrow: "Seminario",
+        title: "Coaching para",
+        titleSerif: "el liderazgo",
         description:
-          "Encuentro presencial para miembros Cumbre enfocado en comunidad, estrategia y ejecución empresarial.",
+          "Dos días para fortalecer dirección, criterio y liderazgo empresarial con herramientas de ejecución.",
         price: "$0 MXN",
-        date: "23 Octubre 2026",
+        date: "23 y 24 Octubre 2026",
         rawDate: "2026-10-23T09:07:00-06:00",
         location: "CDMX",
-        image: eventRevisionEstrategica,
-        slug: "evento-miembros-cumbre-octubre-2026",
+        image: eventCoaching,
+        slug: "coaching-para-el-liderazgo",
         to: "https://www.youtube.com/@YoSoyDiegoDiaz",
         cta: "Ver en YouTube",
         modality: "in-person",
