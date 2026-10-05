@@ -1393,7 +1393,7 @@ export default function Events() {
 
       <section className="bg-cream-50">
         <div className="mx-auto max-w-[1280px] px-5 py-8 sm:px-8 sm:py-14 lg:px-0 lg:py-20">
-          <div className="grid items-start gap-5 border-b border-cream-400 pb-7 md:grid-cols-[120px_minmax(0,1fr)_230px] md:gap-0 md:pb-10">
+          <div className="grid items-start gap-5 border-b border-cream-400 pb-7 md:grid-cols-[120px_minmax(0,1fr)] md:gap-0 md:pb-10">
             <p className="text-[12px] uppercase leading-[1.35] tracking-[0.22em] text-ink-400">
               02 /<br />
               Calendario
@@ -1407,12 +1407,6 @@ export default function Events() {
                 </span>
               </span>
             </h2>
-            <Link
-              to="/contacto"
-              className="mt-5 hidden justify-self-end border-b border-ink-900 pb-1 text-[11px] uppercase tracking-[0.18em] text-ink-500 hover:text-ink-900 md:inline-flex"
-            >
-              Suscríbete al calendario →
-            </Link>
           </div>
 
           <div className="divide-y divide-cream-400">
