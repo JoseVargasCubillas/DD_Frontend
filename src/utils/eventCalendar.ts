@@ -191,13 +191,14 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     description:
       "Dos días para fortalecer dirección, criterio y liderazgo empresarial con herramientas de ejecución.",
     location: "CDMX",
-    onlineUrl: "https://www.youtube.com/@YoSoyDiegoDiaz",
+    onlineUrl: "/eventos/coaching-para-el-liderazgo",
     startDate: "2026-10-23T09:07:00-06:00",
     endDate: "2026-10-24T17:00:00-06:00",
     capacity: 100,
     registeredCount: 0,
     status: "upcoming",
     modality: "in-person",
+    whatsappOnly: true,
   },
   {
     title: "Masterclass Holding",

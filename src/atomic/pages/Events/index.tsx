@@ -646,8 +646,8 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         location: "CDMX",
         image: eventCoaching,
         slug: "coaching-para-el-liderazgo",
-        to: "https://www.youtube.com/@YoSoyDiegoDiaz",
-        cta: "Ver en YouTube",
+        to: "/eventos/coaching-para-el-liderazgo",
+        cta: "¡Estoy listo!",
         modality: "in-person",
       },
       {
