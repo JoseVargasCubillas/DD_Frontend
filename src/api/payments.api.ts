@@ -49,9 +49,8 @@ export const getOrders = (): Promise<Order[]> =>
 
 export const listAllOrders = (): Promise<Order[]> =>
   client
-    .get<ApiResponse<Order[]>>('/payments/orders')
-    .then((r) => r.data)
-    .catch(() => []);
+    .get<ApiResponse<Order[]>>('/payments/admin/orders')
+    .then((r) => r.data);
 
 export interface OrderReceipt {
   id: string;
