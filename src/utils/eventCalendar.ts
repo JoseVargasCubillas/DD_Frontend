@@ -124,13 +124,28 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     modality: "in-person",
   },
   {
-    title: "Taller de estrategia fiscal",
-    slug: "taller-estrategia-fiscal-online-octubre",
+    title: "De 48 a 40 horas laborales",
+    slug: "de-48-a-40-horas-laborales",
+    shortDescription:
+      "Masterclass gratuita sobre la reducción de la jornada laboral y cómo prepararse para implementarla con éxito.",
+    description:
+      "Masterclass gratuita sobre la reducción de la jornada laboral y cómo prepararse para implementarla con éxito.",
+    location: "YouTube",
+    onlineUrl: "https://www.youtube.com/@YoSoyDiegoDiaz",
+    startDate: "2026-10-12T17:00:00-06:00",
+    capacity: 0,
+    registeredCount: 0,
+    status: "upcoming",
+    modality: "online",
+  },
+  {
+    title: "Seminario de Estrategia Fiscal",
+    slug: "seminario-estrategia-fiscal-online-octubre",
     shortDescription:
       "Taller online por Zoom para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
     description:
       "Taller online por Zoom para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
-    location: "Zoom",
+    location: "Online",
     onlineUrl: "/eventos/estrategia-fiscal",
     startDate: "2026-10-16T09:07:00-06:00",
     capacity: 100,
@@ -139,8 +154,23 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     modality: "online",
   },
   {
-    title: "Taller de estrategia fiscal",
-    slug: "taller-estrategia-fiscal-cdmx-octubre",
+    title: "Revisión Estratégica",
+    slug: "revision-estrategica-octubre-2026",
+    shortDescription:
+      "Sesión presencial de revisión estratégica para alinear prioridades, decisiones y ejecución empresarial.",
+    description:
+      "Sesión presencial de revisión estratégica para alinear prioridades, decisiones y ejecución empresarial.",
+    location: "CDMX",
+    onlineUrl: "https://www.youtube.com/@YoSoyDiegoDiaz",
+    startDate: "2026-10-21T09:07:00-06:00",
+    capacity: 100,
+    registeredCount: 0,
+    status: "upcoming",
+    modality: "in-person",
+  },
+  {
+    title: "Seminario de Estrategia Fiscal",
+    slug: "seminario-estrategia-fiscal-cdmx-octubre",
     shortDescription:
       "Edición CDMX del taller de estrategia fiscal para empresarios que quieren cerrar el año con estructura.",
     description:
@@ -154,14 +184,14 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     modality: "in-person",
   },
   {
-    title: "Coaching para el liderazgo",
-    slug: "coaching-para-el-liderazgo",
+    title: "Evento Miembros Cumbre",
+    slug: "evento-miembros-cumbre-octubre-2026",
     shortDescription:
-      "Dos días para fortalecer dirección, criterio y liderazgo empresarial con herramientas de ejecución.",
+      "Encuentro presencial para miembros Cumbre enfocado en comunidad, estrategia y ejecución empresarial.",
     description:
-      "Dos días para fortalecer dirección, criterio y liderazgo empresarial con herramientas de ejecución.",
+      "Encuentro presencial para miembros Cumbre enfocado en comunidad, estrategia y ejecución empresarial.",
     location: "CDMX",
-    onlineUrl: "/eventos/coaching-para-el-liderazgo",
+    onlineUrl: "https://www.youtube.com/@YoSoyDiegoDiaz",
     startDate: "2026-10-23T09:07:00-06:00",
     capacity: 100,
     registeredCount: 0,
@@ -169,13 +199,13 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     modality: "in-person",
   },
   {
-    title: "Holding",
+    title: "Masterclass Holding",
     slug: "holding-octubre",
     shortDescription:
       "Entrenamiento online para entender cuándo una holding sí suma y cuándo sólo complica la estructura.",
     description:
       "Entrenamiento online para entender cuándo una holding sí suma y cuándo sólo complica la estructura.",
-    location: "Zoom",
+    location: "Online",
     onlineUrl: "/eventos/holding",
     startDate: "2026-10-27T09:07:00-06:00",
     capacity: 100,
@@ -184,13 +214,13 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     modality: "online",
   },
   {
-    title: "Taller de estrategia fiscal",
-    slug: "taller-estrategia-fiscal-monterrey",
+    title: "Seminario de Estrategia Fiscal",
+    slug: "seminario-estrategia-fiscal-monterrey-noviembre",
     shortDescription:
       "Edición Monterrey del taller para empresarios que quieren claridad fiscal y decisiones accionables.",
     description:
       "Edición Monterrey del taller para empresarios que quieren claridad fiscal y decisiones accionables.",
-    location: "Monterrey",
+    location: "MTY",
     onlineUrl: "/eventos/estrategia-fiscal",
     startDate: "2026-11-06T09:07:00-06:00",
     capacity: 100,
@@ -333,7 +363,13 @@ export const mergeCalendarEventSources = (
 ) => {
   const bySlug = new Map<string, CalendarEventSummary>();
   sources.flat().forEach((event) => {
-    if (DEPRECATED_EVENT_SLUGS.has(event.slug)) return;
+    if (
+      DEPRECATED_EVENT_SLUGS.has(event.slug) ||
+      event.status === "canceled" ||
+      event.status === "finished"
+    ) {
+      return;
+    }
     bySlug.set(event.slug, event);
   });
   const byEdition = new Map<string, CalendarEventSummary>();
@@ -535,6 +571,9 @@ export const getCalendarEventType = (
 
   const key = `${event.slug || ""} ${event.title || ""}`.toLowerCase();
 
+  if (key.includes("48-a-40") || key.includes("48 a 40") || key.includes("masterclass")) return "Masterclass";
+  if (key.includes("seminario") && key.includes("estrategia fiscal")) return "Seminario";
+  if (key.includes("revision estrategica") || key.includes("revisión estratégica")) return "Sesión";
   if (key.includes("taller-estrategia-fiscal") || key.includes("taller de estrategia fiscal")) return "Workshop";
   if (key.includes("mastermind")) return "Mastermind";
   if (key.includes("prospeccion") || key.includes("prospección") || key.includes("cumbre")) return "Cumbre";
@@ -572,7 +611,7 @@ export const isWhatsAppOnlyEvent = (event: { whatsappOnly?: boolean }) =>
 // mano. Cualquier otro evento sólo tiene landing real si existe de verdad en
 // el backend (viene de la API o lo creó el admin, por eso trae id/_id) — de
 // lo contrario mandar a `/eventos/:slug` mostraría una página rota.
-export const hasDedicatedCalendarLanding = (
+const hasCuratedCalendarLanding = (
   event: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl" | "id" | "_id" | "whatsappOnly">,
 ) => {
   if (isWhatsAppOnlyEvent(event)) return false;
@@ -589,8 +628,12 @@ export const hasDedicatedCalendarLanding = (
   ) {
     return true;
   }
-  return Boolean(event.id || event._id);
+  return false;
 };
+
+export const hasDedicatedCalendarLanding = (
+  event: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl" | "id" | "_id" | "whatsappOnly">,
+) => hasCuratedCalendarLanding(event) || Boolean(event.id || event._id);
 
 export const getEventWhatsAppLink = (event: Pick<CalendarEventSummary, "title">) => {
   const message = `Hola, vengo de la página web y estoy interesado en el evento ${event.title}.`;
@@ -599,15 +642,34 @@ export const getEventWhatsAppLink = (event: Pick<CalendarEventSummary, "title">)
 
 // Resuelve a dónde debe apuntar el botón de un evento del calendario: su
 // landing real si existe, o WhatsApp con el nombre del evento si no.
+export type CalendarEventAction = {
+  type: "internal" | "external" | "whatsapp";
+  href: string;
+};
+
 export const getCalendarEventAction = (
   event?: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl" | "id" | "_id" | "whatsappOnly"> | null,
-): { type: "internal" | "whatsapp"; href: string } => {
+): CalendarEventAction => {
   if (!event) return { type: "internal", href: "/eventos" };
+  if (hasCuratedCalendarLanding(event)) {
+    return { type: "internal", href: getCalendarEventPath(event) };
+  }
+  if (!isWhatsAppOnlyEvent(event) && /^https?:\/\//i.test(event.onlineUrl || "")) {
+    return { type: "external", href: event.onlineUrl as string };
+  }
   if (hasDedicatedCalendarLanding(event)) {
     return { type: "internal", href: getCalendarEventPath(event) };
   }
   return { type: "whatsapp", href: getEventWhatsAppLink(event) };
 };
+
+export const getCalendarEventActionLabel = (
+  action: CalendarEventAction,
+  fallback = "Más información",
+) =>
+  action.type === "external" && /(?:youtube\.com|youtu\.be)/i.test(action.href)
+    ? "Ver en YouTube"
+    : fallback;
 
 export const getCalendarEventPath = (
   event?: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl"> | null,

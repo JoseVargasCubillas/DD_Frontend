@@ -5,7 +5,7 @@ import * as blogApi from '@api/blog.api';
 import Spinner from '@atoms/Spinner';
 import { formatDate } from '@utils/formatters';
 import { useNextCalendarEvent } from '@hooks/useNextCalendarEvent';
-import { getCalendarEventAction } from '@utils/eventCalendar';
+import { getCalendarEventAction, getCalendarEventActionLabel } from '@utils/eventCalendar';
 import { getEventImage } from '@utils/eventImages';
 import { sanitizeHtml } from '@utils/sanitizeHtml';
 import { findStaticBlogPost, formatStaticBlogDate, STATIC_BLOG_POSTS } from '@/data/blogPosts';
@@ -195,14 +195,14 @@ export default function BlogPost() {
                 </div>
               ))}
             </div>
-            {eventAction.type === 'whatsapp' ? (
+            {eventAction.type !== 'internal' ? (
               <a
                 href={eventAction.href}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-5 block bg-white px-5 py-4 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-ink-900 transition-colors hover:bg-cream-200"
               >
-                Reservar lugar →
+                {getCalendarEventActionLabel(eventAction, 'Reservar lugar')} →
               </a>
             ) : (
               <Link

@@ -6,6 +6,8 @@ import { useEvents } from "@hooks/useEvents";
 import { waClickHandler } from "@utils/whatsapp";
 import {
   calendarEventKey,
+  getCalendarEventAction,
+  getCalendarEventActionLabel,
   isEstrategiaFiscalEvent,
   isWhatsAppOnlyEvent,
   VENUE_TO_BE_CONFIRMED,
@@ -18,12 +20,12 @@ import eventTallerFiscal from "../../../../assets/eventos/evento-taller-estrateg
 import eventMastermindPanama from "../../../../assets/eventos/evento-mastermind-panama.png";
 import eventHolding from "../../../../assets/eventos/evento-holding.png";
 import eventFiscalCdmx from "../../../../assets/eventos/evento-estrategia-fiscal-cdmx.png";
-import eventCoaching from "../../../../assets/eventos/evento-coaching-liderazgo.png";
 import eventFiscalMonterrey from "../../../../assets/eventos/evento-estrategia-fiscal-monterrey.png";
 import eventRockefeller from "../../../../assets/eventos/evento-rockefeller.png";
 import eventMaestriaEscenica from "../../../../assets/eventos/evento-maestria-escenica.png";
 import eventBeneficiosRegimen from "../../../../assets/eventos/evento-beneficios-regimen-fiscal.png";
 import eventRevisionEstrategica from "../../../../assets/eventos/evento-revision-estrategica-cdmx.png";
+import event48a40Horas from "../../../assets/eventos/evento-48-a-40-horas.png";
 
 type EventTone = "cream" | "dark";
 
@@ -59,6 +61,7 @@ const NEXT_EVENT_DATE = new Date("2026-08-28T09:07:00-06:00");
 
 function getCountdown(target: Date) {
   const diff = Math.max(0, target.getTime() - Date.now());
+
   return {
     days: Math.floor(diff / 86400000),
     hours: Math.floor((diff % 86400000) / 3600000),
@@ -221,39 +224,10 @@ const splitTitle = (title: string) => {
   };
 };
 
-const isHoldingEvent = (event: Pick<SiteEvent, "slug" | "title">) =>
-  event.slug.startsWith("holding") || event.title.trim().toLowerCase() === "holding";
-
-// Misma regla que usa la landing (slug, título o enlace con "estrategia fiscal"),
-// para que un evento creado en el admin no aparezca en la landing pero con la
-// card apuntando a otro lado.
-const isTallerEstrategiaFiscalEvent = (
-  event: Pick<SiteEvent, "slug" | "title" | "onlineUrl">,
-) => isEstrategiaFiscalEvent(event);
-
-const isRockefellerEventCard = (event: Pick<SiteEvent, "slug" | "title">) => {
-  const title = event.title.trim().toLowerCase();
-  return (
-    event.slug.includes("rockefeller") ||
-    event.slug.includes("4e-codigo") ||
-    title.includes("rockefeller") ||
-    title.includes("código rockefeller") ||
-    title.includes("codigo rockefeller")
-  );
-};
-
-const isComoCobrarEvent = (event: Pick<SiteEvent, "slug" | "title">) => {
-  const title = event.title.trim().toLowerCase();
-  return (
-    event.slug.includes("como-cobrar") ||
-    title.includes("como cobrar") ||
-    title.includes("cobrar como ceo")
-  );
-};
-
 const cardFromApiEvent = (event: SiteEvent): EventCard => {
   const titleParts = splitTitle(event.title);
   const price = event.salePrice ?? event.price ?? 0;
+  const action = getCalendarEventAction(event);
 
   return {
     eyebrow: TYPE_LABEL[event.type] ?? event.type,
@@ -270,17 +244,12 @@ const cardFromApiEvent = (event: SiteEvent): EventCard => {
           : "Zoom"
         : event.location ||
           (event.modality === "hybrid" ? "Híbrido" : "Por definir"),
-    to: isComoCobrarEvent(event)
-      ? "/eventos/como-cobrar-como-ceo"
-      : isTallerEstrategiaFiscalEvent(event)
-      ? "/eventos/estrategia-fiscal"
-      : isHoldingEvent(event)
-        ? "/eventos/holding"
-        : isRockefellerEventCard(event)
-          ? "/eventos/rockefeller"
-          : event.onlineUrl || `/eventos/${event.slug}`,
+    to: action.href,
     image: event.thumbnail,
-    cta: event.status === "ongoing" ? "Entrar ahora" : "¡Estoy listo!",
+    cta: getCalendarEventActionLabel(
+      action,
+      event.status === "ongoing" ? "Entrar ahora" : "¡Estoy listo!",
+    ),
     isFeatured: event.isFeatured,
     slug: event.slug,
     modality: event.modality,
@@ -333,6 +302,18 @@ function EventCtaLink({
   salesPhone: string;
   fallbackTo?: string;
 }) {
+  if (event?.to && /^https?:\/\//i.test(event.to)) {
+    return (
+      <a
+        href={event.to}
+        target="_blank"
+        rel="noreferrer"
+        className={className}
+      >
+        {label}
+      </a>
+    );
+  }
   if (event && !hasRealEventLanding(event)) {
     return (
       <a
@@ -342,7 +323,7 @@ function EventCtaLink({
         onClick={waClickHandler("event-card-sales", eventWhatsAppMessage(event))}
         className={className}
       >
-        {label}
+        {event.cta ?? label}
       </a>
     );
   }
@@ -488,7 +469,7 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         slug: "de-persona-fisica-a-moral",
         isFeatured: true,
         to: "/eventos/de-persona-fisica-a-moral",
-        cta: "¡Estoy listo!",
+        cta: "Más información",
       },
     ],
   },
@@ -591,23 +572,55 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
     month: "Octubre 2026",
     events: [
       {
-        eyebrow: "Workshop",
-        title: "Taller de",
+        eyebrow: "Masterclass",
+        title: "De 48 a 40",
+        titleSerif: "horas laborales",
+        description:
+          "Masterclass gratuita sobre la reducción de la jornada laboral y cómo prepararse para implementarla con éxito.",
+        price: "$0 MXN",
+        date: "12 Octubre 2026 · 17:00",
+        rawDate: "2026-10-12T17:00:00-06:00",
+        location: "YouTube",
+        image: event48a40Horas,
+        slug: "de-48-a-40-horas-laborales",
+        to: "https://www.youtube.com/@YoSoyDiegoDiaz",
+        cta: "Ver en YouTube",
+        modality: "online",
+      },
+      {
+        eyebrow: "Seminario",
+        title: "Seminario de",
         titleSerif: "Estrategia Fiscal",
         description:
           "Taller online por Zoom para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
         price: "$0 MXN",
         date: "16 Octubre 2026",
         rawDate: "2026-10-16T09:07:00-06:00",
-        location: "Zoom",
+        location: "Online",
         image: eventTallerFiscal,
-        slug: "taller-estrategia-fiscal-online-octubre",
+        slug: "seminario-estrategia-fiscal-online-octubre",
         to: "/eventos/estrategia-fiscal",
         cta: "¡Estoy listo!",
       },
       {
-        eyebrow: "Workshop",
-        title: "Taller de",
+        eyebrow: "Seminario",
+        title: "Revisión",
+        titleSerif: "Estratégica",
+        description:
+          "Sesión presencial de revisión estratégica para alinear prioridades, decisiones y ejecución empresarial.",
+        price: "$0 MXN",
+        date: "21 Octubre 2026",
+        rawDate: "2026-10-21T09:07:00-06:00",
+        location: "CDMX",
+        image: eventRevisionEstrategica,
+        slug: "revision-estrategica-octubre-2026",
+        to: "https://www.youtube.com/@YoSoyDiegoDiaz",
+        cta: "Ver en YouTube",
+        modality: "in-person",
+      },
+      {
+        eyebrow: "Seminario",
+        title: "Seminario de",
         titleSerif: "Estrategia Fiscal",
         description:
           "Edición CDMX del taller de estrategia fiscal para empresarios que quieren cerrar el año con estructura.",
@@ -616,35 +629,36 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         rawDate: "2026-10-22T09:07:00-06:00",
         location: "CDMX",
         image: eventFiscalCdmx,
-        slug: "taller-estrategia-fiscal-cdmx-octubre",
+        slug: "seminario-estrategia-fiscal-cdmx-octubre",
         to: "/eventos/estrategia-fiscal",
         cta: "¡Estoy listo!",
       },
       {
-        eyebrow: "Seminario",
-        title: "Coaching para",
-        titleSerif: "el Liderazgo",
+        eyebrow: "Cumbre",
+        title: "Evento Miembros",
+        titleSerif: "Cumbre",
         description:
-          "Dos días para fortalecer dirección, criterio y liderazgo empresarial con herramientas de ejecución.",
+          "Encuentro presencial para miembros Cumbre enfocado en comunidad, estrategia y ejecución empresarial.",
         price: "$0 MXN",
-        date: "23 y 24 Octubre 2026",
+        date: "23 Octubre 2026",
         rawDate: "2026-10-23T09:07:00-06:00",
         location: "CDMX",
-        image: eventCoaching,
-        slug: "coaching-para-el-liderazgo",
-        to: "/eventos/coaching-para-el-liderazgo",
-        cta: "¡Estoy listo!",
+        image: eventRevisionEstrategica,
+        slug: "evento-miembros-cumbre-octubre-2026",
+        to: "https://www.youtube.com/@YoSoyDiegoDiaz",
+        cta: "Ver en YouTube",
+        modality: "in-person",
       },
       {
-        eyebrow: "Webinar",
-        title: "Holding",
-        titleSerif: undefined,
+        eyebrow: "Masterclass",
+        title: "Masterclass",
+        titleSerif: "Holding",
         description:
           "Entrenamiento online para entender cuándo una holding sí suma y cuándo sólo complica la estructura.",
         price: "$0 MXN",
         date: "27 Octubre 2026",
         rawDate: "2026-10-27T09:07:00-06:00",
-        location: "Zoom",
+        location: "Online",
         image: eventHolding,
         slug: "holding-octubre",
         to: "/eventos/holding",
@@ -656,17 +670,17 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
     month: "Noviembre 2026",
     events: [
       {
-        eyebrow: "Workshop",
-        title: "Taller de",
+        eyebrow: "Seminario",
+        title: "Seminario de",
         titleSerif: "Estrategia Fiscal",
         description:
           "Edición Monterrey del taller para empresarios que quieren claridad fiscal y decisiones accionables.",
         price: "$0 MXN",
         date: "6 Noviembre 2026",
         rawDate: "2026-11-06T09:07:00-06:00",
-        location: "Monterrey",
+        location: "MTY",
         image: eventFiscalMonterrey,
-        slug: "taller-estrategia-fiscal-monterrey",
+        slug: "seminario-estrategia-fiscal-monterrey-noviembre",
         to: "/eventos/estrategia-fiscal",
         cta: "¡Estoy listo!",
       },

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import { useNextCalendarEvent } from '@hooks/useNextCalendarEvent';
-import { getCalendarEventAction } from '@utils/eventCalendar';
+import { getCalendarEventAction, getCalendarEventActionLabel } from '@utils/eventCalendar';
 import { getEventImage } from '@utils/eventImages';
 import { subscribeNewsletter } from '@api/leads.api';
 import diegoPasarela from '../../../../../assets/ddweb/diego-pasarela.jpg';
@@ -278,14 +278,14 @@ export default function BlogList() {
             <p className="mt-4 text-[12px] leading-[1.55] text-white/62">
               Reserva tu lugar y conoce el programa completo del próximo seminario.
             </p>
-            {eventAction.type === 'whatsapp' ? (
+            {eventAction.type !== 'internal' ? (
               <a
                 href={eventAction.href}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-5 block bg-white px-5 py-4 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-ink-900 transition-colors hover:bg-cream-200"
               >
-                Reservar lugar →
+                {getCalendarEventActionLabel(eventAction, 'Reservar lugar')} →
               </a>
             ) : (
               <Link

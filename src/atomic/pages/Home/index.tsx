@@ -12,6 +12,7 @@ import { requestSatGuide, triggerLeadDownload } from "@api/leads.api";
 import {
   FALLBACK_CALENDAR_EVENTS,
   getCalendarEventAction,
+  getCalendarEventActionLabel,
   getCalendarEventLocation,
   getCalendarEventStatus,
   getCalendarEventTime,
@@ -22,6 +23,7 @@ import {
   mergeCalendarEventSources,
   type CalendarEventSummary,
 } from "@utils/eventCalendar";
+import { getEventImage } from "@utils/eventImages";
 import { waClickHandler } from "@utils/whatsapp";
 import imgEstrategia from "../../../../assets/home/002_home_Estrategia_DD.png";
 import imgFormacion from "../../../../assets/home/003_home_Formacion_DD.png";
@@ -86,17 +88,21 @@ function CalendarCardLink({
   className,
   children,
 }: {
-  action: { type: "internal" | "whatsapp"; href: string };
+  action: { type: "internal" | "external" | "whatsapp"; href: string };
   className: string;
   children: ReactNode;
 }) {
-  if (action.type === "whatsapp") {
+  if (action.type !== "internal") {
     return (
       <a
         href={action.href}
         target="_blank"
         rel="noreferrer"
-        onClick={waClickHandler("home-calendar-card")}
+        onClick={
+          action.type === "whatsapp"
+            ? waClickHandler("home-calendar-card")
+            : undefined
+        }
         className={className}
       >
         {children}
@@ -372,7 +378,11 @@ export default function Home() {
           // ya recortado a la medida de esta tarjeta — así nunca se ve cortada.
           image:
             event.thumbnail ||
-            HOME_CALENDAR_FALLBACK_IMAGES[index % HOME_CALENDAR_FALLBACK_IMAGES.length],
+            (/48-a-40|48 a 40/i.test(`${event.slug} ${event.title}`)
+              ? getEventImage(event)
+              : HOME_CALENDAR_FALLBACK_IMAGES[
+                  index % HOME_CALENDAR_FALLBACK_IMAGES.length
+                ]),
           date: formatHomeEventDate(event.startDate),
           location:
             getCalendarEventLocation(event, calendarCandidates, nowTick) ||
@@ -640,15 +650,23 @@ export default function Home() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-5 pt-2">
-                  {nextEventAction.type === "whatsapp" ? (
+                  {nextEventAction.type !== "internal" ? (
                     <a
                       href={nextEventAction.href}
                       target="_blank"
                       rel="noreferrer"
-                      onClick={waClickHandler("home-next-event-reserve")}
+                      onClick={
+                        nextEventAction.type === "whatsapp"
+                          ? waClickHandler("home-next-event-reserve")
+                          : undefined
+                      }
                       className="btn-primary-inv"
                     >
-                      Reservar mi lugar →
+                      {getCalendarEventActionLabel(
+                        nextEventAction,
+                        "Reservar mi lugar",
+                      )}{" "}
+                      →
                     </a>
                   ) : (
                     <Link to={nextEventAction.href} className="btn-primary-inv">
