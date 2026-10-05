@@ -139,13 +139,13 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     modality: "online",
   },
   {
-    title: "Seminario de Estrategia Fiscal",
-    slug: "seminario-estrategia-fiscal-online-octubre",
+    title: "Taller de estrategia fiscal",
+    slug: "taller-estrategia-fiscal-online-octubre",
     shortDescription:
       "Taller online por Zoom para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
     description:
       "Taller online por Zoom para revisar estructura fiscal, riesgos y decisiones urgentes antes del cierre del año.",
-    location: "Online",
+    location: "Zoom",
     onlineUrl: "/eventos/estrategia-fiscal",
     startDate: "2026-10-16T09:07:00-06:00",
     capacity: 100,
@@ -169,8 +169,8 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     modality: "in-person",
   },
   {
-    title: "Seminario de Estrategia Fiscal",
-    slug: "seminario-estrategia-fiscal-cdmx-octubre",
+    title: "Taller de estrategia fiscal",
+    slug: "taller-estrategia-fiscal-cdmx-octubre",
     shortDescription:
       "Edición CDMX del taller de estrategia fiscal para empresarios que quieren cerrar el año con estructura.",
     description:
@@ -216,13 +216,13 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     modality: "online",
   },
   {
-    title: "Seminario de Estrategia Fiscal",
-    slug: "seminario-estrategia-fiscal-monterrey-noviembre",
+    title: "Taller de estrategia fiscal",
+    slug: "taller-estrategia-fiscal-monterrey",
     shortDescription:
       "Edición Monterrey del taller para empresarios que quieren claridad fiscal y decisiones accionables.",
     description:
       "Edición Monterrey del taller para empresarios que quieren claridad fiscal y decisiones accionables.",
-    location: "MTY",
+    location: "Monterrey",
     onlineUrl: "/eventos/estrategia-fiscal",
     startDate: "2026-11-06T09:07:00-06:00",
     capacity: 100,
