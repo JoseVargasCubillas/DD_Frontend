@@ -3,6 +3,15 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useOrders } from "@hooks/usePayments";
 import { useUsers } from "@hooks/useUsers";
 import type { Order, User } from "@t/index";
+import DatePeriodFilter from "@molecules/DatePeriodFilter";
+import {
+  defaultDatePeriod,
+  enumeratePeriodDays,
+  formatDatePeriodLabel,
+  isDateInPeriod,
+  toLocalDateInput,
+  type DatePeriod,
+} from "@utils/datePeriod";
 
 type SalesTab =
   | "overview"
@@ -37,22 +46,6 @@ interface SubscriptionRow {
   createdAt: string;
 }
 
-type SalesRange =
-  | "today"
-  | "7d"
-  | "30d"
-  | "month"
-  | "3m"
-  | "6m"
-  | "2026"
-  | "2025"
-  | "all";
-
-interface RangeOption {
-  label: string;
-  value: SalesRange;
-}
-
 const SALES_TABS: Array<[SalesTab, string]> = [
   ["overview", "Resumen"],
   ["transactions", "Transacciones"],
@@ -61,33 +54,16 @@ const SALES_TABS: Array<[SalesTab, string]> = [
   ["disputes", "Disputas"],
 ];
 
-const REVENUE_RANGES: RangeOption[] = [
-  { label: "Hoy", value: "today" },
-  { label: "7d", value: "7d" },
-  { label: "30d", value: "30d" },
-];
-
-const OFFER_RANGES: RangeOption[] = [
-  { label: "Este mes", value: "month" },
-  { label: "3 meses", value: "3m" },
-  { label: "2026", value: "2026" },
-  { label: "Todo", value: "all" },
-];
-
-const CUSTOMER_RANGES: RangeOption[] = [
-  { label: "6 meses", value: "6m" },
-  { label: "2026", value: "2026" },
-  { label: "2025", value: "2025" },
-  { label: "Todo", value: "all" },
-];
-
 export default function SalesPayments() {
   const [params, setParams] = useSearchParams();
   const tabParam = params.get("tab");
   const [search, setSearch] = useState("");
   const { data: orders = [], isLoading: isLoadingOrders } = useOrders();
   const { data: contactsResponse } = useUsers({ limit: 500 });
-  const contacts = contactsResponse?.data ?? [];
+  const contacts = useMemo(
+    () => contactsResponse?.data ?? [],
+    [contactsResponse?.data],
+  );
   const transactions = useMemo(() => {
     return ordersToTransactions(orders, contacts);
   }, [orders, contacts]);
@@ -152,7 +128,6 @@ export default function SalesPayments() {
           title="Aún no hay planes de pago"
           description="Cuando tus clientes compren ofertas con plan de pagos, aparecerán aquí."
           searchPlaceholder="Buscar planes de pago..."
-          filters
         />
       )}
       {activeTab === "disputes" && (
@@ -162,8 +137,6 @@ export default function SalesPayments() {
           title="No hay pagos disputados"
           description="Los pagos autorizados en disputa aparecerán aquí."
           searchPlaceholder="Buscar disputas..."
-          filters
-          exportButton
         />
       )}
     </div>
@@ -179,86 +152,41 @@ function PaymentsOverview({
   subscriptions: SubscriptionRow[];
   isLoading: boolean;
 }) {
-  const [revenueRange, setRevenueRange] = useState<SalesRange>("30d");
-  const [offerRange, setOfferRange] = useState<SalesRange>("month");
-  const [customerRange, setCustomerRange] = useState<SalesRange>("6m");
+  const [period, setPeriod] = useState<DatePeriod>(() => defaultDatePeriod());
   const completedTransactions = transactions.filter(
     (item) => item.status === "completed",
   );
-  const revenueTransactions = filterTransactionsByRange(
-    completedTransactions,
-    revenueRange,
+  const periodTransactions = completedTransactions.filter((item) =>
+    isDateInPeriod(item.date, period),
   );
-  const offerTransactions = filterTransactionsByRange(
-    completedTransactions,
-    offerRange,
-  );
-  const customerTransactions = filterTransactionsByRange(
-    completedTransactions,
-    customerRange,
-  );
-  const grossRevenue = revenueTransactions.reduce(
+  const totalRevenue = periodTransactions.reduce(
     (sum, item) => sum + item.amount,
     0,
   );
-  const customers = summarizeCustomers(customerTransactions);
-  const topOffers = summarizeOffers(offerTransactions);
-  const chartData = buildRevenueSeries(
-    revenueTransactions,
-    getRangeDays(revenueRange),
-  );
-  const selectedRevenueLabel = getRangeLabel(REVENUE_RANGES, revenueRange);
+  const customers = summarizeCustomers(periodTransactions);
+  const topOffers = summarizeOffers(periodTransactions);
+  const chartData = buildRevenueSeries(periodTransactions, period);
+  const selectedPeriodLabel = formatDatePeriodLabel(period);
 
   return (
     <div className="space-y-5">
       <section className="overflow-hidden rounded-2xl border border-ink-900/10 bg-white shadow-sm">
         <div className="border-b border-ink-900/10 p-7">
-          <select className="min-h-11 rounded-lg border border-ink-900/20 bg-white px-4 text-sm">
-            <option>Ingresos brutos</option>
-            <option>Ingresos netos</option>
-          </select>
+          <p className="text-sm font-semibold text-ink-900">Periodo del reporte</p>
+          <div className="mt-3">
+            <DatePeriodFilter value={period} onChange={setPeriod} idPrefix="sales-overview" />
+          </div>
         </div>
         <div className="p-7">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <p className="font-serif text-3xl font-semibold">
-                {formatMoney(grossRevenue, "MXN")}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">
+                Ingresos totales
               </p>
-              <select className="min-h-10 rounded-lg border border-ink-900/20 bg-white px-3 text-sm">
-                <option>MXN</option>
-                <option>USD</option>
-              </select>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <select className="min-h-10 rounded-lg border border-ink-900/20 bg-white px-3 text-sm">
-                <option>Diario</option>
-                <option>Semanal</option>
-                <option>Mensual</option>
-              </select>
-              <div className="overflow-hidden rounded-lg border border-ink-900/20 text-sm">
-                {REVENUE_RANGES.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setRevenueRange(option.value)}
-                    aria-pressed={revenueRange === option.value}
-                    className={`min-h-10 cursor-pointer px-4 transition-colors ${
-                      revenueRange === option.value
-                        ? "bg-ink-900 text-cream"
-                        : "bg-white hover:bg-cream-100"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                aria-label="Elegir fechas"
-                className="flex min-h-10 w-11 cursor-pointer items-center justify-center rounded-lg border border-ink-900/20"
-              >
-                <CalendarIcon />
-              </button>
+              <p className="font-serif text-3xl font-semibold">
+                {formatMoney(totalRevenue, "MXN")}
+              </p>
+              <p className="mt-1 text-sm capitalize text-ink-500">{selectedPeriodLabel}</p>
             </div>
           </div>
           <RevenueChart data={chartData} />
@@ -281,8 +209,8 @@ function PaymentsOverview({
       <div className="grid gap-5 md:grid-cols-4">
         <MetricCard
           title="Transacciones"
-          value={String(revenueTransactions.length)}
-          note={selectedRevenueLabel}
+          value={String(periodTransactions.length)}
+          note={selectedPeriodLabel}
           to="?tab=transactions"
         />
         <MetricCard
@@ -314,11 +242,6 @@ function PaymentsOverview({
             </Link>
           }
         >
-          <PillFilters
-            options={OFFER_RANGES}
-            active={offerRange}
-            onChange={setOfferRange}
-          />
           <TopOffers offers={topOffers} />
         </Panel>
         <Panel
@@ -329,11 +252,6 @@ function PaymentsOverview({
             </Link>
           }
         >
-          <PillFilters
-            options={CUSTOMER_RANGES}
-            active={customerRange}
-            onChange={setCustomerRange}
-          />
           <TopCustomers customers={customers} />
         </Panel>
       </div>
@@ -347,7 +265,7 @@ function PaymentsOverview({
         }
       >
         <SimpleTransactionsTable
-          transactions={revenueTransactions.slice(0, 10)}
+          transactions={periodTransactions.slice(0, 10)}
         />
       </Panel>
     </div>
@@ -363,16 +281,34 @@ function TransactionsTab({
   search: string;
   setSearch: (value: string) => void;
 }) {
-  const filtered = filterTransactions(transactions, search);
+  const [period, setPeriod] = useState<DatePeriod>(() => defaultDatePeriod());
+  const filtered = filterTransactions(transactions, search).filter((item) =>
+    isDateInPeriod(item.date, period),
+  );
   return (
     <Panel>
+      <div className="mb-6">
+        <DatePeriodFilter value={period} onChange={setPeriod} idPrefix="sales-transactions" />
+      </div>
       <Toolbar
         search={search}
         setSearch={setSearch}
         placeholder="Buscar transacciones..."
-        filters
-        exportButton
       />
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 text-sm text-ink-600">
+        <span>
+          {filtered.length} transacción{filtered.length === 1 ? "" : "es"} ·{" "}
+          <span className="capitalize">{formatDatePeriodLabel(period)}</span>
+        </span>
+        <button
+          type="button"
+          onClick={() => downloadTransactionsCsv(filtered)}
+          disabled={filtered.length === 0}
+          className="min-h-11 cursor-pointer rounded-full border border-ink-900/20 px-4 font-semibold text-ink-900 transition-colors hover:bg-cream-100 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Descargar CSV
+        </button>
+      </div>
       <SimpleTransactionsTable transactions={filtered} detailed />
     </Panel>
   );
@@ -424,7 +360,6 @@ function SubscriptionsTab({
             search={search}
             setSearch={setSearch}
             placeholder="Buscar suscripciones..."
-            filters
             compact
           />
         </div>
@@ -479,16 +414,12 @@ function EmptySalesState({
   title,
   description,
   searchPlaceholder,
-  filters,
-  exportButton,
 }: {
   search: string;
   setSearch: (value: string) => void;
   title: string;
   description: string;
   searchPlaceholder: string;
-  filters?: boolean;
-  exportButton?: boolean;
 }) {
   return (
     <Panel>
@@ -496,8 +427,6 @@ function EmptySalesState({
         search={search}
         setSearch={setSearch}
         placeholder={searchPlaceholder}
-        filters={filters}
-        exportButton={exportButton}
       />
       <div className="flex min-h-72 flex-col items-center justify-center text-center">
         <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-300 text-white">
@@ -517,15 +446,11 @@ function Toolbar({
   search,
   setSearch,
   placeholder,
-  filters,
-  exportButton,
   compact,
 }: {
   search: string;
   setSearch: (value: string) => void;
   placeholder: string;
-  filters?: boolean;
-  exportButton?: boolean;
   compact?: boolean;
 }) {
   return (
@@ -542,32 +467,6 @@ function Toolbar({
           className="min-h-11 w-full rounded-lg border border-ink-900/20 bg-white py-2 pl-10 pr-3 text-sm outline-none focus:border-ink-900"
         />
       </label>
-      {filters && (
-        <button
-          type="button"
-          className="relative min-h-11 rounded-full border border-ink-900/20 px-4 text-sm"
-        >
-          Filtros
-          <span className="absolute -right-1 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-ink-900 text-[11px] text-cream">
-            1
-          </span>
-        </button>
-      )}
-      {exportButton && (
-        <button
-          type="button"
-          className="min-h-11 rounded-full border border-ink-900/20 px-4 text-sm"
-        >
-          Exportar
-        </button>
-      )}
-      <button
-        type="button"
-        aria-label="Más opciones"
-        className="flex h-11 w-11 items-center justify-center rounded-full border border-ink-900/20"
-      >
-        •••
-      </button>
     </div>
   );
 }
@@ -849,36 +748,6 @@ function RevenueChart({
   );
 }
 
-function PillFilters({
-  options,
-  active,
-  onChange,
-}: {
-  options: RangeOption[];
-  active: SalesRange;
-  onChange: (value: SalesRange) => void;
-}) {
-  return (
-    <div className="flex flex-wrap gap-3">
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          onClick={() => onChange(option.value)}
-          aria-pressed={active === option.value}
-          className={`min-h-8 cursor-pointer rounded-full px-4 text-xs font-semibold transition-colors ${
-            active === option.value
-              ? "bg-ink-900 text-cream"
-              : "bg-ink-900/6 text-ink-900 hover:bg-ink-900/10"
-          }`}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function TopOffers({ offers }: { offers: ReturnType<typeof summarizeOffers> }) {
   if (offers.length === 0) {
     return (
@@ -1005,52 +874,6 @@ function ordersToTransactions(
     });
 }
 
-function filterTransactionsByRange(
-  transactions: SalesTransaction[],
-  range: SalesRange,
-) {
-  if (range === "all") return transactions;
-
-  const now = new Date();
-  const start = new Date(now);
-
-  if (range === "today") {
-    start.setHours(0, 0, 0, 0);
-    return transactions.filter((item) => new Date(item.date) >= start);
-  }
-
-  if (range === "7d" || range === "30d" || range === "3m" || range === "6m") {
-    start.setDate(now.getDate() - (getRangeDays(range) - 1));
-    start.setHours(0, 0, 0, 0);
-    return transactions.filter((item) => new Date(item.date) >= start);
-  }
-
-  if (range === "month") {
-    start.setDate(1);
-    start.setHours(0, 0, 0, 0);
-    return transactions.filter((item) => new Date(item.date) >= start);
-  }
-
-  const year = Number(range);
-  return transactions.filter(
-    (item) => new Date(item.date).getFullYear() === year,
-  );
-}
-
-function getRangeDays(range: SalesRange) {
-  if (range === "today") return 1;
-  if (range === "7d") return 7;
-  if (range === "30d") return 30;
-  if (range === "3m") return 90;
-  if (range === "6m") return 180;
-  if (range === "month") return new Date().getDate();
-  return 365;
-}
-
-function getRangeLabel(options: RangeOption[], value: SalesRange) {
-  return options.find((option) => option.value === value)?.label ?? "Periodo";
-}
-
 function filterTransactions(transactions: SalesTransaction[], search: string) {
   const query = search.trim().toLowerCase();
   return query
@@ -1061,6 +884,35 @@ function filterTransactions(transactions: SalesTransaction[], search: string) {
           item.customer.toLowerCase().includes(query),
       )
     : transactions;
+}
+
+function downloadTransactionsCsv(transactions: SalesTransaction[]) {
+  const rows = [
+    ["monto", "moneda", "titulo", "cliente", "correo", "fecha", "estado"],
+    ...transactions.map((item) => [
+      item.amount,
+      item.currency,
+      item.title,
+      item.customer,
+      item.email,
+      item.date,
+      item.status,
+    ]),
+  ];
+  const csv = rows
+    .map((row) =>
+      row
+        .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+        .join(","),
+    )
+    .join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `ventas-${toLocalDateInput(new Date())}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function summarizeCustomers(transactions: SalesTransaction[]) {
@@ -1146,22 +998,19 @@ function deriveSubscriptions(
     });
 }
 
-function buildRevenueSeries(transactions: SalesTransaction[], days: number) {
-  const now = new Date();
-  const start = new Date(now);
-  start.setDate(now.getDate() - (days - 1));
-  start.setHours(0, 0, 0, 0);
-
+function buildRevenueSeries(
+  transactions: SalesTransaction[],
+  period: DatePeriod,
+) {
+  const dates = enumeratePeriodDays(period);
   const buckets = new Map<string, number>();
-  Array.from({ length: days }).forEach((_, index) => {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    buckets.set(toDateKey(date), 0);
+  dates.forEach((date) => {
+    buckets.set(toLocalDateInput(date), 0);
   });
 
   transactions.forEach((transaction) => {
     const date = new Date(transaction.date);
-    const key = toDateKey(date);
+    const key = toLocalDateInput(date);
     if (buckets.has(key)) {
       buckets.set(key, (buckets.get(key) || 0) + transaction.amount);
     }
@@ -1254,10 +1103,6 @@ function daysBetween(start: Date, end: Date) {
   );
 }
 
-function toDateKey(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
 function isSalesTab(value: string | null): value is SalesTab {
   return SALES_TABS.some(([tab]) => tab === value);
 }
@@ -1306,22 +1151,6 @@ function MiniSearchIcon() {
     >
       <circle cx="11" cy="11" r="7" />
       <path strokeLinecap="round" d="m16 16 4 4" />
-    </svg>
-  );
-}
-
-function CalendarIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      className="h-5 w-5"
-    >
-      <rect x="4" y="5" width="16" height="15" rx="2" />
-      <path strokeLinecap="round" d="M8 3v4m8-4v4M4 10h16" />
     </svg>
   );
 }

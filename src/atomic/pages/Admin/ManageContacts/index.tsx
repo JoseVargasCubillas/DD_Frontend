@@ -20,6 +20,13 @@ import { upsertManualSubscription } from '@utils/manualSubscriptions';
 import type { ImportContactInput, ImportContactsResult } from '@api/users.api';
 import type { User, Tag, Course, Offer, Event as EventType, Package } from '@t/index';
 import { useLeads } from '@hooks/useLeads';
+import DatePeriodFilter from '@molecules/DatePeriodFilter';
+import {
+  currentMonthValue,
+  defaultDatePeriod,
+  isDateInPeriod,
+  type DatePeriod,
+} from '@utils/datePeriod';
 
 const SUBSCRIPTION_DURATION_OPTIONS: { days: number; label: string; sub: string }[] = [
   { days: 30, label: '1 mes', sub: '30 días de acceso' },
@@ -29,6 +36,9 @@ const SUBSCRIPTION_DURATION_OPTIONS: { days: number; label: string; sub: string 
 
 const LEAD_SOURCE_LABELS: Record<string, string> = {
   'guia-blindaje-sat': 'Guía SAT',
+  'iniciativa-fiscal-2027': 'Iniciativa Fiscal 2027',
+  'estrategia-fiscal-dossier': 'Dossier Estrategia Fiscal',
+  'centro-recursos': 'Centro de recursos',
   'media-kit': 'Media Kit',
   newsletter: 'Newsletter',
   contact: 'Formulario contacto',
@@ -41,6 +51,9 @@ const LEAD_SOURCE_LABELS: Record<string, string> = {
 // - motivo: contacto directo / consultas.
 const LEAD_SOURCE_CATEGORY: Record<string, 'archivo' | 'suscripcion' | 'motivo'> = {
   'guia-blindaje-sat': 'archivo',
+  'iniciativa-fiscal-2027': 'archivo',
+  'estrategia-fiscal-dossier': 'archivo',
+  'centro-recursos': 'archivo',
   'media-kit': 'archivo',
   newsletter: 'suscripcion',
   contact: 'motivo',
@@ -53,25 +66,6 @@ const CATEGORY_LABELS: Record<'archivo' | 'suscripcion' | 'motivo' | 'otro', str
   suscripcion: 'Suscripciones',
   motivo: 'Contactos por motivo',
   otro: 'Otros',
-};
-
-type PeriodKey = 'today' | 'week' | 'month' | 'total';
-const PERIOD_TABS: { key: PeriodKey; label: string }[] = [
-  { key: 'today', label: 'Hoy' },
-  { key: 'week', label: '7 días' },
-  { key: 'month', label: '30 días' },
-  { key: 'total', label: 'Total' },
-];
-
-const startOfPeriod = (period: PeriodKey): number => {
-  const now = new Date();
-  if (period === 'today') {
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    return d.getTime();
-  }
-  if (period === 'week') return now.getTime() - 7 * 86_400_000;
-  if (period === 'month') return now.getTime() - 30 * 86_400_000;
-  return 0;
 };
 
 const formatLeadDate = (value?: string | null) => {
@@ -89,7 +83,7 @@ const formatLeadDate = (value?: string | null) => {
 
 function LeadsTab() {
   const [source, setSource] = useState<string>('');
-  const [period, setPeriod] = useState<PeriodKey>('week');
+  const [period, setPeriod] = useState<DatePeriod>(() => defaultDatePeriod());
   // Traemos todos los leads para poder computar conteos globales por período
   // y categoría; el filtro por fuente se aplica localmente sobre la tabla.
   const { data: allLeads = [], isLoading } = useLeads(undefined);
@@ -98,48 +92,49 @@ function LeadsTab() {
     ? `/admin/email?segment=${encodeURIComponent(`lead-source:${source}`)}`
     : '/admin/email?segment=guide-leads';
 
-  // Conteos por período. Cada bucket incluye sub-conteos por fuente y por categoría.
+  const periodLeads = useMemo(
+    () => allLeads.filter((lead) => isDateInPeriod(lead.createdAt, period)),
+    [allLeads, period],
+  );
+
   const stats = useMemo(() => {
-    const now = Date.now();
-    const buckets: Record<PeriodKey, {
+    const bucket: {
       total: number;
       bySource: Record<string, number>;
       byCategory: Record<'archivo' | 'suscripcion' | 'motivo' | 'otro', number>;
-    }> = {
-      today: { total: 0, bySource: {}, byCategory: { archivo: 0, suscripcion: 0, motivo: 0, otro: 0 } },
-      week:  { total: 0, bySource: {}, byCategory: { archivo: 0, suscripcion: 0, motivo: 0, otro: 0 } },
-      month: { total: 0, bySource: {}, byCategory: { archivo: 0, suscripcion: 0, motivo: 0, otro: 0 } },
-      total: { total: 0, bySource: {}, byCategory: { archivo: 0, suscripcion: 0, motivo: 0, otro: 0 } },
+    } = {
+      total: 0,
+      bySource: {},
+      byCategory: { archivo: 0, suscripcion: 0, motivo: 0, otro: 0 },
     };
-    const bounds = {
-      today: startOfPeriod('today'),
-      week: startOfPeriod('week'),
-      month: startOfPeriod('month'),
-    };
-    for (const l of allLeads) {
-      const ts = new Date(l.createdAt).getTime();
-      if (Number.isNaN(ts) || ts > now) continue;
+    for (const l of periodLeads) {
       const cat = leadCategoryOf(l.source);
-      const inc = (p: PeriodKey) => {
-        buckets[p].total += 1;
-        buckets[p].bySource[l.source] = (buckets[p].bySource[l.source] ?? 0) + 1;
-        buckets[p].byCategory[cat] += 1;
-      };
-      inc('total');
-      if (ts >= bounds.month) inc('month');
-      if (ts >= bounds.week) inc('week');
-      if (ts >= bounds.today) inc('today');
+      bucket.total += 1;
+      bucket.bySource[l.source] = (bucket.bySource[l.source] ?? 0) + 1;
+      bucket.byCategory[cat] += 1;
     }
-    return buckets;
-  }, [allLeads]);
+    return bucket;
+  }, [periodLeads]);
 
   const filteredLeads = useMemo(() => {
-    if (!source) return allLeads;
-    return allLeads.filter((l) => l.source === source);
-  }, [allLeads, source]);
+    if (!source) return periodLeads;
+    return periodLeads.filter((l) => l.source === source);
+  }, [periodLeads, source]);
 
-  const activeBucket = stats[period];
-  const sourceEntries = Object.entries(activeBucket.bySource).sort((a, b) => b[1] - a[1]);
+  const monthSections = useMemo(() => {
+    const counts = new Map<string, number>([[currentMonthValue(), 0]]);
+    allLeads.forEach((lead) => {
+      const date = new Date(lead.createdAt);
+      if (Number.isNaN(date.getTime())) return;
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    });
+    return Array.from(counts.entries())
+      .sort(([a], [b]) => b.localeCompare(a))
+      .slice(0, 12);
+  }, [allLeads]);
+
+  const sourceEntries = Object.entries(stats.bySource).sort((a, b) => b[1] - a[1]);
 
   const copyEmails = () => {
     const text = filteredLeads.map((l) => l.email).join('\n');
@@ -185,6 +180,9 @@ function LeadsTab() {
           >
             <option value="">Todas las fuentes</option>
             <option value="guia-blindaje-sat">Guía SAT</option>
+            <option value="iniciativa-fiscal-2027">Iniciativa Fiscal 2027</option>
+            <option value="estrategia-fiscal-dossier">Dossier Estrategia Fiscal</option>
+            <option value="centro-recursos">Centro de recursos</option>
             <option value="media-kit">Media Kit</option>
             <option value="newsletter">Newsletter</option>
             <option value="contact">Formulario contacto</option>
@@ -216,32 +214,42 @@ function LeadsTab() {
 
       {/* Estadísticas: tabs de período + tarjetas por categoría + desglose por fuente */}
       <div className="mb-6 rounded-2xl border border-ink-900/10 bg-ink-50/40 p-5">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          {PERIOD_TABS.map((tab) => {
-            const active = period === tab.key;
-            const count = stats[tab.key].total;
+        <DatePeriodFilter value={period} onChange={setPeriod} idPrefix="leads" />
+
+        <div className="mt-4 border-t border-ink-900/10 pt-4">
+          <p className="mb-2 text-[10px] uppercase tracking-[0.28em] text-ink-500">
+            Historial por mes
+          </p>
+          <div className="flex flex-wrap gap-2">
+          {monthSections.map(([month, count]) => {
+            const active = period.mode === 'month' && period.month === month;
+            const label = new Date(`${month}-01T00:00:00`).toLocaleDateString('es-MX', {
+              month: 'short',
+              year: 'numeric',
+            });
             return (
               <button
-                key={tab.key}
+                key={month}
                 type="button"
-                onClick={() => setPeriod(tab.key)}
+                onClick={() => setPeriod({ mode: 'month', month })}
                 className={`min-h-9 cursor-pointer rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
                   active
                     ? 'border-ink-900 bg-ink-900 text-white'
                     : 'border-ink-900/15 bg-white text-ink-700 hover:border-ink-900/40'
                 }`}
               >
-                {tab.label} · {count}
+                {label} · {count}
               </button>
             );
           })}
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           {(['archivo', 'suscripcion', 'motivo', 'otro'] as const).map((cat) => (
             <div key={cat} className="rounded-xl border border-ink-900/10 bg-white p-4">
               <p className="text-[10px] uppercase tracking-[0.28em] text-ink-500">{CATEGORY_LABELS[cat]}</p>
-              <p className="mt-2 font-serif text-3xl text-ink-900">{activeBucket.byCategory[cat]}</p>
+              <p className="mt-2 font-serif text-3xl text-ink-900">{stats.byCategory[cat]}</p>
             </div>
           ))}
         </div>

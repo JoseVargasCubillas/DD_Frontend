@@ -30,5 +30,4 @@ export const getOrders = (): Promise<Order[]> =>
 export const listAllOrders = (): Promise<Order[]> =>
   client
     .get<ApiResponse<Order[]>>('/payments/admin/orders')
-    .then((r) => r.data)
-    .catch(() => []);
+    .then((r) => r.data);
