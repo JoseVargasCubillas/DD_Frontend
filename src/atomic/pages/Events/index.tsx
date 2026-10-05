@@ -12,6 +12,10 @@ import {
   isWhatsAppOnlyEvent,
   VENUE_TO_BE_CONFIRMED,
 } from "@utils/eventCalendar";
+import {
+  dedupeEstrategiaFiscalCards,
+  isEstrategiaFiscalCard,
+} from "@utils/eventCardDedupe";
 import type { Event as SiteEvent } from "@t/index";
 import eventPersonaFisicaMoral from "../../../../assets/eventos/evento-persona-fisica-moral.png";
 import eventMentalidadEmpresarial from "../../../../assets/eventos/evento-mentalidad-empresarial.png";
@@ -344,9 +348,6 @@ const getEventCardSlug = (event: EventCard) =>
 
 const ESTRATEGIA_FISCAL_PATH = "/eventos/estrategia-fiscal";
 
-const isEstrategiaFiscalCard = (event: EventCard) =>
-  event.to.split("?")[0] === ESTRATEGIA_FISCAL_PATH;
-
 const isOnlineCard = (event: EventCard) =>
   event.modality
     ? event.modality === "online"
@@ -443,7 +444,9 @@ const mergeCalendarGroups = (
     .flatMap((group) => group.events)
     .forEach((event) => byEdition.set(getEventCardKey(event), event));
 
-  const events = Array.from(byEdition.values()).sort((a, b) => {
+  const events = dedupeEstrategiaFiscalCards(
+    Array.from(byEdition.values()),
+  ).sort((a, b) => {
     const first = a.rawDate ? new Date(a.rawDate).getTime() : Number.MAX_SAFE_INTEGER;
     const second = b.rawDate ? new Date(b.rawDate).getTime() : Number.MAX_SAFE_INTEGER;
     return first - second;
