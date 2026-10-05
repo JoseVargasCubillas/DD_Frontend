@@ -161,12 +161,13 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     description:
       "Sesión presencial de revisión estratégica para alinear prioridades, decisiones y ejecución empresarial.",
     location: "CDMX",
-    onlineUrl: "https://www.youtube.com/@YoSoyDiegoDiaz",
+    onlineUrl: "/eventos/revision-estrategica-octubre-2026",
     startDate: "2026-10-21T09:07:00-06:00",
     capacity: 100,
     registeredCount: 0,
     status: "upcoming",
     modality: "in-person",
+    whatsappOnly: true,
   },
   {
     title: "Taller de estrategia fiscal",

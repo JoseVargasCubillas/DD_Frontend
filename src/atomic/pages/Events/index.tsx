@@ -618,8 +618,8 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         location: "CDMX",
         image: eventRevisionEstrategica,
         slug: "revision-estrategica-octubre-2026",
-        to: "https://www.youtube.com/@YoSoyDiegoDiaz",
-        cta: "Ver en YouTube",
+        to: "/eventos/revision-estrategica-octubre-2026",
+        cta: "¡Estoy listo!",
         modality: "in-person",
       },
       {
