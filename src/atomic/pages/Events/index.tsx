@@ -427,15 +427,37 @@ const getEventCardKey = (event: EventCard) =>
     ? calendarEventKey([event.title, event.titleSerif].filter(Boolean).join(" "), event.rawDate)
     : getEventCardSlug(event);
 
+// La card estática se pinta antes de que responda el API; si ambas son la misma
+// edición, se conserva la presentación curada (título partido, fecha legible,
+// flyer) y sólo se toman del API los datos funcionales. Así no hay "salto"
+// visual cuando llega la respuesta.
+const mergeEditionCards = (base: EventCard, dynamic: EventCard): EventCard => ({
+  ...dynamic,
+  eyebrow: base.eyebrow,
+  title: base.title,
+  titleSerif: base.titleSerif,
+  date: base.date,
+  image: dynamic.image || base.image,
+  description: dynamic.description || base.description,
+});
+
 const mergeCalendarGroups = (
   baseGroups: Array<{ month: string; events: EventCard[] }>,
   dynamicGroups: Array<{ month: string; events: EventCard[] }>,
 ) => {
   const byEdition = new Map<string, EventCard>();
 
-  [...baseGroups, ...dynamicGroups]
+  baseGroups
     .flatMap((group) => group.events)
     .forEach((event) => byEdition.set(getEventCardKey(event), event));
+
+  dynamicGroups
+    .flatMap((group) => group.events)
+    .forEach((event) => {
+      const key = getEventCardKey(event);
+      const base = byEdition.get(key);
+      byEdition.set(key, base ? mergeEditionCards(base, event) : event);
+    });
 
   const events = dedupeEstrategiaFiscalCards(
     Array.from(byEdition.values()),

@@ -380,7 +380,17 @@ export const mergeCalendarEventSources = (
   });
   const byEdition = new Map<string, CalendarEventSummary>();
   Array.from(bySlug.values()).forEach((event) => {
-    byEdition.set(calendarEventKey(event.title, event.startDate), event);
+    const key = calendarEventKey(event.title, event.startDate);
+    const previous = byEdition.get(key);
+    // Misma edición: manda la fuente de mayor prioridad, pero se conserva el
+    // título curado y el flyer del fallback para que el render no "salte"
+    // cuando la respuesta del API sustituye a la primera pintura.
+    byEdition.set(
+      key,
+      previous
+        ? { ...event, title: previous.title, thumbnail: event.thumbnail || previous.thumbnail }
+        : event,
+    );
   });
   return Array.from(byEdition.values());
 };
