@@ -6,6 +6,15 @@ interface FetchOptions extends RequestInit {
   _retry?: boolean;
 }
 
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
 async function request<T>(path: string, options: FetchOptions = {}): Promise<T> {
   const { _retry, headers: extraHeaders, ...fetchOptions } = options;
 
@@ -50,7 +59,7 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
 
   if (!res.ok) {
     const errorData: { message?: string } = await res.json().catch(() => ({}));
-    throw new Error(errorData.message ?? `Error HTTP ${res.status}`);
+    throw new ApiError(errorData.message ?? `Error HTTP ${res.status}`, res.status);
   }
 
   if (res.status === 204) return undefined as T;

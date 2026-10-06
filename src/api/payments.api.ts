@@ -68,6 +68,7 @@ export interface OrderReceipt {
   shippingTrackingNumber: string;
   shippingLabelUrl: string;
   shippingTrackUrl: string;
+  tickets?: { folio: string; url: string; attendeeName: string; status: 'valid' | 'used' | 'void' }[];
 }
 
 export const getOrderReceipt = (id: string): Promise<OrderReceipt> =>

@@ -64,6 +64,43 @@ export function formatDateTime(date: string | Date, locale: string = 'es-MX'): s
 }
 
 /**
+ * Format a date and time in the Mexico City timezone (e.g., "6 de octubre de 2026, 14:30")
+ */
+export function formatDateTimeCdmx(date: string | Date): string {
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return '';
+    return dateObj.toLocaleString('es-MX', {
+      timeZone: 'America/Mexico_City',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Format only the time (hh:mm) in the Mexico City timezone
+ */
+export function formatTimeCdmx(date: string | Date): string {
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return '';
+    return dateObj.toLocaleTimeString('es-MX', {
+      timeZone: 'America/Mexico_City',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Format a price to a localized currency format
  * @param price - Price number
  * @param currency - Currency code (default: 'MXN')

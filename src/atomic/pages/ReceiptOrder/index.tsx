@@ -64,6 +64,48 @@ export default function ReceiptOrder() {
         ]}
       />
 
+      {receipt.tickets && receipt.tickets.length > 0 && (
+        <div className="mt-6">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-[10px] uppercase tracking-[0.3em] text-ink-300">— Tus boletos</span>
+            <span className="font-serif text-[13px] italic text-ink-400">
+              {receipt.tickets.length === 1 ? '1 boleto' : `${receipt.tickets.length} boletos`}
+            </span>
+          </div>
+          <div className="border border-cream-400 bg-white">
+            {receipt.tickets.map((ticket) => (
+              <div
+                key={ticket.folio}
+                className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-cream-400 px-5 py-4 last:border-0 sm:px-6"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="font-mono text-[14px] font-bold tracking-[0.14em] text-ink-900">{ticket.folio}</p>
+                  <p className="truncate text-[12px] text-ink-400">{ticket.attendeeName}</p>
+                </div>
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] ${
+                    ticket.status === 'used'
+                      ? 'bg-amber-50 text-amber-800'
+                      : ticket.status === 'void'
+                        ? 'bg-red-50 text-red-800'
+                        : 'bg-emerald-50 text-emerald-800'
+                  }`}
+                >
+                  {ticket.status === 'used' ? 'Utilizado' : ticket.status === 'void' ? 'Anulado' : 'Válido'}
+                </span>
+                <a
+                  href={ticket.url}
+                  className="text-[11px] font-bold uppercase tracking-[0.18em] text-ink-900 underline-offset-4 hover:underline"
+                >
+                  Ver boleto →
+                </a>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[12px] leading-[1.6] text-ink-400">Presenta el código QR de cada boleto en la entrada del evento.</p>
+        </div>
+      )}
+
       {receipt.shippingTrackingNumber && (
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           {receipt.shippingTrackUrl && (

@@ -54,6 +54,8 @@ const ManageContacts = lazy(() => import("@pages/Admin/ManageContacts"));
 const ContactProfile = lazy(() => import("@pages/Admin/ContactProfile"));
 const ManageTags = lazy(() => import("@pages/Admin/ManageTags"));
 const ManageEvents = lazy(() => import("@pages/Admin/ManageEvents"));
+const EventCheckIn = lazy(() => import("@pages/Admin/EventCheckIn"));
+const EventAttendees = lazy(() => import("@pages/Admin/EventAttendees"));
 const ManageBlog = lazy(() => import("@pages/Admin/ManageBlog"));
 const SalesPayments = lazy(() => import("@pages/Admin/SalesPayments"));
 const SalesCart = lazy(() => import("@pages/Admin/SalesCart"));
@@ -71,6 +73,7 @@ const Privacidad = lazy(() => import("@pages/LegalDocuments/Privacidad"));
 const Faq = lazy(() => import("@pages/LegalDocuments/Faq"));
 const Receipt = lazy(() => import("@pages/Receipt"));
 const ReceiptOrder = lazy(() => import("@pages/ReceiptOrder"));
+const Ticket = lazy(() => import("@pages/Ticket"));
 const TerminosArquitectura = lazy(() => import("@pages/LegalDocuments/TerminosArquitectura"));
 export const router = createBrowserRouter([
   // Ruta legal privada — solo por link directo, no aparece en navbar, footer
@@ -138,6 +141,7 @@ export const router = createBrowserRouter([
       { path: "/faq", element: <Faq /> },
       { path: "/recibo/:id", element: <Receipt /> },
       { path: "/recibo/pedido/:id", element: <ReceiptOrder /> },
+      { path: "/boleto/:folio", element: <Ticket /> },
       { path: "/libros/:slug/checkout", element: <BookCheckout /> },
       {
         path: "/cursos/:slug/leccion/:lessonId",
@@ -194,6 +198,8 @@ export const router = createBrowserRouter([
       { path: "/admin/promociones", element: <ManagePromotions /> },
       { path: "/admin/usuarios", element: <ManageUsers /> },
       { path: "/admin/eventos", element: <ManageEvents /> },
+      { path: "/admin/eventos/check-in", element: <EventCheckIn /> },
+      { path: "/admin/eventos/:id/asistentes", element: <EventAttendees /> },
       { path: "/admin/blog", element: <ManageBlog /> },
       { path: "/admin/ventas", element: <SalesPayments /> },
       { path: "/admin/ventas/pagos", element: <SalesPayments /> },

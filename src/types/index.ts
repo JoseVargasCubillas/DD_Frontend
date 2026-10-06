@@ -342,6 +342,46 @@ export interface Book {
   createdAt?: string;
 }
 
+export type TicketStatus = "valid" | "used" | "void";
+
+export interface PublicTicket {
+  folio: string;
+  status: TicketStatus;
+  attendeeName: string;
+  eventTitle: string;
+  eventDate: string;
+  eventFormat: string;
+  eventSlug?: string;
+  eventId?: string;
+  amount: number;
+  currency: string;
+  purchasedAt: string;
+  checkedInAt: string | null;
+  seatIndex: number;
+  seatTotal: number;
+  orderReference: string;
+  qrUrl: string;
+}
+
+export interface AdminTicket extends PublicTicket {
+  attendeeEmail: string;
+  attendeePhone: string;
+  orderId: string;
+  checkedInBy: string | null;
+}
+
+export interface TicketCheckInResult {
+  result: "ok" | "alreadyUsed" | "invalid" | "void";
+  ticket?: AdminTicket;
+}
+
+export interface EventAttendees {
+  event: { id: string; title: string; startDate: string };
+  summary: { total: number; checkedIn: number };
+  sheetUrl: string | null;
+  tickets: AdminTicket[];
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T;

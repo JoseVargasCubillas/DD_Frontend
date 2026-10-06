@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import * as eventsApi from "@api/events.api";
 import { useCreateEvent, useDeleteEvent, useEvents, useUpdateEvent } from "@hooks/useEvents";
@@ -968,14 +969,22 @@ const selectedIsNew = selectedId === "new";
             el código fuente.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={save}
-          disabled={isSaving}
-          className="min-h-11 rounded-full bg-ink-900 px-6 text-sm font-semibold text-cream disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isSaving ? "Guardando..." : "Guardar"}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            to="/admin/eventos/check-in"
+            className="inline-flex min-h-11 items-center rounded-full border border-ink-900/15 bg-white px-5 text-sm font-semibold hover:bg-cream-200"
+          >
+            Escanear QR
+          </Link>
+          <button
+            type="button"
+            onClick={save}
+            disabled={isSaving}
+            className="min-h-11 rounded-full bg-ink-900 px-6 text-sm font-semibold text-cream disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSaving ? "Guardando..." : "Guardar"}
+          </button>
+        </div>
       </header>
 
       <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
@@ -1011,13 +1020,14 @@ const selectedIsNew = selectedId === "new";
               const id = getEventId(event);
               const isActive = id === selectedId;
               const hidden = event.status === "canceled";
+              const hasRealId = Boolean(id) && !isSeedId(id) && !isLocalId(id);
 
               return (
+                <div key={id} className="flex items-center gap-1">
                 <button
-                  key={id}
                   type="button"
                   onClick={() => setSelectedId(id)}
-                  className={`flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm transition-colors ${
+                  className={`flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-lg px-3 text-left text-sm transition-colors ${
                     isActive
                       ? "bg-ink-900/[0.07] font-semibold text-ink-900"
                       : "text-ink-700 hover:bg-cream-200"
@@ -1037,6 +1047,16 @@ const selectedIsNew = selectedId === "new";
                   ) : null}
                   {hidden ? <EyeOffIcon /> : null}
                 </button>
+                {hasRealId ? (
+                  <Link
+                    to={`/admin/eventos/${id}/asistentes`}
+                    title="Ver asistentes"
+                    className="shrink-0 rounded-full border border-ink-900/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-ink-600 hover:bg-cream-200"
+                  >
+                    Asistentes
+                  </Link>
+                ) : null}
+                </div>
               );
             })}
           </div>
@@ -1130,14 +1150,24 @@ const selectedIsNew = selectedId === "new";
               </p>
               <h2 className="mt-1 font-serif text-3xl">Evento</h2>
             </div>
-            <a
-              href="/eventos"
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-full border border-ink-900/15 px-4 py-2 text-sm font-semibold transition-colors hover:border-ink-900"
-            >
-              Ver sección sincronizada ↗
-            </a>
+            <div className="flex flex-wrap items-center gap-2">
+              {!selectedIsNew && !selectedIsSeed && !selectedIsLocal && form.id ? (
+                <Link
+                  to={`/admin/eventos/${form.id}/asistentes`}
+                  className="rounded-full bg-ink-900 px-4 py-2 text-sm font-semibold text-cream transition-opacity hover:opacity-90"
+                >
+                  Asistentes
+                </Link>
+              ) : null}
+              <a
+                href="/eventos"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-ink-900/15 px-4 py-2 text-sm font-semibold transition-colors hover:border-ink-900"
+              >
+                Ver sección sincronizada ↗
+              </a>
+            </div>
           </div>
 
           <div className="mt-6 grid gap-x-6 gap-y-5 lg:grid-cols-2">

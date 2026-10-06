@@ -833,3 +833,27 @@
     color: #6b4f2a;
   }
 }
+
+/* ── Impresión del boleto QR (/boleto/:folio) ─────────────────────────────
+   Oculta navbar, footer y burbujas; sólo se imprime la tarjeta del boleto. */
+@media print {
+  body.dd-ticket-print * {
+    visibility: hidden;
+  }
+  body.dd-ticket-print #ticket-print-root,
+  body.dd-ticket-print #ticket-print-root * {
+    visibility: visible;
+  }
+  body.dd-ticket-print #ticket-print-root {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    margin: 0;
+    padding: 16px;
+    background: #fff;
+    box-shadow: none;
+  }
+  body.dd-ticket-print .print-hidden {
+    display: none !important;
+  }
+}
