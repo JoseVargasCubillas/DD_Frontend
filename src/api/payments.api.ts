@@ -52,6 +52,11 @@ export const listAllOrders = (): Promise<Order[]> =>
     .get<ApiResponse<Order[]>>('/payments/admin/orders')
     .then((r) => r.data);
 
+export const deleteOrder = (id: string): Promise<{ id: string }> =>
+  client
+    .delete<ApiResponse<{ id: string }>>(`/payments/admin/orders/${id}`)
+    .then((r) => r.data);
+
 export interface OrderReceipt {
   id: string;
   items: { title: string; price: number; quantity: number; eventDate?: string; eventFormat?: string }[];

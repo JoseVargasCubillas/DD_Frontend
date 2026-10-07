@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode }
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Link, useSearchParams } from "react-router-dom";
-import { useOrders } from "@hooks/usePayments";
+import { useOrders, useDeleteOrder } from "@hooks/usePayments";
 import { useUsers } from "@hooks/useUsers";
 import { listAllSubscriptions, type AdminSubscriptionRow } from "@api/subscriptions.api";
 import type { Order, User } from "@t/index";
@@ -37,6 +37,8 @@ interface SalesTransaction {
   items: Order["items"];
   subscriptionId?: string;
   kind: "order" | "subscription";
+  // Solo las ordenes puras (no respaldo de una suscripcion) se pueden borrar.
+  deletable?: boolean;
 }
 
 interface SubscriptionRow {
@@ -344,6 +346,21 @@ function TransactionsTab({
     queryClient.invalidateQueries({ queryKey: ["subscriptions", "admin", "all"] });
     toast.success("Transacciones actualizadas");
   };
+
+  const deleteOrderMutation = useDeleteOrder();
+  const handleDelete = (item: SalesTransaction) => {
+    const ok = window.confirm(
+      `¿Borrar la transacción de ${item.customer} por ${formatMoney(item.amount, item.currency)}?\n\n` +
+        "Se eliminará la orden y sus boletos QR. Esta acción no se puede deshacer.",
+    );
+    if (!ok) return;
+    deleteOrderMutation.mutate(item.orderId, {
+      onSuccess: () => toast.success("Transacción borrada"),
+      onError: (err) =>
+        toast.error(err instanceof Error ? err.message : "No se pudo borrar la transacción"),
+    });
+  };
+  const deletingId = deleteOrderMutation.isPending ? deleteOrderMutation.variables ?? null : null;
   return (
     <Panel>
       <div className="mb-6">
@@ -377,7 +394,12 @@ function TransactionsTab({
           <span className="capitalize">{formatDatePeriodLabel(period)}</span>
         </span>
       </div>
-      <SimpleTransactionsTable transactions={filtered} detailed />
+      <SimpleTransactionsTable
+        transactions={filtered}
+        detailed
+        onDelete={handleDelete}
+        deletingId={deletingId}
+      />
     </Panel>
   );
 }
@@ -872,9 +894,13 @@ function TransactionStatusBadge({ status }: { status: SalesTransaction["status"]
 function SimpleTransactionsTable({
   transactions,
   detailed,
+  onDelete,
+  deletingId,
 }: {
   transactions: SalesTransaction[];
   detailed?: boolean;
+  onDelete?: (item: SalesTransaction) => void;
+  deletingId?: string | null;
 }) {
   if (transactions.length === 0) {
     return (
@@ -945,7 +971,17 @@ function SimpleTransactionsTable({
                     {item.contactId && (
                       <MenuLink to={`/admin/contactos/${item.contactId}`}>Ver cliente →</MenuLink>
                     )}
-                    {item.status !== "completed" && !item.contactId && (
+                    {onDelete && item.deletable && (
+                      <button
+                        type="button"
+                        disabled={deletingId === item.orderId}
+                        onClick={() => onDelete(item)}
+                        className="block w-full cursor-pointer rounded-lg px-3 py-2 text-left text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {deletingId === item.orderId ? "Borrando…" : "Borrar transacción"}
+                      </button>
+                    )}
+                    {item.status !== "completed" && !item.contactId && !(onDelete && item.deletable) && (
                       <p className="px-3 py-2 text-sm text-ink-400">Sin acciones disponibles</p>
                     )}
                   </Dropdown>
@@ -1244,6 +1280,7 @@ function ordersToTransactions(
         items: order.items || [],
         subscriptionId: order.subscriptionId,
         kind: "order" as const,
+        deletable: true,
       };
     });
 }
