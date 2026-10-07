@@ -376,7 +376,7 @@ export interface TicketCheckInResult {
 }
 
 export interface EventAttendees {
-  event: { id: string; title: string; startDate: string };
+  event: { id: string; title: string; startDate: string | null; dateLabel?: string; slug?: string };
   summary: { total: number; checkedIn: number };
   sheetUrl: string | null;
   tickets: AdminTicket[];

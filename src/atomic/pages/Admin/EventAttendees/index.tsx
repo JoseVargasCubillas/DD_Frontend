@@ -86,7 +86,7 @@ export default function EventAttendees() {
         <div>
           <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500">Eventos / Asistentes</p>
           <h1 className="mt-2 font-serif text-3xl leading-tight sm:text-5xl">{data.event.title}</h1>
-          <p className="mt-2 text-sm text-ink-600">{data.event.startDate ? formatDate(data.event.startDate) : ''}</p>
+          <p className="mt-2 text-sm text-ink-600">{data.event.dateLabel || (data.event.startDate ? formatDate(data.event.startDate) : '')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link

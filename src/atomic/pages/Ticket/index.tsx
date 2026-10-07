@@ -89,7 +89,7 @@ function TicketCard({ ticket }: { ticket: PublicTicket }) {
             </div>
             <h2 className="mt-3 font-serif text-[26px] leading-[1.1] sm:text-[30px]">{ticket.eventTitle}</h2>
             <p className="mt-2 text-[13px] text-ink-100">
-              {ticket.eventDate ? formatDate(ticket.eventDate) : ''}
+              {ticket.eventDate}
               {ticket.eventFormat ? ` · ${ticket.eventFormat}` : ''}
             </p>
           </header>
@@ -132,7 +132,7 @@ function TicketCard({ ticket }: { ticket: PublicTicket }) {
 
             <div className="mt-5">
               <Row label="Evento" value={ticket.eventTitle} />
-              {ticket.eventDate && <Row label="Fecha" value={formatDate(ticket.eventDate)} />}
+              {ticket.eventDate && <Row label="Fecha" value={ticket.eventDate} />}
               {ticket.eventFormat && <Row label="Formato / Sede" value={ticket.eventFormat} />}
               {ticket.seatTotal > 1 && <Row label="Asiento" value={`Boleto ${ticket.seatIndex} de ${ticket.seatTotal}`} />}
               <Row label="Monto" value={`${formatCurrency(ticket.amount, ticket.currency)} ${ticket.currency}`} />
