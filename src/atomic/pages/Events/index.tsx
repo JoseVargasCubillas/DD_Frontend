@@ -32,6 +32,7 @@ import eventMaestriaEscenica from "../../../../assets/eventos/evento-maestria-es
 import eventBeneficiosRegimen from "../../../../assets/eventos/evento-beneficios-regimen-fiscal.png";
 import eventRevisionEstrategica from "../../../../assets/eventos/evento-revision-estrategica-cdmx.png";
 import event48a40Horas from "../../../assets/eventos/evento-48-a-40-horas.png";
+import eventTableroCeo from "../../../assets/eventos/evento-tablero-del-ceo.png";
 
 type EventTone = "cream" | "dark";
 
@@ -717,6 +718,22 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         slug: "4e-codigo-rockefeller",
         to: "/eventos/4e-codigo-rockefeller",
         cta: "¡Estoy listo!",
+      },
+      {
+        eyebrow: "Masterclass",
+        title: "El Tablero",
+        titleSerif: "del CEO",
+        description:
+          "Masterclass gratuita por Zoom sobre los 4 tableros que usa un CEO para dirigir su empresa en lugar de operarla.",
+        price: "$0 MXN",
+        date: "20 Noviembre 2026 · 19:00",
+        rawDate: "2026-11-20T19:00:00-06:00",
+        location: "Zoom",
+        image: eventTableroCeo,
+        slug: "tablero-del-ceo-noviembre",
+        to: "/eventos/tablero-del-ceo",
+        cta: "Quiero mi lugar",
+        modality: "online",
       },
       {
         eyebrow: "Webinar",

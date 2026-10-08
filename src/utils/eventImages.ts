@@ -15,6 +15,7 @@ import equipoUnido from '../../assets/ddweb/equipo-unido.jpg';
 import diegoHero from '../../assets/ddweb/figma-diego-hero.png';
 import comoCobrarCeo from '../../assets/eventos/fondo-como-cobrar-ceo.png';
 import evento48a40Horas from '../assets/eventos/evento-48-a-40-horas.png';
+import eventoTableroCeo from '../assets/eventos/evento-tablero-del-ceo.png';
 
 export function getEventImage(
   event?: Pick<CalendarEventSummary, 'slug' | 'title'> | null,
@@ -22,6 +23,7 @@ export function getEventImage(
   if (!event) return reforma;
   const key = `${event.slug ?? ''} ${event.title ?? ''}`.toLowerCase();
 
+  if (key.includes('tablero-del-ceo') || key.includes('tablero del ceo') || key.includes('emprendedor-vs-ceo') || key.includes('emprendedor vs')) return eventoTableroCeo;
   if (key.includes('48-a-40') || key.includes('48 a 40')) return evento48a40Horas;
   if (key.includes('estrategia-fiscal') || key.includes('estrategia fiscal')) return sefCdmx;
   if (key.includes('como-cobrar') || key.includes('como cobrar') || key.includes('cobrar como ceo')) return comoCobrarCeo;

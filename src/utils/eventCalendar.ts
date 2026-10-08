@@ -232,21 +232,6 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     modality: "in-person",
   },
   {
-    title: "El emprendedor vs. el CEO",
-    slug: "emprendedor-vs-ceo-noviembre",
-    shortDescription:
-      "Clase gratuita por Zoom sobre la mentalidad y el tablero del CEO para dueños de empresa que quieren dirigir en lugar de operar.",
-    description:
-      "Clase gratuita por Zoom sobre la mentalidad y el tablero del CEO para dueños de empresa que quieren dirigir en lugar de operar.",
-    location: "Zoom",
-    onlineUrl: "/eventos/emprendedor-vs-ceo",
-    startDate: "2026-11-10T19:00:00-06:00",
-    capacity: 500,
-    registeredCount: 0,
-    status: "upcoming",
-    modality: "online",
-  },
-  {
     title: "4E Código Rockefeller",
     slug: "4e-codigo-rockefeller",
     shortDescription:
@@ -260,6 +245,21 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     registeredCount: 0,
     status: "upcoming",
     modality: "in-person",
+  },
+  {
+    title: "El Tablero del CEO",
+    slug: "tablero-del-ceo-noviembre",
+    shortDescription:
+      "Masterclass gratuita por Zoom sobre los 4 tableros que usa un CEO para dirigir su empresa en lugar de operarla.",
+    description:
+      "Masterclass gratuita por Zoom sobre los 4 tableros que usa un CEO para dirigir su empresa en lugar de operarla.",
+    location: "Zoom",
+    onlineUrl: "/eventos/tablero-del-ceo",
+    startDate: "2026-11-20T19:00:00-06:00",
+    capacity: 500,
+    registeredCount: 0,
+    status: "upcoming",
+    modality: "online",
   },
   {
     title: "Holding",
@@ -665,7 +665,8 @@ export const getCalendarEventType = (
   if (key.includes("mentalidad")) return "Seminario";
   if (key.includes("holding") || key.includes("persona-fisica") || key.includes("persona física")) return "Webinar";
   if (key.includes("como-cobrar") || key.includes("como cobrar")) return "Seminario";
-  if (key.includes("emprendedor-vs-ceo") || key.includes("tablero-del-ceo") || key.includes("emprendedor vs")) return "Webinar";
+  if (key.includes("tablero-del-ceo") || key.includes("tablero del ceo")) return "Masterclass";
+  if (key.includes("emprendedor-vs-ceo") || key.includes("emprendedor vs")) return "Webinar";
   return "Evento";
 };
 
@@ -771,7 +772,7 @@ export const getCalendarEventPath = (
     title.includes("emprendedor vs") ||
     title.includes("tablero del ceo")
   ) {
-    return "/eventos/emprendedor-vs-ceo";
+    return "/eventos/tablero-del-ceo";
   }
   if (
     event.slug.includes("como-cobrar") ||
