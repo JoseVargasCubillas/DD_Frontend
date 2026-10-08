@@ -232,6 +232,21 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     modality: "in-person",
   },
   {
+    title: "El Tablero del CEO",
+    slug: "tablero-del-ceo-noviembre",
+    shortDescription:
+      "Masterclass gratuita por Zoom sobre los 4 tableros que usa un CEO para dirigir su empresa en lugar de operarla.",
+    description:
+      "Masterclass gratuita por Zoom sobre los 4 tableros que usa un CEO para dirigir su empresa en lugar de operarla.",
+    location: "Zoom",
+    onlineUrl: "/eventos/tablero-del-ceo",
+    startDate: "2026-11-10T10:00:00-06:00",
+    capacity: 500,
+    registeredCount: 0,
+    status: "upcoming",
+    modality: "online",
+  },
+  {
     title: "4E Código Rockefeller",
     slug: "4e-codigo-rockefeller",
     shortDescription:
@@ -245,21 +260,6 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     registeredCount: 0,
     status: "upcoming",
     modality: "in-person",
-  },
-  {
-    title: "El Tablero del CEO",
-    slug: "tablero-del-ceo-noviembre",
-    shortDescription:
-      "Masterclass gratuita por Zoom sobre los 4 tableros que usa un CEO para dirigir su empresa en lugar de operarla.",
-    description:
-      "Masterclass gratuita por Zoom sobre los 4 tableros que usa un CEO para dirigir su empresa en lugar de operarla.",
-    location: "Zoom",
-    onlineUrl: "/eventos/tablero-del-ceo",
-    startDate: "2026-11-20T19:00:00-06:00",
-    capacity: 500,
-    registeredCount: 0,
-    status: "upcoming",
-    modality: "online",
   },
   {
     title: "Holding",
