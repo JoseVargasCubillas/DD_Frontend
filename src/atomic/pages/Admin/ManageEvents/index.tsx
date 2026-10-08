@@ -5,6 +5,7 @@ import * as eventsApi from "@api/events.api";
 import { useCreateEvent, useDeleteEvent, useEvents, useUpdateEvent } from "@hooks/useEvents";
 import { isEstrategiaFiscalEvent, isWhatsAppOnlyEvent } from "@utils/eventCalendar";
 import type { Event } from "@t/index";
+import IntegrationsPanel from "./IntegrationsPanel";
 import eventPersonaFisicaMoral from "../../../../../assets/eventos/evento-persona-fisica-moral.png";
 import eventMentalidadEmpresarial from "../../../../../assets/eventos/evento-mentalidad-empresarial.png";
 import eventSistemaProspeccion from "../../../../../assets/eventos/evento-sistema-prospeccion-digital.png";
@@ -986,6 +987,8 @@ const selectedIsNew = selectedId === "new";
           </button>
         </div>
       </header>
+
+      <IntegrationsPanel />
 
       <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="rounded-2xl border border-ink-900/10 bg-white p-5 shadow-sm">
