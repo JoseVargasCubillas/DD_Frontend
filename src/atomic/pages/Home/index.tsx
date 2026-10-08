@@ -24,7 +24,6 @@ import {
   mergeCalendarEventSources,
   type CalendarEventSummary,
 } from "@utils/eventCalendar";
-import { getEventImage } from "@utils/eventImages";
 import { waClickHandler } from "@utils/whatsapp";
 import imgEstrategia from "../../../../assets/home/002_home_Estrategia_DD.png";
 import imgFormacion from "../../../../assets/home/003_home_Formacion_DD.png";
@@ -363,15 +362,13 @@ export default function Home() {
         const [titleLine1, titleLine2] = splitHomeEventTitle(event.title);
         return {
           id: event.slug,
-          // Foto real del evento si existe (API/admin); si no, una del pool
-          // ya recortado a la medida de esta tarjeta — así nunca se ve cortada.
+          // Imágenes fijas por posición: esta sección conserva siempre las
+          // mismas fotos (ya recortadas a la medida de la tarjeta); solo
+          // cambian fechas/títulos. No se sustituyen por pósters de evento.
           image:
-            event.thumbnail ||
-            (/48-a-40|48 a 40/i.test(`${event.slug} ${event.title}`)
-              ? getEventImage(event)
-              : HOME_CALENDAR_FALLBACK_IMAGES[
-                  index % HOME_CALENDAR_FALLBACK_IMAGES.length
-                ]),
+            HOME_CALENDAR_FALLBACK_IMAGES[
+              index % HOME_CALENDAR_FALLBACK_IMAGES.length
+            ],
           date:
             formatEventShortDateRange(event.startDate, event.endDate) ||
             "Por definir",
