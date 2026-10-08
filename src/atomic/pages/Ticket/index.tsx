@@ -137,7 +137,7 @@ function TicketCard({ ticket }: { ticket: PublicTicket }) {
               {ticket.seatTotal > 1 && <Row label="Asiento" value={`Boleto ${ticket.seatIndex} de ${ticket.seatTotal}`} />}
               <Row label="Monto" value={`${formatCurrency(ticket.amount, ticket.currency)} ${ticket.currency}`} />
               {ticket.purchasedAt && <Row label="Compra" value={formatDate(ticket.purchasedAt)} />}
-              {ticket.orderReference && <Row label="Referencia" value={ticket.orderReference} mono />}
+              {(ticket.orderLabel || ticket.orderReference) && <Row label="Referencia" value={ticket.orderLabel || ticket.orderReference} mono />}
             </div>
 
             <p className="mt-6 text-center text-[12px] leading-[1.6] text-ink-400">

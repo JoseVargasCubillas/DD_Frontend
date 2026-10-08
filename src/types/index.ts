@@ -360,6 +360,8 @@ export interface PublicTicket {
   seatIndex: number;
   seatTotal: number;
   orderReference: string;
+  /** Código corto para mostrar (HP-… HubSpot / WB-… web). */
+  orderLabel?: string;
   qrUrl: string;
 }
 
