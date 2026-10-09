@@ -796,7 +796,7 @@ export default function EmprendedorVsCeoLanding() {
               — Formulario de registro
             </p>
             <h3 className="mb-7 font-serif text-[28px] font-normal leading-[1.05] tracking-[-0.016em] text-ink-900 sm:text-[32px]">
-              Regístrate a la <span className="italic">Master Class.</span>
+              Regístrate a la <span className="italic">Masterclass.</span>
             </h3>
 
             {/* Embed oficial de HubSpot — el script global hidrata este div */}
