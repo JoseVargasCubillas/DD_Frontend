@@ -67,21 +67,18 @@ export const HUBSPOT_FORMS = {
     landing: "/eventos/rockefeller",
     previewUrl: "https://taukw.share.hsforms.com/2L-ApR7RSRpWJw_sIyXBV0g",
   },
+  revisionEstrategica: {
+    formId: "20f99a01-77b2-4622-8341-b304b5beae32",
+    portalId: HUBSPOT_PORTAL_ID,
+    region: "na1",
+    landing: "/eventos/revision-estrategica",
+    previewUrl: "https://taukw.share.hsforms.com/2IPmaAXeyRiKDQbMEtb6uMg",
+  },
 
   // ==================================================
   // RESERVADOS — landings aun no construidas.
   // No borrar. Cuando exista la landing, poblar `landing` y consumir aqui.
   // ==================================================
-
-  revisionEstrategica: {
-    formId: "20f99a01-77b2-4622-8341-b304b5beae32",
-    portalId: HUBSPOT_PORTAL_ID,
-    region: "na1",
-    landing: null,
-    previewUrl: "https://taukw.share.hsforms.com/2IPmaAXeyRiKDQbMEtb6uMg",
-    notes:
-      "Reservado para la landing de 'Revisión estratégica'. El evento hoy solo existe como tarjeta del calendario (slug: revision-estrategica).",
-  },
 } as const satisfies Record<string, HubspotFormEntry>;
 
 export type HubspotFormKey = keyof typeof HUBSPOT_FORMS;

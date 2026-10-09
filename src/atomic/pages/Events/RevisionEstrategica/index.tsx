@@ -1,4 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import HubspotForm from '@molecules/HubspotForm';
+import { HUBSPOT_FORMS } from '@utils/hubspotForms';
 import { waClickHandler, waLink } from '@utils/whatsapp';
 import revisionLogo from '../../../../assets/eventos/revision-estrategica-logo.png';
 
@@ -745,6 +747,62 @@ export default function RevisionEstrategicaLanding() {
             <p data-reveal data-delay="1" className="mt-10 font-serif text-[18px] italic text-cream/75 sm:text-[20px]">
               — Mesa Estratégica · Edición 2026
             </p>
+          </div>
+        </section>
+
+        {/* ============ REGISTRO · HubSpot ============ */}
+        <section
+          id="registro"
+          className="scroll-mt-24 relative border-t border-cream/10 bg-ink-800 px-5 py-24 text-cream sm:px-8 lg:px-16 lg:py-32"
+        >
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_30%,rgba(180,150,110,0.15),transparent_62%)]" />
+
+          <div className="relative mx-auto grid max-w-[1180px] items-start gap-16 lg:grid-cols-[1fr_640px] lg:gap-20">
+            <div>
+              <p className="mb-5 text-[10px] font-medium uppercase tracking-[0.30em] text-[#b98a4a]">
+                ★ Mesa Estratégica · 2026
+              </p>
+              <h2 className="mb-7 font-serif text-[44px] font-normal leading-[0.98] tracking-[-0.024em] text-cream sm:text-[56px] lg:text-[64px]">
+                Solicita tu <span className="italic">pre-calificación.</span>
+              </h2>
+              <p className="mb-9 max-w-[440px] text-[15px] leading-[1.7] text-cream/78">
+                Déjanos tus datos y un asesor te contacta para validar si la Mesa Estratégica es para tu empresa.
+                Cupos limitados — el acceso se confirma tras la llamada 1:1.
+              </p>
+              <div className="border-y border-cream/20">
+                {[
+                  ['Formato', 'Mesa Estratégica'],
+                  ['Modalidad', 'Presencial 1:1'],
+                  ['Inversión', '$49,997 MXN'],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="grid grid-cols-[160px_1fr] items-baseline gap-5 border-b border-cream/10 py-4 last:border-b-0"
+                  >
+                    <span className="text-[9.5px] font-medium uppercase tracking-[0.24em] text-cream/50">— {label}</span>
+                    <span className="font-serif text-[18px] italic text-cream">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative border border-ink-900/30 bg-cream p-9 text-ink-900 shadow-[0_40px_100px_rgba(0,0,0,0.42),0_12px_30px_rgba(0,0,0,0.22)] sm:p-11">
+              <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.30em] text-[#6b4f2a]">
+                — Formulario de registro
+              </p>
+              <h3 className="mb-7 font-serif text-[28px] font-normal leading-[1.05] tracking-[-0.016em] text-ink-900 sm:text-[32px]">
+                Regístrate a la <span className="italic">Revisión Estratégica.</span>
+              </h3>
+
+              <HubspotForm
+                portalId={HUBSPOT_FORMS.revisionEstrategica.portalId}
+                formId={HUBSPOT_FORMS.revisionEstrategica.formId}
+              />
+
+              <div className="mt-6 border-t border-ink-900/10 pt-5 text-center font-serif text-[13px] italic text-ink-600">
+                — Un asesor te contactará en menos de 24 horas.
+              </div>
+            </div>
           </div>
         </section>
       </div>
