@@ -28,6 +28,7 @@ const ProspeccionDigitalLanding = lazy(
   () => import("@pages/Events/ProspeccionDigital"),
 );
 const RockefellerLanding = lazy(() => import("@pages/Events/Rockefeller"));
+const RevisionEstrategicaLanding = lazy(() => import("@pages/Events/RevisionEstrategica"));
 
 const EventDetail = lazy(() => import("@pages/Events/EventDetail"));
 const BlogList = lazy(() => import("@pages/Blog/BlogList"));
@@ -125,6 +126,8 @@ export const router = createBrowserRouter([
       { path: "/eventos/rockefeller", element: <RockefellerLanding /> },
       { path: "/eventos/estrategia-rockefeller", element: <RockefellerLanding /> },
       { path: "/eventos/4e-codigo-rockefeller", element: <RockefellerLanding /> },
+      { path: "/eventos/revision-estrategica", element: <RevisionEstrategicaLanding /> },
+      { path: "/eventos/revision-estrategica-octubre-2026", element: <RevisionEstrategicaLanding /> },
       { path: "/eventos/checkout", element: <EventCheckout /> },
       { path: "/eventos/:slug", element: <EventDetail /> },
       { path: "/blog", element: <BlogList /> },

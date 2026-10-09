@@ -161,13 +161,12 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     description:
       "Sesión presencial de revisión estratégica para alinear prioridades, decisiones y ejecución empresarial.",
     location: "CDMX",
-    onlineUrl: "/eventos/revision-estrategica-octubre-2026",
+    onlineUrl: "/eventos/revision-estrategica",
     startDate: "2026-10-21T09:07:00-06:00",
     capacity: 100,
     registeredCount: 0,
     status: "upcoming",
     modality: "in-person",
-    whatsappOnly: true,
   },
   {
     title: "Taller de estrategia fiscal",
@@ -618,6 +617,20 @@ export const isRockefellerEvent = (
   );
 };
 
+export const isRevisionEstrategicaEvent = (
+  event: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl">,
+) => {
+  const slug = (event.slug || "").toLowerCase();
+  const title = (event.title || "").toLowerCase();
+  const onlineUrl = (event.onlineUrl || "").toLowerCase();
+  return (
+    slug.includes("revision-estrategica") ||
+    title.includes("revisión estratégica") ||
+    title.includes("revision estrategica") ||
+    onlineUrl.includes("/revision-estrategica")
+  );
+};
+
 export const isHoldingEvent = (event: Pick<CalendarEventSummary, "slug" | "title">) =>
   (event.slug || "").toLowerCase().startsWith("holding") ||
   (event.title || "").trim().toLowerCase() === "holding";
@@ -701,6 +714,7 @@ const hasCuratedCalendarLanding = (
   if (isEstrategiaFiscalEvent(event)) return true;
   if (isEmprendedorVsCeoEvent(event)) return true;
   if (isRockefellerEvent(event)) return true;
+  if (isRevisionEstrategicaEvent(event)) return true;
   const slug = (event.slug || "").toLowerCase();
   const title = event.title.trim().toLowerCase();
   if (slug.startsWith("holding") || title === "holding") return true;
@@ -759,6 +773,9 @@ export const getCalendarEventPath = (
 ) => {
   if (!event) return "/eventos";
   const title = event.title.trim().toLowerCase();
+  if (isRevisionEstrategicaEvent(event)) {
+    return "/eventos/revision-estrategica";
+  }
   if (isEstrategiaFiscalEvent(event)) {
     // ?evento fija qué edición (online / presencial) abre la landing; sin él
     // la landing muestra la próxima por fecha.

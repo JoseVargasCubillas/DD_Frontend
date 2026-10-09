@@ -273,6 +273,8 @@ const DEDICATED_LANDING_PATHS = new Set([
   "/eventos/rockefeller",
   "/eventos/estrategia-rockefeller",
   "/eventos/4e-codigo-rockefeller",
+  "/eventos/revision-estrategica",
+  "/eventos/revision-estrategica-octubre-2026",
 ]);
 
 const hasRealEventLanding = (event?: EventCard | null) => {
@@ -634,7 +636,7 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         location: "CDMX",
         image: eventRevisionEstrategica,
         slug: "revision-estrategica-octubre-2026",
-        to: "/eventos/revision-estrategica-octubre-2026",
+        to: "/eventos/revision-estrategica",
         cta: "¡Estoy listo!",
         modality: "in-person",
       },
