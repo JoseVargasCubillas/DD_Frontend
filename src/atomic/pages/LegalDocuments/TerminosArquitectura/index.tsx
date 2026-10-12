@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { AcceptanceGate } from '../shared';
 import './styles.css';
 
 /**
@@ -488,6 +489,10 @@ export default function TerminosArquitectura() {
           </div>
         </div>
       </footer>
+      <AcceptanceGate
+        storageKey="dd-terms-arquitectura-accepted"
+        documentName="los Términos y Condiciones de los Servicios de Arquitectura Fiscal, Jurídica y Patrimonial"
+      />
     </div>
   );
 }

@@ -87,12 +87,19 @@ export type FaqCategory = {
   }[];
 };
 
+const ACCEPTED_EVENT = 'dd-legal-accepted';
+
 function useAccepted(storageKey?: string) {
   const [accepted, setAccepted] = useState(false);
 
   useEffect(() => {
     if (!storageKey) return;
     setAccepted(window.localStorage.getItem(storageKey) === 'true');
+    const onAccepted = (event: Event) => {
+      if ((event as CustomEvent<string>).detail === storageKey) setAccepted(true);
+    };
+    window.addEventListener(ACCEPTED_EVENT, onAccepted);
+    return () => window.removeEventListener(ACCEPTED_EVENT, onAccepted);
   }, [storageKey]);
 
   const accept = () => {
@@ -101,6 +108,96 @@ function useAccepted(storageKey?: string) {
   };
 
   return { accepted, accept };
+}
+
+/**
+ * Puerta de aceptación obligatoria. Mientras el usuario no haya aceptado el
+ * documento (persistido en localStorage bajo `storageKey`), muestra una barra
+ * fija no descartable sobre el contenido. El documento sigue siendo legible
+ * para que pueda revisarlo; "No acepto" lo saca de la página hacia `exitTo`.
+ */
+export function AcceptanceGate({
+  storageKey,
+  documentName,
+  exitTo = '/',
+}: {
+  storageKey: string;
+  documentName: string;
+  exitTo?: string;
+}) {
+  const [ready, setReady] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+
+  useEffect(() => {
+    setAccepted(window.localStorage.getItem(storageKey) === 'true');
+    setReady(true);
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!ready || accepted) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') event.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [ready, accepted]);
+
+  if (!ready || accepted) return null;
+
+  const accept = () => {
+    window.localStorage.setItem(storageKey, 'true');
+    window.dispatchEvent(new CustomEvent(ACCEPTED_EVENT, { detail: storageKey }));
+    setAccepted(true);
+  };
+
+  const reject = () => {
+    window.location.assign(exitTo);
+  };
+
+  return (
+    <div
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="acceptance-gate-title"
+      aria-describedby="acceptance-gate-desc"
+      className="fixed inset-x-0 bottom-0 z-[100] border-t-2 border-ink-900 bg-cream-100 shadow-[0_-18px_48px_rgba(20,16,10,0.22)]"
+    >
+      <div className="container-app flex flex-col gap-5 py-6 md:flex-row md:items-center md:justify-between md:py-7">
+        <div>
+          <p
+            id="acceptance-gate-title"
+            className="font-mono text-[10px] uppercase tracking-[0.28em] text-ink-500"
+          >
+            Aceptación requerida
+          </p>
+          <p
+            id="acceptance-gate-desc"
+            className="mt-2 max-w-[680px] text-[15px] leading-[1.65] text-ink-800"
+          >
+            Para continuar en esta página debes leer y aceptar {documentName}. Si no estás de
+            acuerdo, selecciona &ldquo;No acepto&rdquo; y te llevaremos fuera del documento.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={accept}
+            autoFocus
+            className="min-h-11 cursor-pointer border border-ink-900 bg-ink-900 px-6 text-[11px] font-bold uppercase tracking-[0.2em] text-white transition-colors hover:bg-white hover:text-ink-900 focus:outline-none focus:ring-2 focus:ring-ink-900 focus:ring-offset-2"
+          >
+            Aceptar
+          </button>
+          <button
+            type="button"
+            onClick={reject}
+            className="min-h-11 cursor-pointer border border-ink-900 px-6 text-[11px] font-bold uppercase tracking-[0.2em] text-ink-900 transition-colors hover:bg-ink-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-ink-900 focus:ring-offset-2"
+          >
+            No acepto
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function LegalHeader({

@@ -1,4 +1,5 @@
 import {
+  AcceptanceGate,
   AcceptancePanel,
   LegalBody,
   LegalHeader,
@@ -388,6 +389,10 @@ export default function TerminosContabilidadGratuita() {
       </div>
 
       <AcceptancePanel
+        storageKey="dd-terms-contabilidad-gratuita-accepted"
+        documentName="los Términos y Condiciones del Diagnóstico Contable y Fiscal Gratuito"
+      />
+      <AcceptanceGate
         storageKey="dd-terms-contabilidad-gratuita-accepted"
         documentName="los Términos y Condiciones del Diagnóstico Contable y Fiscal Gratuito"
       />

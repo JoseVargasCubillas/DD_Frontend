@@ -1,4 +1,5 @@
 import {
+  AcceptanceGate,
   AcceptancePanel,
   BankBlock,
   LegalClause,
@@ -289,6 +290,7 @@ export default function Terminos() {
       </div>
 
       <AcceptancePanel storageKey="dd-terms-accepted" documentName="los Términos y Condiciones" />
+      <AcceptanceGate storageKey="dd-terms-accepted" documentName="los Términos y Condiciones" />
     </main>
   );
 }
