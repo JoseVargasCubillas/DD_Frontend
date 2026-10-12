@@ -1,13 +1,82 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
+export type LegalBlock =
+  | { type: 'p'; text: string }
+  | { type: 'subtitle'; text: string }
+  | { type: 'list'; items: string[]; ordered?: boolean };
+
 export type LegalSection = {
   id: string;
   eyebrow?: string;
   title: string;
   body?: string[];
   bullets?: string[];
+  /** Bloques ordenados para secciones que intercalan párrafos y listas. */
+  blocks?: LegalBlock[];
 };
+
+/**
+ * Marca la página como noindex mientras está montada y ajusta el título del
+ * documento. Para landings legales privadas que solo se comparten por link.
+ */
+export function useNoIndex(title: string) {
+  useEffect(() => {
+    const robots = document.createElement('meta');
+    robots.name = 'robots';
+    robots.content = 'noindex, nofollow, noarchive';
+    document.head.appendChild(robots);
+
+    const prevTitle = document.title;
+    document.title = title;
+
+    return () => {
+      robots.remove();
+      document.title = prevTitle;
+    };
+  }, [title]);
+}
+
+function LegalBlocks({ blocks }: { blocks: LegalBlock[] }) {
+  return (
+    <>
+      {blocks.map((block, index) => {
+        if (block.type === 'subtitle') {
+          return (
+            <p
+              key={index}
+              className="mt-7 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500"
+            >
+              {block.text}
+            </p>
+          );
+        }
+        if (block.type === 'list') {
+          const Tag = block.ordered ? 'ol' : 'ul';
+          return (
+            <Tag
+              key={index}
+              className={`mt-5 grid gap-2 border-l border-ink-900/20 pl-5 ${
+                block.ordered ? 'list-decimal pl-9 marker:font-bold marker:text-ink-900' : ''
+              }`}
+            >
+              {block.items.map((item) => (
+                <li key={item} className="text-[14px] leading-[1.7] text-ink-700">
+                  {item}
+                </li>
+              ))}
+            </Tag>
+          );
+        }
+        return (
+          <p key={index} className="mt-5 text-[15px] leading-[1.8] text-ink-700">
+            {block.text}
+          </p>
+        );
+      })}
+    </>
+  );
+}
 
 export type FaqCategory = {
   id: string;
@@ -139,6 +208,7 @@ export function LegalBody({ sections }: { sections: LegalSection[] }) {
                   ))}
                 </ul>
               ) : null}
+              {section.blocks?.length ? <LegalBlocks blocks={section.blocks} /> : null}
             </div>
           </article>
         ))}

@@ -76,6 +76,12 @@ const Receipt = lazy(() => import("@pages/Receipt"));
 const ReceiptOrder = lazy(() => import("@pages/ReceiptOrder"));
 const Ticket = lazy(() => import("@pages/Ticket"));
 const TerminosArquitectura = lazy(() => import("@pages/LegalDocuments/TerminosArquitectura"));
+const AvisoPrivacidadContabilidadGratuita = lazy(
+  () => import("@pages/LegalDocuments/ContabilidadGratuitaDiazLara/AvisoPrivacidad"),
+);
+const TerminosContabilidadGratuita = lazy(
+  () => import("@pages/LegalDocuments/ContabilidadGratuitaDiazLara/TerminosCondiciones"),
+);
 export const router = createBrowserRouter([
   // Ruta legal privada — solo por link directo, no aparece en navbar, footer
   // ni sitemap. El componente inyecta <meta name="robots" content="noindex"> al
@@ -141,6 +147,16 @@ export const router = createBrowserRouter([
       { path: "/checkout", element: <Checkout /> },
       { path: "/terminos", element: <Terminos /> },
       { path: "/privacidad", element: <Privacidad /> },
+      // Landings legales privadas de Díaz Lara Contabilidad (servicios gratuitos).
+      // Solo por link directo: no se enlazan desde navbar/footer y van noindex.
+      {
+        path: "/legal/servicios-gratuitos-contabilidad-diaz-lara/aviso-de-privacidad",
+        element: <AvisoPrivacidadContabilidadGratuita />,
+      },
+      {
+        path: "/legal/servicios-gratuitos-contabilidad-diaz-lara/terminos-y-condiciones",
+        element: <TerminosContabilidadGratuita />,
+      },
       { path: "/faq", element: <Faq /> },
       { path: "/recibo/:id", element: <Receipt /> },
       { path: "/recibo/pedido/:id", element: <ReceiptOrder /> },
