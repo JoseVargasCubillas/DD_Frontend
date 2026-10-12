@@ -132,7 +132,7 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
       "Masterclass gratuita sobre la reducción de la jornada laboral y cómo prepararse para implementarla con éxito.",
     location: "YouTube",
     onlineUrl: "https://www.youtube.com/@YoSoyDiegoDiaz",
-    startDate: "2026-10-12T17:00:00-06:00",
+    startDate: "2026-10-19T17:00:00-06:00",
     capacity: 0,
     registeredCount: 0,
     status: "upcoming",

@@ -430,41 +430,55 @@ const getEventCardKey = (event: EventCard) =>
     ? calendarEventKey([event.title, event.titleSerif].filter(Boolean).join(" "), event.rawDate)
     : getEventCardSlug(event);
 
-// La card estática se pinta antes de que responda el API; si ambas son la misma
-// edición, se conserva la presentación curada (título partido, fecha legible,
-// flyer) y sólo se toman del API los datos funcionales. Así no hay "salto"
-// visual cuando llega la respuesta.
-const mergeEditionCards = (base: EventCard, dynamic: EventCard): EventCard => ({
-  ...dynamic,
-  eyebrow: base.eyebrow,
-  title: base.title,
-  titleSerif: base.titleSerif,
-  date: base.date,
-  image: dynamic.image || base.image,
-  description: dynamic.description || base.description,
-});
+// La card estática se pinta antes de que responda el API; cuando llega el
+// evento real (mismo slug o misma edición) manda el API en todo lo funcional
+// —fecha, sede, modalidad, acción— y sólo se conserva la presentación curada
+// (título partido, flyer). Si el admin cambió la fecha, la card se mueve.
+const mergeEditionCards = (base: EventCard, dynamic: EventCard): EventCard => {
+  const sameEdition = getEventCardKey(base) === getEventCardKey(dynamic);
+  return {
+    ...dynamic,
+    eyebrow: base.eyebrow,
+    title: base.title,
+    titleSerif: base.titleSerif,
+    date: sameEdition ? base.date : dynamic.date,
+    image: dynamic.image || base.image,
+    description: dynamic.description || base.description,
+  };
+};
 
 const mergeCalendarGroups = (
   baseGroups: Array<{ month: string; events: EventCard[] }>,
   dynamicGroups: Array<{ month: string; events: EventCard[] }>,
 ) => {
-  const byEdition = new Map<string, EventCard>();
+  const baseCards = baseGroups.flatMap((group) => group.events);
+  const baseBySlug = new Map<string, EventCard>();
+  const baseByEdition = new Map<string, EventCard>();
+  baseCards.forEach((event) => {
+    const slug = getEventCardSlug(event);
+    if (slug) baseBySlug.set(slug, event);
+    baseByEdition.set(getEventCardKey(event), event);
+  });
 
-  baseGroups
-    .flatMap((group) => group.events)
-    .forEach((event) => byEdition.set(getEventCardKey(event), event));
-
+  // Una card estática queda sustituida por el evento del API con el mismo
+  // slug (aunque haya cambiado de fecha) o con la misma edición.
+  const consumedBase = new Set<EventCard>();
+  const merged: EventCard[] = [];
   dynamicGroups
     .flatMap((group) => group.events)
     .forEach((event) => {
-      const key = getEventCardKey(event);
-      const base = byEdition.get(key);
-      byEdition.set(key, base ? mergeEditionCards(base, event) : event);
+      const base =
+        baseBySlug.get(getEventCardSlug(event)) ?? baseByEdition.get(getEventCardKey(event));
+      if (base) consumedBase.add(base);
+      merged.push(base ? mergeEditionCards(base, event) : event);
     });
+  const mergedKeys = new Set(merged.map(getEventCardKey));
+  baseCards.forEach((event) => {
+    if (consumedBase.has(event) || mergedKeys.has(getEventCardKey(event))) return;
+    merged.push(event);
+  });
 
-  const events = dedupeEstrategiaFiscalCards(
-    Array.from(byEdition.values()),
-  ).sort((a, b) => {
+  const events = dedupeEstrategiaFiscalCards(merged).sort((a, b) => {
     const first = a.rawDate ? new Date(a.rawDate).getTime() : Number.MAX_SAFE_INTEGER;
     const second = b.rawDate ? new Date(b.rawDate).getTime() : Number.MAX_SAFE_INTEGER;
     return first - second;
@@ -600,8 +614,8 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         description:
           "Masterclass gratuita sobre la reducción de la jornada laboral y cómo prepararse para implementarla con éxito.",
         price: "$0 MXN",
-        date: "12 Octubre 2026 · 17:00",
-        rawDate: "2026-10-12T17:00:00-06:00",
+        date: "19 Octubre 2026 · 17:00",
+        rawDate: "2026-10-19T17:00:00-06:00",
         location: "YouTube",
         image: event48a40Horas,
         slug: "de-48-a-40-horas-laborales",
