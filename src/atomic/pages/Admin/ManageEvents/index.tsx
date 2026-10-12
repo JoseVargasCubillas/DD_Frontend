@@ -25,6 +25,9 @@ import eventRockefellerAlt from "../../../../../assets/eventos/evento-rockefelle
 import eventMaestriaEscenica from "../../../../../assets/eventos/evento-maestria-escenica.png";
 import eventBeneficiosRegimen from "../../../../../assets/eventos/evento-beneficios-regimen-fiscal.png";
 import eventRevisionEstrategica from "../../../../../assets/eventos/evento-revision-estrategica-cdmx.png";
+import event48a40Horas from "../../../../assets/eventos/evento-48-a-40-horas.png";
+import eventTableroCeo from "../../../../assets/eventos/evento-tablero-del-ceo.png";
+import { getEventImage } from "@utils/eventImages";
 
 type EventForm = {
   id?: string;
@@ -142,7 +145,14 @@ const SEED_THUMBNAILS: Record<string, string> = {
   "holding-noviembre": eventHolding,
   "maestria-escenica": eventMaestriaEscenica,
   "taller-estrategia-fiscal-online-diciembre": eventTallerFiscal,
+  "de-48-a-40-horas-laborales": event48a40Horas,
+  "tablero-del-ceo-noviembre": eventTableroCeo,
 };
+
+// Flyer por slug exacto; si no hay, el mismo resolutor por palabras clave que
+// usa el sitio público (getEventImage).
+const resolveSeedThumbnail = (event: Pick<Event, "slug" | "title">): string =>
+  SEED_THUMBNAILS[event.slug] || getEventImage(event);
 
 const SEED_TYPE_BY_LABEL: Record<string, Event["type"]> = {
   Webinar: "webinar",
@@ -159,7 +169,7 @@ const SEEDED_CALENDAR_EVENTS: Event[] = FALLBACK_CALENDAR_EVENTS.map((event) => 
   slug: event.slug,
   shortDescription: event.shortDescription,
   description: event.description,
-  thumbnail: event.thumbnail || SEED_THUMBNAILS[event.slug] || "",
+  thumbnail: event.thumbnail || resolveSeedThumbnail(event),
   type: event.type ?? SEED_TYPE_BY_LABEL[getCalendarEventType(event)] ?? "seminar",
   modality: event.modality ?? "in-person",
   location: event.location,
@@ -408,8 +418,13 @@ export default function ManageEvents() {
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
   const deleteEventMutation = useDeleteEvent();
+  // Eventos reales sin imagen capturada heredan el flyer curado del calendario,
+  // igual que hace el sitio público, para no mostrarse como "pendientes".
   const apiEvents = useMemo(
-    () => (data?.data ?? []).filter((event) => !DEPRECATED_EVENT_SLUGS.has(event.slug)),
+    () =>
+      (data?.data ?? [])
+        .filter((event) => !DEPRECATED_EVENT_SLUGS.has(event.slug))
+        .map((event) => ({ ...event, thumbnail: event.thumbnail || resolveSeedThumbnail(event) })),
     [data?.data],
   );
   const [localEvents, setLocalEvents] = useState<Event[]>(loadStoredEvents);
