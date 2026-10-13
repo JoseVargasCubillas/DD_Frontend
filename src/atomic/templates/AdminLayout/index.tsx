@@ -31,6 +31,7 @@ const SALES_ITEMS = [
 
 const MARKETING_ITEMS = [
   { label: "Email campaigns", to: "/admin/email" },
+  { label: "Historial de emails", to: "/admin/email/historial" },
   { label: "WhatsApp broadcast", to: "/admin/whatsapp" },
 ] as const;
 
@@ -289,7 +290,7 @@ export default function AdminLayout() {
               <ul id="admin-marketing-menu" className="mt-1 space-y-0.5 pl-7">
                 {MARKETING_ITEMS.map((item) => (
                   <li key={item.label}>
-                    <NavLink to={item.to} className={({ isActive }) => subLinkClass(isActive)}>
+                    <NavLink to={item.to} end className={({ isActive }) => subLinkClass(isActive)}>
                       {item.label}
                     </NavLink>
                   </li>
