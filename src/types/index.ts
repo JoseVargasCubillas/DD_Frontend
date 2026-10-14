@@ -100,7 +100,7 @@ export interface Promotion {
   description: string;
   type: "percentage" | "fixed";
   value: number;
-  scope: "all" | "course" | "package" | "offer";
+  scope: "all" | "course" | "package" | "offer" | "event" | "book";
   targetId: string;
   expiresAt: string | null;
   maxUses: number;
@@ -283,6 +283,10 @@ export interface OrderItem {
   // qué edición se compró (no viajan al backend).
   eventDate?: string;
   eventFormat?: string;
+  // Id de la edición (evento del admin): permite que un código de descuento
+  // limitado a un evento aplique aunque el boleto salga del catálogo.
+  eventId?: string;
+  eventSlug?: string;
 }
 
 export interface ShippingAddress {

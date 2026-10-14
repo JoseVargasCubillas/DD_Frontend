@@ -3,9 +3,25 @@ import { usePromotions, useCreatePromotion, useDeletePromotion, useUpdatePromoti
 import { usePackages } from '@hooks/usePackages';
 import { useOffers } from '@hooks/useOffers';
 import { useCourses } from '@hooks/useCourses';
+import { useEvents } from '@hooks/useEvents';
+import { useBooks } from '@hooks/useBooks';
+import toast from 'react-hot-toast';
 import type { Promotion } from '@t/index';
 
-type Scope = 'all' | 'course' | 'package' | 'offer';
+type Scope = 'all' | 'course' | 'package' | 'offer' | 'event' | 'book';
+
+// Eventos y libros pueden dejar el objetivo vacío: aplica a todos los de ese tipo.
+const TARGET_OPTIONAL: Scope[] = ['all', 'event', 'book'];
+
+// Varias ediciones comparten título: se distinguen por fecha y sede.
+const eventLabel = (e: any) => {
+  const date = e.startDate ? new Date(e.startDate) : null;
+  const dateLabel =
+    date && !Number.isNaN(date.getTime())
+      ? date.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Mexico_City' })
+      : '';
+  return [e.title, dateLabel, e.location].filter(Boolean).join(' · ');
+};
 
 export default function ManagePromotions() {
   const { data: promotions = [], isLoading } = usePromotions();
@@ -13,6 +29,9 @@ export default function ManagePromotions() {
   const { data: offers = [] } = useOffers();
   const { data: coursesData } = useCourses({ includeAll: true, limit: 200 } as any);
   const courses = coursesData?.data ?? [];
+  const { data: eventsData } = useEvents({ limit: 200, status: "all" });
+  const events = eventsData?.data ?? [];
+  const { data: books = [] } = useBooks();
   const create = useCreatePromotion();
   const del = useDeletePromotion();
   const upd = useUpdatePromotion();
@@ -34,10 +53,21 @@ export default function ManagePromotions() {
         ? offers.map((o) => ({ id: o._id, label: o.title }))
         : form.scope === 'course'
           ? courses.map((c: any) => ({ id: String(c._id || c.id), label: c.title }))
-          : [];
+          : form.scope === 'event'
+            ? events.map((e: any) => ({ id: String(e._id || e.id), label: eventLabel(e) }))
+            : form.scope === 'book'
+              ? books.map((b: any) => ({ id: String(b._id || b.id), label: b.title }))
+              : [];
 
   const scopeLabel = (p: Promotion) => {
+    if (p.scope === 'event' && !p.targetId) return 'Todos los eventos';
+    if (p.scope === 'book' && !p.targetId) return 'Todos los libros';
     if (p.scope === 'all' || !p.targetId) return 'Todo';
+    if (p.scope === 'event') {
+      const event = events.find((x: any) => String(x._id || x.id) === p.targetId);
+      return `Evento: ${event ? eventLabel(event) : p.targetId}`;
+    }
+    if (p.scope === 'book') return `Libro: ${books.find((x: any) => String(x._id || x.id) === p.targetId)?.title ?? p.targetId}`;
     if (p.scope === 'package') return `Paquete: ${packages.find((x) => x._id === p.targetId)?.name ?? p.targetId}`;
     if (p.scope === 'offer') return `Oferta: ${offers.find((x) => x._id === p.targetId)?.title ?? p.targetId}`;
     if (p.scope === 'course') return `Curso: ${courses.find((x: any) => String(x._id || x.id) === p.targetId)?.title ?? p.targetId}`;
@@ -51,7 +81,7 @@ export default function ManagePromotions() {
         <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-ink-900 leading-none">Promociones</h1>
         <p className="text-sm text-ink-600 mt-3 max-w-2xl">
           Códigos de descuento aplicables al checkout. Pueden ser porcentaje o monto fijo, globales o
-          limitados a un <b>paquete</b>, <b>oferta</b> o <b>curso</b> específico.
+          limitados a un <b>paquete</b>, <b>oferta</b>, <b>curso</b>, <b>evento</b> o <b>libro</b>.
         </p>
       </header>
 
@@ -60,6 +90,10 @@ export default function ManagePromotions() {
         onSubmit={(e) => {
           e.preventDefault();
           if (!form.code.trim()) return;
+          if (!TARGET_OPTIONAL.includes(form.scope) && !form.targetId) {
+            toast.error('Selecciona el producto al que aplica el código');
+            return;
+          }
           create.mutate(
             {
               ...form,
@@ -135,6 +169,8 @@ export default function ManagePromotions() {
               <option value="package">Un paquete</option>
               <option value="offer">Una oferta</option>
               <option value="course">Un curso</option>
+              <option value="event">Eventos</option>
+              <option value="book">Libros</option>
             </select>
           </div>
           <div>
@@ -145,7 +181,7 @@ export default function ManagePromotions() {
               disabled={form.scope === 'all'}
               className="ink-input cursor-pointer disabled:opacity-50"
             >
-              <option value="">{form.scope === 'all' ? '—' : 'Selecciona…'}</option>
+              <option value="">{form.scope === 'all' ? '—' : TARGET_OPTIONAL.includes(form.scope) ? 'Todos' : 'Selecciona…'}</option>
               {targetOptions.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.label}

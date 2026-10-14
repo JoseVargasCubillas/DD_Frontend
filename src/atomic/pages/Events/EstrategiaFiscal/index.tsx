@@ -604,6 +604,8 @@ export default function EstrategiaFiscalLanding() {
       currency: 'MXN',
       paymentType: 'one_time',
       eventDate: currentEventDateLabel,
+      eventId: String(currentEvent.id ?? currentEvent._id ?? '') || undefined,
+      eventSlug: currentEvent.slug,
       eventFormat: ticket.withLocation
         ? formatEventFormatLabel('in-person', currentEventLocation)
         : formatEventFormatLabel('online', currentEventLocation),

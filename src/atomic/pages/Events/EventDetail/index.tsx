@@ -157,6 +157,7 @@ export default function EventDetail() {
       currency: 'MXN',
       paymentType: 'one_time',
       eventDate: formatEventDateLabel(event.startDate, event.endDate),
+      eventId: info.eventId,
       eventFormat: formatEventFormatLabel(event.modality, event.location),
     });
     navigate('/eventos/checkout');

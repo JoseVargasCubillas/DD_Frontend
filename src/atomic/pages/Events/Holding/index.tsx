@@ -195,6 +195,7 @@ export default function HoldingLanding() {
     addItem({
       ...HOLDING_CHECKOUT_ITEM,
       ...(editionDate && { eventDate: editionDate }),
+      ...(edition && { eventId: String(edition.id ?? edition._id ?? '') || undefined, eventSlug: edition.slug }),
       eventFormat: editionFormat || "Online · Zoom",
     });
     navigate("/eventos/checkout");

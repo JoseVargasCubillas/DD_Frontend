@@ -38,6 +38,8 @@ const checkoutRefs = (items: OrderItem[]) =>
     // Sólo texto de presentación (el precio lo fija el backend): fecha y formato de la edición.
     eventDate: item.eventDate,
     eventFormat: item.eventFormat,
+    eventId: item.eventId,
+    eventSlug: item.eventSlug,
   }));
 
 export const createPaymentIntent = (

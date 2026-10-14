@@ -105,6 +105,8 @@ export default function ProspeccionDigitalLanding() {
       quantity: 1,
       currency: 'MXN',
       paymentType: 'one_time',
+      eventId: edition ? String(edition.id ?? edition._id ?? '') || undefined : undefined,
+      eventSlug: edition?.slug,
       eventDate: edition ? formatEventDateLabel(edition.startDate, edition.endDate) : '4 y 5 de septiembre',
       eventFormat: edition ? formatEventFormatLabel(edition.modality, edition.location) : 'Presencial · CDMX',
     });
