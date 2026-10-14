@@ -314,6 +314,9 @@ export interface Order {
   tax?: number;
   shippingCost?: number;
   shipping?: ShippingAddress | null;
+  discount?: number;
+  promotionCode?: string;
+  promotionId?: string;
   total: number;
   currency: string;
   status: OrderStatus;

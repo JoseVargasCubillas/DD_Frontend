@@ -39,6 +39,8 @@ interface SalesTransaction {
   kind: "order" | "subscription";
   // Solo las ordenes puras (no respaldo de una suscripcion) se pueden borrar.
   deletable?: boolean;
+  discount?: number;
+  promotionCode?: string;
 }
 
 interface SubscriptionRow {
@@ -931,6 +933,11 @@ function SimpleTransactionsTable({
             >
               <td className="py-5 font-semibold">
                 {formatMoney(item.amount, item.currency)}
+                {item.promotionCode && (
+                  <span className="mt-1 block font-mono text-[10px] font-normal tracking-[0.12em] text-ink-400">
+                    {item.promotionCode} · −{formatMoney(item.discount ?? 0, item.currency)}
+                  </span>
+                )}
               </td>
               <td className="py-5 text-ink-700">{item.title}</td>
               {detailed && (
@@ -1281,6 +1288,8 @@ function ordersToTransactions(
         subscriptionId: order.subscriptionId,
         kind: "order" as const,
         deletable: true,
+        discount: Number(order.discount || 0),
+        promotionCode: order.promotionCode || undefined,
       };
     });
 }

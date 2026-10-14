@@ -7,6 +7,8 @@ import { createPaymentIntent } from '@api/payments.api';
 import { quoteShipping, type ShippingRateOption } from '@api/shipping.api';
 import { formatCurrency } from '@utils/formatters';
 import { hasStripePublishableKey, stripeMissingKeyMessage, stripePromise } from '@utils/stripe';
+import { usePromoCode } from '@hooks/usePromoCode';
+import PromoCodeField, { DiscountRow, TotalAmount } from '@molecules/PromoCodeField';
 import Spinner from '@atoms/Spinner';
 import NotFound from '@pages/NotFound';
 import BookStack from '@molecules/BookStack';
@@ -172,6 +174,13 @@ export default function BookCheckout() {
   const needsGuestContact = !isAuthenticated;
   const canSubmitShipping = !needsGuestContact || /\S+@\S+\.\S+/.test(guestEmail.trim());
 
+  // Se construye antes de los returns tempranos para que el hook de código de
+  // descuento se ejecute en todos los renders.
+  const bookItems: OrderItem[] = book
+    ? [{ type: 'product', refId: book._id ?? book.id ?? book.slug, title: book.title, price: book.price, quantity }]
+    : [];
+  const promo = usePromoCode(bookItems);
+
   if (isLoading) {
     return (
       <div className="flex justify-center bg-cream-50 py-32">
@@ -192,9 +201,7 @@ export default function BookCheckout() {
   const shippingCost = 0;
   const tax = 0;
   const total = subtotal + shippingCost + tax;
-  const bookItems: OrderItem[] = [
-    { type: 'product', refId: book._id ?? book.id ?? book.slug, title: book.title, price: book.price, quantity },
-  ];
+  const payable = Math.max(0, total - promo.discount);
 
   const updateShipping = (name: keyof ShippingAddress, value: string) =>
     setShipping((current) => ({ ...current, [name]: value }));
@@ -223,10 +230,11 @@ export default function BookCheckout() {
         shipping,
         needsGuestContact ? { name: shipping.fullName.trim(), email: guestEmail.trim(), phone: shipping.phone.trim() } : undefined,
         selectedRate ? { carrier: selectedRate.carrier, service: selectedRate.service } : undefined,
+        promo.applied?.code,
       );
       setClientSecret(result.clientSecret ?? '');
       setOrderId(result.orderId ?? '');
-      setFinalTotal(result.total ?? total);
+      setFinalTotal(result.total ?? payable);
     } catch (error) {
       setInitError((error as Error).message || 'No se pudo iniciar el pago. Intenta de nuevo.');
     } finally {
@@ -301,7 +309,11 @@ export default function BookCheckout() {
                   <div className="flex items-center justify-between py-5">
                     <span className="text-[11px] uppercase tracking-[0.18em] text-ink-300">Método de pago</span>
                     <span className="font-serif text-[15px]">
-                      {clientSecret.startsWith('demo_') ? 'Modo local (demo)' : 'Tarjeta bancaria · Stripe'}
+                      {clientSecret.startsWith('free_')
+                        ? `Cortesía · código ${promo.applied?.code ?? ''}`.trim()
+                        : clientSecret.startsWith('demo_')
+                          ? 'Modo local (demo)'
+                          : 'Tarjeta bancaria · Stripe'}
                     </span>
                   </div>
                 </div>
@@ -449,6 +461,7 @@ export default function BookCheckout() {
                 </div>
               </div>
 
+              <PromoCodeField promo={promo} locked={Boolean(clientSecret)} />
               <div className="mt-2 space-y-3 border-t border-cream-400 pt-6">
                 <div className="flex items-baseline justify-between text-[13px] text-ink-500">
                   <span>Subtotal</span>
@@ -462,9 +475,10 @@ export default function BookCheckout() {
                   <span>IVA (16%)</span>
                   <span className="font-serif">{formatCurrency(tax)}</span>
                 </div>
+                <DiscountRow promo={promo} />
                 <div className="flex items-baseline justify-between border-t border-ink-900/25 pt-4">
                   <span className="font-serif text-[16px]">Total</span>
-                  <span className="font-serif text-[34px]">{formatCurrency(total)}</span>
+                  <TotalAmount total={payable} original={total} />
                 </div>
               </div>
               <p className="mt-6 border-t border-cream-400 pt-5 text-[12px] leading-[1.6] text-ink-400">
@@ -641,29 +655,31 @@ export default function BookCheckout() {
                         <span className="text-[11px] font-bold uppercase tracking-[0.18em]">
                           {loading ? 'Cargando…' : 'Continuar al pago →'}
                         </span>
-                        <span className="font-serif text-[15px] italic">{formatCurrency(total)}</span>
+                        <span className="font-serif text-[15px] italic">{formatCurrency(payable)}</span>
                       </button>
                     </div>
                   ) : !hasStripePublishableKey ? (
                     <div className="mt-6 border border-red-700 bg-red-950/40 px-4 py-3 text-[13px] text-red-300">
                       {stripeMissingKeyMessage}
                     </div>
-                  ) : clientSecret.startsWith('demo_') ? (
+                  ) : clientSecret.startsWith('demo_') || clientSecret.startsWith('free_') ? (
                     <div className="mt-6">
                       <div className="border border-white/15 bg-white/5 px-4 py-3 text-[13px] text-white/70">
-                        Modo local activo: se confirmará tu pedido sin contactar a Stripe.
+                        {clientSecret.startsWith('free_')
+                          ? `Tu código ${promo.applied?.code ?? ''} cubre el total del pedido. No se realizará ningún cargo.`
+                          : 'Modo local activo: se confirmará tu pedido sin contactar a Stripe.'}
                       </div>
                       <button
                         onClick={() => setSuccess(true)}
                         className="mt-6 flex w-full items-center justify-between bg-cream-50 px-7 py-5 text-ink-900"
                       >
                         <span className="text-[11px] font-bold uppercase tracking-[0.18em]">Comprar libro ahora →</span>
-                        <span className="font-serif text-[15px] italic">{formatCurrency(finalTotal || total)}</span>
+                        <span className="font-serif text-[15px] italic">{formatCurrency(finalTotal || payable)}</span>
                       </button>
                     </div>
                   ) : (
                     <Elements stripe={stripePromise} options={elementsOptions}>
-                      <BookPaymentForm total={finalTotal || total} onSuccess={() => setSuccess(true)} />
+                      <BookPaymentForm total={finalTotal || payable} onSuccess={() => setSuccess(true)} />
                     </Elements>
                   )}
 

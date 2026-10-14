@@ -5,7 +5,12 @@ import { useCartStore } from '@store/cartStore';
 import { confirmPaymentIntent, createPaymentIntent } from '@api/payments.api';
 import { formatCurrency } from '@utils/formatters';
 import { hasStripePublishableKey, stripeMissingKeyMessage, stripePromise } from '@utils/stripe';
+import { usePromoCode } from '@hooks/usePromoCode';
+import PromoCodeField, { DiscountRow, TotalAmount } from '@molecules/PromoCodeField';
 import type { OrderItem } from '@t/index';
+
+// Pedidos de cortesía (100% de descuento) o modo local se confirman sin Stripe.
+const isDirectConfirm = (secret: string) => secret.startsWith('demo_') || secret.startsWith('free_');
 
 interface PaymentFormProps {
   total: number;
@@ -69,12 +74,12 @@ function ReceiptConfirmation({
   items,
   total,
   orderId,
-  isDemo,
+  paymentLabel,
 }: {
   items: OrderItem[];
   total: number;
   orderId: string;
-  isDemo: boolean;
+  paymentLabel: string;
 }) {
   return (
     <div className="bg-cream-50 text-ink-900">
@@ -146,7 +151,7 @@ function ReceiptConfirmation({
               )}
               <div className="flex items-center justify-between py-5">
                 <span className="text-[11px] uppercase tracking-[0.18em] text-ink-300">Método de pago</span>
-                <span className="font-serif text-[15px]">{isDemo ? 'Modo local (demo)' : 'Tarjeta bancaria · Stripe'}</span>
+                <span className="font-serif text-[15px]">{paymentLabel}</span>
               </div>
             </div>
             <div className="flex items-baseline justify-between border-t border-ink-900/20 pt-6">
@@ -183,6 +188,9 @@ export default function EventCheckout() {
   const [orderTotal, setOrderTotal] = useState(0);
   const [confirmedItems, setConfirmedItems] = useState<OrderItem[]>([]);
 
+  const promo = usePromoCode(items);
+  const payable = Math.max(0, total() - promo.discount);
+
   const canSubmitContact =
     name.trim().length >= 2 && /\S+@\S+\.\S+/.test(email.trim()) && phone.trim().length >= 10;
 
@@ -191,14 +199,16 @@ export default function EventCheckout() {
     setInitError('');
     setLoading(true);
     try {
-      const result = await createPaymentIntent(items, undefined, {
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-      });
+      const result = await createPaymentIntent(
+        items,
+        undefined,
+        { name: name.trim(), email: email.trim(), phone: phone.trim() },
+        undefined,
+        promo.applied?.code,
+      );
       setClientSecret(result.clientSecret ?? '');
       setOrderId(result.orderId ?? '');
-      setOrderTotal(result.total ?? total());
+      setOrderTotal(result.total ?? payable);
     } catch (error) {
       setInitError((error as Error).message || 'No se pudo iniciar el pago. Intenta de nuevo.');
     } finally {
@@ -209,7 +219,7 @@ export default function EventCheckout() {
   const handleSuccess = () => {
     // Confirma la orden sin depender sólo del webhook de Stripe (que no llega en
     // local sin `stripe listen`): el backend verifica el pago con Stripe y manda el recibo.
-    if (clientSecret && !clientSecret.startsWith('demo_')) {
+    if (clientSecret && !isDirectConfirm(clientSecret)) {
       confirmPaymentIntent(clientSecret.split('_secret_')[0]).catch(() => undefined);
     }
     setConfirmedItems(items);
@@ -218,12 +228,17 @@ export default function EventCheckout() {
   };
 
   if (success) {
+    const paymentLabel = clientSecret.startsWith('free_')
+      ? `Cortesía · código ${promo.applied?.code ?? ''}`.trim()
+      : clientSecret.startsWith('demo_')
+        ? 'Modo local (demo)'
+        : 'Tarjeta bancaria · Stripe';
     return (
       <ReceiptConfirmation
         items={confirmedItems}
         total={orderTotal}
         orderId={orderId}
-        isDemo={clientSecret.startsWith('demo_')}
+        paymentLabel={paymentLabel}
       />
     );
   }
@@ -324,6 +339,7 @@ export default function EventCheckout() {
                   </div>
                 ))}
               </div>
+              <PromoCodeField promo={promo} locked={Boolean(clientSecret)} />
               <div className="mt-2 space-y-3 border-t border-cream-400 pt-6">
                 <div className="flex items-baseline justify-between text-[13px] text-ink-500">
                   <span>Subtotal</span>
@@ -333,9 +349,10 @@ export default function EventCheckout() {
                   <span>IVA (16%)</span>
                   <span className="font-serif">{formatCurrency(tax)}</span>
                 </div>
+                <DiscountRow promo={promo} />
                 <div className="flex items-baseline justify-between border-t border-ink-900/25 pt-4">
                   <span className="font-serif text-[16px]">Total</span>
-                  <span className="font-serif text-[34px]">{formatCurrency(total())}</span>
+                  <TotalAmount total={payable} original={total()} />
                 </div>
               </div>
             </div>
@@ -404,22 +421,24 @@ export default function EventCheckout() {
                     <div className="mt-6 border border-red-700 bg-red-950/40 px-4 py-3 text-[13px] text-red-300">
                       {stripeMissingKeyMessage}
                     </div>
-                  ) : clientSecret.startsWith('demo_') ? (
+                  ) : isDirectConfirm(clientSecret) ? (
                 <div className="mt-8">
                   <div className="border border-white/15 bg-white/5 px-4 py-3 text-[13px] text-white/70">
-                    Modo local activo: se confirmará la compra sin contactar a Stripe.
+                    {clientSecret.startsWith('free_')
+                      ? `Tu código ${promo.applied?.code ?? ''} cubre el total del pedido. No se realizará ningún cargo.`
+                      : 'Modo local activo: se confirmará la compra sin contactar a Stripe.'}
                   </div>
                   <button
                     onClick={handleSuccess}
                     className="mt-6 flex w-full items-center justify-between bg-cream-50 px-7 py-5 text-ink-900"
                   >
                     <span className="text-[11px] font-bold uppercase tracking-[0.18em]">Confirmar compra →</span>
-                    <span className="font-serif text-[15px] italic">{formatCurrency(total())}</span>
+                    <span className="font-serif text-[15px] italic">{formatCurrency(orderTotal || payable)}</span>
                   </button>
                 </div>
               ) : (
                 <Elements stripe={stripePromise} options={elementsOptions}>
-                  <PaymentForm total={total()} onSuccess={handleSuccess} />
+                  <PaymentForm total={orderTotal || payable} onSuccess={handleSuccess} />
                 </Elements>
               )}
             </div>

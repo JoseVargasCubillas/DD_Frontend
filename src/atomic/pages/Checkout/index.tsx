@@ -6,7 +6,12 @@ import { useAuthStore } from '@store/authStore';
 import { createPaymentIntent } from '@api/payments.api';
 import { formatCurrency, formatDate } from '@utils/formatters';
 import { hasStripePublishableKey, stripeMissingKeyMessage, stripePromise } from '@utils/stripe';
+import { usePromoCode } from '@hooks/usePromoCode';
+import PromoCodeField, { DiscountRow, TotalAmount } from '@molecules/PromoCodeField';
 import type { OrderItem } from '@t/index';
+
+// Pedidos de cortesía (100% de descuento) o modo local se confirman sin Stripe.
+const isDirectConfirm = (secret: string) => secret.startsWith('demo_') || secret.startsWith('free_');
 
 type CheckoutMode = 'academia' | 'one_time';
 
@@ -206,6 +211,8 @@ export default function Checkout() {
   const [contactPhone, setContactPhone] = useState('');
 
   const mode = detectMode(items);
+  const promo = usePromoCode(items);
+  const payable = Math.max(0, total() - promo.discount);
   const needsGuestContact = mode === 'academia' && !isAuthenticated;
   const canSubmitContact =
     !needsGuestContact ||
@@ -219,9 +226,9 @@ export default function Checkout() {
       const customer = needsGuestContact
         ? { name: contactName.trim(), email: contactEmail.trim(), phone: contactPhone.trim() }
         : undefined;
-      const result = await createPaymentIntent(items, undefined, customer);
+      const result = await createPaymentIntent(items, undefined, customer, undefined, promo.applied?.code);
       setClientSecret(result.clientSecret ?? '');
-      setOrder({ mode, items, total: result.total ?? total(), orderId: result.orderId ?? '' });
+      setOrder({ mode, items, total: result.total ?? payable, orderId: result.orderId ?? '' });
     } catch (error) {
       setInitError((error as Error).message || 'No se pudo iniciar el pago. Intenta de nuevo.');
     } finally {
@@ -230,13 +237,17 @@ export default function Checkout() {
   };
 
   const handleSuccess = () => {
-    setOrder((current) => current ?? { mode, items, total: total(), orderId: '' });
+    setOrder((current) => current ?? { mode, items, total: payable, orderId: '' });
     clear();
     setSuccess(true);
   };
 
   if (success && order) {
-    const paymentLabel = clientSecret.startsWith('demo_') ? 'Modo local (demo)' : 'Tarjeta bancaria · Stripe';
+    const paymentLabel = clientSecret.startsWith('free_')
+      ? `Cortesía · código ${promo.applied?.code ?? ''}`.trim()
+      : clientSecret.startsWith('demo_')
+        ? 'Modo local (demo)'
+        : 'Tarjeta bancaria · Stripe';
     return <OrderConfirmation order={order} paymentLabel={paymentLabel} />;
   }
 
@@ -331,6 +342,7 @@ export default function Checkout() {
                   </div>
                 ))}
               </div>
+              <PromoCodeField promo={promo} locked={Boolean(clientSecret)} />
               <div className="mt-2 space-y-3 border-t border-cream-400 pt-6">
                 <div className="flex items-baseline justify-between text-[13px] text-ink-500">
                   <span>Subtotal</span>
@@ -340,9 +352,10 @@ export default function Checkout() {
                   <span>IVA (16%)</span>
                   <span className="font-serif">{formatCurrency(tax)}</span>
                 </div>
+                <DiscountRow promo={promo} />
                 <div className="flex items-baseline justify-between border-t border-ink-900/25 pt-4">
                   <span className="font-serif text-[16px]">Total {mode === 'academia' ? 'del acceso' : ''}</span>
-                  <span className="font-serif text-[34px]">{formatCurrency(total())}</span>
+                  <TotalAmount total={payable} original={total()} />
                 </div>
               </div>
               {mode === 'academia' && (
@@ -419,10 +432,12 @@ export default function Checkout() {
                 <div className="mt-8 border border-red-700 bg-red-950/40 px-4 py-3 text-[13px] text-red-300">
                   {stripeMissingKeyMessage}
                 </div>
-              ) : clientSecret.startsWith('demo_') ? (
+              ) : isDirectConfirm(clientSecret) ? (
                 <div className="mt-8">
                   <div className="border border-white/15 bg-white/5 px-4 py-3 text-[13px] text-white/70">
-                    Modo local activo: se confirmará el acceso sin contactar a Stripe.
+                    {clientSecret.startsWith('free_')
+                      ? `Tu código ${promo.applied?.code ?? ''} cubre el total del pedido. No se realizará ningún cargo.`
+                      : 'Modo local activo: se confirmará el acceso sin contactar a Stripe.'}
                   </div>
                   <button
                     onClick={handleSuccess}
@@ -431,12 +446,12 @@ export default function Checkout() {
                     <span className="text-[11px] font-bold uppercase tracking-[0.18em]">
                       {mode === 'academia' ? 'Activar acceso →' : 'Confirmar compra →'}
                     </span>
-                    <span className="font-serif text-[15px] italic">{formatCurrency(total())}</span>
+                    <span className="font-serif text-[15px] italic">{formatCurrency(order?.total ?? payable)}</span>
                   </button>
                 </div>
               ) : (
                 <Elements stripe={stripePromise} options={elementsOptions}>
-                  <PaymentForm mode={mode} total={total()} onSuccess={handleSuccess} />
+                  <PaymentForm mode={mode} total={order?.total ?? payable} onSuccess={handleSuccess} />
                 </Elements>
               )}
             </div>

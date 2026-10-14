@@ -1,13 +1,31 @@
 import { client } from './client';
 import type { Order, OrderItem, ShippingAddress, ApiResponse } from '@t/index';
 
+export interface AppliedPromotion {
+  promotionId: string;
+  code: string;
+  description: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  discount: number;
+}
+
 interface PaymentIntentResult {
   clientSecret: string;
   orderId: string;
   subtotal: number;
   tax: number;
   shippingCost: number;
+  discount: number;
   total: number;
+  promotion: AppliedPromotion | null;
+}
+
+export interface OrderQuote {
+  subtotal: number;
+  discount: number;
+  total: number;
+  promotion: AppliedPromotion | null;
 }
 
 const checkoutRefs = (items: OrderItem[]) =>
@@ -27,6 +45,7 @@ export const createPaymentIntent = (
   shipping?: ShippingAddress,
   customer?: { name: string; email: string; phone: string },
   shippingSelection?: { carrier: string; service: string },
+  promoCode?: string,
 ) =>
   client
     .post<ApiResponse<PaymentIntentResult>>('/payments/intent', {
@@ -34,7 +53,15 @@ export const createPaymentIntent = (
       shipping,
       customer,
       shippingSelection,
+      promoCode: promoCode || undefined,
     })
+    .then((r) => r.data);
+
+// Cotiza el pedido con precios del catálogo del backend y, si se manda un
+// código, valida que aplique y devuelve el descuento resultante.
+export const quoteOrder = (items: OrderItem[], promoCode?: string): Promise<OrderQuote> =>
+  client
+    .post<ApiResponse<OrderQuote>>('/payments/quote', { items: checkoutRefs(items), promoCode: promoCode || undefined })
     .then((r) => r.data);
 
 // Avisa al backend que Stripe ya cobro; el backend lo verifica contra Stripe.
