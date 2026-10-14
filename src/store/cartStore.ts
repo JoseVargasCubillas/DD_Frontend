@@ -25,6 +25,21 @@ export const useCartStore = create<CartState>()(
       clear: () => set({ items: [] }),
       total: () => get().items.reduce((sum, i) => sum + i.price * (i.quantity ?? 1), 0),
     }),
-    { name: 'dd-cart' }
+    {
+      name: 'dd-cart',
+      version: 1,
+      // v1: los boletos de evento guardan la edición (eventId/eventSlug) para
+      // validar códigos de descuento. Los guardados antes no la traen: se quitan
+      // una sola vez y la persona vuelve a elegir su boleto desde la landing.
+      migrate: (persisted, version) => {
+        const state = persisted as { items?: CartItem[] } | undefined;
+        if (version < 1 && state?.items) {
+          state.items = state.items.filter(
+            (item) => item.type !== 'event' || item.eventId || item.eventSlug,
+          );
+        }
+        return state as CartState;
+      },
+    }
   )
 );
