@@ -422,21 +422,13 @@ export const getNextEstrategiaFiscalEvent = (
 
 export const VENUE_TO_BE_CONFIRMED = "Sede por confirmar";
 
-// Sólo se conoce la sede de la próxima edición presencial de Estrategia
-// Fiscal; las presenciales posteriores todavía no tienen sede definida, así
-// que no se debe mostrar la ciudad que traigan por defecto.
+// La sede se muestra en cuanto el evento tiene "Lugar" capturado en el admin;
+// sólo si viene vacía aparece "Sede por confirmar".
 export const hasConfirmedVenue = (
-  event: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl" | "modality" | "startDate" | "status">,
-  events: CalendarEventSummary[],
-  now = Date.now(),
-) => {
-  if (event.modality === "online" || !isEstrategiaFiscalEvent(event)) return true;
-  const nextInPerson = getNextUpcomingCalendarEvent(
-    events.filter((item) => isEstrategiaFiscalEvent(item) && item.modality !== "online"),
-    now,
-  );
-  return nextInPerson?.slug === event.slug;
-};
+  event: Pick<CalendarEventSummary, "location" | "modality">,
+  _events?: CalendarEventSummary[],
+  _now = Date.now(),
+) => event.modality === "online" || Boolean((event.location || "").trim());
 
 export const ONLINE_PLATFORM_LABEL = "Zoom";
 

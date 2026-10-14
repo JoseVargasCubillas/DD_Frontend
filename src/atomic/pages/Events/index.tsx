@@ -359,10 +359,6 @@ const HOLDING_PATH = "/eventos/holding";
 const applyEventSeriesRules = (
   groups: Array<{ month: string; events: EventCard[] }>,
 ) => {
-  const nextInPersonSlug = groups
-    .flatMap((group) => group.events)
-    .find((event) => isEstrategiaFiscalCard(event) && !isOnlineCard(event))?.slug;
-
   return groups.map((group) => ({
     ...group,
     events: group.events.map((event) => {
@@ -373,7 +369,7 @@ const applyEventSeriesRules = (
         return { ...event, to: `${HOLDING_PATH}?evento=${encodeURIComponent(slug)}` };
       }
       if (!isEstrategiaFiscalCard(event)) return event;
-      const hiddenVenue = !isOnlineCard(event) && slug !== nextInPersonSlug;
+      const hiddenVenue = !isOnlineCard(event) && !event.location.trim();
       return {
         ...event,
         to: `${ESTRATEGIA_FISCAL_PATH}?evento=${encodeURIComponent(slug)}`,

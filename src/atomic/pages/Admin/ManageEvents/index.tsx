@@ -1037,7 +1037,7 @@ const selectedIsNew = selectedId === "new";
                     ? "Modalidad Online: la landing mostrará solo el ticket Online."
                     : form.modality === "hybrid"
                       ? "Modalidad Híbrido: la landing mostrará Online, General y VIP."
-                      : "Modalidad Presencial: la landing mostrará General y VIP. La sede se publica solo si es la próxima presencial; si no, aparece como “Sede por confirmar”."}
+                      : "Modalidad Presencial: la landing mostrará General y VIP. La sede es el campo Lugar; si lo dejas vacío aparece como “Sede por confirmar”."}
                 </>
               ) : (
                 <>
