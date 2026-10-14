@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import * as emailApi from '@api/email.api';
 import { buildPreviewDocument } from '@utils/emailPreview';
+import { CONTACTS_TEMPLATE_CSV, contactsToText, parseContacts, readTextFile } from '@utils/contactsFile';
 import type { BroadcastPayload, BroadcastResult, ContactPreview } from '@api/email.api';
 
 // ── Tipos ─────────────────────────────────────────────────────
@@ -39,7 +40,9 @@ const SEGMENT_OPTIONS: SegmentOption[] = [
 const pct = (rate: number) => `${(rate * 100).toFixed(1)}%`;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MAX_CUSTOM = 500;
+// Sin tope de negocio en los destinatarios personalizados. Este máximo es solo técnico:
+// la petición al servidor admite ~10 MB, lo que alcanza para unos 100,000 contactos.
+const MAX_CUSTOM_PAYLOAD = 100_000;
 // Debe coincidir con la frase y el umbral que valida el servidor.
 const MASS_PHRASE = 'ENVIAR A TODOS';
 const MASS_THRESHOLD = 1000;
@@ -131,6 +134,10 @@ export default function ManageEmail() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [customText, setCustomText] = useState('');
+  const [importSummary, setImportSummary] = useState<string | null>(null);
+  // Última importación: los correos que añadió, para poder deshacerla sin tocar el resto de la lista.
+  const [lastImport, setLastImport] = useState<{ fileName: string; emails: string[] } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [testToText, setTestToText] = useState('');
   // Destino del envío: tu base de datos web, o una audiencia que ya vive en Mailchimp.
   const [source, setSource] = useState<'web' | 'mailchimp'>('web');
@@ -241,7 +248,8 @@ export default function ManageEmail() {
   });
 
   const selectedSegmentOption = SEGMENT_OPTIONS.find((s) => s.id === segment)!;
-  const customParsed = parseEmails(customText);
+  // Contactos pegados o importados (correo + nombre). Memoizado: puede tener miles de líneas.
+  const customParsed = useMemo(() => parseContacts(customText), [customText]);
   const testParsed = parseEmails(testToText);
   const webRecipientCount =
     segment === 'custom'
@@ -279,14 +287,14 @@ export default function ManageEmail() {
   const needsPhrase =
     source === 'mailchimp'
       ? audienceSegmentId === null || (mailchimpCount ?? 0) > MASS_THRESHOLD
-      : segment === 'all';
+      : segment === 'all' || (segment === 'custom' && customParsed.valid.length > MASS_THRESHOLD);
   const phraseOk = !needsPhrase || confirmPhrase.trim() === MASS_PHRASE;
 
   const customOk =
     source !== 'web' ||
     segment !== 'custom' ||
     (customParsed.valid.length > 0 &&
-      customParsed.valid.length <= MAX_CUSTOM &&
+      customParsed.valid.length <= MAX_CUSTOM_PAYLOAD &&
       customParsed.invalid.length === 0);
   const destinationOk = source === 'web' || (Boolean(audienceId) && (mailchimpCount ?? 0) > 0);
   const testOk = testParsed.invalid.length === 0 && testParsed.valid.length <= MAX_TEST;
@@ -297,12 +305,70 @@ export default function ManageEmail() {
     if (!id) return;
     try {
       const contacts = await emailApi.getSegmentContacts(id);
-      const merged = parseEmails(`${customText}\n${contacts.map((c) => c.email).join('\n')}`).valid;
-      setCustomText(merged.join('\n'));
+      const merged = parseContacts(`${customText}\n${contactsToText(contacts)}`);
+      setCustomText(contactsToText(merged.valid));
       toast.success(`${contacts.length} contactos cargados`);
     } catch (err) {
       toast.error((err as Error).message || 'No se pudo cargar el segmento');
     }
+  };
+
+  // Importa un CSV/TSV/TXT: extrae correo y nombre y los suma a la lista (sin repetidos).
+  const importContactsFile = async (file: File) => {
+    try {
+      const parsed = parseContacts(await readTextFile(file));
+      if (parsed.valid.length === 0) {
+        setImportSummary(`${file.name}: no encontré correos válidos. Revisa el formato indicado arriba.`);
+        toast.error('No encontré correos válidos en el archivo');
+        return;
+      }
+      const alreadyInList = new Set(customParsed.valid.map((c) => c.email));
+      const merged = parseContacts(`${customText}\n${contactsToText(parsed.valid)}`);
+      setCustomText(contactsToText(merged.valid));
+      setLastImport({
+        fileName: file.name,
+        emails: parsed.valid.filter((c) => !alreadyInList.has(c.email)).map((c) => c.email),
+      });
+
+      const notes = [
+        `${parsed.valid.length.toLocaleString('es-MX')} contactos (${parsed.withName.toLocaleString('es-MX')} con nombre)`,
+        parsed.duplicates > 0 ? `${parsed.duplicates} repetidos ignorados` : '',
+        parsed.invalid.length > 0
+          ? `${parsed.invalid.length} filas sin correo válido omitidas (${parsed.invalid.slice(0, 3).join(', ')}${parsed.invalid.length > 3 ? '…' : ''})`
+          : '',
+      ].filter(Boolean);
+      setImportSummary(`${file.name}: ${notes.join(' · ')}`);
+      toast.success(`${parsed.valid.length.toLocaleString('es-MX')} contactos importados`);
+    } catch (err) {
+      toast.error((err as Error).message || 'No se pudo leer el archivo');
+    }
+  };
+
+  // Deshace la última importación: quita los contactos que añadió ese archivo y deja los demás.
+  const removeLastImport = () => {
+    if (!lastImport) return;
+    const toDrop = new Set(lastImport.emails);
+    setCustomText(contactsToText(customParsed.valid.filter((c) => !toDrop.has(c.email))));
+    toast.success(`Importación de ${lastImport.fileName} quitada`);
+    setLastImport(null);
+    setImportSummary(null);
+  };
+
+  const clearCustomList = () => {
+    setCustomText('');
+    setLastImport(null);
+    setImportSummary(null);
+  };
+
+  const downloadContactsTemplate = () => {
+    // El BOM hace que Excel abra los acentos correctamente.
+    const blob = new Blob([String.fromCharCode(0xfeff), CONTACTS_TEMPLATE_CSV], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'plantilla-contactos.csv';
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const basePayload = (): BroadcastPayload =>
@@ -322,7 +388,7 @@ export default function ManageEmail() {
           segment,
           segmentLabel: selectedSegmentOption.label,
           source: 'web',
-          ...(segment === 'custom' ? { emails: customParsed.valid } : {}),
+          ...(segment === 'custom' ? { recipients: customParsed.valid } : {}),
         };
 
   // ── Helpers de formato en textarea ─────────────────────────
@@ -524,27 +590,121 @@ export default function ManageEmail() {
                 )}
               </div>
               {source === 'web' && segment === 'custom' && (
-                <div className="mt-3 space-y-2">
+                <div className="mt-3 space-y-3">
+                  {/* Cómo preparar el archivo */}
+                  <div className="rounded border border-cream-300 bg-white p-4 text-[11px] leading-relaxed text-ink-600">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-400">
+                      Importar contactos desde un archivo
+                    </p>
+                    <ul className="mt-2 list-disc space-y-1 pl-4">
+                      <li>
+                        Archivo <strong>.csv</strong>, <strong>.tsv</strong> o <strong>.txt</strong>, con una fila por
+                        contacto. Desde Excel: <em>Guardar como → CSV UTF-8</em>.
+                      </li>
+                      <li>
+                        Una columna <strong>correo</strong> (obligatoria) y, para personalizar el saludo con{' '}
+                        <code>*|FNAME|*</code>, una columna <strong>nombre</strong> (y opcionalmente{' '}
+                        <strong>apellido</strong>).
+                      </li>
+                      <li>
+                        Encabezados reconocidos: <code>correo</code> / <code>email</code>, <code>nombre</code> /{' '}
+                        <code>name</code>, <code>apellido</code> / <code>last name</code>.
+                      </li>
+                      <li>
+                        Sin encabezados también funciona: se detecta la columna del correo y la primera otra columna
+                        con texto se toma como nombre.
+                      </li>
+                    </ul>
+                    <pre className="mt-3 overflow-x-auto rounded bg-cream-50 px-3 py-2 font-mono text-[11px] text-ink-700">
+{`correo,nombre
+ana@ejemplo.com,Ana López
+juan@ejemplo.com,Juan Pérez`}
+                    </pre>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="h-[34px] bg-ink-900 px-4 text-[10px] font-bold uppercase tracking-[0.16em] text-white hover:bg-ink-700"
+                      >
+                        Importar archivo
+                      </button>
+                      <button
+                        type="button"
+                        onClick={downloadContactsTemplate}
+                        className="h-[34px] border border-cream-400 px-4 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-600 hover:border-ink-600"
+                      >
+                        Descargar plantilla
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".csv,.tsv,.txt,text/csv,text/plain"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = '';
+                          if (file) void importContactsFile(file);
+                        }}
+                      />
+                    </div>
+                    {importSummary && (
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-[11px] text-ink-700">✓ {importSummary}</p>
+                        {lastImport && (
+                          <button
+                            type="button"
+                            onClick={removeLastImport}
+                            className="h-[28px] border border-red-300 px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-red-600 hover:bg-red-50"
+                          >
+                            Quitar importación
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   <textarea
                     value={customText}
                     onChange={(e) => setCustomText(e.target.value)}
-                    rows={5}
-                    placeholder={'correo1@ejemplo.com\ncorreo2@ejemplo.com\n(uno por línea, o separados por coma)'}
+                    rows={6}
+                    placeholder={
+                      'correo@ejemplo.com, Nombre\notro@ejemplo.com\n(un contacto por línea: correo y, si quieres, su nombre)'
+                    }
                     className="w-full resize-y border border-cream-300 bg-cream-50 px-4 py-3 font-mono text-[12px] leading-relaxed placeholder:text-ink-300 focus:border-ink-400 focus:outline-none"
                   />
                   <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
                     <span className="text-ink-500">
-                      <strong className="text-ink-900">{customParsed.valid.length}</strong> correos válidos
-                      {customParsed.valid.length > MAX_CUSTOM && (
-                        <span className="ml-2 font-bold text-red-600">Máximo {MAX_CUSTOM} por envío</span>
+                      <strong className="text-ink-900">{customParsed.valid.length.toLocaleString('es-MX')}</strong>{' '}
+                      correos válidos · {customParsed.withName.toLocaleString('es-MX')} con nombre
+                      {customParsed.duplicates > 0 && ` · ${customParsed.duplicates} repetidos ignorados`}
+                      {customParsed.valid.length > MAX_CUSTOM_PAYLOAD && (
+                        <span className="ml-2 font-bold text-red-600">
+                          Máximo {MAX_CUSTOM_PAYLOAD.toLocaleString('es-MX')} por envío (límite técnico): divide la lista
+                        </span>
                       )}
                       {customParsed.invalid.length > 0 && (
                         <span className="ml-2 font-bold text-red-600">
-                          Inválidos: {customParsed.invalid.slice(0, 3).join(', ')}
+                          Inválidos ({customParsed.invalid.length}): {customParsed.invalid.slice(0, 3).join(', ')}
                           {customParsed.invalid.length > 3 ? '…' : ''}
+                          <button
+                            type="button"
+                            onClick={() => setCustomText(contactsToText(customParsed.valid))}
+                            className="ml-2 font-normal underline underline-offset-2"
+                          >
+                            Quitar inválidos
+                          </button>
                         </span>
                       )}
                     </span>
+                    {customText.trim() && (
+                      <button
+                        type="button"
+                        onClick={clearCustomList}
+                        className="text-[10px] uppercase tracking-[0.16em] text-ink-400 underline underline-offset-2 hover:text-red-600"
+                      >
+                        Limpiar lista
+                      </button>
+                    )}
                     <select
                       value=""
                       onChange={(e) => void loadFromSegment(e.target.value)}
@@ -556,6 +716,12 @@ export default function ManageEmail() {
                       ))}
                     </select>
                   </div>
+                  {customParsed.valid.length > MASS_THRESHOLD && (
+                    <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-700">
+                      Más de {MASS_THRESHOLD.toLocaleString('es-MX')} contactos: para enviar tendrás que escribir "
+                      {MASS_PHRASE}".
+                    </p>
+                  )}
                   <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-700">
                     Los correos que no estén en tu base se subirán a Mailchimp. Úsalo solo con personas que ya
                     aceptaron recibir tus correos. Quienes se dieron de baja se excluyen automáticamente.

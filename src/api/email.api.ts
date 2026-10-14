@@ -8,7 +8,9 @@ export interface BroadcastPayload {
   segmentLabel?: string;
   // Valida todo con Mailchimp sin enviar nada.
   dryRun?: boolean;
-  // Solo con segment === 'custom': correos pegados a mano.
+  // Solo con segment === 'custom': contactos pegados o importados de un archivo (con nombre opcional).
+  recipients?: Array<{ email: string; name?: string }>;
+  // Solo con segment === 'custom': correos sueltos (formato anterior).
   emails?: string[];
   // 'web': contactos de tu base de datos. 'mailchimp': una audiencia que ya vive en Mailchimp.
   source?: 'web' | 'mailchimp';
