@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import HubspotForm from '@molecules/HubspotForm';
+import { useAutoUnmuteOnGesture } from '@hooks/useAutoUnmuteOnGesture';
 import { HUBSPOT_FORMS } from '@utils/hubspotForms';
 import { useEvents } from '@hooks/useEvents';
 import { useNowTick } from '@hooks/useNowTick';
@@ -30,6 +31,12 @@ import {
  */
 
 const ENABLE_EVENT_API_SYNC = import.meta.env.VITE_EVENTS_API_SYNC !== 'false';
+
+// Video hospedado en el GitHub Release `media-v1` (mismo esquema que Home,
+// Academia y Estrategia Fiscal): sobrevive al deploy destructivo del VPS.
+const HERO_VIDEO_URL =
+  'https://github.com/JoseVargasCubillas/DD_Frontend/releases/download/media-v1/tablero-ceo-16x9.mp4';
+const HERO_VIDEO_POSTER = '/event-media/ceo-ajedrez-hero.webp';
 
 const HUBSPOT_PORTAL_ID = HUBSPOT_FORMS.emprendedorVsCeo.portalId;
 const HUBSPOT_FORM_ID = HUBSPOT_FORMS.emprendedorVsCeo.formId;
@@ -184,6 +191,8 @@ const llevas = [
 
 export default function EmprendedorVsCeoLanding() {
   const formRef = useRef<HTMLDivElement | null>(null);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const [videoMuted, toggleVideoMute, videoState] = useAutoUnmuteOnGesture(heroVideoRef);
 
   const scrollToRegistro = () => {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -459,29 +468,62 @@ export default function EmprendedorVsCeoLanding() {
             </button>
           </div>
 
-          {/* Columna imagen — piezas de ajedrez con drift + halo interno */}
-          <div className="relative order-first h-[360px] lg:order-none lg:h-[600px]">
-            {/* Halo interno detrás de las piezas (dorado cálido) */}
+          {/* Columna video — 16:9, autoplay en silencio; activa el sonido al primer clic o scroll */}
+          <div className="relative order-first flex items-center lg:order-none lg:min-h-[600px]">
+            {/* Halo interno detrás del video (dorado cálido) */}
             <div
               aria-hidden="true"
               className="dd-hero-glow-inner pointer-events-none absolute inset-0"
               style={{
                 background:
-                  'radial-gradient(48% 55% at 52% 60%, rgba(255,196,120,0.38) 0%, rgba(196,148,84,0.18) 32%, transparent 70%)',
-                filter: 'blur(3px)',
+                  'radial-gradient(60% 60% at 50% 50%, rgba(255,196,120,0.30) 0%, rgba(196,148,84,0.14) 36%, transparent 72%)',
+                filter: 'blur(6px)',
               }}
             />
-            <img
-              src="/event-media/ceo-ajedrez-hero.webp"
-              alt="Piezas de ajedrez iluminadas — metáfora del tablero del CEO"
-              loading="eager"
-              decoding="async"
-              className="dd-hero-piece relative z-[1] mx-auto h-full w-auto max-w-[560px] select-none object-contain"
-              style={{
-                filter:
-                  'drop-shadow(0 30px 50px rgba(196,148,84,0.24)) drop-shadow(0 0 24px rgba(196,148,84,0.14))',
-              }}
-            />
+            <div
+              className="relative z-[1] aspect-video w-full cursor-pointer overflow-hidden border border-cream/10 bg-black"
+              style={{ boxShadow: '0 30px 60px rgba(0,0,0,0.55), 0 0 40px rgba(196,148,84,0.16)' }}
+              onClick={() => { if (!videoState.needsUserPlay) toggleVideoMute(); }}
+            >
+              <video
+                ref={heroVideoRef}
+                className="h-full w-full object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                poster={HERO_VIDEO_POSTER}
+                controls={videoState.needsUserPlay}
+                aria-label="Video de presentación · Tablero del CEO"
+              >
+                <source src={HERO_VIDEO_URL} type="video/mp4" />
+              </video>
+              {videoState.needsUserPlay && (
+                <button
+                  type="button"
+                  onClick={toggleVideoMute}
+                  aria-label="Reproducir video"
+                  className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/30"
+                >
+                  <span className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-cream bg-black/40">
+                    <svg className="ml-1 h-7 w-7 text-cream" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </span>
+                </button>
+              )}
+              {!videoState.needsUserPlay && videoMuted && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); toggleVideoMute(); }}
+                  aria-label="Activar sonido del video"
+                  className="absolute bottom-4 right-4 z-10 min-h-11 cursor-pointer bg-cream px-4 py-3 font-mono text-[9px] uppercase tracking-[0.18em] text-ink-900 shadow-lg transition-opacity duration-200 hover:opacity-90"
+                >
+                  Activar sonido
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </section>
