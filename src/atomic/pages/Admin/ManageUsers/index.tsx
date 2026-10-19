@@ -22,7 +22,11 @@ export default function ManageUsers() {
   const create = useAdminCreateUser();
   const assignPackage = useAssignPackage();
   const { data: allPackages = [] } = usePackages();
-  const activePackages = useMemo(() => allPackages.filter((p) => p.isActive), [allPackages]);
+  // Solo los paquetes oficiales de la web (Entrepreneur / Business / Master); los legacy no se asignan manualmente.
+  const activePackages = useMemo(
+    () => allPackages.filter((p) => p.isActive && ['entrepreneur', 'business', 'master'].includes(String(p.tier || '').toLowerCase())),
+    [allPackages],
+  );
 
   const [assignSubscription, setAssignSubscription] = useState(false);
   const [selectedPackageId, setSelectedPackageId] = useState<string>('');
@@ -235,9 +239,8 @@ export default function ManageUsers() {
 
                 {selectedPackage && activePackages.length > 0 && (
                   <p className="text-xs text-ink-500">
-                    Se registrará como venta manual de{' '}
-                    <span className="text-ink-900">{selectedPackage.name}</span> por{' '}
-                    <span className="text-ink-900">${selectedPackage.price}</span> con {subscriptionDurationDays} días de vigencia.
+                    Se asignará <span className="text-ink-900">{selectedPackage.name}</span> sin cobro
+                    (no es una venta) con {subscriptionDurationDays} días de vigencia.
                   </p>
                 )}
               </div>

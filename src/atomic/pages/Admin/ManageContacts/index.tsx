@@ -2399,11 +2399,16 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
   const { data: tags = [] } = useTags();
   const { data: coursesData } = useCourses({ includeAll: true, limit: 200 } as any);
   const { data: allPackages = [] } = usePackages();
-  const activePackages = useMemo(() => allPackages.filter((p) => p.isActive), [allPackages]);
+  // Solo los paquetes oficiales de la web (Entrepreneur / Business / Master); los legacy no se asignan manualmente.
+  const activePackages = useMemo(
+    () => allPackages.filter((p) => p.isActive && ['entrepreneur', 'business', 'master'].includes(String(p.tier || '').toLowerCase())),
+    [allPackages],
+  );
   const courses = coursesData?.data ?? [];
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [grantOffers, setGrantOffers] = useState(false);
   const [addTags, setAddTags] = useState(false);
   const [subscribeMarketing, setSubscribeMarketing] = useState(false);
@@ -2420,7 +2425,9 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
   }, [activePackages, selectedPackageId]);
 
   const name = `${firstName} ${lastName}`.trim();
-  const canSave = Boolean(name && email) && (!assignSubscription || Boolean(selectedPackageId));
+  // El teléfono es obligatorio al asignar suscripción a la Academia (mismo mínimo que el checkout).
+  const phoneOk = phone.replace(/\D/g, '').length >= 8;
+  const canSave = Boolean(name && email) && (!assignSubscription || (Boolean(selectedPackageId) && phoneOk));
   const isSaving = create.isPending || assignPackage.isPending;
   const selectedPackage = activePackages.find((p) => p._id === selectedPackageId);
 
@@ -2439,6 +2446,7 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
             create.mutate({
               name,
               email,
+              phone: phone.trim(),
               role: 'user',
               courseIds: grantOffers ? selectedCourseIds : [],
               tagIds: addTags ? selectedTagIds : [],
@@ -2516,6 +2524,23 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
               placeholder="Email"
               className="h-11 w-full rounded-lg border border-[#d6d6d6] bg-white px-4 text-sm outline-none transition-colors placeholder:text-[#8a8a8a] focus:border-[#8b8cf6]"
             />
+          </div>
+          <div>
+            <label htmlFor="new-contact-phone" className="mb-2 block text-sm font-semibold text-[#242424]">
+              Teléfono{assignSubscription ? ' *' : ''}
+            </label>
+            <input
+              id="new-contact-phone"
+              type="tel"
+              required={assignSubscription}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Teléfono (WhatsApp)"
+              className="h-11 w-full rounded-lg border border-[#d6d6d6] bg-white px-4 text-sm outline-none transition-colors placeholder:text-[#8a8a8a] focus:border-[#8b8cf6]"
+            />
+            {assignSubscription && phone && !phoneOk && (
+              <p className="mt-1 text-xs text-red-600">Ingresa un teléfono válido (mínimo 8 dígitos).</p>
+            )}
           </div>
 
           <div className="space-y-4 rounded-2xl border border-ink-900/5 bg-white p-5 shadow-sm">
@@ -2617,9 +2642,8 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
 
                     {selectedPackage && (
                       <p className="border-t border-ink-900/10 pt-3 text-xs text-ink-500">
-                        Se registrará como venta manual de{' '}
-                        <span className="text-ink-900">{selectedPackage.name}</span> por{' '}
-                        <span className="text-ink-900">${selectedPackage.price}</span> con {subscriptionDurationDays} días de vigencia.
+                        Se asignará <span className="text-ink-900">{selectedPackage.name}</span> sin cobro
+                        (no es una venta) con {subscriptionDurationDays} días de vigencia.
                       </p>
                     )}
                   </>

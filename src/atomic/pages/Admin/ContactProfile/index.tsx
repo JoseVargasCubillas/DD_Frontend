@@ -16,6 +16,28 @@ const TABS: { k: TabKey; label: string }[] = [
   { k: 'notes',     label: 'Notas' },
 ];
 
+interface AcademySub {
+  _id: string;
+  packageName: string | null;
+  packageTier: string | null;
+  price: number | null;
+  currency: string;
+  status: string;
+  startDate: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  source: 'order' | 'stripe' | 'manual_admin';
+  createdAt: string;
+}
+
+const SOURCE_LABEL: Record<AcademySub['source'], string> = {
+  order: 'Compra',
+  stripe: 'Stripe',
+  manual_admin: 'Asignación manual',
+};
+
+const fmtDate = (d?: string) => (d ? new Date(d).toLocaleDateString('es-MX') : '—');
+
 export default function ContactProfile() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -26,6 +48,9 @@ export default function ContactProfile() {
   const [editing, setEditing] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [showAssignSubscription, setShowAssignSubscription] = useState(false);
+  const academySubscriptions: AcademySub[] = ((contact as any)?.academySubscriptions ?? []) as AcademySub[];
+  // Las asignadas a mano no generan Order, por eso no salían en Compras.
+  const manualSubscriptions = academySubscriptions.filter((s) => s.source === 'manual_admin');
 
   if (isLoading) return <p className="text-sm text-ink-500">Cargando contacto…</p>;
   if (!contact) return <p className="text-sm text-ink-500">Contacto no encontrado.</p>;
@@ -91,9 +116,9 @@ export default function ContactProfile() {
             ))}
           </div>
 
-          {tab === 'lifecycle' && <LifecycleTab contact={contact} />}
-          {tab === 'info'      && <InfoTab contact={contact} />}
-          {tab === 'purchases' && <PurchasesTab orders={contact.orders} />}
+          {tab === 'lifecycle' && <LifecycleTab contact={contact} subscriptions={manualSubscriptions} />}
+          {tab === 'info'      && <InfoTab contact={contact} subscriptions={academySubscriptions} />}
+          {tab === 'purchases' && <PurchasesTab orders={contact.orders} subscriptions={manualSubscriptions} />}
           {tab === 'products'  && <ProductsTab courses={contact.enrolledCourses as any} offers={(contact as any).assignedOffers ?? []} />}
           {tab === 'notes'     && <NotesTab id={id} initial={contact.notes ?? ''} />}
         </section>
@@ -145,7 +170,11 @@ function AssignSubscriptionModal({
     return list.filter((c) => (c as any).isPublished !== false && (c as any).isActive !== false).length;
   }, [coursesData]);
 
-  const activePackages = useMemo(() => packages.filter((p) => p.isActive), [packages]);
+  // Solo los paquetes oficiales de la web (Entrepreneur / Business / Master); los legacy no se asignan manualmente.
+  const activePackages = useMemo(
+    () => packages.filter((p) => p.isActive && ['entrepreneur', 'business', 'master'].includes(String(p.tier || '').toLowerCase())),
+    [packages],
+  );
   const [packageId, setPackageId] = useState<string>(() => activePackages[0]?._id ?? '');
   const [durationDays, setDurationDays] = useState<number>(365);
 
@@ -198,8 +227,8 @@ function AssignSubscriptionModal({
         <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500 mb-2">Academia</p>
         <h3 className="font-serif text-2xl text-ink-900 mb-1">Asignar suscripción</h3>
         <p className="text-sm text-ink-600 mb-5">
-          Otorga acceso a la Academia igual que si el cliente hubiera comprado. La asignación queda
-          registrada como venta manual en Pagos.
+          Otorga acceso a la Academia igual que si el cliente hubiera comprado. Es una asignación
+          manual: no cuenta como venta ni aparece en Pagos.
         </p>
 
         {activePackages.length === 0 ? (
@@ -270,9 +299,8 @@ function AssignSubscriptionModal({
 
             {selectedPkg && (
               <p className="text-xs text-ink-500 mb-4 border-t border-ink-900/10 pt-3">
-                Se registrará como venta manual de{' '}
-                <span className="text-ink-900">{selectedPkg.name}</span> por{' '}
-                <span className="text-ink-900">${selectedPkg.price}</span> con {durationDays} días de vigencia.
+                Se asignará <span className="text-ink-900">{selectedPkg.name}</span> sin cobro
+                (no es una venta) con {durationDays} días de vigencia.
               </p>
             )}
           </>
@@ -332,9 +360,9 @@ function MoreActions({ id, isActive, onAction, onDeleted }: { id: string; isActi
   );
 }
 
-function LifecycleTab({ contact }: { contact: any }) {
+function LifecycleTab({ contact, subscriptions }: { contact: any; subscriptions: AcademySub[] }) {
   const lifespanDays = Math.max(0, Math.round((Date.now() - new Date(contact.createdAt).getTime()) / 86400000));
-  const purchases = contact.orders?.length ?? 0;
+  const purchases = (contact.orders?.length ?? 0) + subscriptions.length;
   const netRevenue = (contact.orders ?? []).reduce((sum: number, o: any) => sum + (o.total || 0), 0);
 
   return (
@@ -371,6 +399,12 @@ function LifecycleTab({ contact }: { contact: any }) {
               <p className="text-sm text-ink-900">Compra ${o.total} {o.currency}</p>
             </li>
           ))}
+          {subscriptions.map((s) => (
+            <li key={s._id}>
+              <p className="text-[10px] uppercase tracking-[0.28em] text-ink-500">{fmtDate(s.createdAt)}</p>
+              <p className="text-sm text-ink-900">Agregado a la Academia · {s.packageName ?? 'Suscripción'} (asignación manual)</p>
+            </li>
+          ))}
           <li>
             <p className="text-[10px] uppercase tracking-[0.28em] text-ink-500">
               {new Date(contact.createdAt).toLocaleDateString('es-MX')}
@@ -383,8 +417,17 @@ function LifecycleTab({ contact }: { contact: any }) {
   );
 }
 
-function InfoTab({ contact }: { contact: any }) {
+function InfoTab({ contact, subscriptions }: { contact: any; subscriptions: AcademySub[] }) {
+  const activeSubs = subscriptions.filter((s) => s.status === 'active');
+  const academia = activeSubs.length
+    ? activeSubs
+        .map((s) => `${s.packageName ?? s.packageTier ?? 'Suscripción'} · vence ${fmtDate(s.currentPeriodEnd)} · ${SOURCE_LABEL[s.source]}`)
+        .join(' | ')
+    : subscriptions.length
+      ? 'Suscripción inactiva / vencida'
+      : 'No suscrito';
   const rows: [string, string][] = [
+    ['Academia', academia],
     ['Correo', contact.email],
     ['Teléfono', contact.phone || '—'],
     ['Rol', contact.role],
@@ -412,11 +455,22 @@ function InfoTab({ contact }: { contact: any }) {
   );
 }
 
-function PurchasesTab({ orders }: { orders: any[] }) {
-  if (!orders?.length) return <p className="text-sm text-ink-500 p-8 text-center border border-dashed border-ink-900/15">Sin compras registradas.</p>;
+function PurchasesTab({ orders, subscriptions }: { orders: any[]; subscriptions: AcademySub[] }) {
+  if (!orders?.length && !subscriptions.length) return <p className="text-sm text-ink-500 p-8 text-center border border-dashed border-ink-900/15">Sin compras registradas.</p>;
   return (
     <div className="border border-ink-900/15 bg-cream-100 divide-y divide-ink-900/10">
-      {orders.map((o) => (
+      {subscriptions.map((s) => (
+        <div key={s._id} className="px-5 py-4 grid grid-cols-[1fr_auto] gap-4">
+          <div>
+            <p className="text-sm font-semibold text-ink-900">Academia · {s.packageName ?? 'Suscripción'}</p>
+            <p className="text-[10px] uppercase tracking-[0.28em] text-ink-500 mt-1">
+              {fmtDate(s.createdAt)} · {s.status === 'active' ? 'activa' : s.status} · vence {fmtDate(s.currentPeriodEnd)} · {SOURCE_LABEL[s.source]}
+            </p>
+          </div>
+          <p className="text-[10px] uppercase tracking-[0.28em] text-ink-500 self-center">Sin cobro</p>
+        </div>
+      ))}
+      {(orders ?? []).map((o) => (
         <div key={o._id || o.id} className="px-5 py-4 grid grid-cols-[1fr_auto] gap-4">
           <div>
             <p className="text-sm font-semibold text-ink-900">

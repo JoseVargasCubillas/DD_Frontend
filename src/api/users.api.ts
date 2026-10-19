@@ -44,6 +44,7 @@ export const deleteUser = (userId: string): Promise<{ id: string }> =>
 interface AdminCreateUserInput {
   name: string;
   email: string;
+  phone?: string;
   role?: 'user' | 'admin';
   tagIds?: string[];
   courseIds?: string[];

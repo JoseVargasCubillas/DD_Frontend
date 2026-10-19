@@ -19,13 +19,12 @@ export const deletePackage = (id: string): Promise<void> =>
 export const assignPackageToUser = (
   userId: string,
   packageId: string,
-  options?: { durationDays?: number | null; source?: string; recordAsOrder?: boolean },
+  options?: { durationDays?: number | null; source?: string },
 ): Promise<any> =>
   client
     .post<ApiResponse<any>>(`/packages/assign/${userId}`, {
       packageId,
       source: 'manual_admin',
-      recordAsOrder: true,
       ...(options ?? {}),
     })
     .then((r) => r.data);

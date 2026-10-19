@@ -60,7 +60,6 @@ export const useAssignPackage = () => {
       api.assignPackageToUser(userId, packageId, {
         durationDays: durationDays ?? null,
         source: 'manual_admin',
-        recordAsOrder: true,
       }),
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ['user', vars.userId] });
