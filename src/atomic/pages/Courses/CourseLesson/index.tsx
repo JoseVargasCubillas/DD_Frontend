@@ -248,6 +248,8 @@ export default function CourseLesson() {
                 allowFullScreen
                 referrerPolicy="strict-origin-when-cross-origin"
                 sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                // Carga Drive sin cookies de Google: evita el 401 cuando el navegador tiene varias cuentas abiertas.
+                {...({ credentialless: "" } as Record<string, string>)}
                 className="h-full w-full border-0"
               />
             ) : lesson.mediaType === "audio" ? (
