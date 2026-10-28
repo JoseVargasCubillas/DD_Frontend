@@ -1,10 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useAuthStore } from '@store/authStore';
 import { useBook } from '@hooks/useBooks';
 import { createPaymentIntent } from '@api/payments.api';
-import { quoteShipping, type ShippingRateOption } from '@api/shipping.api';
+import { lookupPostalCode, quoteShipping, validateAddress, type ShippingRateOption } from '@api/shipping.api';
 import { formatCurrency } from '@utils/formatters';
 import { hasStripePublishableKey, stripeMissingKeyMessage, stripePromise } from '@utils/stripe';
 import { usePromoCode } from '@hooks/usePromoCode';
@@ -73,8 +73,14 @@ interface Field {
 }
 
 function ShippingField({
-  field, value, onChange,
-}: { field: Field; value: string; onChange: (name: keyof ShippingAddress, value: string) => void }) {
+  field, value, onChange, hint, listId,
+}: {
+  field: Field;
+  value: string;
+  onChange: (name: keyof ShippingAddress, value: string) => void;
+  hint?: ReactNode;
+  listId?: string;
+}) {
   return (
     <label className="flex flex-col gap-2">
       <span className="text-[10px] uppercase tracking-[0.2em] text-ink-300">— {field.label}</span>
@@ -84,10 +90,33 @@ function ShippingField({
         value={value}
         placeholder={field.placeholder}
         onChange={(e) => onChange(field.name, e.target.value)}
+        list={listId}
+        autoComplete={listId ? 'off' : undefined}
         className="input-cream rounded-none font-serif text-[18px]"
       />
+      {hint}
     </label>
   );
+}
+
+type PostalState =
+  | { status: 'idle' | 'loading' | 'not_found' | 'unavailable' }
+  | { status: 'ok'; city: string; state: string; colonies: string[] };
+
+function PostalHint({ postal }: { postal: PostalState }) {
+  const cls = 'text-[11px]';
+  if (postal.status === 'loading') return <span className={`${cls} text-white/45`}>Buscando código postal…</span>;
+  if (postal.status === 'ok') {
+    return (
+      <span className={`${cls} text-emerald-300`}>
+        ✓ {postal.city}, {postal.state}
+        {postal.colonies.length > 0 && ` · ${postal.colonies.length} colonia${postal.colonies.length === 1 ? '' : 's'}`}
+      </span>
+    );
+  }
+  if (postal.status === 'not_found') return <span className={`${cls} text-red-300`}>Este código postal no existe. Revísalo, por favor.</span>;
+  if (postal.status === 'unavailable') return <span className={`${cls} text-white/45`}>No se pudo consultar el código postal; captura estado y ciudad a mano.</span>;
+  return <span className={`${cls} text-white/45`}>Al escribirlo se llenan estado, ciudad y colonias.</span>;
 }
 
 interface PaymentFormProps {
@@ -145,8 +174,8 @@ const SHIPPING_FIELDS: Field[] = [
   { label: 'Nombre completo', name: 'fullName', placeholder: 'Quien recibe' },
   { label: 'Teléfono de contacto', name: 'phone', placeholder: '+52 · 55 · 0000 · 0000', type: 'tel' },
   { label: 'Calle y número', name: 'street', placeholder: 'Av. Presidente Masaryk 123' },
-  { label: 'Colonia', name: 'colony', placeholder: 'Polanco V Sección' },
   { label: 'Código postal', name: 'postalCode', placeholder: '11560' },
+  { label: 'Colonia', name: 'colony', placeholder: 'Polanco V Sección' },
   { label: 'Ciudad', name: 'city', placeholder: 'Ciudad de México' },
 ];
 
@@ -170,6 +199,53 @@ export default function BookCheckout() {
   const [loadingRates, setLoadingRates] = useState(false);
   const [ratesFetched, setRatesFetched] = useState(false);
   const [guestEmail, setGuestEmail] = useState('');
+  const [postal, setPostal] = useState<PostalState>({ status: 'idle' });
+  const [addressErrors, setAddressErrors] = useState<string[]>([]);
+  const [addressWarnings, setAddressWarnings] = useState<string[]>([]);
+  const [confirmedWarnings, setConfirmedWarnings] = useState(false);
+  const [checkingAddress, setCheckingAddress] = useState(false);
+  // Última ciudad/colonia puestas automáticamente: solo esas se reemplazan al
+  // cambiar de CP, para no pisar lo que el cliente escribió a mano.
+  const autoCity = useRef('');
+  const autoColony = useRef('');
+  const shippingRef = useRef(shipping);
+  shippingRef.current = shipping;
+
+  // Autollenado por código postal: estado, ciudad y colonias.
+  const postalCode = shipping.postalCode.replace(/\D/g, '');
+  useEffect(() => {
+    if (postalCode.length !== 5) {
+      setPostal({ status: 'idle' });
+      return;
+    }
+    let cancelled = false;
+    setPostal({ status: 'loading' });
+    lookupPostalCode(postalCode).then((r) => {
+      if (cancelled) return;
+      if (!r.found || !r.state) {
+        setPostal({ status: r.unavailable ? 'unavailable' : 'not_found' });
+        return;
+      }
+      const colonies = r.colonies ?? [];
+      const city = r.city ?? '';
+      setPostal({ status: 'ok', city, state: r.state, colonies });
+      const current = shippingRef.current;
+      const replaceCity = !current.city.trim() || current.city === autoCity.current;
+      if (replaceCity) autoCity.current = city;
+      const replaceColony = !current.colony.trim() || current.colony === autoColony.current;
+      const colony = colonies.length === 1 ? colonies[0] : '';
+      if (replaceColony) autoColony.current = colony;
+      setShipping((s) => ({
+        ...s,
+        state: r.state as string,
+        city: replaceCity ? city : s.city,
+        colony: replaceColony ? colony : s.colony,
+      }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [postalCode]);
 
   const needsGuestContact = !isAuthenticated;
   const canSubmitShipping = !needsGuestContact || /\S+@\S+\.\S+/.test(guestEmail.trim());
@@ -203,12 +279,38 @@ export default function BookCheckout() {
   const total = subtotal + shippingCost + tax;
   const payable = Math.max(0, total - promo.discount);
 
-  const updateShipping = (name: keyof ShippingAddress, value: string) =>
+  const updateShipping = (name: keyof ShippingAddress, value: string) => {
     setShipping((current) => ({ ...current, [name]: value }));
+    // Cualquier cambio al domicilio invalida avisos y la confirmación previa.
+    setAddressErrors([]);
+    setAddressWarnings([]);
+    setConfirmedWarnings(false);
+  };
 
   const handleContinueToPayment = async (e: FormEvent) => {
     e.preventDefault();
     if (!canSubmitShipping) return;
+
+    // Verifica el domicilio antes de pagar: los errores bloquean (CP
+    // inexistente, estado que no corresponde, teléfono inválido); los avisos
+    // piden confirmar. Si el servicio no responde se deja continuar.
+    setCheckingAddress(true);
+    const check = await validateAddress(shipping);
+    setCheckingAddress(false);
+    if (check) {
+      if (check.errors.length) {
+        setAddressErrors(check.errors);
+        setAddressWarnings([]);
+        return;
+      }
+      if (check.warnings.length && !confirmedWarnings) {
+        setAddressErrors([]);
+        setAddressWarnings(check.warnings);
+        return;
+      }
+    }
+    setAddressErrors([]);
+    setAddressWarnings([]);
     setStep('payment');
     setLoadingRates(true);
     try {
@@ -543,9 +645,20 @@ export default function BookCheckout() {
                   <div className="mt-8 grid gap-6 sm:grid-cols-2 [&_input]:bg-transparent [&_input]:text-cream-50 [&_input]:border-white/25 [&_input::placeholder]:text-white/35 [&_label>span]:text-white/45">
                     {SHIPPING_FIELDS.map((field) => (
                       <div key={field.name} className={field.name === 'street' ? 'sm:col-span-2' : ''}>
-                        <ShippingField field={field} value={shipping[field.name] ?? ''} onChange={updateShipping} />
+                        <ShippingField
+                          field={field}
+                          value={shipping[field.name] ?? ''}
+                          onChange={updateShipping}
+                          hint={field.name === 'postalCode' ? <PostalHint postal={postal} /> : undefined}
+                          listId={field.name === 'colony' ? 'checkout-colonies' : undefined}
+                        />
                       </div>
                     ))}
+                    {postal.status === 'ok' && postal.colonies.length > 0 && (
+                      <datalist id="checkout-colonies">
+                        {postal.colonies.map((c) => <option key={c} value={c} />)}
+                      </datalist>
+                    )}
 
                     <label className="flex flex-col gap-2">
                       <span className="text-[10px] uppercase tracking-[0.2em] text-white/45">— Estado</span>
@@ -571,12 +684,41 @@ export default function BookCheckout() {
                     </div>
                   </div>
 
+                  {addressErrors.length > 0 && (
+                    <div role="alert" className="mt-6 border border-red-700 bg-red-950/40 px-4 py-3 text-[13px] text-red-300">
+                      <p className="mb-1 font-semibold">Revisa tu domicilio para continuar:</p>
+                      <ul className="list-disc space-y-1 pl-5">
+                        {addressErrors.map((m) => <li key={m}>{m}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {addressWarnings.length > 0 && (
+                    <div className="mt-6 border border-amber-500/60 bg-amber-950/30 px-4 py-3 text-[13px] text-amber-200">
+                      <p className="mb-1 font-semibold">Confirma estos puntos antes de pagar:</p>
+                      <ul className="list-disc space-y-1 pl-5">
+                        {addressWarnings.map((m) => <li key={m}>{m}</li>)}
+                      </ul>
+                      <label className="mt-3 flex cursor-pointer items-start gap-2 text-cream-50">
+                        <input
+                          type="checkbox"
+                          checked={confirmedWarnings}
+                          onChange={(e) => setConfirmedWarnings(e.target.checked)}
+                          className="mt-1"
+                        />
+                        Verifiqué que mi domicilio es correcto y quiero continuar.
+                      </label>
+                    </div>
+                  )}
+
                   <button
                     type="submit"
-                    disabled={!canSubmitShipping}
+                    disabled={!canSubmitShipping || checkingAddress || (addressWarnings.length > 0 && !confirmedWarnings)}
                     className="mt-8 flex w-full items-center justify-between bg-cream-50 px-7 py-5 text-ink-900 disabled:opacity-50"
                   >
-                    <span className="text-[11px] font-bold uppercase tracking-[0.18em]">Continuar a pago →</span>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.18em]">
+                      {checkingAddress ? 'Verificando domicilio…' : 'Continuar a pago →'}
+                    </span>
                   </button>
                 </form>
               ) : (

@@ -50,6 +50,7 @@ type EventForm = {
   status: Event["status"];
   isFeatured: boolean;
   whatsappOnly: boolean;
+  whatsappGroupUrl: string;
   buttonText: string;
   buttonUrl: string;
   titleColor: string;
@@ -100,6 +101,7 @@ const DEFAULT_FORM: EventForm = {
   status: "upcoming",
   isFeatured: false,
   whatsappOnly: false,
+  whatsappGroupUrl: "",
   buttonText: "¡Estoy listo!",
   buttonUrl: "/eventos",
   titleColor: "#2C2C2C",
@@ -352,6 +354,7 @@ const formFromEvent = (event: Event): EventForm => ({
   status: event.status,
   isFeatured: Boolean(event.isFeatured),
   whatsappOnly: isWhatsAppOnlyEvent(event),
+  whatsappGroupUrl: event.whatsappGroupUrl || "",
   buttonText: "¡Estoy listo!",
   buttonUrl: event.onlineUrl || `/eventos/${event.slug}`,
   titleColor: "#2C2C2C",
@@ -380,6 +383,7 @@ const buildPayload = (form: EventForm): Partial<Event> => ({
   status: form.status,
   isFeatured: form.isFeatured,
   whatsappOnly: form.whatsappOnly,
+  whatsappGroupUrl: form.whatsappGroupUrl.trim(),
   agenda: [],
 });
 
@@ -406,6 +410,7 @@ const eventFromForm = (form: EventForm, id: string): Event => ({
   instructor: "admin",
   isFeatured: form.isFeatured,
   whatsappOnly: form.whatsappOnly,
+  whatsappGroupUrl: form.whatsappGroupUrl.trim(),
   agenda: [],
 });
 
@@ -1138,6 +1143,21 @@ const selectedIsNew = selectedId === "new";
                 onChange={(event) => update("whatsappOnly", event.target.checked)}
               />
             </label>
+
+            {form.modality !== "in-person" && (
+              <label className="block rounded-xl border border-ink-900/10 px-4 py-3 text-sm">
+                <span className="block font-semibold">Grupo de WhatsApp (invitación)</span>
+                <span className="mb-2 mt-1 block text-xs text-ink-500">
+                  Quien compre esta fecha recibe en su correo el acceso a este grupo (enlace de un solo uso; el real nunca se manda). Solo Holding y SEF Online.
+                </span>
+                <input
+                  value={form.whatsappGroupUrl}
+                  onChange={(event) => update("whatsappGroupUrl", event.target.value)}
+                  placeholder="https://chat.whatsapp.com/…"
+                  className={INPUT_CLASS}
+                />
+              </label>
+            )}
 
             <label className="flex items-center justify-between gap-3 rounded-xl border border-ink-900/10 px-4 py-3 text-sm">
               <span>

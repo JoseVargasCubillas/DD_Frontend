@@ -231,6 +231,8 @@ export interface Event {
   instructor: User | string;
   isFeatured: boolean;
   whatsappOnly?: boolean;
+  // Grupo de WhatsApp de esta edición (eventos online con grupo: Holding / SEF Online).
+  whatsappGroupUrl?: string;
   agenda: { time: string; topic: string; speaker: string }[];
 }
 

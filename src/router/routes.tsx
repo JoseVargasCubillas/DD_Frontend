@@ -68,6 +68,8 @@ const DiazLara = lazy(() => import("@pages/DiazLara"));
 const ManageEmail = lazy(() => import("@pages/Admin/ManageEmail"));
 const EmailHistory = lazy(() => import("@pages/Admin/EmailHistory"));
 const ManageWhatsApp = lazy(() => import("@pages/Admin/ManageWhatsApp"));
+const ManageShipments = lazy(() => import("@pages/Admin/ManageShipments"));
+const AdvisorShipping = lazy(() => import("@pages/AdvisorShipping"));
 const BookCheckout = lazy(() => import("@pages/Books/BookCheckout"));
 const Books = lazy(() => import("@pages/Books"));
 const Terminos = lazy(() => import("@pages/LegalDocuments/Terminos"));
@@ -90,6 +92,13 @@ export const router = createBrowserRouter([
   {
     path: "/legal/arquitectura-integral-diaz-lara",
     element: <TerminosArquitectura />,
+    errorElement: <RouterErrorBoundary />,
+  },
+  // Captura de envíos de libros para asesores — link secreto por asesor, sin
+  // login. Sin navbar ni footer, no se enlaza en ningún lado y va noindex.
+  {
+    path: "/envios-asesores/:token",
+    element: <AdvisorShipping />,
     errorElement: <RouterErrorBoundary />,
   },
   {
@@ -225,6 +234,7 @@ export const router = createBrowserRouter([
       { path: "/admin/ventas/pagos", element: <SalesPayments /> },
       { path: "/admin/ventas/precios", element: <Navigate to="/admin/suscripciones" replace /> },
       { path: "/admin/ventas/carrito", element: <SalesCart /> },
+      { path: "/admin/envios", element: <ManageShipments /> },
       { path: "/admin/suscripciones", element: <ManageSubscriptions /> },
       { path: "/admin/paquetes", element: <Navigate to="/admin/suscripciones" replace /> },
       { path: "/admin/ofertas", element: <Navigate to="/admin/suscripciones" replace /> },

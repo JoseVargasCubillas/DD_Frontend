@@ -25,6 +25,7 @@ const ACADEMIA_ITEMS = [
 const SALES_ITEMS = [
   { label: "Pagos", to: "/admin/ventas/pagos" },
   { label: "Carrito", to: "/admin/ventas/carrito" },
+  { label: "Envíos de libros", to: "/admin/envios" },
   { label: "Facturas" },
   { label: "Afiliados" },
 ] as const;
@@ -100,7 +101,9 @@ export default function AdminLayout() {
     location.pathname.startsWith("/admin/ofertas") ||
     location.pathname.startsWith("/admin/promociones") ||
     location.pathname.startsWith("/admin/suscripciones");
-  const isSalesRoute = location.pathname.startsWith("/admin/ventas");
+  const isSalesRoute =
+    location.pathname.startsWith("/admin/ventas") ||
+    location.pathname.startsWith("/admin/envios");
   const isMarketingRoute =
     location.pathname.startsWith("/admin/email") ||
     location.pathname.startsWith("/admin/whatsapp");
