@@ -4,6 +4,7 @@ import { useCartStore } from '@store/cartStore';
 import { useSubscription } from '@hooks/useSubscription';
 import { usePackages } from '@hooks/usePackages';
 import { useAutoUnmuteOnGesture } from '@hooks/useAutoUnmuteOnGesture';
+import { useCatalogStats } from '@hooks/useCatalogStats';
 import diegoPortrait from '../../../../assets/eventos/LEF_img_001.png';
 import oscarPortrait from '../../../../assets/eventos/oscar-cayetano.png';
 import jazminPortrait from '../../../../assets/eventos/LEF_img 003.png';
@@ -102,7 +103,7 @@ const ACADEMIA_OFFER_ID_BY_TIER: Record<string, string> = {
   master: 'off_academia_master',
 };
 
-const plansFallback: PlanCard[] = [
+const plansFallback = (courseCount: number): PlanCard[] => [
   {
     id: ACADEMIA_OFFER_ID_BY_TIER.entrepreneur,
     name: 'Entrepreneur',
@@ -112,11 +113,7 @@ const plansFallback: PlanCard[] = [
     plan: 'entrepreneur',
     suffix: '/ año',
     note: 'Acceso anual a todos los cursos',
-    items: [
-      'Acceso a los 33 cursos del catálogo',
-      'Nuevos cursos incluidos al publicarse',
-      '+120 hrs de contenido',
-    ],
+    items: benefitsForTier('entrepreneur', courseCount),
     dark: true,
     cta: 'Aplicar',
   },
@@ -129,11 +126,7 @@ const plansFallback: PlanCard[] = [
     plan: 'business',
     suffix: '/ año',
     note: '',
-    items: [
-      'Todos los cursos incluidos',
-      'Masterclass gratuita cada 2 meses',
-      'Grupo de WhatsApp con asesores y consultores',
-    ],
+    items: benefitsForTier('business', courseCount),
     featured: true,
     cta: 'Aplicar',
   },
@@ -146,11 +139,7 @@ const plansFallback: PlanCard[] = [
     plan: 'master',
     suffix: '/ año',
     note: 'Plazas limitadas',
-    items: [
-      'Todos los cursos incluidos',
-      'Masterclass gratuita cada 2 meses',
-      'Asesoramiento por WhatsApp con Diego Díaz',
-    ],
+    items: benefitsForTier('master', courseCount),
     dark: true,
     cta: 'Aplicar a Master',
   },
@@ -158,7 +147,7 @@ const plansFallback: PlanCard[] = [
 
 const tierOrder: Record<string, number> = { entrepreneur: 0, business: 1, master: 2 };
 
-function benefitsForTier(tier: string): string[] {
+function benefitsForTier(tier: string, courseCount: number): string[] {
   if (tier === 'business') {
     return [
       'Todos los cursos incluidos',
@@ -174,29 +163,32 @@ function benefitsForTier(tier: string): string[] {
     ];
   }
   return [
-    'Acceso a los 33 cursos del catálogo',
+    `Acceso a los ${courseCount} cursos del catálogo`,
     'Nuevos cursos incluidos al publicarse',
     '+120 hrs de contenido',
   ];
 }
 
-function packageToPlan(pkg: {
-  id?: string;
-  _id?: string;
-  name?: string;
-  tier?: string;
-  price?: number;
-  benefits?: { allCourses?: boolean; bimonthlyMasterclass?: boolean; whatsappAdvisorsUrl?: string; whatsappCeoUrl?: string };
-}): PlanCard {
+function packageToPlan(
+  pkg: {
+    id?: string;
+    _id?: string;
+    name?: string;
+    tier?: string;
+    price?: number;
+    benefits?: { allCourses?: boolean; bimonthlyMasterclass?: boolean; whatsappAdvisorsUrl?: string; whatsappCeoUrl?: string };
+  },
+  courseCount: number,
+): PlanCard {
   const tier = (pkg.tier || 'entrepreneur').toLowerCase();
   const name = pkg.name || (tier === 'business' ? 'Business' : tier === 'master' ? 'Master' : 'Entrepreneur');
-  const amount = typeof pkg.price === 'number' ? pkg.price : plansFallback.find((p) => p.plan === tier)?.amount ?? 4997;
+  const amount = typeof pkg.price === 'number' ? pkg.price : plansFallback(courseCount).find((p) => p.plan === tier)?.amount ?? 4997;
   const custom: string[] = [];
   if (pkg.benefits?.allCourses !== false) custom.push('Todos los cursos incluidos');
   if (pkg.benefits?.bimonthlyMasterclass) custom.push('Masterclass gratuita cada 2 meses');
   if (pkg.benefits?.whatsappAdvisorsUrl) custom.push('Grupo de WhatsApp con asesores y consultores');
   if (pkg.benefits?.whatsappCeoUrl) custom.push('Asesoramiento por WhatsApp con Diego Díaz');
-  const items = custom.length >= 2 ? custom : benefitsForTier(tier);
+  const items = custom.length >= 2 ? custom : benefitsForTier(tier, courseCount);
   return {
     id: ACADEMIA_OFFER_ID_BY_TIER[tier] ?? pkg.id ?? pkg._id ?? `pkg_${tier}`,
     name,
@@ -325,18 +317,28 @@ export default function Academy() {
   const { data: packages } = usePackages();
   const academyVideoRef = useRef<HTMLVideoElement>(null);
   const [videoMuted, toggleVideoMute, videoState] = useAutoUnmuteOnGesture(academyVideoRef);
+  const { courseCount, lessonCount } = useCatalogStats();
   const hasAcademyAccess = subscription?.status === 'active' || subscription?.status === 'trialing';
 
   const plans = useMemo<PlanCard[]>(() => {
     const tiered = (packages ?? []).filter((p) =>
       ['entrepreneur', 'business', 'master'].includes(String(p.tier || '').toLowerCase()),
     );
-    if (tiered.length === 0) return plansFallback;
+    if (tiered.length === 0) return plansFallback(courseCount);
     const sorted = [...tiered].sort(
       (a, b) => (tierOrder[String(a.tier || '').toLowerCase()] ?? 99) - (tierOrder[String(b.tier || '').toLowerCase()] ?? 99),
     );
-    return sorted.map(packageToPlan);
-  }, [packages]);
+    return sorted.map((pkg) => packageToPlan(pkg, courseCount));
+  }, [packages, courseCount]);
+
+  const membershipBenefits = [
+    '+120 horas de contenido',
+    `${courseCount} cursos disponibles`,
+    'Masterclass cada 2 meses',
+    'WhatsApp con asesores',
+    'Acceso 24/7',
+  ];
+  const catalogSide = lessonCount > 0 ? `${courseCount} cursos · ${lessonCount} lecciones` : `${courseCount} cursos`;
 
   const startAcademyCheckout = (plan: PlanCard = plans[1] ?? plans[0]) => {
     if (hasAcademyAccess) {
@@ -521,7 +523,7 @@ export default function Academy() {
         </SectionIntro>
 
         <div className={`mt-20 grid border ${line} bg-[#f5f2ec] md:grid-cols-5`}>
-          {['+120 horas de contenido', '33 cursos disponibles', 'Masterclass cada 2 meses', 'WhatsApp con asesores', 'Acceso 24/7'].map((benefit) => (
+          {membershipBenefits.map((benefit) => (
             <button
               key={benefit}
               type="button"
@@ -535,7 +537,7 @@ export default function Academy() {
       </section>
 
       <section className={`${cream} border-b ${line} px-5 py-24 md:px-10 lg:px-14 lg:py-[140px]`}>
-        <SectionIntro index="03" label="Catálogo" side="33 cursos · 8 categorías">
+        <SectionIntro index="03" label="Catálogo" side={catalogSide}>
           <EditorialTitle>
             Cursos
             <span className="block"><em className="font-normal italic">destacados.</em></span>

@@ -36,7 +36,7 @@ const TIERS: TierDef[] = [
     eyebrow: 'Plan de entrada',
     suggestedPrice: 4997,
     defaultBenefits: { allCourses: true, masterclassEveryTwoMonths: false },
-    copy: 'Acceso completo al catálogo de la Academia (33 cursos).',
+    copy: 'Acceso completo al catálogo de la Academia.',
   },
   {
     tier: 'business',
@@ -206,6 +206,7 @@ function TierCard({
   const [editing, setEditing] = useState(false);
   const [selling, setSelling] = useState(false);
   const exists = !!pkg;
+  const publishedCount = courses.filter((c) => c.status === 'published').length;
 
   return (
     <article className="bg-cream-100 border border-ink-900/15 p-6 flex flex-col gap-5">
@@ -225,14 +226,14 @@ function TierCard({
         </p>
       </div>
 
-      <BenefitsSummary benefits={pkg?.benefits ?? def.defaultBenefits} />
+      <BenefitsSummary benefits={pkg?.benefits ?? def.defaultBenefits} courseCount={publishedCount} />
 
       <div className="border-t border-ink-900/10 pt-4 text-xs text-ink-600 flex items-center justify-between">
         <span>
           Cursos incluidos:{' '}
           <b className="text-ink-900">
             {pkg?.benefits?.allCourses
-              ? 'Todos'
+              ? `Todos (${publishedCount} publicados)`
               : `${Math.min(pkg?.courseIds.length ?? 0, courses.length || Number.MAX_SAFE_INTEGER)}`}
           </b>
         </span>
@@ -285,9 +286,9 @@ function TierCard({
   );
 }
 
-function BenefitsSummary({ benefits }: { benefits: PackageBenefits }) {
+function BenefitsSummary({ benefits, courseCount }: { benefits: PackageBenefits; courseCount: number }) {
   const rows = [
-    { on: benefits.allCourses, label: 'Acceso a los 33 cursos' },
+    { on: benefits.allCourses, label: courseCount > 0 ? `Acceso a los ${courseCount} cursos` : 'Acceso a todos los cursos' },
     { on: benefits.masterclassEveryTwoMonths, label: 'Masterclass gratis cada 2 meses' },
     { on: !!benefits.whatsappGroupAdvisors?.enabled, label: 'Grupo WhatsApp con asesores' },
     { on: !!benefits.whatsappDirectCEO?.enabled, label: 'WhatsApp directo con Diego Díaz' },
