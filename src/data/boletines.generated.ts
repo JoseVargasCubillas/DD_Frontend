@@ -3,13 +3,13 @@
 
 import type { StaticBlogPost } from './blogPosts';
 import alianza from '../../assets/ddweb/alianza-empresarial.jpg';
-import blindajeDigital from '../../assets/ddweb/blindaje-digital.jpg';
-import diegoAjedrez from '../../assets/ddweb/diego-ajedrez.jpg';
-import equipoUnido from '../../assets/ddweb/equipo-unido.jpg';
-import inmobiliario from '../../assets/ddweb/inmobiliario-construccion.jpg';
-import recibos from '../../assets/ddweb/recibos-deducibles.jpg';
+import blindajeDigital from '../../assets/ddweb/blindaje-digital.webp';
+import diegoAjedrez from '../../assets/ddweb/diego-ajedrez.webp';
+import equipoUnido from '../../assets/ddweb/equipo-unido.webp';
+import inmobiliario from '../../assets/ddweb/inmobiliario-construccion.webp';
+import recibos from '../../assets/ddweb/recibos-deducibles.webp';
 import reformaCover from '../../assets/ddweb/reforma-fiscal-2026.jpg';
-import satDigital from '../../assets/ddweb/sat-cumplimiento-digital.jpg';
+import satDigital from '../../assets/ddweb/sat-cumplimiento-digital.webp';
 
 const AUTHOR = {
   name: 'Equipo de Consultoría Diego Díaz',

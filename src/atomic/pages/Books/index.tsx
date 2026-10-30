@@ -3,10 +3,10 @@ import { useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import { subscribeNewsletter, subscribeSatWaitlist } from '@api/leads.api';
 import BookStack from '@molecules/BookStack';
-import bookClaves from '../../../../assets/ddweb/libro-siete-claves-cobrar.png';
-import bookSat from '../../../../assets/ddweb/libro-siete-secretos-sat.png';
-import bookFiscalista from '../../../../assets/ddweb/libro-siete-secretos-fiscalista.png';
-import diegoAuthor from '../../../../assets/ddweb/diego-lentes.jpg';
+import bookClaves from '../../../../assets/ddweb/libro-siete-claves-cobrar.webp';
+import bookSat from '../../../../assets/ddweb/libro-siete-secretos-sat.webp';
+import bookFiscalista from '../../../../assets/ddweb/libro-siete-secretos-fiscalista.webp';
+import diegoAuthor from '../../../../assets/ddweb/diego-lentes.webp';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -69,7 +69,7 @@ function BookCover3D({ src, alt }: { src: string; alt: string }) {
     <div className="group mx-auto w-full max-w-[430px] cursor-pointer [perspective:1400px]">
       <div className="relative aspect-[0.66] w-full transition-transform duration-300 ease-out [transform-style:preserve-3d] group-hover:[transform:rotateY(-10deg)_rotateX(4deg)_translateY(-10px)]">
         <div className="absolute inset-0 translate-x-7 translate-y-7 bg-black/10 blur-2xl transition-all duration-300 group-hover:translate-x-10 group-hover:translate-y-10 group-hover:bg-black/16" />
-        <img
+        <img loading="lazy" decoding="async"
           src={src}
           alt={alt}
           className={`relative z-10 h-full w-full border ${border} object-cover shadow-[0_24px_48px_rgba(0,0,0,0.18)] transition-shadow duration-300 group-hover:shadow-[0_36px_70px_rgba(0,0,0,0.28)]`}
@@ -495,7 +495,7 @@ export default function Books() {
         <div className="grid gap-14 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-24">
           <div>
             <p className={mono}>05 / Sobre el autor</p>
-            <img
+            <img loading="lazy" decoding="async"
               src={diegoAuthor}
               alt="Diego Díaz, autor de los libros"
               className={`mt-12 aspect-[0.75] w-full max-w-[540px] border ${border} object-cover object-center`}

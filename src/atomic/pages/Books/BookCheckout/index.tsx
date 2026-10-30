@@ -13,9 +13,9 @@ import Spinner from '@atoms/Spinner';
 import NotFound from '@pages/NotFound';
 import BookStack from '@molecules/BookStack';
 import type { ShippingAddress, OrderItem } from '@t/index';
-import bookClaves from '../../../../../assets/ddweb/libro-siete-claves-cobrar.png';
-import bookSat from '../../../../../assets/ddweb/libro-siete-secretos-sat.png';
-import bookFiscalista from '../../../../../assets/ddweb/libro-siete-secretos-fiscalista.png';
+import bookClaves from '../../../../../assets/ddweb/libro-siete-claves-cobrar.webp';
+import bookSat from '../../../../../assets/ddweb/libro-siete-secretos-sat.webp';
+import bookFiscalista from '../../../../../assets/ddweb/libro-siete-secretos-fiscalista.webp';
 
 const MEXICAN_STATES = [
   'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',

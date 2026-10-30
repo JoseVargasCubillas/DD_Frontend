@@ -9,8 +9,8 @@ import {
 } from '@utils/eventCalendar';
 import { getEventImage } from '@utils/eventImages';
 import { subscribeNewsletter } from '@api/leads.api';
-import diegoPasarela from '../../../../../assets/ddweb/diego-pasarela.jpg';
-import satDigital from '../../../../../assets/ddweb/sat-cumplimiento-digital.jpg';
+import diegoPasarela from '../../../../../assets/ddweb/diego-pasarela.webp';
+import satDigital from '../../../../../assets/ddweb/sat-cumplimiento-digital.webp';
 import { STATIC_BLOG_POSTS, formatStaticBlogDate } from '@/data/blogPosts';
 
 const border = 'border-ink-900/10';
@@ -135,7 +135,7 @@ export default function BlogList() {
 
       <section className="border-y border-ink-900/70">
         <div className="container-app grid gap-12 py-14 lg:grid-cols-[0.98fr_0.72fr] lg:items-center lg:py-20">
-          <img
+          <img loading="lazy" decoding="async"
             src={featured?.image ?? diegoPasarela}
             alt={featured?.title ?? 'Destacado'}
             className="h-[360px] w-full object-cover md:h-[440px] lg:h-[510px]"
@@ -196,7 +196,7 @@ export default function BlogList() {
           </div>
 
           <article className={`border-b ${border} py-9`}>
-            <img src={satDigital} alt="Cumplimiento digital del SAT" className="h-[330px] w-full object-cover" />
+            <img loading="lazy" decoding="async" src={satDigital} alt="Cumplimiento digital del SAT" className="h-[330px] w-full object-cover" />
             <div className="pt-6">
               <p className={mono}>— SAT & reformas · esta semana</p>
               <h3 className="mt-4 max-w-[860px] font-serif text-[clamp(38px,4.7vw,58px)] font-normal leading-[0.95] tracking-[-0.045em]">
@@ -218,7 +218,7 @@ export default function BlogList() {
           <div className="grid gap-x-6 md:grid-cols-2">
             {posts.map((post) => (
               <Link key={post.slug} to={`/blog/${post.slug}`} className={`group border-b ${border} py-7`}>
-                <img
+                <img loading="lazy" decoding="async"
                   src={post.image}
                   alt={post.title}
                   className="h-[220px] w-full object-cover transition duration-300 group-hover:grayscale"
@@ -247,7 +247,7 @@ export default function BlogList() {
             <h3 className="mt-5 font-serif text-[30px] leading-[0.95]">
               {eventTitle}
             </h3>
-            <img
+            <img loading="lazy" decoding="async"
               src={eventImage}
               alt={eventTitle}
               className="mt-5 aspect-square w-full object-cover"

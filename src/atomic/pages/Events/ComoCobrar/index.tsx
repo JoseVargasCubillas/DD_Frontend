@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import HubspotForm from "@molecules/HubspotForm";
 import { HUBSPOT_FORMS } from "@utils/hubspotForms";
-import heroBackground from "../../../../../assets/eventos/fondo-como-cobrar-ceo.png";
+import heroBackground from "../../../../../assets/eventos/fondo-como-cobrar-ceo.webp";
 
 const blocks = [
   {

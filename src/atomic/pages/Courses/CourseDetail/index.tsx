@@ -425,7 +425,7 @@ export default function CourseDetail() {
           <section className="border border-ink-900/10 bg-[#e8e1d6]">
             <div className="relative aspect-[1/1.12] overflow-hidden bg-[radial-gradient(circle_at_55%_35%,#5b4938_0,#2d211a_34%,#090807_80%)]">
               {instructorAvatar && (
-                <img src={instructorAvatar} alt={instructorName} className="h-full w-full object-cover opacity-90" />
+                <img loading="lazy" decoding="async" src={instructorAvatar} alt={instructorName} className="h-full w-full object-cover opacity-90" />
               )}
               <p className="absolute bottom-4 left-4 text-[8px] uppercase tracking-[0.24em] text-white/55">
                 - {instructorName} - Masterclass

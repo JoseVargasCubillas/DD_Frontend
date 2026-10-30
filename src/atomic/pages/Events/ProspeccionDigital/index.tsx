@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '@store/cartStore';
 import { waLink, trackWaClick } from '@utils/whatsapp';
-import prospeccionHero from '../../../../../assets/eventos/prospeccion-digital-hero.png';
+import prospeccionHero from '../../../../../assets/eventos/prospeccion-digital-hero.webp';
 
 const mono = 'font-mono text-[11px] uppercase tracking-[0.16em]';
 const marker = 'inline-flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-500 before:h-px before:w-6 before:bg-ink-500 before:content-[""]';

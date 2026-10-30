@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import armchair404 from "../../../../assets/errors/404-armchair.png";
+import armchair404 from "../../../../assets/errors/404-armchair.webp";
 
 const notFoundLines = [
   <>

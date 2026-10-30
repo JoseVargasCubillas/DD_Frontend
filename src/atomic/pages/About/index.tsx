@@ -4,8 +4,8 @@ import { useLocation } from 'react-router-dom';
 import { useHeroReveal, useReveal } from '@hooks/useReveal';
 import LeadCaptureModal from '@molecules/LeadCaptureModal';
 import { requestMediaKit } from '@api/leads.api';
-import diegoHero from '../../../../assets/ddweb/figma-diego-hero.png';
-import equipoDiazLara from '../../../../assets/ddweb/equipo-diaz-lara-escaleras.jpg';
+import diegoHero from '../../../../assets/ddweb/figma-diego-hero.webp';
+import equipoDiazLara from '../../../../assets/ddweb/equipo-diaz-lara-escaleras.webp';
 import logoLider from '../../../../assets/home/008_home_logo1_DD.png';
 import logoExcelsior from '../../../../assets/home/009_home_logo2_DD.png';
 import logoTeleformula from '../../../../assets/home/010_home_logo3_DD.png';
@@ -230,7 +230,7 @@ export default function About() {
             </p>
           </div>
           <div ref={heroImageRef} className="fade-up xl:flex xl:justify-end" style={{ transitionDelay: '260ms' }}>
-            <img
+            <img loading="lazy" decoding="async"
               src={diegoHero}
               alt="Diego Díaz"
               className={`aspect-[2731/4096] w-full max-w-[460px] border ${border} object-cover shadow-[0_28px_70px_rgba(0,0,0,0.08)] xl:max-h-[680px] xl:max-w-[520px]`}
@@ -324,7 +324,7 @@ export default function About() {
 
       <section className="bg-ink-900 py-24 text-white">
         <div ref={firmRef} className="stagger-grid container-app grid gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-          <img data-s="0" src={equipoDiazLara} alt="Equipo Díaz Lara" className="aspect-[4/3] w-full object-cover opacity-90" />
+          <img loading="lazy" decoding="async" data-s="0" src={equipoDiazLara} alt="Equipo Díaz Lara" className="aspect-[4/3] w-full object-cover opacity-90" />
           <div data-s="1">
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/45">04 / Firma</p>
             <h2 className="mt-6 font-serif text-[72px] leading-none tracking-[-0.06em]">Fundador de Díaz Lara.</h2>

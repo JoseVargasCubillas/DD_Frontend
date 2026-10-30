@@ -5,17 +5,17 @@
  */
 import type { CalendarEventSummary } from '@utils/eventCalendar';
 
-import satDigital from '../../assets/ddweb/sat-cumplimiento-digital.jpg';
-import sefCdmx from '../../assets/ddweb/SEF.jpg';
+import satDigital from '../../assets/ddweb/sat-cumplimiento-digital.webp';
+import sefCdmx from '../../assets/ddweb/SEF.webp';
 import reforma from '../../assets/ddweb/reforma-fiscal-2026.jpg';
-import diegoAjedrez from '../../assets/ddweb/diego-ajedrez.jpg';
-import ponente from '../../assets/ddweb/figma-ponente-diego.png';
+import diegoAjedrez from '../../assets/ddweb/diego-ajedrez.webp';
+import ponente from '../../assets/ddweb/figma-ponente-diego.webp';
 import alianza from '../../assets/ddweb/alianza-empresarial.jpg';
-import equipoUnido from '../../assets/ddweb/equipo-unido.jpg';
-import diegoHero from '../../assets/ddweb/figma-diego-hero.png';
-import comoCobrarCeo from '../../assets/eventos/fondo-como-cobrar-ceo.png';
-import evento48a40Horas from '../assets/eventos/evento-48-a-40-horas.png';
-import eventoTableroCeo from '../assets/eventos/evento-tablero-del-ceo.png';
+import equipoUnido from '../../assets/ddweb/equipo-unido.webp';
+import diegoHero from '../../assets/ddweb/figma-diego-hero.webp';
+import comoCobrarCeo from '../../assets/eventos/fondo-como-cobrar-ceo.webp';
+import evento48a40Horas from '../assets/eventos/evento-48-a-40-horas.webp';
+import eventoTableroCeo from '../assets/eventos/evento-tablero-del-ceo.webp';
 
 export function getEventImage(
   event?: Pick<CalendarEventSummary, 'slug' | 'title'> | null,

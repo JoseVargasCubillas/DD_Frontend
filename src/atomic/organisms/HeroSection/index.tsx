@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import heroImage from '../../../../assets/home/001_home_foto_DD.png';
+import heroImage from '../../../../assets/home/001_home_foto_DD.webp';
 import { useInView } from '@hooks/useInView';
 
 const EASE_OUT = 'cubic-bezier(.2,.8,.2,1)';

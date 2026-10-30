@@ -5,10 +5,10 @@ import { useSubscription } from '@hooks/useSubscription';
 import { usePackages } from '@hooks/usePackages';
 import { useAutoUnmuteOnGesture } from '@hooks/useAutoUnmuteOnGesture';
 import { useCatalogStats } from '@hooks/useCatalogStats';
-import diegoPortrait from '../../../../assets/eventos/LEF_img_001.png';
-import oscarPortrait from '../../../../assets/eventos/oscar-cayetano.png';
-import jazminPortrait from '../../../../assets/eventos/LEF_img 003.png';
-import jessicaPortrait from '../../../../assets/eventos/LEF_img_004.png';
+import diegoPortrait from '../../../../assets/eventos/LEF_img_001.webp';
+import oscarPortrait from '../../../../assets/eventos/oscar-cayetano.webp';
+import jazminPortrait from '../../../../assets/eventos/LEF_img 003.webp';
+import jessicaPortrait from '../../../../assets/eventos/LEF_img_004.webp';
 // Video hospedado en un GitHub Release del propio repo (tag `media-v1`).
 // Ventajas: es permanente, sobrevive a cualquier deploy del VPS (no vive en public_html),
 // tiene CDN de GitHub y no cuenta contra el bundle de Vite (307 MB).

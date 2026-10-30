@@ -11,22 +11,22 @@ import {
 } from "@utils/eventCalendar";
 import type { Event } from "@t/index";
 import IntegrationsPanel from "./IntegrationsPanel";
-import eventPersonaFisicaMoral from "../../../../../assets/eventos/evento-persona-fisica-moral.png";
-import eventMentalidadEmpresarial from "../../../../../assets/eventos/evento-mentalidad-empresarial.png";
-import eventSistemaProspeccion from "../../../../../assets/eventos/evento-sistema-prospeccion-digital.png";
-import eventTallerFiscal from "../../../../../assets/eventos/evento-taller-estrategia-fiscal.png";
-import eventMastermindPanama from "../../../../../assets/eventos/evento-mastermind-panama.png";
-import eventHolding from "../../../../../assets/eventos/evento-holding.png";
-import eventFiscalCdmx from "../../../../../assets/eventos/evento-estrategia-fiscal-cdmx.png";
-import eventCoaching from "../../../../../assets/eventos/evento-coaching-liderazgo.png";
-import eventFiscalMonterrey from "../../../../../assets/eventos/evento-estrategia-fiscal-monterrey.png";
-import eventRockefeller from "../../../../../assets/eventos/evento-rockefeller.png";
-import eventRockefellerAlt from "../../../../../assets/eventos/evento-rockefeller-alt.png";
-import eventMaestriaEscenica from "../../../../../assets/eventos/evento-maestria-escenica.png";
-import eventBeneficiosRegimen from "../../../../../assets/eventos/evento-beneficios-regimen-fiscal.png";
-import eventRevisionEstrategica from "../../../../../assets/eventos/evento-revision-estrategica-cdmx.png";
-import event48a40Horas from "../../../../assets/eventos/evento-48-a-40-horas.png";
-import eventTableroCeo from "../../../../assets/eventos/evento-tablero-del-ceo.png";
+import eventPersonaFisicaMoral from "../../../../../assets/eventos/evento-persona-fisica-moral.webp";
+import eventMentalidadEmpresarial from "../../../../../assets/eventos/evento-mentalidad-empresarial.webp";
+import eventSistemaProspeccion from "../../../../../assets/eventos/evento-sistema-prospeccion-digital.webp";
+import eventTallerFiscal from "../../../../../assets/eventos/evento-taller-estrategia-fiscal.webp";
+import eventMastermindPanama from "../../../../../assets/eventos/evento-mastermind-panama.webp";
+import eventHolding from "../../../../../assets/eventos/evento-holding.webp";
+import eventFiscalCdmx from "../../../../../assets/eventos/evento-estrategia-fiscal-cdmx.webp";
+import eventCoaching from "../../../../../assets/eventos/evento-coaching-liderazgo.webp";
+import eventFiscalMonterrey from "../../../../../assets/eventos/evento-estrategia-fiscal-monterrey.webp";
+import eventRockefeller from "../../../../../assets/eventos/evento-rockefeller.webp";
+import eventRockefellerAlt from "../../../../../assets/eventos/evento-rockefeller-alt.webp";
+import eventMaestriaEscenica from "../../../../../assets/eventos/evento-maestria-escenica.webp";
+import eventBeneficiosRegimen from "../../../../../assets/eventos/evento-beneficios-regimen-fiscal.webp";
+import eventRevisionEstrategica from "../../../../../assets/eventos/evento-revision-estrategica-cdmx.webp";
+import event48a40Horas from "../../../../assets/eventos/evento-48-a-40-horas.webp";
+import eventTableroCeo from "../../../../assets/eventos/evento-tablero-del-ceo.webp";
 import { getEventImage } from "@utils/eventImages";
 
 type EventForm = {

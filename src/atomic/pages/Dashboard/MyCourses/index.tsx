@@ -371,7 +371,7 @@ export default function MyCourses() {
             <div className="grid lg:grid-cols-[minmax(0,1fr)_340px]">
               <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-ink-900 via-[#241a13] to-[#0a0806] lg:aspect-auto lg:min-h-[320px]">
                 {selectedCourseCover && (
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={selectedCourseCover}
                     alt={`Portada del curso ${selectedCourse.title}`}
                     className="absolute inset-0 h-full w-full object-contain"

@@ -9,7 +9,7 @@ import {
   isHoldingEvent,
 } from "@utils/eventCalendar";
 import type { OrderItem } from "@t/index";
-import holdingPoster from "../../../../../assets/eventos/evento-holding.png";
+import holdingPoster from "../../../../../assets/eventos/evento-holding.webp";
 
 const HOLDING_CHECKOUT_ITEM: OrderItem & { id: string } = {
   id: "event-holding-masterclass-2026",

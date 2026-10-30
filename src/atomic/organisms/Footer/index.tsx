@@ -4,8 +4,8 @@ import toast from 'react-hot-toast';
 import { subscribeNewsletter } from '@api/leads.api';
 import logoFooter from '../../../../assets/home/012_home_footerlogo_DD.png';
 import logoDiegoWatermark from '../../../../assets/home/010_home_logo_fotter2_DD.png';
-import gptwBadge from '../../../../assets/certifications/gptw.png';
-import latinBadge from '../../../../assets/certifications/latin-excellence.png';
+import gptwBadge from '../../../../assets/certifications/gptw.webp';
+import latinBadge from '../../../../assets/certifications/latin-excellence.webp';
 
 const NEWSLETTER_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -45,7 +45,7 @@ export default function Footer() {
 
       {/* Watermark — imagen real del logo condensado, centrada como en el mockup */}
       <div className="overflow-hidden select-none pointer-events-none w-full h-[220px] md:h-[250px] flex items-center justify-center px-8 md:px-12">
-        <img
+        <img loading="lazy" decoding="async"
           src={logoDiegoWatermark}
           alt=""
           className="w-full max-w-[1040px] max-h-[180px] md:max-h-[195px] object-contain block"
@@ -57,7 +57,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr] gap-10 pt-12">
 
           <div className="sm:col-span-2 lg:col-span-1 space-y-5">
-            <img src={logoFooter} alt="Diego Diaz" className="h-12 object-contain brightness-0 invert" />
+            <img loading="lazy" decoding="async" src={logoFooter} alt="Diego Diaz" className="h-12 object-contain brightness-0 invert" />
             <p className="font-serif text-[20px] text-ink-300 leading-snug max-w-[180px]">
               El &eacute;xito, ama la preparaci&oacute;n.
             </p>

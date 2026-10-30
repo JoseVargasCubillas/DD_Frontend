@@ -3,11 +3,11 @@
 // `/blog/:slug` (ver BlogPost). Los posts locales tienen prioridad sobre el API.
 
 import reformaCover from '../../assets/ddweb/reforma-fiscal-2026.jpg';
-import satCover from '../../assets/ddweb/sat-cumplimiento-digital.jpg';
-import blindajeCover from '../../assets/ddweb/blindaje-digital.jpg';
-import equipoCover from '../../assets/ddweb/equipo-unido.jpg';
-import inmobiliarioCover from '../../assets/ddweb/inmobiliario-construccion.jpg';
-import recibosCover from '../../assets/ddweb/recibos-deducibles.jpg';
+import satCover from '../../assets/ddweb/sat-cumplimiento-digital.webp';
+import blindajeCover from '../../assets/ddweb/blindaje-digital.webp';
+import equipoCover from '../../assets/ddweb/equipo-unido.webp';
+import inmobiliarioCover from '../../assets/ddweb/inmobiliario-construccion.webp';
+import recibosCover from '../../assets/ddweb/recibos-deducibles.webp';
 
 export type BlogAuthor = {
   name: string;

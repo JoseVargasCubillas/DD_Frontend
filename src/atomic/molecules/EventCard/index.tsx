@@ -30,7 +30,7 @@ export default function EventCard({ event }: EventCardProps) {
       {/* Imagen */}
       {event.thumbnail && (
         <div className="overflow-hidden h-48">
-          <img
+          <img loading="lazy" decoding="async"
             src={event.thumbnail}
             alt={event.title}
             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"

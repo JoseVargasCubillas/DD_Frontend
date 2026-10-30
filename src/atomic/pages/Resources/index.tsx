@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
 import LeadCaptureModal from '@molecules/LeadCaptureModal';
 import { requestDownloadableResource } from '@api/leads.api';
-import phoneMockup from '../../../../assets/resources/calculadora-celular.png';
+import phoneMockup from '../../../../assets/resources/calculadora-celular.webp';
 import googlePlayBadge from '../../../../assets/resources/google-play-badge.png';
 import appStoreBadge from '../../../../assets/resources/app-store-badge.png';
-import coverIngresos from '../../../../assets/resources/cover-ingresos-exentos-isr.png';
-import coverAgenda from '../../../../assets/resources/cover-si-tu-agenda.png';
-import coverBlindaje from '../../../../assets/resources/cover-guia-blindarte-sat.png';
-import coverPartes from '../../../../assets/resources/cover-partes-relacionadas.png';
+import coverIngresos from '../../../../assets/resources/cover-ingresos-exentos-isr.webp';
+import coverAgenda from '../../../../assets/resources/cover-si-tu-agenda.webp';
+import coverBlindaje from '../../../../assets/resources/cover-guia-blindarte-sat.webp';
+import coverPartes from '../../../../assets/resources/cover-partes-relacionadas.webp';
 import ingresosPdf from '../../../../assets/resources/recurso-asesorias.pdf';
 import agendaPdf from '../../../../assets/resources/recurso-rockefeller.pdf';
 import blindajePdf from '../../../../assets/resources/recurso-estrategia-fiscal.pdf';
@@ -154,7 +154,7 @@ export default function Resources() {
             className="order-2 flex shrink-0 items-end justify-center self-stretch md:order-1"
             style={{ width: 360, maxWidth: '100%', minHeight: 320 }}
           >
-            <img
+            <img loading="lazy" decoding="async"
               src={phoneMockup}
               alt="Vista de la Calculadora Fiscal en celular"
               className="w-auto max-w-none object-contain drop-shadow-[0_24px_34px_rgba(0,0,0,0.16)]"
@@ -204,7 +204,7 @@ export default function Resources() {
                 aria-label="Descargar Calculadora Fiscal en Google Play"
                 className="inline-flex min-h-11 cursor-pointer transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-ink-900 focus:ring-offset-2"
               >
-                <img
+                <img loading="lazy" decoding="async"
                   src={googlePlayBadge}
                   alt="Disponible en Google Play"
                   className="w-auto"
@@ -218,7 +218,7 @@ export default function Resources() {
                 aria-label="Descargar Calculadora Fiscal en App Store"
                 className="inline-flex min-h-11 cursor-pointer transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-ink-900 focus:ring-offset-2"
               >
-                <img
+                <img loading="lazy" decoding="async"
                   src={appStoreBadge}
                   alt="Disponible en App Store"
                   className="w-auto"

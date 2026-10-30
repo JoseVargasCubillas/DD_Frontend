@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import diegoAjedrez from '../../../../assets/ddweb/diego-ajedrez.jpg';
+import diegoAjedrez from '../../../../assets/ddweb/diego-ajedrez.webp';
 import { waLink, WHATSAPP_DEFAULT_MESSAGE, WHATSAPP_PHONE, trackWaClick } from '@utils/whatsapp';
 
 const formatWaDisplay = (raw: string): string => {
@@ -220,7 +220,7 @@ export default function Contact() {
           </div>
         </div>
         <div className="lg:pt-0">
-          <img
+          <img loading="lazy" decoding="async"
             src={diegoAjedrez}
             alt="Diego Díaz revisando una estrategia"
             className="ml-auto aspect-[0.73] w-full max-w-[560px] object-cover"

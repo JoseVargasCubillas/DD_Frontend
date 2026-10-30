@@ -232,7 +232,7 @@ export default function EventDetail() {
 
             <div className="lg:sticky lg:top-24">
               {event.thumbnail
-                ? <img src={event.thumbnail} alt={event.title} className="aspect-[4/3] w-full object-cover" />
+                ? <img loading="lazy" decoding="async" src={event.thumbnail} alt={event.title} className="aspect-[4/3] w-full object-cover" />
                 : <div className="flex aspect-[4/3] w-full items-center justify-center bg-ink-200 text-[10px] uppercase tracking-[0.24em] text-ink-300">Imagen proxima</div>
               }
               <div className="mt-5 hidden border border-cream-400 bg-white p-6 lg:block">

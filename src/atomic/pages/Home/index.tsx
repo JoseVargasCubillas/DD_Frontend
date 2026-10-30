@@ -25,15 +25,15 @@ import {
   type CalendarEventSummary,
 } from "@utils/eventCalendar";
 import { waClickHandler } from "@utils/whatsapp";
-import imgEstrategia from "../../../../assets/home/002_home_Estrategia_DD.png";
-import imgFormacion from "../../../../assets/home/003_home_Formacion_DD.png";
-import imgRevision from "../../../../assets/home/004_home_Revision_DD.png";
-import imgCreativos from "../../../../assets/home/005_home_creativos_DD.png";
-import imgRockefeller from "../../../../assets/home/006_home_rockefeller_DD.png";
+import imgEstrategia from "../../../../assets/home/002_home_Estrategia_DD.webp";
+import imgFormacion from "../../../../assets/home/003_home_Formacion_DD.webp";
+import imgRevision from "../../../../assets/home/004_home_Revision_DD.webp";
+import imgCreativos from "../../../../assets/home/005_home_creativos_DD.webp";
+import imgRockefeller from "../../../../assets/home/006_home_rockefeller_DD.webp";
 
 // Assets
-import imgBio from "../../../../assets/home/007_home_bios_DD.png";
-import imgGuia from "../../../../assets/home/010_home_iniciativa_fiscal_2027_DD.png";
+import imgBio from "../../../../assets/home/007_home_bios_DD.webp";
+import imgGuia from "../../../../assets/home/010_home_iniciativa_fiscal_2027_DD.webp";
 import logoAzteca from "../../../../assets/home/008_home_logo1_DD.png";
 import logoLider from "../../../../assets/home/009_home_logo2_DD.png";
 import logoMilenio from "../../../../assets/home/010_home_logo3_DD.png";
@@ -225,7 +225,7 @@ function BookTilt({
       }}
       onTouchEnd={resetTilt}
     >
-      <img src={src} alt={alt} className={imgClassName} />
+      <img loading="lazy" decoding="async" src={src} alt={alt} className={imgClassName} />
     </div>
   );
 }
@@ -719,7 +719,7 @@ export default function Home() {
                 className="group flex-1 flex flex-col overflow-hidden border border-cream-400 hover:border-ink-400 hover:-translate-y-1.5 transition-[transform,border-color] duration-[400ms] bg-white"
               >
                 <div className="flex-1 overflow-hidden min-h-[260px] md:min-h-0">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={featured.image}
                     alt={featured.titleLine1}
                     className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
@@ -775,7 +775,7 @@ export default function Home() {
                   className="group flex flex-col overflow-hidden border border-cream-400 hover:border-ink-400 hover:-translate-y-1.5 transition-[transform,border-color] duration-[400ms] bg-white h-full"
                 >
                   <div className="overflow-hidden h-40">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={ev.image}
                       alt={ev.titleLine1}
                       className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
@@ -856,7 +856,7 @@ export default function Home() {
               variant="slide-right"
               className="overflow-hidden aspect-[3/4]"
             >
-              <img
+              <img loading="lazy" decoding="async"
                 src={imgBio}
                 alt="Diego Díaz"
                 className="w-full h-full object-cover object-top"
@@ -942,7 +942,7 @@ export default function Home() {
                 aria-label={`Ver a Diego en prensa: ${logo.alt}`}
                 className="inline-flex cursor-pointer items-center transition-opacity duration-300 opacity-60 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900/35"
               >
-                <img
+                <img loading="lazy" decoding="async"
                   src={logo.src}
                   alt={logo.alt}
                   className="h-7 md:h-8 object-contain"

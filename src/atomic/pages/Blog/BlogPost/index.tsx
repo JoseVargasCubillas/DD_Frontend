@@ -126,7 +126,7 @@ export default function BlogPost() {
       {/* ── Portada ─────────────────────────────── */}
       {image && (
         <section className={`container-app border-b ${border} py-10`}>
-          <img
+          <img loading="lazy" decoding="async"
             src={image}
             alt={title}
             className="h-[320px] w-full object-cover sm:h-[420px] lg:h-[520px]"
@@ -167,7 +167,7 @@ export default function BlogPost() {
           <div className="bg-ink-900 p-6 text-white">
             <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-white/50">— Próximo evento</p>
             <h3 className="mt-5 font-serif text-[26px] leading-[0.98]">{eventTitle}</h3>
-            <img
+            <img loading="lazy" decoding="async"
               src={eventImage}
               alt={eventTitle}
               className="mt-5 aspect-square w-full object-cover"
@@ -232,7 +232,7 @@ export default function BlogPost() {
             <div className="mt-10 grid gap-8 md:grid-cols-3">
               {suggestions.map((post) => (
                 <Link key={post.slug} to={`/blog/${post.slug}`} className={`group block border ${border} bg-cream-50 p-6 transition-colors hover:bg-ink-900 hover:text-white`}>
-                  <img src={post.image} alt={post.title} className="h-[180px] w-full object-cover transition duration-300 group-hover:grayscale" />
+                  <img loading="lazy" decoding="async" src={post.image} alt={post.title} className="h-[180px] w-full object-cover transition duration-300 group-hover:grayscale" />
                   <p className={`mt-5 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-900/45 group-hover:text-white/50`}>
                     — {post.tag} · {formatStaticBlogDate(post.publishedAt)}
                   </p>
