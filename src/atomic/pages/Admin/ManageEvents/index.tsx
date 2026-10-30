@@ -887,9 +887,30 @@ const selectedIsNew = selectedId === "new";
               <input
                 type="datetime-local"
                 value={form.startDate}
-                onChange={(event) => update("startDate", event.target.value)}
+                onChange={(event) => {
+                  const start = event.target.value;
+                  // Un fin anterior al inicio es un dato inválido: se alinea al nuevo inicio.
+                  setForm((current) => ({
+                    ...current,
+                    startDate: start,
+                    endDate: !current.endDate || current.endDate < start ? start : current.endDate,
+                  }));
+                }}
                 className={INPUT_CLASS}
               />
+            </Field>
+
+            <Field label="Fin del evento">
+              <input
+                type="datetime-local"
+                value={form.endDate}
+                min={form.startDate || undefined}
+                onChange={(event) => update("endDate", event.target.value)}
+                className={INPUT_CLASS}
+              />
+              <p className="mt-1 text-xs text-ink-400">
+                Si el evento dura un solo día, deja el mismo día que el inicio.
+              </p>
             </Field>
 
             <Field label="Imagen del evento">
