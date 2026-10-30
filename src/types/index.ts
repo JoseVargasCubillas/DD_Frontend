@@ -379,6 +379,9 @@ export interface AdminTicket extends PublicTicket {
   attendeePhone: string;
   orderId: string;
   checkedInBy: string | null;
+  /** 'hubspot' = venta cerrada por un asesor; 'web' = compra en la página. */
+  source: 'hubspot' | 'web';
+  advisorName: string;
 }
 
 export interface TicketCheckInResult {

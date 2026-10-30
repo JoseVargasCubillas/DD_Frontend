@@ -14,6 +14,11 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'pending', label: 'Pendientes' },
 ];
 
+function originLabel(ticket: AdminTicket): string {
+  if (ticket.source !== 'hubspot') return 'Compra web';
+  return ticket.advisorName ? `Asesor: ${ticket.advisorName}` : 'Asesor (sin asignar)';
+}
+
 function StatusCell({ ticket }: { ticket: AdminTicket }) {
   if (ticket.status === 'used') {
     return (
@@ -42,7 +47,7 @@ export default function EventAttendees() {
       if (filter === 'checkedIn' && t.status !== 'used') return false;
       if (filter === 'pending' && t.status !== 'valid') return false;
       if (!q) return true;
-      return [t.attendeeName, t.attendeeEmail, t.folio].some((v) => v?.toLowerCase().includes(q));
+      return [t.attendeeName, t.attendeeEmail, t.folio, originLabel(t)].some((v) => v?.toLowerCase().includes(q));
     });
   }, [data?.tickets, filter, search]);
 
@@ -132,7 +137,7 @@ export default function EventAttendees() {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nombre, correo o folio"
+            placeholder="Buscar por nombre, correo, folio o asesor"
             className="min-h-11 w-full rounded-xl border border-ink-900/15 bg-cream-50 px-4 text-sm focus:border-ink-900 focus:outline-none sm:max-w-sm"
           />
           <div className="flex gap-1 rounded-full bg-cream-100 p-1">
@@ -164,6 +169,7 @@ export default function EventAttendees() {
                     <th className="px-4 py-3">Correo</th>
                     <th className="px-4 py-3">Folio</th>
                     <th className="px-4 py-3">Compra</th>
+                    <th className="px-4 py-3">Origen / Asesor</th>
                     <th className="px-4 py-3">Estado</th>
                     <th className="px-4 py-3 text-right">Acción</th>
                   </tr>
@@ -178,6 +184,7 @@ export default function EventAttendees() {
                       <td className="px-4 py-3 text-ink-600">{t.attendeeEmail}</td>
                       <td className="px-4 py-3 font-mono text-xs tracking-wider">{t.folio}</td>
                       <td className="px-4 py-3 text-ink-600">{t.purchasedAt ? formatDateShort(t.purchasedAt) : '—'}</td>
+                      <td className="px-4 py-3 text-ink-600">{originLabel(t)}</td>
                       <td className="px-4 py-3">
                         <StatusCell ticket={t} />
                       </td>
@@ -214,6 +221,7 @@ export default function EventAttendees() {
                     <span className="font-mono tracking-wider">{t.folio}</span>
                     <span>{t.purchasedAt ? formatDateShort(t.purchasedAt) : ''}</span>
                   </div>
+                  <p className="mt-1 text-xs text-ink-500">{originLabel(t)}</p>
                   {t.status === 'used' && (
                     <button
                       type="button"
