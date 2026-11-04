@@ -6,6 +6,8 @@ export interface BroadcastPayload {
   html: string;
   segment: string;
   segmentLabel?: string;
+  // Solo con segment === 'downloadables': ids del catálogo (vacío = todos los descargables).
+  downloadableIds?: string[];
   // Valida todo con Mailchimp sin enviar nada.
   dryRun?: boolean;
   // Solo con segment === 'custom': contactos pegados o importados de un archivo (con nombre opcional).
@@ -186,8 +188,17 @@ export const getCampaignDetail = (id: string): Promise<CampaignDetail> =>
 export const getCampaigns = (): Promise<CampaignLog[]> =>
   client.get<ApiResponse<CampaignLog[]>>('/email/campaigns').then((r) => r.data);
 
+export interface DownloadableOption {
+  id: string;
+  label: string;
+  group: string;
+  count: number;
+}
+
 export interface SegmentCounts {
   all: number;
+  // Solo cuentas de la plataforma (sin leads); `all` ya incluye ambos.
+  accounts?: number;
   subscribed: number;
   customers: number;
   leads: number;
@@ -195,6 +206,8 @@ export interface SegmentCounts {
   guiaSat?: number;
   iniciativaFiscal2027?: number;
   newsletterLeads?: number;
+  downloadables?: number;
+  downloadableOptions?: DownloadableOption[];
 }
 
 export const sendBroadcast = (payload: BroadcastPayload): Promise<BroadcastResult> =>
@@ -208,5 +221,8 @@ export interface ContactPreview {
 export const getSegments = (): Promise<SegmentCounts> =>
   client.get<ApiResponse<SegmentCounts>>('/email/segments').then((r) => r.data);
 
-export const getSegmentContacts = (segment: string): Promise<ContactPreview[]> =>
-  client.get<ApiResponse<ContactPreview[]>>('/email/contacts?segment=' + segment).then((r) => r.data);
+export const getSegmentContacts = (segment: string, downloadableIds: string[] = []): Promise<ContactPreview[]> => {
+  const params = new URLSearchParams({ segment });
+  if (downloadableIds.length) params.set('downloadableIds', downloadableIds.join(','));
+  return client.get<ApiResponse<ContactPreview[]>>('/email/contacts?' + params.toString()).then((r) => r.data);
+};

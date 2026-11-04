@@ -17,6 +17,7 @@ type Segment =
   | 'guide-leads'
   | 'lead-source:guia-blindaje-sat'
   | 'lead-source:iniciativa-fiscal-2027'
+  | 'downloadables'
   | 'custom';
 
 interface SegmentOption {
@@ -30,10 +31,11 @@ const SEGMENT_OPTIONS: SegmentOption[] = [
   { id: 'customers', label: 'Clientes', description: 'Compraron al menos una vez' },
   { id: 'leads', label: 'Leads (usuarios)', description: 'Cuentas sin compra' },
   { id: 'newsletter-leads', label: 'Suscriptores Mailing', description: 'Correos del footer, blog y formularios de mailing (no es lo mismo que Academia)' },
+  { id: 'downloadables', label: 'Descargables', description: 'Elige qué guías o recursos descargaron' },
   { id: 'lead-source:guia-blindaje-sat', label: 'Leads · Guía SAT', description: 'Descargaron la guía desde el Home' },
   { id: 'lead-source:iniciativa-fiscal-2027', label: 'Leads · Iniciativa Fiscal 2027', description: 'Descargaron el documento de Iniciativa Fiscal 2027' },
   { id: 'guide-leads', label: 'Leads editoriales', description: 'Descargas de recursos y media kit' },
-  { id: 'all', label: 'Todos los contactos', description: 'Toda la base de datos activa' },
+  { id: 'all', label: 'Todos los contactos', description: 'Cuentas de la plataforma + todos los leads (formularios, descargas, mailing)' },
   { id: 'custom', label: 'Destinatarios personalizados', description: 'Pega los correos a los que quieres enviar' },
 ];
 
@@ -99,6 +101,8 @@ export default function ManageEmail() {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [segment, setSegment] = useState<Segment>('all');
+  // Solo con segment === 'downloadables'. Vacío = todos los descargables.
+  const [downloadableIds, setDownloadableIds] = useState<string[]>([]);
 
   useEffect(() => {
     const urlSegment = searchParams.get('segment');
@@ -203,8 +207,8 @@ export default function ManageEmail() {
   });
 
   const { data: contactList = [] } = useQuery<ContactPreview[]>({
-    queryKey: ['email-contacts', segment],
-    queryFn: () => emailApi.getSegmentContacts(segment),
+    queryKey: ['email-contacts', segment, downloadableIds],
+    queryFn: () => emailApi.getSegmentContacts(segment, downloadableIds),
     staleTime: 30 * 1000,
     enabled: source === 'web' && segment !== 'custom',
   });
@@ -248,12 +252,33 @@ export default function ManageEmail() {
   });
 
   const selectedSegmentOption = SEGMENT_OPTIONS.find((s) => s.id === segment)!;
+  const downloadableOptions = useMemo(() => segments?.downloadableOptions ?? [], [segments]);
+  const downloadableGroups = useMemo(() => {
+    const map = new Map<string, emailApi.DownloadableOption[]>();
+    for (const opt of downloadableOptions) {
+      map.set(opt.group, [...(map.get(opt.group) ?? []), opt]);
+    }
+    return Array.from(map.entries());
+  }, [downloadableOptions]);
+  const toggleDownloadable = (id: string) =>
+    setDownloadableIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const downloadablesLabel =
+    downloadableIds.length === 0
+      ? 'Descargables · todos'
+      : `Descargables · ${downloadableIds
+          .map((id) => downloadableOptions.find((o) => o.id === id)?.label ?? id)
+          .join(', ')}`;
+  const segmentLabel = segment === 'downloadables' ? downloadablesLabel : selectedSegmentOption.label;
   // Contactos pegados o importados (correo + nombre). Memoizado: puede tener miles de líneas.
   const customParsed = useMemo(() => parseContacts(customText), [customText]);
   const testParsed = parseEmails(testToText);
   const webRecipientCount =
     segment === 'custom'
       ? customParsed.valid.length
+      : segment === 'downloadables'
+      ? downloadableIds.length === 0
+        ? segments?.downloadables
+        : contactList.length
       : segment === 'all'
       ? segments?.all
       : segment === 'subscribed'
@@ -281,7 +306,7 @@ export default function ManageEmail() {
   const destinationLabel =
     source === 'mailchimp'
       ? `${selectedAudience?.name ?? 'Audiencia de Mailchimp'} · ${selectedAudienceSegment?.name ?? 'Toda la audiencia'}`
-      : selectedSegmentOption.label;
+      : segmentLabel;
 
   // Envíos masivos: el servidor también exige la frase, esto solo la pide en pantalla.
   const needsPhrase =
@@ -386,9 +411,10 @@ export default function ManageEmail() {
           subject,
           html: previewHtml,
           segment,
-          segmentLabel: selectedSegmentOption.label,
+          segmentLabel,
           source: 'web',
           ...(segment === 'custom' ? { recipients: customParsed.valid } : {}),
+          ...(segment === 'downloadables' ? { downloadableIds } : {}),
         };
 
   // ── Helpers de formato en textarea ─────────────────────────
@@ -562,6 +588,76 @@ export default function ManageEmail() {
                   </button>
                 ))}
               </div>
+              )}
+              {source === 'web' && segment === 'downloadables' && (
+                <fieldset className="mt-3 rounded border border-cream-300 bg-white p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <legend className="text-[10px] font-bold uppercase tracking-[0.18em] text-ink-400">
+                      ¿Qué descargaron?
+                    </legend>
+                    <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.16em]">
+                      <button
+                        type="button"
+                        onClick={() => setDownloadableIds([])}
+                        className={`underline-offset-2 ${downloadableIds.length === 0 ? 'text-ink-900 underline' : 'text-ink-400 hover:text-ink-700'}`}
+                      >
+                        Todos
+                      </button>
+                      {downloadableIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setDownloadableIds([])}
+                          className="text-ink-400 hover:text-ink-700"
+                        >
+                          Limpiar ({downloadableIds.length})
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <p className="mt-1 text-[11px] text-ink-500">
+                    Sin marcar nada se envía a quien descargó cualquier recurso. Marca uno o varios para acotar.
+                  </p>
+                  {downloadableGroups.length === 0 ? (
+                    <p className="mt-3 text-[11px] text-ink-400">Cargando descargables…</p>
+                  ) : (
+                    <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                      {downloadableGroups.map(([group, opts]) => (
+                        <div key={group}>
+                          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">{group}</p>
+                          <ul className="space-y-1">
+                            {opts.map((opt) => {
+                              const checked = downloadableIds.includes(opt.id);
+                              return (
+                                <li key={opt.id}>
+                                  <label
+                                    className={`flex cursor-pointer items-center justify-between gap-3 rounded border px-3 py-2 text-[12px] transition-colors ${
+                                      checked
+                                        ? 'border-ink-900 bg-ink-900 text-white'
+                                        : 'border-cream-300 bg-cream-50 text-ink-700 hover:border-ink-400'
+                                    }`}
+                                  >
+                                    <span className="flex items-center gap-2">
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={() => toggleDownloadable(opt.id)}
+                                        className="h-3.5 w-3.5 accent-ink-900"
+                                      />
+                                      <span className="font-medium leading-tight">{opt.label}</span>
+                                    </span>
+                                    <span className={`shrink-0 text-[10px] tabular-nums ${checked ? 'text-white/60' : 'text-ink-400'}`}>
+                                      {opt.count.toLocaleString('es-MX')}
+                                    </span>
+                                  </label>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </fieldset>
               )}
               <div className="mt-3 flex items-center gap-3">
                 {recipientCount !== undefined && (
