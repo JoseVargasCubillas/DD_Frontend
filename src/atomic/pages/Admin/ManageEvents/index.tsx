@@ -6,6 +6,8 @@ import { useCreateEvent, useDeleteEvent, useEvents, useUpdateEvent } from "@hook
 import {
   FALLBACK_CALENDAR_EVENTS,
   getCalendarEventType,
+  getEstrategiaFiscalVenueKey,
+  getEstrategiaFiscalVenuePath,
   isEstrategiaFiscalEvent,
   isWhatsAppOnlyEvent,
 } from "@utils/eventCalendar";
@@ -1042,7 +1044,18 @@ const selectedIsNew = selectedId === "new";
               }) ? (
                 <>
                   <strong className="text-ink-900">Detectado como Estrategia Fiscal.</strong>{" "}
-                  Se abrirá en /eventos/estrategia-fiscal?evento={form.slug || "…"}.{" "}
+                  Link de campaña por sede (estable, siempre abre la próxima edición de esa
+                  sede):{" "}
+                  <code className="rounded bg-ink-900/5 px-1 py-0.5 text-ink-900">
+                    {getEstrategiaFiscalVenuePath(
+                      getEstrategiaFiscalVenueKey({
+                        slug: form.slug,
+                        location: form.location,
+                        modality: form.modality,
+                      }),
+                    )}
+                  </code>
+                  . Esta edición en concreto: /eventos/estrategia-fiscal?evento={form.slug || "…"}.{" "}
                   {form.modality === "online"
                     ? "Modalidad Online: la landing mostrará solo el ticket Online."
                     : form.modality === "hybrid"

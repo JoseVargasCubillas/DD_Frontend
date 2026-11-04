@@ -3,7 +3,7 @@ import LeadCaptureModal from '@molecules/LeadCaptureModal';
 import HubspotForm from '@molecules/HubspotForm';
 import { HUBSPOT_FORMS } from '@utils/hubspotForms';
 import { requestEstrategiaFiscalDossier } from '@api/leads.api';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAutoUnmuteOnGesture } from '@hooks/useAutoUnmuteOnGesture';
 import { useEvents } from '@hooks/useEvents';
 import { useNowTick } from '@hooks/useNowTick';
@@ -14,6 +14,7 @@ import {
   formatEventFormatLabel,
   getCalendarEventLocation,
   getNextEstrategiaFiscalEvent,
+  getNextEstrategiaFiscalEventByVenue,
   hasConfirmedVenue,
   isEstrategiaFiscalEvent,
   isUpcomingCalendarEvent,
@@ -472,6 +473,9 @@ export default function EstrategiaFiscalLanding() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedSlug = searchParams.get('evento');
+  // Sede del link de campaña (/eventos/estrategia-fiscal/cdmx). Estable entre
+  // meses: siempre resuelve a la próxima edición en esa sede.
+  const requestedVenue = (useParams<{ sede?: string }>().sede ?? '').trim().toLowerCase();
   const addItem = useCartStore((s) => s.addItem);
   const clearCart = useCartStore((s) => s.clear);
   const nowTick = useNowTick(30_000);
@@ -507,9 +511,10 @@ export default function EstrategiaFiscalLanding() {
     [eventsData?.data, storedEvents],
   );
 
-  // Edición que abre la landing: la que pide ?evento=<slug> (cada card del
-  // calendario manda la suya) o, sin parámetro / si ya pasó, el próximo taller
-  // de Estrategia Fiscal (online, CDMX, Monterrey — cualquier variante).
+  // Edición que abre la landing, por prioridad:
+  //  1. ?evento=<slug> (cada card del calendario manda la suya), si sigue vigente.
+  //  2. /:sede → próxima edición en esa sede (link estable para campañas).
+  //  3. Próximo taller de Estrategia Fiscal, cualquier sede.
   // Se recomputa cada 30s con nowTick: cuando la fecha del actual pasa, salta
   // automáticamente al siguiente de la lista.
   const currentEvent = useMemo<CalendarEventSummary>(() => {
@@ -518,12 +523,16 @@ export default function EstrategiaFiscalLanding() {
           (event) => event.slug === requestedSlug && isUpcomingCalendarEvent(event, nowTick),
         )
       : undefined;
+    const byVenue = requestedVenue
+      ? getNextEstrategiaFiscalEventByVenue(efCandidates, requestedVenue, nowTick)
+      : undefined;
     return (
       requested ??
+      byVenue ??
       getNextEstrategiaFiscalEvent(efCandidates, nowTick) ??
       FALLBACK_ESTRATEGIA_FISCAL
     );
-  }, [efCandidates, requestedSlug, nowTick]);
+  }, [efCandidates, requestedSlug, requestedVenue, nowTick]);
 
   // Sólo la próxima edición presencial tiene sede conocida; las posteriores
   // se muestran como "Sede por confirmar".

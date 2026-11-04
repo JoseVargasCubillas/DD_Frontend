@@ -420,6 +420,52 @@ export const getNextEstrategiaFiscalEvent = (
   now = Date.now(),
 ) => getNextUpcomingCalendarEvent(events.filter(isEstrategiaFiscalEvent), now);
 
+// Clave estable de sede para links de campaña: /eventos/estrategia-fiscal/<sede>.
+// No depende del mes: "cdmx" siempre apunta a la próxima edición en CDMX.
+export const getEstrategiaFiscalVenueKey = (
+  event: Pick<CalendarEventSummary, "slug" | "location" | "modality">,
+) => {
+  if (event.modality === "online") return "online";
+  const haystack = `${event.slug || ""} ${event.location || ""}`.toLowerCase();
+  if (/cdmx|ciudad de m[eé]xico|santa fe/.test(haystack)) return "cdmx";
+  if (/monterrey|mty|nuevo le[oó]n/.test(haystack)) return "monterrey";
+  if (/guadalajara|gdl|jalisco/.test(haystack)) return "guadalajara";
+  if (/online|zoom/.test(haystack)) return "online";
+  const city = (event.location || "").split(",")[0].trim();
+  const slugged = city
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+  return slugged || "presencial";
+};
+
+export const ESTRATEGIA_FISCAL_VENUE_LABELS: Record<string, string> = {
+  online: "Online",
+  cdmx: "CDMX",
+  monterrey: "Monterrey",
+  guadalajara: "Guadalajara",
+  presencial: "Presencial",
+};
+
+export const getEstrategiaFiscalVenuePath = (venueKey: string) =>
+  `/eventos/estrategia-fiscal/${encodeURIComponent(venueKey)}`;
+
+// Próxima edición de Estrategia Fiscal en una sede concreta.
+export const getNextEstrategiaFiscalEventByVenue = (
+  events: CalendarEventSummary[],
+  venueKey: string,
+  now = Date.now(),
+) =>
+  getNextUpcomingCalendarEvent(
+    events.filter(
+      (event) =>
+        isEstrategiaFiscalEvent(event) && getEstrategiaFiscalVenueKey(event) === venueKey,
+    ),
+    now,
+  );
+
 export const VENUE_TO_BE_CONFIRMED = "Sede por confirmar";
 
 // La sede se muestra en cuanto el evento tiene "Lugar" capturado en el admin;
@@ -761,7 +807,8 @@ export const getCalendarEventActionLabel = (
     : fallback;
 
 export const getCalendarEventPath = (
-  event?: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl"> | null,
+  event?: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl"> &
+    Partial<Pick<CalendarEventSummary, "location" | "modality">> | null,
 ) => {
   if (!event) return "/eventos";
   const title = event.title.trim().toLowerCase();
@@ -769,11 +816,16 @@ export const getCalendarEventPath = (
     return "/eventos/revision-estrategica";
   }
   if (isEstrategiaFiscalEvent(event)) {
-    // ?evento fija qué edición (online / presencial) abre la landing; sin él
-    // la landing muestra la próxima por fecha.
-    return event.slug
-      ? `/eventos/estrategia-fiscal?evento=${encodeURIComponent(event.slug)}`
-      : "/eventos/estrategia-fiscal";
+    // Link por sede (estable para campañas). ?evento fija la edición concreta
+    // que abre la card; sin él la landing muestra la próxima de esa sede.
+    const base = getEstrategiaFiscalVenuePath(
+      getEstrategiaFiscalVenueKey({
+        slug: event.slug,
+        location: event.location ?? "",
+        modality: event.modality,
+      }),
+    );
+    return event.slug ? `${base}?evento=${encodeURIComponent(event.slug)}` : base;
   }
   if (
     event.slug.includes("emprendedor-vs-ceo") ||

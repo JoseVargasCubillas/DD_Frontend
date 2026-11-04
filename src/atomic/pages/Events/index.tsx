@@ -9,6 +9,8 @@ import {
   formatEventShortDateRange,
   getCalendarEventAction,
   getCalendarEventActionLabel,
+  getEstrategiaFiscalVenueKey,
+  getEstrategiaFiscalVenuePath,
   isEstrategiaFiscalEvent,
   isWhatsAppOnlyEvent,
   VENUE_TO_BE_CONFIRMED,
@@ -342,8 +344,6 @@ const getEventCardSlug = (event: EventCard) =>
     return parts[parts.length - 1] ?? "";
   })();
 
-const ESTRATEGIA_FISCAL_PATH = "/eventos/estrategia-fiscal";
-
 const isOnlineCard = (event: EventCard) =>
   event.modality
     ? event.modality === "online"
@@ -370,9 +370,17 @@ const applyEventSeriesRules = (
       }
       if (!isEstrategiaFiscalCard(event)) return event;
       const hiddenVenue = !isOnlineCard(event) && !event.location.trim();
+      // Link por sede (estable para campañas) + ?evento para fijar esta edición.
+      const venuePath = getEstrategiaFiscalVenuePath(
+        getEstrategiaFiscalVenueKey({
+          slug,
+          location: event.location,
+          modality: event.modality ?? (isOnlineCard(event) ? "online" : undefined),
+        }),
+      );
       return {
         ...event,
-        to: `${ESTRATEGIA_FISCAL_PATH}?evento=${encodeURIComponent(slug)}`,
+        to: `${venuePath}?evento=${encodeURIComponent(slug)}`,
         location: hiddenVenue ? VENUE_TO_BE_CONFIRMED : event.location,
       };
     }),

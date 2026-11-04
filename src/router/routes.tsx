@@ -116,6 +116,11 @@ export const router = createBrowserRouter([
         path: "/eventos/estrategia-fiscal",
         element: <EstrategiaFiscalLanding />,
       },
+      {
+        // Link por sede para campañas: /eventos/estrategia-fiscal/cdmx, /monterrey, /online
+        path: "/eventos/estrategia-fiscal/:sede",
+        element: <EstrategiaFiscalLanding />,
+      },
       { path: "/eventos/holding", element: <HoldingLanding /> },
       { path: "/eventos/holding-septiembre", element: <HoldingLanding /> },
       { path: "/eventos/holding-octubre", element: <HoldingLanding /> },
