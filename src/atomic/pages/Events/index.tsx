@@ -1025,11 +1025,13 @@ function AgendaPanel({ children }: { children: ReactNode }) {
 }
 
 export default function Events() {
-  const { data: eventsData } = useEvents({
+  const { data: eventsData, isPending: eventsPending } = useEvents({
     limit: 200,
     status: "all",
     enabled: ENABLE_EVENT_API_SYNC,
   });
+  // Evita pintar el catálogo estático y luego reemplazarlo por el del admin.
+  const calendarSyncing = ENABLE_EVENT_API_SYNC && eventsPending;
   const ctaSettings = useMemo(() => loadCtaSettings(), []);
   const [storedEvents, setStoredEvents] = useState<SiteEvent[]>(loadStoredEvents);
   const [featuredSlug, setFeaturedSlug] = useState(loadFeaturedEventSlug);
@@ -1454,7 +1456,25 @@ export default function Events() {
           </div>
 
           <div className="divide-y divide-cream-400">
-            {filteredGroups.length > 0 ? (
+            {calendarSyncing ? (
+              <div
+                aria-busy="true"
+                aria-label="Cargando calendario"
+                className="grid gap-5 py-7 sm:gap-7 sm:py-10 lg:grid-cols-[190px_minmax(0,1fr)] lg:gap-10 lg:py-12"
+              >
+                <div className="h-16 w-40 animate-pulse bg-cream-200" />
+                <div className="grid gap-5 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="border border-cream-400 bg-cream-100 p-4">
+                      <div className="aspect-square w-full animate-pulse bg-cream-200" />
+                      <div className="mt-4 h-10 animate-pulse bg-cream-200" />
+                      <div className="mt-4 h-8 w-3/4 animate-pulse bg-cream-200" />
+                      <div className="mt-6 h-12 animate-pulse bg-cream-200" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : filteredGroups.length > 0 ? (
               filteredGroups.map((group) => {
                 return (
                   <div
