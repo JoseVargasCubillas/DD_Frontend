@@ -1,17 +1,28 @@
 import { client } from './client';
 import type { Event, PaginatedResponse, ApiResponse } from '@t/index';
+import { resolveEventThumbnail } from '@utils/eventFlyers';
+
+// Las imágenes del catálogo se guardan como clave estable; aquí se convierten a URL real
+// para que todas las vistas (público y admin) reciban un thumbnail que carga.
+const normalizeEvent = (event: Event): Event => ({
+  ...event,
+  thumbnail: resolveEventThumbnail(event.thumbnail),
+});
 
 export const getEvents = (params?: Record<string, unknown>): Promise<PaginatedResponse<Event>> =>
-  client.get<PaginatedResponse<Event>>('/events', params);
+  client.get<PaginatedResponse<Event>>('/events', params).then((r) => ({
+    ...r,
+    data: Array.isArray(r.data) ? r.data.map(normalizeEvent) : r.data,
+  }));
 
 export const getEventBySlug = (slug: string): Promise<Event> =>
-  client.get<ApiResponse<Event>>(`/events/${slug}`).then((r) => r.data);
+  client.get<ApiResponse<Event>>(`/events/${slug}`).then((r) => normalizeEvent(r.data));
 
 export const createEvent = (data: Partial<Event>): Promise<Event> =>
-  client.post<ApiResponse<Event>>('/events', data).then((r) => r.data);
+  client.post<ApiResponse<Event>>('/events', data).then((r) => normalizeEvent(r.data));
 
 export const updateEvent = (id: string, data: Partial<Event>): Promise<Event> =>
-  client.put<ApiResponse<Event>>(`/events/${id}`, data).then((r) => r.data);
+  client.put<ApiResponse<Event>>(`/events/${id}`, data).then((r) => normalizeEvent(r.data));
 
 export const deleteEvent = (id: string): Promise<void> =>
   client.delete<ApiResponse<{ id: string }>>(`/events/${id}`).then(() => undefined);

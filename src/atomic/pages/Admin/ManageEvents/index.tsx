@@ -21,13 +21,13 @@ import eventFiscalCdmx from "../../../../../assets/eventos/evento-estrategia-fis
 import eventCoaching from "../../../../../assets/eventos/evento-coaching-liderazgo.webp";
 import eventFiscalMonterrey from "../../../../../assets/eventos/evento-estrategia-fiscal-monterrey.webp";
 import eventRockefeller from "../../../../../assets/eventos/evento-rockefeller.webp";
-import eventRockefellerAlt from "../../../../../assets/eventos/evento-rockefeller-alt.webp";
 import eventMaestriaEscenica from "../../../../../assets/eventos/evento-maestria-escenica.webp";
 import eventBeneficiosRegimen from "../../../../../assets/eventos/evento-beneficios-regimen-fiscal.webp";
 import eventRevisionEstrategica from "../../../../../assets/eventos/evento-revision-estrategica-cdmx.webp";
 import event48a40Horas from "../../../../assets/eventos/evento-48-a-40-horas.webp";
 import eventTableroCeo from "../../../../assets/eventos/evento-tablero-del-ceo.webp";
 import { getEventImage } from "@utils/eventImages";
+import { EVENT_FLYERS, toFlyerRef } from "@utils/eventFlyers";
 
 type EventForm = {
   id?: string;
@@ -108,23 +108,6 @@ const DEFAULT_FORM: EventForm = {
   buttonBackground: "#8B1538",
   buttonTextColor: "#FFFFFF",
 };
-
-const EVENT_IMAGE_OPTIONS = [
-  { label: "Persona física a moral", src: eventPersonaFisicaMoral },
-  { label: "Mentalidad empresarial", src: eventMentalidadEmpresarial },
-  { label: "Prospección digital", src: eventSistemaProspeccion },
-  { label: "Taller estrategia fiscal", src: eventTallerFiscal },
-  { label: "Mastermind Panamá", src: eventMastermindPanama },
-  { label: "Holding", src: eventHolding },
-  { label: "Estrategia fiscal CDMX", src: eventFiscalCdmx },
-  { label: "Coaching liderazgo", src: eventCoaching },
-  { label: "Estrategia fiscal Monterrey", src: eventFiscalMonterrey },
-  { label: "Código Rockefeller", src: eventRockefeller },
-  { label: "Código Rockefeller alternativa", src: eventRockefellerAlt },
-  { label: "Maestría escénica", src: eventMaestriaEscenica },
-  { label: "Beneficios régimen fiscal", src: eventBeneficiosRegimen },
-  { label: "Revisión estratégica CDMX", src: eventRevisionEstrategica },
-];
 
 // Flyers curados por slug para los eventos del calendario editorial que aún no
 // viven en la base de datos. Cuando el evento se guarda desde el admin, el
@@ -367,7 +350,8 @@ const buildPayload = (form: EventForm): Partial<Event> => ({
   slug: form.slug || toSlug(form.title),
   shortDescription: form.shortDescription,
   description: form.description,
-  thumbnail: form.thumbnail,
+  // Catálogo → clave estable (sobrevive a cada build); subidas/URLs externas se guardan tal cual.
+  thumbnail: toFlyerRef(form.thumbnail),
   type: form.type,
   modality: form.modality,
   location: form.location,
@@ -946,11 +930,11 @@ const selectedIsNew = selectedId === "new";
                   Galería de assets
                 </p>
                 <div className="grid max-h-80 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3 xl:grid-cols-4">
-                  {EVENT_IMAGE_OPTIONS.map((option) => {
+                  {EVENT_FLYERS.map((option) => {
                     const selected = form.thumbnail === option.src;
                     return (
                       <button
-                        key={option.label}
+                        key={option.key}
                         type="button"
                         onClick={() => update("thumbnail", option.src)}
                         className={`group overflow-hidden rounded-lg border bg-[#101010] p-1 text-left transition ${
