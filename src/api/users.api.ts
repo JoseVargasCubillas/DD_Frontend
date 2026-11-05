@@ -45,7 +45,7 @@ interface AdminCreateUserInput {
   name: string;
   email: string;
   phone?: string;
-  role?: 'user' | 'admin';
+  role?: 'user' | 'admin' | 'staff';
   tagIds?: string[];
   courseIds?: string[];
   marketingStatus?: 'never_subscribed' | 'subscribed' | 'unsubscribed';

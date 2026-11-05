@@ -163,6 +163,20 @@ export const useUpdateNotes = () => {
   });
 };
 
+// Borra UNA cuenta y muestra el motivo real si el servidor la rechaza (p. ej.
+// "No se puede eliminar una cuenta de administrador").
+export const useDeleteUser = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => usersApi.deleteUser(userId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Usuario eliminado');
+    },
+    onError: (e: Error) => toast.error(e.message || 'No se pudo eliminar el usuario'),
+  });
+};
+
 export const useDeleteUsers = () => {
   const qc = useQueryClient();
   return useMutation({

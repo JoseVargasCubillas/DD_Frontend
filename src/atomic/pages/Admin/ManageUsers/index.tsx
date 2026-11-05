@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useUsers, useToggleUserActive, useAdminCreateUser } from '@hooks/useUsers';
+import { useUsers, useToggleUserActive, useAdminCreateUser, useDeleteUser } from '@hooks/useUsers';
 import { usePackages, useAssignPackage } from '@hooks/usePackages';
 import { upsertManualSubscription } from '@utils/manualSubscriptions';
 import type { User } from '@t/index';
 
-interface NewUserForm { name: string; email: string; role: 'user' | 'admin' }
+interface NewUserForm { name: string; email: string; role: 'user' | 'admin' | 'staff' }
 
 const SUBSCRIPTION_DURATION_OPTIONS: { days: number; label: string; sub: string }[] = [
   { days: 30, label: '1 mes', sub: '30 días de acceso' },
@@ -19,6 +19,7 @@ export default function ManageUsers() {
   const [showNew, setShowNew] = useState(false);
   const { data, isLoading } = useUsers({ page, limit: 20, search: search || undefined });
   const toggle = useToggleUserActive();
+  const remove = useDeleteUser();
   const create = useAdminCreateUser();
   const assignPackage = useAssignPackage();
   const { data: allPackages = [] } = usePackages();
@@ -139,6 +140,7 @@ export default function ManageUsers() {
               <label className="text-[10px] uppercase tracking-[0.3em] text-ink-700">Rol</label>
               <select className="ink-input" {...register('role')}>
                 <option value="user">Suscriptor</option>
+                <option value="staff">Staff (solo check-in)</option>
                 <option value="admin">Administrador</option>
               </select>
             </div>
@@ -300,13 +302,28 @@ export default function ManageUsers() {
                     {u.createdAt ? new Date(u.createdAt).toLocaleDateString('es-MX') : '—'}
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => toggle.mutate(id)}
-                      disabled={toggle.isPending}
-                      className="text-[10px] uppercase tracking-[0.28em] text-ink-700 hover:text-ink-900 underline decoration-ink-900/30 hover:decoration-ink-900 underline-offset-4 cursor-pointer"
-                    >
-                      {u.isActive ? 'Desactivar' : 'Activar'}
-                    </button>
+                    <div className="flex items-center gap-5">
+                      <button
+                        onClick={() => toggle.mutate(id)}
+                        disabled={toggle.isPending}
+                        className="text-[10px] uppercase tracking-[0.28em] text-ink-700 hover:text-ink-900 underline decoration-ink-900/30 hover:decoration-ink-900 underline-offset-4 cursor-pointer"
+                      >
+                        {u.isActive ? 'Desactivar' : 'Activar'}
+                      </button>
+                      {/* Las cuentas admin no se pueden borrar (el servidor lo rechaza). */}
+                      {u.role !== 'admin' && (
+                        <button
+                          onClick={() => {
+                            if (!window.confirm(`¿Eliminar a ${u.name} (${u.email})?\n\nSe borra la cuenta y no se puede deshacer. Sus órdenes y boletos no se borran.`)) return;
+                            remove.mutate(id);
+                          }}
+                          disabled={remove.isPending}
+                          className="text-[10px] uppercase tracking-[0.28em] text-red-700 hover:text-red-900 underline decoration-red-700/30 hover:decoration-red-900 underline-offset-4 cursor-pointer disabled:opacity-50"
+                        >
+                          Eliminar
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );

@@ -2,12 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Html5Qrcode } from 'html5-qrcode';
-import { useCheckInTicket } from '@hooks/useTickets';
+import { useCheckInEvents, useCheckInTicket } from '@hooks/useTickets';
+import { useAuthStore } from '@store/authStore';
 import { formatTimeCdmx } from '@utils/formatters';
-import type { TicketCheckInResult } from '@t/index';
+import type { CheckInEventOption, TicketCheckInResult } from '@t/index';
 
 const SCANNER_ELEMENT_ID = 'dd-qr-reader';
 const SCAN_COOLDOWN_MS = 2500;
+// Valor del selector para admins que quieren escanear sin validar el evento.
+const ANY_EVENT = '__any__';
 const FOLIO_REGEX = /^DD-[A-Z0-9]{2,8}-[A-Z0-9]{4,10}$/i;
 
 interface ScanEntry {
@@ -17,6 +20,7 @@ interface ScanEntry {
   result: TicketCheckInResult['result'] | 'error';
   name?: string;
   eventTitle?: string;
+  eventDate?: string;
   checkedInAt?: string | null;
   eventId?: string;
   message?: string;
@@ -42,6 +46,7 @@ function parseScan(raw: string): { folio: string; t?: string } | null {
 }
 
 const RESULT_STYLE: Record<ScanEntry['result'], { title: string; bg: string; text: string; icon: string }> = {
+  wrongEvent: { title: 'Boleto de otro evento', bg: 'bg-orange-600', text: 'text-white', icon: '🔀' },
   ok: { title: 'Asistencia registrada', bg: 'bg-emerald-600', text: 'text-white', icon: '✅' },
   alreadyUsed: { title: 'Ya se registró', bg: 'bg-amber-500', text: 'text-ink-900', icon: '⚠️' },
   invalid: { title: 'Boleto no válido', bg: 'bg-red-600', text: 'text-white', icon: '⛔' },
@@ -50,6 +55,7 @@ const RESULT_STYLE: Record<ScanEntry['result'], { title: string; bg: string; tex
 };
 
 const RESULT_BADGE: Record<ScanEntry['result'], string> = {
+  wrongEvent: 'bg-orange-100 text-orange-800',
   ok: 'bg-emerald-100 text-emerald-800',
   alreadyUsed: 'bg-amber-100 text-amber-800',
   invalid: 'bg-red-100 text-red-800',
@@ -59,6 +65,36 @@ const RESULT_BADGE: Record<ScanEntry['result'], string> = {
 
 export default function EventCheckIn() {
   const checkIn = useCheckInTicket();
+  // El personal (staff) solo escanea: no ve enlaces a pantallas del panel admin.
+  const isStaff = useAuthStore((s) => s.user?.role === 'staff');
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
+
+  const { data: eventOptions = [], isLoading: eventsLoading } = useCheckInEvents();
+  // '' = aún sin elegir · ANY_EVENT = admin sin validar evento · otro = clave de la edición.
+  const [eventKey, setEventKey] = useState('');
+
+  // El evento más cercano a hoy va primero: casi siempre es el que se está escaneando.
+  const orderedOptions = useMemo(() => {
+    const now = Date.now();
+    const distance = (o: CheckInEventOption) =>
+      o.startDate ? Math.abs(new Date(o.startDate).getTime() - now) : Number.POSITIVE_INFINITY;
+    return [...eventOptions].sort((a, b) => {
+      const da = distance(a);
+      const db = distance(b);
+      return da === db ? 0 : da - db;
+    });
+  }, [eventOptions]);
+
+  useEffect(() => {
+    if (eventKey === ANY_EVENT) return;
+    if (eventKey && orderedOptions.some((o) => o.key === eventKey)) return;
+    setEventKey(orderedOptions[0]?.key ?? '');
+  }, [eventKey, orderedOptions]);
+
+  const selectedOption = orderedOptions.find((o) => o.key === eventKey);
+  // No se puede escanear sin evento elegido (los admins pueden elegir "sin validar").
+  const canScan = eventKey === ANY_EVENT ? isAdmin : Boolean(selectedOption);
+  const requestEventKey = eventKey === ANY_EVENT ? '' : eventKey;
   const [cameraOn, setCameraOn] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [manualFolio, setManualFolio] = useState('');
@@ -94,6 +130,10 @@ export default function EventCheckIn() {
       if (lastScanRef.current.text === rawText && now - lastScanRef.current.at < SCAN_COOLDOWN_MS) return;
       lastScanRef.current = { text: rawText, at: now };
 
+      if (!canScan) {
+        toast.error('Selecciona primero el evento que estás escaneando');
+        return;
+      }
       const parsed = parseScan(rawText);
       if (!parsed) {
         pushEntry({ folio: rawText.slice(0, 40), result: 'invalid', message: 'El código no corresponde a un boleto.' });
@@ -102,12 +142,17 @@ export default function EventCheckIn() {
 
       busyRef.current = true;
       try {
-        const data = await checkIn.mutateAsync(parsed);
+        const data = await checkIn.mutateAsync({ ...parsed, eventKey: requestEventKey || undefined });
         pushEntry({
           folio: data.ticket?.folio ?? parsed.folio,
           result: data.result,
           name: data.ticket?.attendeeName,
           eventTitle: data.ticket?.eventTitle,
+          eventDate: data.ticket?.eventDate,
+          message:
+            data.result === 'wrongEvent'
+              ? `Este boleto es de «${data.ticket?.eventTitle ?? 'otro evento'}» (${data.ticket?.eventDate ?? 'otra fecha'}). Estás escaneando «${selectedOption?.title ?? 'otro evento'}». No se registró la asistencia.`
+              : undefined,
           checkedInAt: data.ticket?.checkedInAt,
           eventId: data.ticket?.eventId,
         });
@@ -119,7 +164,7 @@ export default function EventCheckIn() {
         busyRef.current = false;
       }
     },
-    [checkIn, pushEntry],
+    [canScan, checkIn, pushEntry, requestEventKey, selectedOption],
   );
 
   const processRef = useRef(processCode);
@@ -206,14 +251,49 @@ export default function EventCheckIn() {
             <p className="text-[10px] uppercase tracking-[0.3em] text-ink-400">Registrados</p>
             <p className="mt-1 font-serif text-3xl leading-none">{okCount}</p>
           </div>
-          <Link
-            to="/admin/eventos"
-            className="min-h-11 rounded-full border border-ink-900/15 px-5 py-2.5 text-sm font-semibold hover:bg-cream-200"
-          >
-            Eventos
-          </Link>
+          {!isStaff && (
+            <Link
+              to="/admin/eventos"
+              className="min-h-11 rounded-full border border-ink-900/15 px-5 py-2.5 text-sm font-semibold hover:bg-cream-200"
+            >
+              Eventos
+            </Link>
+          )}
         </div>
       </header>
+
+      <section className="mb-6 rounded-2xl border border-ink-900/10 bg-white p-5 shadow-sm">
+        <label htmlFor="checkin-event" className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">
+          Evento que estás escaneando
+        </label>
+        <select
+          id="checkin-event"
+          value={eventKey}
+          onChange={(e) => {
+            setEventKey(e.target.value);
+            setCurrent(null);
+          }}
+          className="min-h-11 w-full rounded-xl border border-ink-900/15 bg-cream-50 px-4 text-sm focus:border-ink-900 focus:outline-none"
+        >
+          {!eventKey && (
+            <option value="">{eventsLoading ? 'Cargando eventos…' : 'Selecciona un evento…'}</option>
+          )}
+          {orderedOptions.map((o) => (
+            <option key={o.key} value={o.key}>
+              {o.title} · {o.dateLabel} ({o.checkedIn}/{o.total})
+            </option>
+          ))}
+          {isAdmin && <option value={ANY_EVENT}>Cualquier evento (sin validar)</option>}
+        </select>
+        {!eventsLoading && orderedOptions.length === 0 && (
+          <p className="mt-2 text-sm text-ink-500">Aún no hay eventos con boletos emitidos.</p>
+        )}
+        {eventKey === ANY_EVENT && (
+          <p className="mt-2 text-sm text-amber-700">
+            Sin validar: se aceptará el boleto de cualquier evento. Elige un evento para rechazar boletos de otras fechas.
+          </p>
+        )}
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <section className="rounded-2xl border border-ink-900/10 bg-white p-5 shadow-sm">
@@ -222,7 +302,8 @@ export default function EventCheckIn() {
             <button
               type="button"
               onClick={() => (cameraOn ? void stopCamera() : void startCamera())}
-              className={`min-h-11 rounded-full px-5 text-sm font-semibold ${
+              disabled={!cameraOn && !canScan}
+              className={`min-h-11 rounded-full px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
                 cameraOn ? 'border border-red-200 bg-red-50 text-red-700' : 'bg-ink-900 text-cream'
               }`}
             >
@@ -266,7 +347,7 @@ export default function EventCheckIn() {
               />
               <button
                 type="submit"
-                disabled={checkIn.isPending || !manualFolio.trim()}
+                disabled={checkIn.isPending || !manualFolio.trim() || !canScan}
                 className="min-h-11 rounded-xl bg-ink-900 px-5 text-sm font-semibold text-cream disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {checkIn.isPending ? 'Verificando…' : 'Registrar'}
@@ -293,7 +374,7 @@ export default function EventCheckIn() {
                   <p className="mt-3 text-sm font-semibold">Registrado a las {formatTimeCdmx(current.checkedInAt)} (CDMX)</p>
                 )}
                 {current.message && <p className="mt-3 text-sm opacity-90">{current.message}</p>}
-                {current.eventId && (
+                {current.eventId && !isStaff && (
                   <Link
                     to={`/admin/eventos/${current.eventId}/asistentes`}
                     className="mt-5 inline-flex min-h-10 items-center rounded-full bg-white/20 px-4 text-sm font-semibold backdrop-blur hover:bg-white/30"

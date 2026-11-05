@@ -4,9 +4,11 @@ import MainLayout from "@templates/MainLayout";
 import AuthLayout from "@templates/AuthLayout";
 import DashboardLayout from "@templates/DashboardLayout";
 import AdminLayout from "@templates/AdminLayout";
+import StaffLayout from "@templates/StaffLayout";
 import Events from "@pages/Events";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
+import StaffRoute from "./StaffRoute";
 import RouterErrorBoundary from "./RouterErrorBoundary";
 import NotFound from "@pages/NotFound";
 
@@ -211,6 +213,16 @@ export const router = createBrowserRouter([
       { path: "/mi-cuenta/perfil", element: <Profile /> },
       { path: "/mi-cuenta/cambiar-contrasena", element: <ChangePassword /> },
     ],
+  },
+  {
+    // Escáner de entrada para el personal (staff) y admins, sin el menú del panel.
+    element: (
+      <StaffRoute>
+        <StaffLayout />
+      </StaffRoute>
+    ),
+    errorElement: <RouterErrorBoundary />,
+    children: [{ path: "/check-in", element: <EventCheckIn /> }],
   },
   {
     element: (

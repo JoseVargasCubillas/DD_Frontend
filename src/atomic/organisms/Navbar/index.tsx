@@ -44,7 +44,7 @@ export default function Navbar() {
   const { data: eventsData } = useEvents({ limit: 200, status: 'all' });
 
   const academyHref = isAuthenticated
-    ? (user?.role === 'admin' ? '/admin' : '/mi-cuenta')
+    ? (user?.role === 'admin' ? '/admin' : user?.role === 'staff' ? '/check-in' : '/mi-cuenta')
     : '/iniciar-sesion';
   const academyLabel = isAuthenticated ? 'Ir a mi panel →' : 'Acceder a Academia →';
   const nextEvent = useMemo(() => {

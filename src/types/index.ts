@@ -1,4 +1,4 @@
-export type Role = "admin" | "user" | "instructor";
+export type Role = "admin" | "user" | "instructor" | "staff";
 export type Plan = "free" | "basic" | "pro" | "enterprise";
 export type CourseStatus = "draft" | "published" | "archived";
 export type CourseType = "evergreen" | "cohort";
@@ -385,8 +385,19 @@ export interface AdminTicket extends PublicTicket {
 }
 
 export interface TicketCheckInResult {
-  result: "ok" | "alreadyUsed" | "invalid" | "void";
+  /** 'wrongEvent': el boleto es de otro evento/fecha que el elegido en el escáner. */
+  result: "ok" | "alreadyUsed" | "invalid" | "void" | "wrongEvent";
   ticket?: AdminTicket;
+}
+
+/** Evento con boletos, para el selector del escáner de check-in. */
+export interface CheckInEventOption {
+  key: string;
+  title: string;
+  dateLabel: string;
+  startDate: string | null;
+  total: number;
+  checkedIn: number;
 }
 
 export interface EventAttendees {

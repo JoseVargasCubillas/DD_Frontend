@@ -9,11 +9,20 @@ export const useTicket = (folio: string | undefined, t: string | undefined) =>
     retry: false,
   });
 
+// Eventos con boletos para el selector del escáner (los contadores se refrescan solos).
+export const useCheckInEvents = () =>
+  useQuery({
+    queryKey: ['checkin-events'],
+    queryFn: ticketsApi.getCheckInEvents,
+    refetchInterval: 30_000,
+  });
+
 export const useCheckInTicket = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ticketsApi.checkInTicket,
     onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['checkin-events'] });
       const eventId = data.ticket?.eventId;
       queryClient.invalidateQueries({ queryKey: eventId ? ['event-attendees', eventId] : ['event-attendees'] });
     },

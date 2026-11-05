@@ -41,7 +41,7 @@ export default function ChangePassword() {
         });
       }
       reset();
-      navigate(user?.role === 'admin' ? '/admin' : '/mi-cuenta');
+      navigate(user?.role === 'admin' ? '/admin' : user?.role === 'staff' ? '/check-in' : '/mi-cuenta');
     },
     onError: (err: unknown) => {
       setServerError(err instanceof Error ? err.message : 'No se pudo actualizar la contraseña.');

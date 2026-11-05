@@ -171,6 +171,25 @@ export default function AdminLayout() {
             </NavLink>
           </div>
 
+          {/* Usuarios — crear cuentas (suscriptores, admin, staff de check-in) */}
+          <div className="mb-4">
+            <NavLink
+              to="/admin/usuarios"
+              className={({ isActive }) =>
+                "flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900/40 " +
+                (isActive
+                  ? "bg-ink-900/[0.07] text-ink-900"
+                  : "text-ink-700 hover:bg-cream-200/60 hover:text-ink-900")
+              }
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4 shrink-0">
+                <circle cx="12" cy="8" r="4" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" />
+              </svg>
+              Usuarios
+            </NavLink>
+          </div>
+
           {/* Productos */}
           <div className="mb-6">
             <button

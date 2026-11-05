@@ -30,6 +30,11 @@ export const useAuth = () => {
       // continuar tu compra" en el checkout de libros), regresa ahi en vez
       // del destino generico por rol — solo se acepta una ruta relativa
       // propia, nunca una URL externa.
+      // El personal de entrada (staff) solo tiene acceso al escáner.
+      if (data.user.role === 'staff') {
+        navigate('/check-in');
+        return;
+      }
       const redirect = searchParams.get('redirect');
       const isAdmin = data.user.role === 'admin';
       const isSafeRedirect = Boolean(redirect) && redirect!.startsWith('/') && !redirect!.startsWith('//');
