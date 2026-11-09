@@ -51,6 +51,10 @@ export default function ContactProfile() {
   const academySubscriptions: AcademySub[] = ((contact as any)?.academySubscriptions ?? []) as AcademySub[];
   // Las asignadas a mano no generan Order, por eso no salían en Compras.
   const manualSubscriptions = academySubscriptions.filter((s) => s.source === 'manual_admin');
+  // Suscripción vigente (la más reciente) para preseleccionar su paquete al renovar.
+  const currentSub = [...academySubscriptions]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .find((s) => s.status === 'active') ?? academySubscriptions[0];
 
   if (isLoading) return <p className="text-sm text-ink-500">Cargando contacto…</p>;
   if (!contact) return <p className="text-sm text-ink-500">Contacto no encontrado.</p>;
@@ -136,6 +140,9 @@ export default function ContactProfile() {
           userName={contact.name}
           userEmail={contact.email}
           packages={allPackages}
+          currentPackageId={(currentSub as any)?.packageId ?? null}
+          currentTier={currentSub?.packageTier ?? (contact as any).plan ?? null}
+          currentPackageName={currentSub?.packageName ?? null}
           onClose={() => setShowAssignSubscription(false)}
         />
       )}
@@ -154,12 +161,18 @@ function AssignSubscriptionModal({
   userName,
   userEmail,
   packages,
+  currentPackageId,
+  currentTier,
+  currentPackageName,
   onClose,
 }: {
   userId: string;
   userName?: string;
   userEmail?: string;
   packages: Package[];
+  currentPackageId?: string | null;
+  currentTier?: string | null;
+  currentPackageName?: string | null;
   onClose: () => void;
 }) {
   const assign = useAssignPackage();
@@ -177,7 +190,15 @@ function AssignSubscriptionModal({
       .sort((a, b) => ['master', 'business', 'entrepreneur', 'elite'].indexOf(String(a.tier || '').toLowerCase()) - ['master', 'business', 'entrepreneur', 'elite'].indexOf(String(b.tier || '').toLowerCase())),
     [packages],
   );
-  const [packageId, setPackageId] = useState<string>(() => activePackages[0]?._id ?? '');
+  // Preselecciona el paquete que ya posee el cliente (por tier o nombre); si no tiene, el primero.
+  const [packageId, setPackageId] = useState<string>(() => {
+    const tier = String(currentTier || '').toLowerCase();
+    const name = String(currentPackageName || '').toLowerCase();
+    const owned = activePackages.find((p) => currentPackageId && p._id === currentPackageId)
+      ?? activePackages.find((p) => tier && String(p.tier || '').toLowerCase() === tier)
+      ?? activePackages.find((p) => name && p.name.toLowerCase() === name);
+    return owned?._id ?? activePackages[0]?._id ?? '';
+  });
   const [durationDays, setDurationDays] = useState<number>(365);
 
   const submit = () => {
