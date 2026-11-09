@@ -13,8 +13,10 @@ import type { BillingInterval, Course, Package, PackageBenefits, PackageTier } f
  *  - Entrepreneur → acceso a todos los cursos.
  *  - Business     → Entrepreneur + masterclass bimestral + WhatsApp asesores.
  *  - Master       → Business - grupo asesores + WhatsApp directo con Diego Díaz.
+ *  - Élite Privé  → membresía vendida en eventos presenciales. NO se ofrece en
+ *                   la web (/academia la omite); sólo se asigna manualmente.
  *
- * Los 3 paquetes son un catálogo fijo. Se crean automáticamente si faltan
+ * Los paquetes son un catálogo fijo. Se crean automáticamente si faltan
  * y sólo se editan (precio, beneficios, cursos incluidos, URLs de WhatsApp).
  */
 
@@ -26,7 +28,10 @@ type TierDef = {
   suggestedPrice: number;
   defaultBenefits: PackageBenefits;
   copy: string;
+  manualOnly?: boolean;
 };
+
+export const PUBLIC_TIERS: PackageTier[] = ['entrepreneur', 'business', 'master'];
 
 const TIERS: TierDef[] = [
   {
@@ -64,6 +69,16 @@ const TIERS: TierDef[] = [
     },
     copy: 'Business + acompañamiento directo por WhatsApp con Diego Díaz.',
   },
+  {
+    tier: 'elite',
+    name: 'Élite Privé',
+    slug: 'elite-prive',
+    eyebrow: 'Venta en eventos · sólo asignación manual',
+    suggestedPrice: 7997,
+    defaultBenefits: { allCourses: true, masterclassEveryTwoMonths: true },
+    copy: 'Membresía exclusiva que se vende en eventos presenciales. No aparece en la web; regístrala desde Contactos o Suscriptores.',
+    manualOnly: true,
+  },
 ];
 
 export default function ManagePackages({ hideHeader = false }: { hideHeader?: boolean } = {}) {
@@ -91,7 +106,7 @@ export default function ManagePackages({ hideHeader = false }: { hideHeader?: bo
   const legacyPackages = useMemo(
     () =>
       packages.filter(
-        (p) => !['entrepreneur', 'business', 'master'].includes(String(p.tier || '').toLowerCase()),
+        (p) => !TIERS.some((t) => t.tier === String(p.tier || '').toLowerCase()),
       ),
     [packages],
   );
@@ -105,12 +120,13 @@ export default function ManagePackages({ hideHeader = false }: { hideHeader?: bo
             <div>
               <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-ink-900 leading-none">Paquetes</h1>
               <p className="text-sm text-ink-600 mt-3 max-w-2xl">
-                Los tres productos de la Academia. Precio, cursos incluidos y beneficios (masterclass y grupos
-                de WhatsApp) se controlan aquí. Estos paquetes son los que aparecen públicamente en{' '}
+                Los productos de la Academia. Precio, cursos incluidos y beneficios (masterclass y grupos
+                de WhatsApp) se controlan aquí. Entrepreneur, Business y Master aparecen públicamente en{' '}
                 <span className="font-mono text-[11px] px-1.5 py-0.5 bg-cream-200 border border-ink-900/10">
                   /academia
-                </span>{' '}
-                y los que asignas manualmente a un cliente desde su perfil.
+                </span>
+                ; Élite Privé es sólo para registro manual de ventas hechas en eventos. Todos se pueden asignar a un
+                cliente desde su perfil.
               </p>
             </div>
           </div>
@@ -121,7 +137,7 @@ export default function ManagePackages({ hideHeader = false }: { hideHeader?: bo
         <p className="p-8 text-sm text-ink-500">Cargando…</p>
       ) : (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
             {TIERS.map((def) => {
               const pkg = byTier[def.tier];
               return (
@@ -209,11 +225,16 @@ function TierCard({
   const publishedCount = courses.filter((c) => c.status === 'published').length;
 
   return (
-    <article className="bg-cream-100 border border-ink-900/15 p-6 flex flex-col gap-5">
+    <article className={`bg-cream-100 border p-6 flex flex-col gap-5 ${def.manualOnly ? 'border-ink-900 border-dashed' : 'border-ink-900/15'}`}>
       <header>
         <p className="text-[10px] uppercase tracking-[0.4em] text-ink-500">{def.eyebrow}</p>
         <h2 className="font-serif text-3xl text-ink-900 mt-1">{def.name}</h2>
         <p className="text-sm text-ink-600 mt-2">{pkg?.description || def.copy}</p>
+        {def.manualOnly && (
+          <p className="mt-3 inline-block border border-ink-900 px-2 py-1 text-[10px] uppercase tracking-[0.28em] text-ink-900">
+            No se ofrece en la web
+          </p>
+        )}
       </header>
 
       <div className="border-t border-ink-900/10 pt-5">

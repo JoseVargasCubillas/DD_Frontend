@@ -172,7 +172,7 @@ function AssignSubscriptionModal({
 
   // Solo los paquetes oficiales de la web (Entrepreneur / Business / Master); los legacy no se asignan manualmente.
   const activePackages = useMemo(
-    () => packages.filter((p) => p.isActive && ['entrepreneur', 'business', 'master'].includes(String(p.tier || '').toLowerCase())),
+    () => packages.filter((p) => p.isActive && ['entrepreneur', 'business', 'master', 'elite'].includes(String(p.tier || '').toLowerCase())),
     [packages],
   );
   const [packageId, setPackageId] = useState<string>(() => activePackages[0]?._id ?? '');

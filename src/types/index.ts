@@ -61,7 +61,7 @@ export interface Module {
   createdAt?: string;
 }
 
-export type PackageTier = "entrepreneur" | "business" | "master";
+export type PackageTier = "entrepreneur" | "business" | "master" | "elite";
 export type BillingInterval = "year" | "month" | "lifetime";
 
 export interface PackageBenefits {

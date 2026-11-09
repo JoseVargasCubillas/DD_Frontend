@@ -5,7 +5,9 @@ import { usePackages, useAssignPackage } from '@hooks/usePackages';
 import { upsertManualSubscription } from '@utils/manualSubscriptions';
 import type { User } from '@t/index';
 
-interface NewUserForm { name: string; email: string; role: 'user' | 'admin' | 'staff' }
+interface NewUserForm { name: string; email: string; phone: string; role: 'user' | 'admin' | 'staff' }
+
+const ASSIGNABLE_TIERS = ['entrepreneur', 'business', 'master', 'elite'];
 
 const SUBSCRIPTION_DURATION_OPTIONS: { days: number; label: string; sub: string }[] = [
   { days: 30, label: '1 mes', sub: '30 días de acceso' },
@@ -23,13 +25,15 @@ export default function ManageUsers() {
   const create = useAdminCreateUser();
   const assignPackage = useAssignPackage();
   const { data: allPackages = [] } = usePackages();
-  // Solo los paquetes oficiales de la web (Entrepreneur / Business / Master); los legacy no se asignan manualmente.
+  // Paquetes oficiales (Entrepreneur / Business / Master) + Élite Privé (venta en eventos, sólo manual); los legacy no se asignan.
   const activePackages = useMemo(
-    () => allPackages.filter((p) => p.isActive && ['entrepreneur', 'business', 'master'].includes(String(p.tier || '').toLowerCase())),
+    () => allPackages.filter((p) => p.isActive && ASSIGNABLE_TIERS.includes(String(p.tier || '').toLowerCase())),
     [allPackages],
   );
 
   const [assignSubscription, setAssignSubscription] = useState(false);
+  // Todos los miembros de la Academia deben recibir mailing; por defecto activo.
+  const [subscribeMarketing, setSubscribeMarketing] = useState(true);
   const [selectedPackageId, setSelectedPackageId] = useState<string>('');
   const [subscriptionDurationDays, setSubscriptionDurationDays] = useState<number>(365);
 
@@ -40,13 +44,21 @@ export default function ManageUsers() {
   }, [activePackages, selectedPackageId]);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<NewUserForm>({
-    defaultValues: { role: 'user' },
+    defaultValues: { role: 'user', phone: '' },
   });
 
+  const effectiveMarketing = assignSubscription || subscribeMarketing;
+
   const onCreate = (form: NewUserForm) => {
-    create.mutate(form, {
+    create.mutate({
+      name: form.name,
+      email: form.email,
+      role: form.role,
+      phone: form.phone.trim() || undefined,
+      marketingStatus: effectiveMarketing ? 'subscribed' : 'never_subscribed',
+    }, {
       onSuccess: (data) => {
-        const done = () => { reset(); setShowNew(false); setAssignSubscription(false); };
+        const done = () => { reset(); setShowNew(false); setAssignSubscription(false); setSubscribeMarketing(true); };
         const pkg = activePackages.find((p) => p._id === selectedPackageId);
         if (assignSubscription && selectedPackageId && pkg && data?.user?._id) {
           const userId = data.user._id;
@@ -115,7 +127,7 @@ export default function ManageUsers() {
           onSubmit={handleSubmit(onCreate)}
           className="bg-cream-100 border border-ink-900/20 p-6 space-y-5"
         >
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 items-end">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-5 items-end">
             <div className="flex flex-col gap-1.5 lg:col-span-1">
               <label className="text-[10px] uppercase tracking-[0.3em] text-ink-700">Nombre</label>
               <input
@@ -136,6 +148,20 @@ export default function ManageUsers() {
               />
               {errors.email && <p className="text-[11px] text-red-700 italic font-serif">{errors.email.message}</p>}
             </div>
+            <div className="flex flex-col gap-1.5 lg:col-span-1">
+              <label className="text-[10px] uppercase tracking-[0.3em] text-ink-700">Teléfono</label>
+              <input
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                className="ink-input"
+                placeholder="+52 55 1234 5678"
+                {...register('phone', {
+                  validate: (v) => !v.trim() || /^[+\d][\d\s().-]{6,}$/.test(v.trim()) || 'Teléfono inválido',
+                })}
+              />
+              {errors.phone && <p className="text-[11px] text-red-700 italic font-serif">{errors.phone.message}</p>}
+            </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] uppercase tracking-[0.3em] text-ink-700">Rol</label>
               <select className="ink-input" {...register('role')}>
@@ -151,6 +177,27 @@ export default function ManageUsers() {
             >
               {isSaving ? 'Creando…' : 'Enviar credenciales →'}
             </button>
+          </div>
+
+          {/* Mailing */}
+          <div className="border-t border-ink-900/15 pt-5">
+            <label className={`flex items-center gap-3 text-sm text-ink-900 ${assignSubscription ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+              <input
+                type="checkbox"
+                checked={effectiveMarketing}
+                disabled={assignSubscription}
+                onChange={(e) => setSubscribeMarketing(e.target.checked)}
+                className="h-4 w-4 cursor-pointer accent-ink-900 disabled:cursor-not-allowed"
+              />
+              <span className="text-[10px] uppercase tracking-[0.3em] text-ink-700">
+                Suscribir a mailing
+              </span>
+            </label>
+            <p className="mt-2 pl-7 text-xs text-ink-500">
+              {assignSubscription
+                ? 'Todos los miembros de la Academia reciben el mailing; se activa automáticamente.'
+                : 'Recibirá los correos de la comunidad. Desactívalo sólo si el cliente lo pidió.'}
+            </p>
           </div>
 
           {/* Suscripción a la Academia */}
@@ -199,9 +246,10 @@ export default function ManageUsers() {
                               <p className="font-serif text-base text-ink-900">{p.name}</p>
                               <p className="mt-0.5 text-xs text-ink-500">
                                 {p.courseIds.length} cursos{p.tier ? ` · ${p.tier}` : ''}
+                                {p.tier === 'elite' ? ' · venta en evento' : ''}
                               </p>
                             </div>
-                            <p className="shrink-0 font-serif text-base text-ink-900">${p.price}</p>
+                            <p className="shrink-0 font-serif text-base text-ink-900">${p.price.toLocaleString('es-MX')}</p>
                           </label>
                         ))}
                       </div>

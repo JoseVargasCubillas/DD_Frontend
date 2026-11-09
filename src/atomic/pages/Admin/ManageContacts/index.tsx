@@ -2401,7 +2401,7 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
   const { data: allPackages = [] } = usePackages();
   // Solo los paquetes oficiales de la web (Entrepreneur / Business / Master); los legacy no se asignan manualmente.
   const activePackages = useMemo(
-    () => allPackages.filter((p) => p.isActive && ['entrepreneur', 'business', 'master'].includes(String(p.tier || '').toLowerCase())),
+    () => allPackages.filter((p) => p.isActive && ['entrepreneur', 'business', 'master', 'elite'].includes(String(p.tier || '').toLowerCase())),
     [allPackages],
   );
   const courses = coursesData?.data ?? [];
@@ -2411,7 +2411,8 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
   const [phone, setPhone] = useState('');
   const [grantOffers, setGrantOffers] = useState(false);
   const [addTags, setAddTags] = useState(false);
-  const [subscribeMarketing, setSubscribeMarketing] = useState(false);
+  // Por defecto activo: la comunidad y la Academia reciben mailing.
+  const [subscribeMarketing, setSubscribeMarketing] = useState(true);
   const [assignSubscription, setAssignSubscription] = useState(false);
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -2430,6 +2431,7 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
   const canSave = Boolean(name && email) && (!assignSubscription || (Boolean(selectedPackageId) && phoneOk));
   const isSaving = create.isPending || assignPackage.isPending;
   const selectedPackage = activePackages.find((p) => p._id === selectedPackageId);
+  const effectiveMarketing = assignSubscription || subscribeMarketing;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-6">
@@ -2450,7 +2452,7 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
               role: 'user',
               courseIds: grantOffers ? selectedCourseIds : [],
               tagIds: addTags ? selectedTagIds : [],
-              marketingStatus: subscribeMarketing ? 'subscribed' : 'never_subscribed',
+              marketingStatus: effectiveMarketing ? 'subscribed' : 'never_subscribed',
             }, {
               onSuccess: (data) => {
                 if (assignSubscription && selectedPackageId && selectedPackage && data?.user?._id) {
@@ -2532,6 +2534,8 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
             <input
               id="new-contact-phone"
               type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               required={assignSubscription}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -2566,7 +2570,11 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
               />
             )}
 
-            <KajabiToggle checked={subscribeMarketing} onChange={setSubscribeMarketing} label="Subscribe to marketing emails" />
+            <KajabiToggle
+              checked={effectiveMarketing}
+              onChange={(v) => { if (!assignSubscription) setSubscribeMarketing(v); }}
+              label={assignSubscription ? 'Subscribe to marketing emails (requerido para la Academia)' : 'Subscribe to marketing emails'}
+            />
 
             <KajabiToggle checked={assignSubscription} onChange={setAssignSubscription} label="Asignar suscripción a la Academia" />
             {assignSubscription && (
