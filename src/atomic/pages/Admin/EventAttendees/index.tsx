@@ -20,6 +20,9 @@ function originLabel(ticket: AdminTicket): string {
 }
 
 function StatusCell({ ticket }: { ticket: AdminTicket }) {
+  if (ticket.accessType === 'online' && ticket.status === 'valid') {
+    return <span className="inline-flex rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-800">Inscrito online</span>;
+  }
   if (ticket.status === 'used') {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
@@ -83,6 +86,8 @@ export default function EventAttendees() {
   }
 
   const { total, checkedIn } = data.summary;
+  // Eventos online (Holding / SEF Online): solo lista de inscritos, sin QR ni check-in.
+  const onlineOnly = total > 0 && data.tickets.every((t) => t.accessType === 'online');
   const pct = total > 0 ? Math.round((checkedIn / total) * 100) : 0;
 
   return (
@@ -94,12 +99,14 @@ export default function EventAttendees() {
           <p className="mt-2 text-sm text-ink-600">{data.event.dateLabel || (data.event.startDate ? formatDate(data.event.startDate) : '')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link
-            to="/admin/eventos/check-in"
-            className="inline-flex min-h-11 items-center rounded-full bg-ink-900 px-5 text-sm font-semibold text-cream"
-          >
-            Escanear QR
-          </Link>
+          {!onlineOnly && (
+            <Link
+              to="/admin/eventos/check-in"
+              className="inline-flex min-h-11 items-center rounded-full bg-ink-900 px-5 text-sm font-semibold text-cream"
+            >
+              Escanear QR
+            </Link>
+          )}
           {data.sheetUrl && (
             <a
               href={data.sheetUrl}
@@ -113,6 +120,14 @@ export default function EventAttendees() {
         </div>
       </header>
 
+      {onlineOnly ? (
+        <section className="rounded-2xl border border-ink-900/10 bg-white p-5 shadow-sm">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-ink-400">Inscritos online</p>
+          <p className="mt-1 font-serif text-3xl leading-none">
+            {total} <span className="text-base font-sans text-ink-600">inscritos</span>
+          </p>
+        </section>
+      ) : (
       <section className="rounded-2xl border border-ink-900/10 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -130,6 +145,7 @@ export default function EventAttendees() {
           <div className="h-full rounded-full bg-emerald-500 transition-all duration-500" style={{ width: `${pct}%` }} />
         </div>
       </section>
+      )}
 
       <section className="mt-6 rounded-2xl border border-ink-900/10 bg-white shadow-sm">
         <div className="flex flex-col gap-3 border-b border-ink-900/10 p-4 sm:flex-row sm:items-center sm:justify-between">

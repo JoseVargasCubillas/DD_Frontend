@@ -382,6 +382,8 @@ export interface AdminTicket extends PublicTicket {
   /** 'hubspot' = venta cerrada por un asesor; 'web' = compra en la página. */
   source: 'hubspot' | 'web';
   advisorName: string;
+  /** 'online' = inscrito a Holding / SEF Online (sin QR ni check-in). */
+  accessType?: 'ticket' | 'online';
 }
 
 export interface TicketCheckInResult {
