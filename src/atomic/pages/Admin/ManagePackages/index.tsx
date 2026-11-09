@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { usePackages, useCreatePackage, useUpdatePackage, useDeletePackage, useAssignPackage } from '@hooks/usePackages';
 import { useCourses } from '@hooks/useCourses';
@@ -32,6 +32,9 @@ type TierDef = {
 };
 
 export const PUBLIC_TIERS: PackageTier[] = ['entrepreneur', 'business', 'master'];
+
+// Grupo de WhatsApp exclusivo de la membresía Élite Privé.
+const ELITE_WHATSAPP_GROUP_URL = 'https://chat.whatsapp.com/JgoggooO4BzGvcU2jEMZl9';
 
 const TIERS: TierDef[] = [
   {
@@ -75,8 +78,12 @@ const TIERS: TierDef[] = [
     slug: 'elite-prive',
     eyebrow: 'Venta en eventos · sólo asignación manual',
     suggestedPrice: 7997,
-    defaultBenefits: { allCourses: true, masterclassEveryTwoMonths: true },
-    copy: 'Membresía exclusiva que se vende en eventos presenciales. No aparece en la web; regístrala desde Contactos o Suscriptores.',
+    defaultBenefits: {
+      allCourses: true,
+      masterclassEveryTwoMonths: true,
+      whatsappGroupAdvisors: { enabled: true, url: ELITE_WHATSAPP_GROUP_URL },
+    },
+    copy: 'Mismos beneficios que Business con grupo de WhatsApp propio. Se vende en eventos presenciales; no aparece en la web y sólo se asigna manualmente.',
     manualOnly: true,
   },
 ];
@@ -84,7 +91,7 @@ const TIERS: TierDef[] = [
 export default function ManagePackages({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const { data: packages = [], isLoading } = usePackages();
   const { data: coursesData } = useCourses({ includeAll: true, limit: 200 } as any);
-  const courses = coursesData?.data ?? [];
+  const courses = useMemo(() => coursesData?.data ?? [], [coursesData]);
   const create = useCreatePackage();
   const update = useUpdatePackage();
   const remove = useDeletePackage();
@@ -101,6 +108,40 @@ export default function ManagePackages({ hideHeader = false }: { hideHeader?: bo
     for (const p of packages) if (p.tier) map[p.tier] = p;
     return map;
   }, [packages]);
+
+  // Élite Privé se crea sola la primera vez que se abre Paquetes: clona Business
+  // (cursos, vigencia, masterclass) y usa su propio grupo de WhatsApp.
+  const eliteCreated = useRef(false);
+  useEffect(() => {
+    if (isLoading || eliteCreated.current || byTier.elite || create.isPending) return;
+    const def = TIERS.find((t) => t.tier === 'elite');
+    if (!def) return;
+    const business = byTier.business;
+    const allCourseIds = courses.map((c) => String(c._id || c.id));
+    if (!business && allCourseIds.length === 0) return;
+    eliteCreated.current = true;
+    create.mutate(
+      {
+        name: def.name,
+        slug: def.slug,
+        tier: 'elite',
+        description: def.copy,
+        price: def.suggestedPrice,
+        currency: business?.currency ?? 'MXN',
+        paymentType: 'subscription',
+        billingInterval: business?.billingInterval ?? 'year',
+        durationDays: business?.durationDays ?? 365,
+        isActive: true,
+        isFeatured: false,
+        benefits: {
+          ...(business?.benefits ?? def.defaultBenefits),
+          whatsappGroupAdvisors: { enabled: true, url: ELITE_WHATSAPP_GROUP_URL },
+        },
+        courseIds: business?.courseIds?.length ? [...business.courseIds] : allCourseIds,
+      } as any,
+      { onError: () => { eliteCreated.current = false; } },
+    );
+  }, [isLoading, byTier, courses, create]);
 
   // Paquetes viejos sin tier oficial — se pueden borrar desde aquí
   const legacyPackages = useMemo(
