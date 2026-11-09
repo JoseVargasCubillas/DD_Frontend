@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { useUsers, useToggleUserActive, useAdminCreateUser, useDeleteUser } from '@hooks/useUsers';
 import { usePackages, useAssignPackage } from '@hooks/usePackages';
 import { upsertManualSubscription } from '@utils/manualSubscriptions';
@@ -89,9 +90,13 @@ export default function ManageUsers() {
                   status: 'active',
                   source: 'manual_admin',
                 });
+                toast.success(`Suscripción ${pkg.name} asignada. Se envió el correo de acceso a ${form.email}.`);
                 done();
               },
-              onError: done,
+              onError: (err) => {
+                toast.error(`Se creó la cuenta pero no se pudo asignar la suscripción: ${(err as Error).message}`);
+                done();
+              },
             },
           );
         } else {
