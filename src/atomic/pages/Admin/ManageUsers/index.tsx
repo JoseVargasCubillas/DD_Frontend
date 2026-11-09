@@ -7,7 +7,11 @@ import type { User } from '@t/index';
 
 interface NewUserForm { name: string; email: string; phone: string; role: 'user' | 'admin' | 'staff' }
 
-const ASSIGNABLE_TIERS = ['entrepreneur', 'business', 'master', 'elite'];
+const ASSIGNABLE_TIERS = ['master', 'business', 'entrepreneur', 'elite'];
+const tierRank = (tier?: string) => {
+  const i = ASSIGNABLE_TIERS.indexOf(String(tier || '').toLowerCase());
+  return i === -1 ? 99 : i;
+};
 
 const SUBSCRIPTION_DURATION_OPTIONS: { days: number; label: string; sub: string }[] = [
   { days: 30, label: '1 mes', sub: '30 días de acceso' },
@@ -27,7 +31,9 @@ export default function ManageUsers() {
   const { data: allPackages = [] } = usePackages();
   // Paquetes oficiales (Entrepreneur / Business / Master) + Élite Privé (venta en eventos, sólo manual); los legacy no se asignan.
   const activePackages = useMemo(
-    () => allPackages.filter((p) => p.isActive && ASSIGNABLE_TIERS.includes(String(p.tier || '').toLowerCase())),
+    () => allPackages
+      .filter((p) => p.isActive && ASSIGNABLE_TIERS.includes(String(p.tier || '').toLowerCase()))
+      .sort((a, b) => tierRank(a.tier) - tierRank(b.tier)),
     [allPackages],
   );
 

@@ -2401,7 +2401,9 @@ function AddContactModal({ onClose }: { onClose: () => void }) {
   const { data: allPackages = [] } = usePackages();
   // Solo los paquetes oficiales de la web (Entrepreneur / Business / Master); los legacy no se asignan manualmente.
   const activePackages = useMemo(
-    () => allPackages.filter((p) => p.isActive && ['entrepreneur', 'business', 'master', 'elite'].includes(String(p.tier || '').toLowerCase())),
+    () => allPackages
+      .filter((p) => p.isActive && ['entrepreneur', 'business', 'master', 'elite'].includes(String(p.tier || '').toLowerCase()))
+      .sort((a, b) => ['master', 'business', 'entrepreneur', 'elite'].indexOf(String(a.tier || '').toLowerCase()) - ['master', 'business', 'entrepreneur', 'elite'].indexOf(String(b.tier || '').toLowerCase())),
     [allPackages],
   );
   const courses = coursesData?.data ?? [];
