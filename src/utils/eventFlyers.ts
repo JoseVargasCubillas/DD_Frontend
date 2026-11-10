@@ -23,6 +23,7 @@ import eventBeneficiosRegimen from '../../assets/eventos/evento-beneficios-regim
 import eventRevisionEstrategica from '../../assets/eventos/evento-revision-estrategica-cdmx.webp';
 import event48a40Horas from '../assets/eventos/evento-48-a-40-horas.webp';
 import eventTableroCeo from '../assets/eventos/evento-tablero-del-ceo.webp';
+import eventReformaFiscal2027 from '../assets/eventos/evento-reforma-fiscal-2027.webp';
 
 export const FLYER_PREFIX = 'flyer:';
 
@@ -50,6 +51,7 @@ export const EVENT_FLYERS: EventFlyer[] = [
   { key: 'evento-revision-estrategica-cdmx', label: 'Revisión estratégica CDMX', src: eventRevisionEstrategica },
   { key: 'evento-48-a-40-horas', label: 'De 48 a 40 horas', src: event48a40Horas },
   { key: 'evento-tablero-del-ceo', label: 'El Tablero del CEO', src: eventTableroCeo },
+  { key: 'evento-reforma-fiscal-2027', label: 'Reforma Fiscal 2027', src: eventReformaFiscal2027 },
 ];
 
 const flyerByKey = new Map(EVENT_FLYERS.map((f) => [f.key, f]));

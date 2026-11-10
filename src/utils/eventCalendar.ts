@@ -15,7 +15,7 @@ export type CalendarEventSummary = Pick<
   | "registeredCount"
   | "status"
 > &
-  Partial<Pick<SiteEvent, "modality" | "endDate" | "thumbnail" | "type" | "id" | "_id" | "whatsappOnly">>;
+  Partial<Pick<SiteEvent, "modality" | "endDate" | "thumbnail" | "type" | "id" | "_id" | "whatsappOnly" | "price">>;
 
 export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
   {
@@ -241,6 +241,23 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
     onlineUrl: "/eventos/tablero-del-ceo",
     startDate: "2026-11-10T19:30:00-06:00",
     capacity: 500,
+    registeredCount: 0,
+    status: "upcoming",
+    modality: "online",
+  },
+  {
+    title: "Masterclass Reforma Fiscal 2027",
+    slug: "reforma-fiscal-2027",
+    shortDescription:
+      "Masterclass online en vivo: los 11 cambios aprobados del paquete fiscal 2027, con reglas transitorias y jugadas de implementación antes del 31 de diciembre.",
+    description:
+      "Masterclass online en vivo: los 11 cambios aprobados del paquete fiscal 2027, con reglas transitorias y jugadas de implementación antes del 31 de diciembre.",
+    location: "Zoom",
+    onlineUrl: "/eventos/reforma-fiscal-2027",
+    startDate: "2026-11-17T18:00:00-06:00",
+    endDate: "2026-11-17T20:00:00-06:00",
+    price: 2997,
+    capacity: 300,
     registeredCount: 0,
     status: "upcoming",
     modality: "online",
@@ -672,6 +689,24 @@ export const isRockefellerEvent = (
   );
 };
 
+export const isReformaFiscalEvent = (
+  event: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl">,
+) => {
+  const slug = (event.slug || "").toLowerCase();
+  const title = (event.title || "").toLowerCase();
+  const onlineUrl = (event.onlineUrl || "").toLowerCase();
+  return (
+    slug.includes("reforma-fiscal") ||
+    title.includes("reforma fiscal") ||
+    onlineUrl.includes("/reforma-fiscal")
+  );
+};
+
+export const getNextReformaFiscalEvent = (
+  events: CalendarEventSummary[],
+  now = Date.now(),
+) => getNextUpcomingCalendarEvent(events.filter(isReformaFiscalEvent), now);
+
 export const isRevisionEstrategicaEvent = (
   event: Pick<CalendarEventSummary, "slug" | "title" | "onlineUrl">,
 ) => {
@@ -770,6 +805,7 @@ const hasCuratedCalendarLanding = (
   if (isEmprendedorVsCeoEvent(event)) return true;
   if (isRockefellerEvent(event)) return true;
   if (isRevisionEstrategicaEvent(event)) return true;
+  if (isReformaFiscalEvent(event)) return true;
   const slug = (event.slug || "").toLowerCase();
   const title = event.title.trim().toLowerCase();
   if (slug.startsWith("holding") || title === "holding") return true;
@@ -831,6 +867,9 @@ export const getCalendarEventPath = (
   const title = event.title.trim().toLowerCase();
   if (isRevisionEstrategicaEvent(event)) {
     return "/eventos/revision-estrategica";
+  }
+  if (isReformaFiscalEvent(event)) {
+    return "/eventos/reforma-fiscal-2027";
   }
   if (isEstrategiaFiscalEvent(event)) {
     // Link por sede (estable para campañas). ?evento fija la edición concreta

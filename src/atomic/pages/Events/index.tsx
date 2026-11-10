@@ -36,6 +36,7 @@ import eventBeneficiosRegimen from "../../../../assets/eventos/evento-beneficios
 import eventRevisionEstrategica from "../../../../assets/eventos/evento-revision-estrategica-cdmx.webp";
 import event48a40Horas from "../../../assets/eventos/evento-48-a-40-horas.webp";
 import eventTableroCeo from "../../../assets/eventos/evento-tablero-del-ceo.webp";
+import eventReformaFiscal2027 from "../../../assets/eventos/evento-reforma-fiscal-2027.webp";
 
 type EventTone = "cream" | "dark";
 
@@ -278,6 +279,7 @@ const DEDICATED_LANDING_PATHS = new Set([
   "/eventos/4e-codigo-rockefeller",
   "/eventos/revision-estrategica",
   "/eventos/revision-estrategica-octubre-2026",
+  "/eventos/reforma-fiscal-2027",
 ]);
 
 const hasRealEventLanding = (event?: EventCard | null) => {
@@ -739,6 +741,22 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         slug: "tablero-del-ceo-noviembre",
         to: "/eventos/tablero-del-ceo",
         cta: "Quiero mi lugar",
+        modality: "online",
+      },
+      {
+        eyebrow: "Masterclass",
+        title: "Reforma Fiscal",
+        titleSerif: "2027",
+        description:
+          "Masterclass online en vivo: los 11 cambios aprobados del paquete fiscal 2027, con reglas transitorias y jugadas de implementación.",
+        price: "$2,997 MXN",
+        date: "17 Noviembre 2026 · 6:00 pm",
+        rawDate: "2026-11-17T18:00:00-06:00",
+        location: "Zoom",
+        image: eventReformaFiscal2027,
+        slug: "reforma-fiscal-2027",
+        to: "/eventos/reforma-fiscal-2027",
+        cta: "Reservar mi lugar",
         modality: "online",
       },
       {

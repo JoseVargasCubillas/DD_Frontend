@@ -28,6 +28,7 @@ import eventBeneficiosRegimen from "../../../../../assets/eventos/evento-benefic
 import eventRevisionEstrategica from "../../../../../assets/eventos/evento-revision-estrategica-cdmx.webp";
 import event48a40Horas from "../../../../assets/eventos/evento-48-a-40-horas.webp";
 import eventTableroCeo from "../../../../assets/eventos/evento-tablero-del-ceo.webp";
+import eventReformaFiscal2027 from "../../../../assets/eventos/evento-reforma-fiscal-2027.webp";
 import { getEventImage } from "@utils/eventImages";
 import { EVENT_FLYERS, toFlyerRef } from "@utils/eventFlyers";
 
@@ -134,6 +135,7 @@ const SEED_THUMBNAILS: Record<string, string> = {
   "taller-estrategia-fiscal-online-diciembre": eventTallerFiscal,
   "de-48-a-40-horas-laborales": event48a40Horas,
   "tablero-del-ceo-noviembre": eventTableroCeo,
+  "reforma-fiscal-2027": eventReformaFiscal2027,
 };
 
 // Flyer por slug exacto; si no hay, el mismo resolutor por palabras clave que

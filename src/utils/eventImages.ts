@@ -16,6 +16,7 @@ import diegoHero from '../../assets/ddweb/figma-diego-hero.webp';
 import comoCobrarCeo from '../../assets/eventos/fondo-como-cobrar-ceo.webp';
 import evento48a40Horas from '../assets/eventos/evento-48-a-40-horas.webp';
 import eventoTableroCeo from '../assets/eventos/evento-tablero-del-ceo.webp';
+import eventoReformaFiscal2027 from '../assets/eventos/evento-reforma-fiscal-2027.webp';
 
 export function getEventImage(
   event?: Pick<CalendarEventSummary, 'slug' | 'title'> | null,
@@ -23,6 +24,7 @@ export function getEventImage(
   if (!event) return reforma;
   const key = `${event.slug ?? ''} ${event.title ?? ''}`.toLowerCase();
 
+  if (key.includes('reforma-fiscal') || key.includes('reforma fiscal')) return eventoReformaFiscal2027;
   if (key.includes('tablero-del-ceo') || key.includes('tablero del ceo') || key.includes('emprendedor-vs-ceo') || key.includes('emprendedor vs')) return eventoTableroCeo;
   if (key.includes('48-a-40') || key.includes('48 a 40')) return evento48a40Horas;
   if (key.includes('estrategia-fiscal') || key.includes('estrategia fiscal')) return sefCdmx;
