@@ -33,8 +33,11 @@ const TEMARIO: Array<{ n: string; title: string; tag: string; tone: TagTone }> =
 const TAG_CLASS: Record<TagTone, string> = {
   neutral: "border-cream-100/20 text-cream-100/60",
   accent: "border-[#c9a76a]/50 text-[#d9b97d]",
-  red: "border-[#c0614a]/50 text-[#e07d64]",
+  red: "border-[#e04b2f] bg-[#b3261e] text-white shadow-[0_0_0_4px_rgba(224,75,47,0.18),0_6px_18px_rgba(224,75,47,0.35)]",
 };
+
+const RED_ROW_CLASS =
+  "relative -mx-5 bg-[#e04b2f]/[0.08] px-5 sm:-mx-6 sm:px-6 before:absolute before:inset-y-3 before:left-0 before:w-[3px] before:bg-[#e04b2f]";
 
 const Eyebrow = ({ children, light = false }: { children: React.ReactNode; light?: boolean }) => (
   <p
@@ -148,8 +151,7 @@ export default function ReformaFiscal2027Landing() {
 
       {/* Contexto */}
       <section id="contexto" className="mx-auto max-w-[1312px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
-        <Eyebrow>01 · Contexto</Eyebrow>
-        <h2 className="mt-4 max-w-[820px] font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+        <h2 className="max-w-[820px] font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
           Después de las fusiones y eliminaciones, quedan{" "}
           <span className="text-[#8a6a3d]">11 cambios.</span>
         </h2>
@@ -192,9 +194,15 @@ export default function ReformaFiscal2027Landing() {
               Once cambios al CFF, LISR y LIVA. El paquete fiscal más denso de los últimos 5 años.
             </p>
           </div>
-          <div className="rounded-3xl border border-ink-900/10 bg-cream-50 p-8 md:col-span-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#8a3d2a]">● Alto impacto</p>
-            <p className="mt-4 font-serif text-6xl leading-none">50%</p>
+          <div className="rounded-3xl border-2 border-[#b3261e]/40 bg-[#fdf1ee] p-8 md:col-span-3">
+            <p className="inline-flex w-fit items-center gap-2 rounded-full bg-[#b3261e] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.28em] text-white">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/80" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+              </span>
+              Alto impacto
+            </p>
+            <p className="mt-4 font-serif text-6xl leading-none text-[#b3261e]">50%</p>
             <p className="mt-4 text-ink-700">
               Nuevo tope a pérdidas fiscales. Lo que arrastras ya no se compensa igual.
             </p>
@@ -231,8 +239,7 @@ export default function ReformaFiscal2027Landing() {
       {/* Temario */}
       <section id="temario" className="bg-ink-900 py-20 text-cream-100 lg:py-28">
         <div className="mx-auto max-w-[1312px] px-5 sm:px-8 lg:px-12">
-          <Eyebrow light>02 · Temario</Eyebrow>
-          <h2 className="mt-4 max-w-[760px] font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+          <h2 className="max-w-[760px] font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
             Los 11 cambios, <span className="text-[#d9b97d]">uno por uno.</span>
           </h2>
 
@@ -240,14 +247,26 @@ export default function ReformaFiscal2027Landing() {
             {TEMARIO.map((item) => (
               <li
                 key={item.n}
-                className="grid gap-3 py-5 sm:grid-cols-[64px_minmax(0,1fr)_auto] sm:items-center sm:gap-6"
+                className={`grid gap-3 py-5 sm:grid-cols-[64px_minmax(0,1fr)_auto] sm:items-center sm:gap-6 ${
+                  item.tone === "red" ? RED_ROW_CLASS : ""
+                }`}
               >
-                <span className="font-serif text-2xl text-[#d9b97d]">{item.n}</span>
-                <span className="text-lg leading-snug">{item.title}</span>
+                <span className={`font-serif text-2xl ${item.tone === "red" ? "text-[#ff8a70]" : "text-[#d9b97d]"}`}>
+                  {item.n}
+                </span>
+                <span className={`text-lg leading-snug ${item.tone === "red" ? "font-semibold text-white" : ""}`}>
+                  {item.title}
+                </span>
                 <span
-                  className={`w-fit rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] ${TAG_CLASS[item.tone]}`}
+                  className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] ${TAG_CLASS[item.tone]}`}
                 >
-                  {item.tag}
+                  {item.tone === "red" && (
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/80" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                    </span>
+                  )}
+                  {item.tone === "red" ? item.tag.replace(/^●\s*/, "") : item.tag}
                 </span>
               </li>
             ))}
@@ -264,8 +283,7 @@ export default function ReformaFiscal2027Landing() {
 
       {/* Sesión */}
       <section id="sesion" className="mx-auto max-w-[1312px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
-        <Eyebrow>03 · La sesión</Eyebrow>
-        <h2 className="mt-4 font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+        <h2 className="font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
           Once reformas. <span className="text-[#8a6a3d]">Cero relleno.</span>
         </h2>
         <div className="mt-12 grid gap-px overflow-hidden rounded-3xl border border-ink-900/10 bg-ink-900/10 sm:grid-cols-3">
