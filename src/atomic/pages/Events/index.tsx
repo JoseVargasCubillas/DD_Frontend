@@ -5,6 +5,7 @@ import { useCountUp } from "@hooks/useCountUp";
 import { useEvents } from "@hooks/useEvents";
 import { waClickHandler } from "@utils/whatsapp";
 import {
+  applyStartDateOverride,
   calendarEventKey,
   formatEventShortDateRange,
   getCalendarEventAction,
@@ -1045,8 +1046,8 @@ export default function Events() {
   const [featuredSlug, setFeaturedSlug] = useState(loadFeaturedEventSlug);
   const apiEvents = useMemo(() => {
     const bySlug = new Map<string, SiteEvent>();
-    (eventsData?.data ?? []).forEach((event) => bySlug.set(event.slug, event));
-    storedEvents.forEach((event) => bySlug.set(event.slug, event));
+    (eventsData?.data ?? []).forEach((event) => bySlug.set(event.slug, applyStartDateOverride(event)));
+    storedEvents.forEach((event) => bySlug.set(event.slug, applyStartDateOverride(event)));
     return Array.from(bySlug.values());
   }, [eventsData?.data, storedEvents]);
   const dynamicGroups = useMemo(() => groupApiEvents(apiEvents), [apiEvents]);

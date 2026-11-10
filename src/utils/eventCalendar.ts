@@ -372,7 +372,7 @@ const START_DATE_OVERRIDES: Record<string, { from: string; to: string }> = {
   },
 };
 
-const applyStartDateOverride = (event: CalendarEventSummary): CalendarEventSummary => {
+export const applyStartDateOverride = <T extends Pick<CalendarEventSummary, "slug" | "startDate" | "endDate">>(event: T): T => {
   const override = START_DATE_OVERRIDES[event.slug];
   if (!override || !event.startDate) return event;
   const current = new Date(event.startDate).getTime();

@@ -1,13 +1,16 @@
 import { client } from './client';
 import type { Event, PaginatedResponse, ApiResponse } from '@t/index';
 import { resolveEventThumbnail } from '@utils/eventFlyers';
+import { applyStartDateOverride } from '@utils/eventCalendar';
 
 // Las imágenes del catálogo se guardan como clave estable; aquí se convierten a URL real
 // para que todas las vistas (público y admin) reciban un thumbnail que carga.
-const normalizeEvent = (event: Event): Event => ({
-  ...event,
-  thumbnail: resolveEventThumbnail(event.thumbnail),
-});
+// También se aplican correcciones puntuales de horario (ver START_DATE_OVERRIDES).
+const normalizeEvent = (event: Event): Event =>
+  applyStartDateOverride({
+    ...event,
+    thumbnail: resolveEventThumbnail(event.thumbnail),
+  });
 
 export const getEvents = (params?: Record<string, unknown>): Promise<PaginatedResponse<Event>> =>
   client.get<PaginatedResponse<Event>>('/events', params).then((r) => ({
