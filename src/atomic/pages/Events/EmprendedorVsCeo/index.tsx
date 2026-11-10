@@ -44,25 +44,43 @@ const HUBSPOT_FORM_ID = HUBSPOT_FORMS.emprendedorVsCeo.formId;
 const FALLBACK_EMPRENDEDOR_VS_CEO: CalendarEventSummary =
   FALLBACK_CALENDAR_EVENTS.find(isEmprendedorVsCeoEvent) ?? FALLBACK_CALENDAR_EVENTS[0];
 
-// "10 de noviembre · 2026" — usado en el bloque de meta del hero.
+// "10 de noviembre · 2026 · 7:30 pm" — usado en el bloque de meta del hero.
 const formatMetaDate = (value: string) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Fecha por definir';
   const day = new Intl.DateTimeFormat('es-MX', {
     day: 'numeric',
     month: 'long',
+    timeZone: 'America/Mexico_City',
   }).format(date);
-  return `${day} · ${date.getFullYear()}`;
+  return `${day} · ${date.getFullYear()} · ${formatMetaTime(value)}`;
 };
 
-// "10 de noviembre" — usado en el cierre editorial.
+// "7:30 pm" hora CDMX — el público del evento está en México.
+const formatMetaTime = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('es-MX', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'America/Mexico_City',
+  })
+    .format(date)
+    .replace(/\s*p\.?\s*m\.?/i, ' pm')
+    .replace(/\s*a\.?\s*m\.?/i, ' am');
+};
+
+// "10 de noviembre a las 7:30 pm" — usado en el cierre editorial.
 const formatSentenceDate = (value: string) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'próximamente';
-  return new Intl.DateTimeFormat('es-MX', {
+  const day = new Intl.DateTimeFormat('es-MX', {
     day: 'numeric',
     month: 'long',
+    timeZone: 'America/Mexico_City',
   }).format(date);
+  return `${day} a las ${formatMetaTime(value)} (hora CDMX)`;
 };
 
 // "Zoom en vivo" / "Presencial" — respeta modality del calendario.

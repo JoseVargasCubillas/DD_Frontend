@@ -239,7 +239,7 @@ export const FALLBACK_CALENDAR_EVENTS: CalendarEventSummary[] = [
       "Masterclass gratuita por Zoom sobre los 4 tableros que usa un CEO para dirigir su empresa en lugar de operarla.",
     location: "Zoom",
     onlineUrl: "/eventos/tablero-del-ceo",
-    startDate: "2026-11-10T10:00:00-06:00",
+    startDate: "2026-11-10T19:30:00-06:00",
     capacity: 500,
     registeredCount: 0,
     status: "upcoming",
@@ -363,11 +363,28 @@ export const calendarEventKey = (title: string, startDate: string | Date) => {
 
 // Las fuentes van de menor a mayor prioridad (fallback, API, admin local): ante
 // el mismo slug, o la misma edición (título + día), gana la última.
+// Correcciones puntuales de horario sobre lo que devuelve el API (cuando el
+// registro en la base aún trae la hora anterior). Clave: slug → { from, to } en ISO.
+const START_DATE_OVERRIDES: Record<string, { from: string; to: string }> = {
+  "tablero-del-ceo-noviembre": {
+    from: "2026-11-10T16:00:00.000Z", // 10:00 CDMX (horario anterior)
+    to: "2026-11-10T19:30:00-06:00",   // 7:30 pm CDMX
+  },
+};
+
+const applyStartDateOverride = (event: CalendarEventSummary): CalendarEventSummary => {
+  const override = START_DATE_OVERRIDES[event.slug];
+  if (!override || !event.startDate) return event;
+  const current = new Date(event.startDate).getTime();
+  if (Number.isNaN(current) || current !== new Date(override.from).getTime()) return event;
+  return { ...event, startDate: override.to, endDate: event.endDate === event.startDate ? override.to : event.endDate };
+};
+
 export const mergeCalendarEventSources = (
   ...sources: Array<CalendarEventSummary[]>
 ) => {
   const bySlug = new Map<string, CalendarEventSummary>();
-  sources.flat().forEach((event) => {
+  sources.flat().map(applyStartDateOverride).forEach((event) => {
     if (
       DEPRECATED_EVENT_SLUGS.has(event.slug) ||
       event.status === "canceled" ||

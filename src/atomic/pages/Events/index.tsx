@@ -731,8 +731,8 @@ const eventGroups: Array<{ month: string; events: EventCard[] }> = [
         description:
           "Masterclass gratuita por Zoom sobre los 4 tableros que usa un CEO para dirigir su empresa en lugar de operarla.",
         price: "$0 MXN",
-        date: "10 Noviembre 2026 · 10:00",
-        rawDate: "2026-11-10T10:00:00-06:00",
+        date: "10 Noviembre 2026 · 7:30 pm",
+        rawDate: "2026-11-10T19:30:00-06:00",
         location: "Zoom",
         image: eventTableroCeo,
         slug: "tablero-del-ceo-noviembre",
