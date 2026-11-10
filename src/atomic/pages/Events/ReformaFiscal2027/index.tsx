@@ -348,45 +348,78 @@ export default function ReformaFiscal2027Landing() {
           </p>
         </div>
         <style>{`
-          .rf-form .dd-hs-form form { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-          .rf-form .dd-hs-form .hs-form-field:nth-child(n+3),
-          .rf-form .dd-hs-form .hs-submit,
-          .rf-form .dd-hs-form .legal-consent-container,
-          .rf-form .dd-hs-form .hs_error_rollup,
-          .rf-form .dd-hs-form .submitted-message { grid-column:1 / -1; }
-          @media (max-width:640px){ .rf-form .dd-hs-form form { grid-template-columns:1fr; } }
-          .rf-form .dd-hs-form label { color:rgba(245,242,236,0.6); font-size:10px; font-weight:600; letter-spacing:0.28em; }
-          .rf-form .dd-hs-form .hs-form-required { color:#d9b97d; }
-          .rf-form .dd-hs-form input[type="text"],
-          .rf-form .dd-hs-form input[type="email"],
-          .rf-form .dd-hs-form input[type="tel"],
-          .rf-form .dd-hs-form input[type="number"],
-          .rf-form .dd-hs-form select,
-          .rf-form .dd-hs-form textarea {
-            color:#f5f2ec; font-style:normal; font-size:22px; letter-spacing:-0.01em;
-            border-bottom:1px solid rgba(245,242,236,0.32); padding:14px 2px;
+          /* HubSpot (render hsfc) inyecta wrapper con fondo blanco, bordes y barra
+             de progreso; se neutraliza para que el formulario viva sobre el fondo
+             negro con inputs subrayados, como en el diseño original. */
+          .rf-form .dd-hs-form,
+          .rf-form .hsfc-Form,
+          .rf-form .hsfc-Step,
+          .rf-form .hsfc-Step__Content,
+          .rf-form .hsfc-Row,
+          .rf-form .hsfc-NavigationRow {
+            background:transparent !important; box-shadow:none !important; border:0 !important;
+            padding:0 !important; margin:0 !important; width:100% !important; max-width:none !important;
           }
-          .rf-form .dd-hs-form input::placeholder,
-          .rf-form .dd-hs-form textarea::placeholder { color:rgba(245,242,236,0.32); font-style:italic; }
-          .rf-form .dd-hs-form input:focus,
-          .rf-form .dd-hs-form select:focus,
-          .rf-form .dd-hs-form textarea:focus { border-bottom-color:#d9b97d; }
-          .rf-form .dd-hs-form .hs-button, .rf-form .dd-hs-form input[type="submit"] {
-            background:#f5f2ec; color:#0a0a0a; border-color:#f5f2ec; min-height:64px; padding:0 40px;
-            font-size:12px; font-weight:600; letter-spacing:0.26em;
+          .rf-form .hsfc-Step__Content { display:grid !important; grid-template-columns:1fr 1fr; gap:28px 24px !important; }
+          .rf-form .hsfc-Row { display:contents !important; }
+          .rf-form .hsfc-Row:nth-child(5) > *,
+          .rf-form .hsfc-NavigationRow { grid-column:1 / -1; }
+          @media (max-width:640px){ .rf-form .hsfc-Step__Content { grid-template-columns:1fr; } }
+          .rf-form .hsfc-ProgressBar { display:none !important; }
+          .rf-form .hsfc-FieldLabel,
+          .rf-form .hsfc-FieldLabel span {
+            color:rgba(245,242,236,0.6) !important; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif !important;
+            font-size:10px !important; font-weight:600 !important; letter-spacing:0.28em !important; text-transform:uppercase !important;
           }
-          .rf-form .dd-hs-form .hs-button:hover, .rf-form .dd-hs-form input[type="submit"]:hover {
-            background:#ece7dd; border-color:#ece7dd; transform:translateY(-2px); box-shadow:0 12px 30px rgba(0,0,0,0.35);
+          .rf-form .hsfc-FieldLabel { display:block; margin:0 0 8px !important; }
+          .rf-form .hsfc-FieldLabel__RequiredIndicator { color:#d9b97d !important; }
+          .rf-form .hsfc-TextInput,
+          .rf-form .hsfc-TextareaInput,
+          .rf-form .hsfc-DropdownInput {
+            background:transparent !important; color:#f5f2ec !important; font-family:'Libre Baskerville',Baskerville,Georgia,serif !important;
+            font-size:22px !important; letter-spacing:-0.01em !important; line-height:1.3 !important;
+            border:0 !important; border-bottom:1px solid rgba(245,242,236,0.32) !important; border-radius:0 !important;
+            padding:14px 2px !important; box-shadow:none !important; width:100% !important; outline:none !important; height:auto !important;
           }
-          .rf-form .dd-hs-form .hs-form-booleancheckbox-display,
-          .rf-form .dd-hs-form .legal-consent-container label,
-          .rf-form .dd-hs-form .legal-consent-container p { color:rgba(245,242,236,0.55); font-size:10.5px; letter-spacing:0.08em; }
-          .rf-form .dd-hs-form .legal-consent-container a { color:#d9b97d; text-decoration:underline; text-underline-offset:3px; }
-          .rf-form .dd-hs-form input[type="checkbox"] { accent-color:#d9b97d; }
-          .rf-form .dd-hs-form .hs-error-msg, .rf-form .dd-hs-form .hs-error-msgs label { color:#e07d64; }
-          .rf-form .dd-hs-form .submitted-message {
-            color:#f5f2ec; background:rgba(138,106,61,0.18); border:1px solid #d9b97d; padding:28px 32px;
+          .rf-form .hsfc-TextInput::placeholder { color:rgba(245,242,236,0.32) !important; font-style:italic; }
+          .rf-form .hsfc-TextInput:focus { border-bottom-color:#d9b97d !important; }
+          .rf-form .hsfc-PhoneInput { display:flex !important; align-items:stretch !important; gap:10px; background:transparent !important; border:0 !important; box-shadow:none !important; padding:0 !important; }
+          .rf-form .hsfc-PhoneInput__FlagAndCaret {
+            display:flex; align-items:center; gap:6px; background:transparent !important; border:0 !important;
+            border-bottom:1px solid rgba(245,242,236,0.32) !important; border-radius:0 !important; padding:0 6px !important; color:#f5f2ec !important;
           }
+          .rf-form .hsfc-PhoneInput__FlagAndCaret__Caret { border-top-color:#f5f2ec !important; color:#f5f2ec !important; filter:invert(1); }
+          .rf-form .hsfc-DropdownOptions { background:#17130f !important; color:#f5f2ec !important; border:1px solid rgba(245,242,236,0.2) !important; }
+          .rf-form .hsfc-DropdownOptions * { color:#f5f2ec !important; }
+          .rf-form .hsfc-DropdownOptions input { background:transparent !important; border-bottom:1px solid rgba(245,242,236,0.32) !important; }
+          .rf-form .hsfc-NavigationRow { display:flex !important; flex-direction:column; align-items:flex-start; gap:12px; margin-top:12px !important; }
+          .rf-form .hsfc-NavigationRow__Buttons { justify-content:flex-start !important; width:100%; }
+          .rf-form .hsfc-Button {
+            display:inline-flex !important; align-items:center; justify-content:center; width:auto !important;
+            background:#f5f2ec !important; background-image:none !important; color:#0a0a0a !important; border:1px solid #f5f2ec !important; border-radius:0 !important;
+            min-height:64px !important; padding:0 40px !important; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif !important;
+            font-size:12px !important; font-weight:600 !important; letter-spacing:0.26em !important; text-transform:uppercase !important;
+            cursor:pointer; transition:all .3s ease;
+          }
+          .rf-form .hsfc-Button:hover { background:#ece7dd !important; border-color:#ece7dd !important; transform:translateY(-2px); box-shadow:0 12px 30px rgba(0,0,0,0.35); }
+          .rf-form .hsfc-NavigationRow__Alerts,
+          .rf-form .hsfc-ErrorAlert,
+          .rf-form .hsfc-FieldError,
+          .rf-form .hsfc-ErrorMessage {
+            color:#e07d64 !important; background:transparent !important; border:0 !important; padding:0 !important;
+            font-family:'Libre Baskerville',Baskerville,Georgia,serif !important; font-style:italic !important;
+            font-size:13px !important; text-transform:none !important; letter-spacing:0 !important;
+          }
+          .rf-form .hsfc-RichText, .rf-form .hsfc-RichText *, .rf-form .hsfc-LegalConsent, .rf-form .hsfc-LegalConsent * {
+            color:rgba(245,242,236,0.55) !important; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif !important;
+            font-size:10.5px !important; letter-spacing:0.08em !important; line-height:1.5;
+          }
+          .rf-form .hsfc-RichText a, .rf-form .hsfc-LegalConsent a { color:#d9b97d !important; text-decoration:underline; text-underline-offset:3px; }
+          .rf-form .hsfc-SuccessMessage, .rf-form .hsfc-ThankYou, .rf-form .hsfc-Step--thankyou {
+            color:#f5f2ec !important; background:rgba(138,106,61,0.18) !important; border:1px solid #d9b97d !important;
+            padding:28px 32px !important; font-family:'Libre Baskerville',Baskerville,Georgia,serif; font-size:17px; line-height:1.5;
+          }
+          .rf-form .hsfc-SuccessMessage *, .rf-form .hsfc-ThankYou * { color:#f5f2ec !important; }
         `}</style>
       </section>
       {/* CTA fija móvil */}
