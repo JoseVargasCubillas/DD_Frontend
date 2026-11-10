@@ -1168,7 +1168,7 @@ const selectedIsNew = selectedId === "new";
               <label className="block rounded-xl border border-ink-900/10 px-4 py-3 text-sm">
                 <span className="block font-semibold">Grupo de WhatsApp (invitación)</span>
                 <span className="mb-2 mt-1 block text-xs text-ink-500">
-                  Quien compre esta fecha recibe en su correo el acceso a este grupo (enlace de un solo uso; el real nunca se manda). Solo Holding y SEF Online.
+                  Quien compre esta fecha recibe en su correo el acceso a este grupo (enlace de un solo uso; el real nunca se manda). Para cualquier evento Online con grupo; la modalidad debe ser Online.
                 </span>
                 <input
                   value={form.whatsappGroupUrl}

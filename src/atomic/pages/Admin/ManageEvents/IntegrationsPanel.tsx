@@ -106,7 +106,7 @@ export default function IntegrationsPanel() {
           <p className="text-[10px] uppercase tracking-[0.3em] text-ink-400">Boletos desde HubSpot</p>
           <p className="mt-2 text-sm leading-relaxed text-ink-600">
             Cada vez que un asesor cierra un negocio con un producto de evento, se manda por correo el boleto con QR
-            (presencial) o la invitación al grupo de WhatsApp de la edición (Holding y SEF Online). Se revisa solo
+            (presencial) o la invitación al grupo de WhatsApp de la edición (cualquier evento online con su campo "Grupo de WhatsApp"). Se revisa solo
             {status ? ` cada ${Math.max(1, Math.round(status.hubspot.intervalSec / 60))} min` : ""}; aquí puedes
             forzarlo ahora.
           </p>
