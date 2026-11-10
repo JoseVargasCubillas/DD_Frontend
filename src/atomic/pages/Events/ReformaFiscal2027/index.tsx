@@ -1,5 +1,3 @@
-import { useNavigate } from "react-router-dom";
-import { useCartStore } from "@store/cartStore";
 import HubspotForm from "@molecules/HubspotForm";
 import { HUBSPOT_FORMS } from "@utils/hubspotForms";
 import { useEventEdition } from "@hooks/useNextCalendarEvent";
@@ -9,25 +7,12 @@ import {
   formatEventTimeLabel,
   isReformaFiscalEvent,
 } from "@utils/eventCalendar";
-import type { OrderItem } from "@t/index";
 
 const HERO_IMAGE = "/event-media/reforma-fiscal-2027-hero.webp";
-const PRICE = 2997;
 const PRICE_LABEL = "$2,997 MXN";
 const WHATSAPP_URL =
   "https://wa.me/525584001184?text=Hola%2C%20tengo%20una%20pregunta%20sobre%20la%20Masterclass%20Reforma%20Fiscal%202027.";
-const BUY_SECTION_ID = "reforma-fiscal-comprar";
-
-const CHECKOUT_ITEM: OrderItem & { id: string } = {
-  id: "event-reforma-fiscal-2027",
-  type: "event",
-  refId: "reforma-fiscal-2027",
-  title: "Masterclass Reforma Fiscal 2027",
-  price: PRICE,
-  quantity: 1,
-  currency: "MXN",
-  paymentType: "one_time",
-};
+const BUY_SECTION_ID = "comprar";
 
 type TagTone = "neutral" | "accent" | "red";
 
@@ -62,10 +47,6 @@ const Eyebrow = ({ children, light = false }: { children: React.ReactNode; light
 );
 
 export default function ReformaFiscal2027Landing() {
-  const navigate = useNavigate();
-  const addItem = useCartStore((state) => state.addItem);
-  const clearCart = useCartStore((state) => state.clear);
-
   // Edición vigente (API/admin o fallback): fecha, hora y modalidad reales.
   const edition = useEventEdition(isReformaFiscalEvent);
   const editionDate = edition
@@ -76,23 +57,11 @@ export default function ReformaFiscal2027Landing() {
     ? formatEventFormatLabel(edition.modality, edition.location)
     : "Online en vivo · Zoom";
 
+  // Fiel al diseño original: todos los CTAs llevan al formulario de registro.
   const scrollToBuy = () => {
     document.getElementById(BUY_SECTION_ID)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-
-  const startCheckout = () => {
-    clearCart();
-    addItem({
-      ...CHECKOUT_ITEM,
-      eventDate: `${editionDate} · ${editionTime} h`,
-      ...(edition && {
-        eventId: String(edition.id ?? edition._id ?? "") || undefined,
-        eventSlug: edition.slug,
-      }),
-      eventFormat: editionFormat,
-    });
-    navigate("/eventos/checkout");
-  };
+  const startCheckout = scrollToBuy;
 
   return (
     <main className="overflow-hidden bg-cream-100 text-ink-900">
@@ -329,96 +298,108 @@ export default function ReformaFiscal2027Landing() {
         </div>
       </section>
 
-      {/* Comprar */}
+      {/* Comprar — fiel al diseño original: precio + formulario en línea */}
       <section
         id={BUY_SECTION_ID}
-        className="mx-auto max-w-[1312px] scroll-mt-24 px-5 py-20 sm:px-8 lg:px-12 lg:py-28"
+        className="relative overflow-hidden bg-ink-900 py-24 text-cream-100 scroll-mt-16 lg:py-36"
       >
-        <Eyebrow>04 · Reserva</Eyebrow>
-        <h2 className="mt-4 font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-          Entra preparado <span className="text-[#8a6a3d]">al 2027.</span>
-        </h2>
+        <div className="pointer-events-none absolute -bottom-60 -left-52 h-[720px] w-[720px] rounded-full bg-[#b4966e]/20 blur-3xl" />
+        <div className="relative mx-auto max-w-[1312px] px-5 sm:px-8 lg:px-12">
+          <h2 className="max-w-[1000px] font-serif text-[clamp(2.75rem,8vw,5.25rem)] leading-[1.02] tracking-tight">
+            Entra preparado
+            <br />
+            al <span className="italic text-[#d9b97d]">2027.</span>
+          </h2>
+          <p className="mt-7 max-w-[760px] text-lg leading-relaxed text-cream-100/80 sm:text-xl">
+            La reforma ya se aprobó. Lo único que decides ahora es si llegas al 1 de enero
+            leyéndola a ciegas, o si llegas con la jugada sobre la mesa.
+          </p>
 
-        <div className="mt-12 grid gap-8 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="rounded-3xl bg-ink-900 p-8 text-cream-100 sm:p-10">
-            <Eyebrow light>Acceso completo · grabación incluida</Eyebrow>
-            <p className="mt-6 font-serif text-[clamp(3rem,8vw,5.5rem)] leading-none">
-              $2,997<span className="text-3xl text-cream-100/60">.00</span>
-            </p>
-            <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.28em] text-cream-100/55">
-              MXN · Pago único
-            </p>
-            <ul className="mt-8 space-y-3 text-cream-100/80">
-              <li>· Masterclass en vivo con los 11 cambios y sus reglas transitorias.</li>
-              <li>· Q&amp;A en vivo con Diego Díaz.</li>
-              <li>· Grabación disponible por 30 días.</li>
-              <li>· Factura disponible al momento.</li>
-            </ul>
-            <button
-              type="button"
-              onClick={startCheckout}
-              className="mt-10 inline-flex min-h-[56px] w-full items-center justify-center rounded-full bg-cream-100 px-8 text-[11px] font-bold uppercase tracking-[0.24em] text-ink-900 transition-colors hover:bg-[#d9b97d] sm:w-auto"
-            >
-              Reservar mi lugar · {PRICE_LABEL}
-            </button>
-            <p className="mt-4 text-sm text-cream-100/60">
-              Pago seguro con tarjeta. Recibes tu boleto QR y el acceso por correo al instante.
-            </p>
-          </div>
-
-          <aside className="flex flex-col justify-between rounded-3xl border border-ink-900/10 bg-cream-50 p-8">
+          <div className="mt-12 grid items-center gap-8 border-y border-cream-100/20 py-10 sm:grid-cols-[1fr_auto] sm:gap-10">
             <div>
-              <Eyebrow>¿Tienes dudas?</Eyebrow>
-              <p className="mt-4 font-serif text-2xl leading-snug">
-                Escríbenos por WhatsApp y te ayudamos con tu registro o factura.
-              </p>
+              <span className="mb-3 block text-[10.5px] font-medium uppercase tracking-[0.3em] text-cream-100/60">
+                Masterclass · Reforma Fiscal 2027
+              </span>
+              <span className="font-serif text-2xl leading-snug sm:text-3xl">
+                Acceso completo · <span className="italic text-[#d9b97d]">grabación incluida.</span>
+              </span>
             </div>
-            <a
-              href={WHATSAPP_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-8 inline-flex min-h-[52px] items-center justify-center rounded-full border border-ink-900 px-6 text-[11px] font-bold uppercase tracking-[0.24em] text-ink-900 transition-colors hover:bg-ink-900 hover:text-cream-100"
-            >
-              Preguntar por WhatsApp
-            </a>
-          </aside>
-        </div>
-
-        <p className="mt-8 text-center text-[10px] font-bold uppercase tracking-[0.28em] text-ink-500">
-          Cupos limitados · Grabación disponible por 30 días · Factura disponible al momento.
-        </p>
-      </section>
-
-      {/* Formulario */}
-      <section id="reforma-fiscal-informes" className="border-t border-ink-900/10 bg-cream-50">
-        <div className="mx-auto grid max-w-[1312px] items-start gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[1fr_1.15fr] lg:gap-20 lg:px-12 lg:py-28">
-          <div>
-            <Eyebrow>05 · Déjanos tus datos</Eyebrow>
-            <h2 className="mt-4 font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-              Quiero recibir <span className="text-[#8a6a3d]">más información.</span>
-            </h2>
-            <p className="mt-6 max-w-[440px] text-lg leading-relaxed text-ink-700">
-              Te contactamos para resolver dudas sobre la masterclass, facturación y formas de
-              pago, y para reservarte un lugar.
-            </p>
+            <div className="sm:text-right">
+              <span className="mb-2 block text-[10.5px] font-medium uppercase tracking-[0.3em] text-cream-100/55">
+                MXN · Pago único
+              </span>
+              <div className="text-[clamp(3.5rem,9vw,6.5rem)] font-bold leading-none tracking-[-0.05em]">
+                <span className="mr-1 align-top text-[0.4em] text-[#d9b97d]">$</span>
+                2,997
+                <span className="ml-1 text-[0.3em] text-cream-100/55">.00</span>
+              </div>
+            </div>
           </div>
-          <div className="rounded-3xl border border-ink-900/10 bg-cream-100 p-7 sm:p-10 lg:p-12">
+
+          <div className="rf-form mt-8">
             <HubspotForm
               portalId={HUBSPOT_FORMS.reformaFiscal2027.portalId}
               formId={HUBSPOT_FORMS.reformaFiscal2027.formId}
             />
           </div>
-        </div>
-      </section>
 
+          <p className="mt-7 font-serif text-[15px] italic text-cream-100/60">
+            Cupos limitados · Grabación disponible por 30 días · Factura disponible al momento.
+          </p>
+        </div>
+        <style>{`
+          .rf-form .dd-hs-form form { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+          .rf-form .dd-hs-form .hs-form-field:nth-child(n+3),
+          .rf-form .dd-hs-form .hs-submit,
+          .rf-form .dd-hs-form .legal-consent-container,
+          .rf-form .dd-hs-form .hs_error_rollup,
+          .rf-form .dd-hs-form .submitted-message { grid-column:1 / -1; }
+          @media (max-width:640px){ .rf-form .dd-hs-form form { grid-template-columns:1fr; } }
+          .rf-form .dd-hs-form label { color:rgba(245,242,236,0.6); font-size:10px; font-weight:600; letter-spacing:0.28em; }
+          .rf-form .dd-hs-form .hs-form-required { color:#d9b97d; }
+          .rf-form .dd-hs-form input[type="text"],
+          .rf-form .dd-hs-form input[type="email"],
+          .rf-form .dd-hs-form input[type="tel"],
+          .rf-form .dd-hs-form input[type="number"],
+          .rf-form .dd-hs-form select,
+          .rf-form .dd-hs-form textarea {
+            color:#f5f2ec; font-style:normal; font-size:22px; letter-spacing:-0.01em;
+            border-bottom:1px solid rgba(245,242,236,0.32); padding:14px 2px;
+          }
+          .rf-form .dd-hs-form input::placeholder,
+          .rf-form .dd-hs-form textarea::placeholder { color:rgba(245,242,236,0.32); font-style:italic; }
+          .rf-form .dd-hs-form input:focus,
+          .rf-form .dd-hs-form select:focus,
+          .rf-form .dd-hs-form textarea:focus { border-bottom-color:#d9b97d; }
+          .rf-form .dd-hs-form .hs-button, .rf-form .dd-hs-form input[type="submit"] {
+            background:#f5f2ec; color:#0a0a0a; border-color:#f5f2ec; min-height:64px; padding:0 40px;
+            font-size:12px; font-weight:600; letter-spacing:0.26em;
+          }
+          .rf-form .dd-hs-form .hs-button:hover, .rf-form .dd-hs-form input[type="submit"]:hover {
+            background:#ece7dd; border-color:#ece7dd; transform:translateY(-2px); box-shadow:0 12px 30px rgba(0,0,0,0.35);
+          }
+          .rf-form .dd-hs-form .hs-form-booleancheckbox-display,
+          .rf-form .dd-hs-form .legal-consent-container label,
+          .rf-form .dd-hs-form .legal-consent-container p { color:rgba(245,242,236,0.55); font-size:10.5px; letter-spacing:0.08em; }
+          .rf-form .dd-hs-form .legal-consent-container a { color:#d9b97d; text-decoration:underline; text-underline-offset:3px; }
+          .rf-form .dd-hs-form input[type="checkbox"] { accent-color:#d9b97d; }
+          .rf-form .dd-hs-form .hs-error-msg, .rf-form .dd-hs-form .hs-error-msgs label { color:#e07d64; }
+          .rf-form .dd-hs-form .submitted-message {
+            color:#f5f2ec; background:rgba(138,106,61,0.18); border:1px solid #d9b97d; padding:28px 32px;
+          }
+        `}</style>
+      </section>
       {/* CTA fija móvil */}
-      <div className="sticky bottom-0 z-30 border-t border-ink-900/10 bg-cream-100/95 px-5 py-3 backdrop-blur lg:hidden">
+      <div className="sticky bottom-0 z-30 flex items-center justify-between gap-4 border-t border-cream-100/15 bg-[#17130f] px-5 py-3 lg:hidden">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-cream-100/80">
+          17 Nov · <strong className="font-serif text-sm italic normal-case tracking-normal text-[#d9b97d]">{PRICE_LABEL}</strong>
+        </span>
         <button
           type="button"
           onClick={startCheckout}
-          className="flex min-h-[48px] w-full items-center justify-center rounded-full bg-ink-900 text-[11px] font-bold uppercase tracking-[0.24em] text-cream-100"
+          className="inline-flex min-h-[44px] items-center justify-center bg-[#d9b97d] px-5 text-[10px] font-semibold uppercase tracking-[0.24em] text-ink-900"
         >
-          Reservar mi lugar · {PRICE_LABEL}
+          Reservar lugar →
         </button>
       </div>
     </main>
