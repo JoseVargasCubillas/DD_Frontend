@@ -74,6 +74,13 @@ export const HUBSPOT_FORMS = {
     landing: "/eventos/revision-estrategica",
     previewUrl: "https://taukw.share.hsforms.com/2IPmaAXeyRiKDQbMEtb6uMg",
   },
+  reformaFiscal2027: {
+    formId: "b9bb5a8d-4c2f-4523-93b5-7d6745120044",
+    portalId: HUBSPOT_PORTAL_ID,
+    region: "na1",
+    landing: "/eventos/reforma-fiscal-2027",
+    previewUrl: "https://taukw.share.hsforms.com/2ubtajUwvRSOTtX1nRRIARA",
+  },
 
   // ==================================================
   // RESERVADOS — landings aun no construidas.

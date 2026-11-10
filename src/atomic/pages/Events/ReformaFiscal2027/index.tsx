@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "@store/cartStore";
+import HubspotForm from "@molecules/HubspotForm";
+import { HUBSPOT_FORMS } from "@utils/hubspotForms";
 import { useEventEdition } from "@hooks/useNextCalendarEvent";
 import {
   formatEventDateLabel,
@@ -385,6 +387,28 @@ export default function ReformaFiscal2027Landing() {
         <p className="mt-8 text-center text-[10px] font-bold uppercase tracking-[0.28em] text-ink-500">
           Cupos limitados · Grabación disponible por 30 días · Factura disponible al momento.
         </p>
+      </section>
+
+      {/* Formulario */}
+      <section id="reforma-fiscal-informes" className="border-t border-ink-900/10 bg-cream-50">
+        <div className="mx-auto grid max-w-[1312px] items-start gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[1fr_1.15fr] lg:gap-20 lg:px-12 lg:py-28">
+          <div>
+            <Eyebrow>05 · Déjanos tus datos</Eyebrow>
+            <h2 className="mt-4 font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+              Quiero recibir <span className="text-[#8a6a3d]">más información.</span>
+            </h2>
+            <p className="mt-6 max-w-[440px] text-lg leading-relaxed text-ink-700">
+              Te contactamos para resolver dudas sobre la masterclass, facturación y formas de
+              pago, y para reservarte un lugar.
+            </p>
+          </div>
+          <div className="rounded-3xl border border-ink-900/10 bg-cream-100 p-7 sm:p-10 lg:p-12">
+            <HubspotForm
+              portalId={HUBSPOT_FORMS.reformaFiscal2027.portalId}
+              formId={HUBSPOT_FORMS.reformaFiscal2027.formId}
+            />
+          </div>
+        </div>
       </section>
 
       {/* CTA fija móvil */}
