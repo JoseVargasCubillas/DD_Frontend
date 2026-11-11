@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ticketsApi from '@api/tickets.api';
+import type { AddAttendeePayload } from '@t/index';
 
 export const useTicket = (folio: string | undefined, t: string | undefined) =>
   useQuery({
@@ -39,6 +40,24 @@ export const useUndoCheckIn = () => {
     },
   });
 };
+
+// Altas, bajas y eliminaciones desde la vista de asistentes: todas refrescan la lista.
+const useAttendeeMutation = <TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['event-attendees'] });
+      queryClient.invalidateQueries({ queryKey: ['checkin-events'] });
+    },
+  });
+};
+
+export const useAddAttendee = (eventId: string | undefined) =>
+  useAttendeeMutation((payload: AddAttendeePayload) => ticketsApi.addAttendee(eventId as string, payload));
+export const useVoidAttendee = () => useAttendeeMutation(ticketsApi.voidAttendee);
+export const useReactivateAttendee = () => useAttendeeMutation(ticketsApi.reactivateAttendee);
+export const useDeleteAttendee = () => useAttendeeMutation(ticketsApi.deleteAttendee);
 
 export const useEventAttendees = (eventId: string | undefined) =>
   useQuery({

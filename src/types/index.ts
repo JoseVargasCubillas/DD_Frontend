@@ -379,11 +379,28 @@ export interface AdminTicket extends PublicTicket {
   attendeePhone: string;
   orderId: string;
   checkedInBy: string | null;
-  /** 'hubspot' = venta cerrada por un asesor; 'web' = compra en la página. */
-  source: 'hubspot' | 'web';
+  /** 'hubspot' = venta cerrada por un asesor; 'web' = compra en la página; 'manual' = alta de un admin. */
+  source: 'hubspot' | 'web' | 'manual';
   advisorName: string;
   /** 'online' = inscrito a Holding / SEF Online (sin QR ni check-in). */
   accessType?: 'ticket' | 'online';
+}
+
+export interface AddAttendeePayload {
+  name: string;
+  email: string;
+  phone?: string;
+  amount?: number;
+  ticketType?: 'General' | 'VIP';
+  sendEmail?: boolean;
+  /** Repetir un nombre que ya tiene boleto activo con ese correo. */
+  force?: boolean;
+}
+
+export interface AddAttendeeResult {
+  ticket: AdminTicket;
+  emailSent: boolean;
+  emailError?: string;
 }
 
 export interface TicketCheckInResult {
