@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+import { useCartStore } from "@store/cartStore";
 import HubspotForm from "@molecules/HubspotForm";
 import { HUBSPOT_FORMS } from "@utils/hubspotForms";
 import { useEventEdition } from "@hooks/useNextCalendarEvent";
@@ -7,12 +9,25 @@ import {
   formatEventTimeLabel,
   isReformaFiscalEvent,
 } from "@utils/eventCalendar";
+import type { OrderItem } from "@t/index";
 
 const HERO_IMAGE = "/event-media/reforma-fiscal-2027-hero.webp";
+const PRICE = 2997;
 const PRICE_LABEL = "$2,997 MXN";
 const WHATSAPP_URL =
   "https://wa.me/525584001184?text=Hola%2C%20tengo%20una%20pregunta%20sobre%20la%20Masterclass%20Reforma%20Fiscal%202027.";
 const BUY_SECTION_ID = "comprar";
+
+const CHECKOUT_ITEM: OrderItem & { id: string } = {
+  id: "event-reforma-fiscal-2027",
+  type: "event",
+  refId: "reforma-fiscal-2027",
+  title: "Masterclass Reforma Fiscal 2027",
+  price: PRICE,
+  quantity: 1,
+  currency: "MXN",
+  paymentType: "one_time",
+};
 
 type TagTone = "neutral" | "accent" | "red";
 
@@ -50,6 +65,9 @@ const Eyebrow = ({ children, light = false }: { children: React.ReactNode; light
 );
 
 export default function ReformaFiscal2027Landing() {
+  const navigate = useNavigate();
+  const addItem = useCartStore((state) => state.addItem);
+  const clearCart = useCartStore((state) => state.clear);
   // Edición vigente (API/admin o fallback): fecha, hora y modalidad reales.
   const edition = useEventEdition(isReformaFiscalEvent);
   const editionDate = edition
@@ -64,7 +82,23 @@ export default function ReformaFiscal2027Landing() {
   const scrollToBuy = () => {
     document.getElementById(BUY_SECTION_ID)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+  // Los CTA de la landing llevan a la sección de compra; ahí conviven el
+  // pago directo (Stripe) y el formulario de HubSpot.
   const startCheckout = scrollToBuy;
+
+  const buyNow = () => {
+    clearCart();
+    addItem({
+      ...CHECKOUT_ITEM,
+      eventDate: `${editionDate} · ${editionTime} h`,
+      ...(edition && {
+        eventId: String(edition.id ?? edition._id ?? "") || undefined,
+        eventSlug: edition.slug,
+      }),
+      eventFormat: editionFormat,
+    });
+    navigate("/eventos/checkout");
+  };
 
   return (
     <main className="overflow-hidden bg-cream-100 text-ink-900">
@@ -354,11 +388,43 @@ export default function ReformaFiscal2027Landing() {
             </div>
           </div>
 
-          <div className="rf-form mt-8">
-            <HubspotForm
-              portalId={HUBSPOT_FORMS.reformaFiscal2027.portalId}
-              formId={HUBSPOT_FORMS.reformaFiscal2027.formId}
-            />
+          <div className="mt-12 grid gap-12 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-16">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-cream-100/55">
+                Opción 2 · Regístrate
+              </p>
+              <p className="mt-3 font-serif text-2xl leading-snug">
+                Déjanos tus datos y te enviamos el acceso.
+              </p>
+              <div className="rf-form mt-8">
+                <HubspotForm
+                  portalId={HUBSPOT_FORMS.reformaFiscal2027.portalId}
+                  formId={HUBSPOT_FORMS.reformaFiscal2027.formId}
+                />
+              </div>
+            </div>
+
+            <aside className="order-first h-fit border border-cream-100/20 bg-cream-100/[0.04] p-8 lg:order-last lg:sticky lg:top-24">
+              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#d9b97d]">
+                Opción 1 · Compra directa
+              </p>
+              <p className="mt-3 font-serif text-2xl leading-snug">
+                Paga ahora con tarjeta y asegura tu lugar al instante.
+              </p>
+              <ul className="mt-6 space-y-2 text-sm text-cream-100/75">
+                <li>· Confirmación y boleto por correo</li>
+                <li>· Factura disponible al momento</li>
+                <li>· Grabación incluida por 30 días</li>
+              </ul>
+              <button
+                type="button"
+                onClick={buyNow}
+                className="mt-8 flex w-full items-center justify-center bg-[#d9b97d] px-6 py-5 text-[11px] font-bold uppercase tracking-[0.28em] text-ink-900 transition-all hover:-translate-y-0.5 hover:bg-[#e7cd98] hover:shadow-[0_12px_30px_rgba(0,0,0,0.35)]"
+              >
+                Comprar ahora · {PRICE_LABEL}
+              </button>
+              <p className="mt-4 text-center text-xs text-cream-100/50">Pago seguro con Stripe</p>
+            </aside>
           </div>
 
           <p className="mt-7 font-serif text-[15px] italic text-cream-100/60">
