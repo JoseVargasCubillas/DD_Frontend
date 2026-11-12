@@ -17,10 +17,16 @@ import { useEffect } from 'react';
 const scriptSrc = (portalId: string) =>
   `https://js.hsforms.net/forms/embed/developer/${portalId}.js`;
 
+/**
+ * El script del developer embed solo pinta los `.hs-form-html` presentes al
+ * ejecutarse. En navegación SPA el contenedor se vuelve a montar vacío, así
+ * que en cada montaje se reinyecta el script (el navegador lo sirve desde
+ * caché; al ser un elemento nuevo se vuelve a ejecutar y re-escanea el DOM).
+ */
 const useHubspotEmbed = (portalId: string) => {
   useEffect(() => {
     const id = `hs-form-embed-${portalId}`;
-    if (document.getElementById(id)) return;
+    document.getElementById(id)?.remove();
     const script = document.createElement('script');
     script.id = id;
     script.src = scriptSrc(portalId);
