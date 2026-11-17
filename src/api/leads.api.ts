@@ -13,6 +13,8 @@ export interface LeadCaptureResult {
    */
   emailStatus?: 'delivered' | 'pending';
   downloadUrl?: string;
+  /** Descargas adicionales entregadas junto al recurso principal. */
+  extraDownloadUrls?: string[];
 }
 
 export interface Lead {
@@ -110,6 +112,16 @@ export const requestDownloadableResource = (input: {
  * Fallback: si el fetch falla (CORS, red), abre la URL en una pestaña
  * nueva como último recurso.
  */
+const filenameFromHeaders = (headers: Headers): string | undefined => {
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(headers.get('content-disposition') ?? '');
+  if (!match) return undefined;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+};
+
 export const triggerLeadDownload = async (
   downloadUrl: string,
   filename?: string,
@@ -122,7 +134,7 @@ export const triggerLeadDownload = async (
     const objectUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = objectUrl;
-    a.download = filename ?? 'documento.pdf';
+    a.download = filename ?? filenameFromHeaders(res.headers) ?? 'documento.pdf';
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();

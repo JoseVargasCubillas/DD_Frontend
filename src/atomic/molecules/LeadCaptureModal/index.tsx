@@ -8,7 +8,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   resource: Resource;
-  submit: (email: string, name?: string, phone?: string) => Promise<{ downloadUrl?: string; emailStatus?: 'delivered' | 'pending' } | void | unknown>;
+  submit: (email: string, name?: string, phone?: string) => Promise<{ downloadUrl?: string; extraDownloadUrls?: string[]; emailStatus?: 'delivered' | 'pending' } | void | unknown>;
   title?: string;
   description?: string;
   submitLabel?: string;
@@ -74,7 +74,7 @@ export default function LeadCaptureModal({
           cleanName || undefined,
           cleanPhone || undefined,
         )) as
-          | { downloadUrl?: string; emailStatus?: 'delivered' | 'pending' }
+          | { downloadUrl?: string; extraDownloadUrls?: string[]; emailStatus?: 'delivered' | 'pending' }
           | undefined;
         setSent(true);
         const url = result?.downloadUrl ?? fallbackDownloadUrl;
@@ -82,10 +82,14 @@ export default function LeadCaptureModal({
         if (url) {
           await triggerLeadDownload(url, fallbackFilename);
         }
+        for (const extraUrl of result?.extraDownloadUrls ?? []) {
+          await triggerLeadDownload(extraUrl);
+        }
+        const plural = (result?.extraDownloadUrls?.length ?? 0) > 0;
         if (result?.emailStatus === 'pending') {
-          toast.success('Descargamos tu documento. Te llegará por correo pronto.');
+          toast.success(plural ? 'Descargamos tus documentos. Te llegarán por correo pronto.' : 'Descargamos tu documento. Te llegará por correo pronto.');
         } else {
-          toast.success('Descargamos tu documento. También lo enviamos a tu bandeja de entrada.');
+          toast.success(plural ? 'Descargamos tus documentos. También los enviamos a tu bandeja de entrada.' : 'Descargamos tu documento. También lo enviamos a tu bandeja de entrada.');
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'No pudimos procesar tu solicitud.';

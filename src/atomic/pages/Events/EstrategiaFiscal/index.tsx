@@ -713,7 +713,7 @@ export default function EstrategiaFiscalLanding() {
               onClick={() => setDossierOpen(true)}
               className="btn-secondary justify-center"
             >
-              Descargar dossier ↓
+              Descargar dossiers ↓
             </button>
             <p className="text-[9px] uppercase tracking-[0.32em] text-ink-400">
               {currentEventRemaining !== null
@@ -1178,9 +1178,9 @@ export default function EstrategiaFiscalLanding() {
         submit={requestEstrategiaFiscalDossier}
         requireName
         requirePhone
-        title="Recibe el dossier del seminario"
-        description="Déjanos tu nombre, correo y número. Te enviaremos el dossier oficial de Estrategia Fiscal directamente a tu bandeja."
-        submitLabel="Enviar dossier"
+        title="Recibe los dossiers del seminario"
+        description="Déjanos tu nombre, correo y número. Te enviaremos el dossier del Seminario presencial (CDMX) y el de la Capacitación online directamente a tu bandeja."
+        submitLabel="Enviar dossiers"
       />
     </div>
   );
