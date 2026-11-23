@@ -1510,7 +1510,7 @@ export default function Events() {
                   >
                     <div className="flex items-start justify-between gap-5 lg:block">
                       <p className="text-[11px] uppercase tracking-[0.22em] text-ink-300">
-                        Mes / 2026
+                        Mes / {group.month.match(/\d{4}$/)?.[0] ?? "2026"}
                       </p>
                       <h3 className="events-agenda-month mt-0 whitespace-pre-line text-right font-serif italic leading-[1.04] tracking-[-0.042em] lg:mt-5 lg:text-left">
                         {group.month.replace(" ", "\n")}
