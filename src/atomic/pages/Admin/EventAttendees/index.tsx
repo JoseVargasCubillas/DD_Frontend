@@ -28,6 +28,17 @@ function originLabel(ticket: AdminTicket): string {
   return ticket.advisorName ? `Asesor: ${ticket.advisorName}` : 'Asesor (sin asignar)';
 }
 
+// Boleto de HubSpot registrado cuando el contacto aún no tenía correo: el
+// backend lo manda solo en cuanto HubSpot tenga el correo.
+function EmailCell({ ticket }: { ticket: AdminTicket }) {
+  if (ticket.attendeeEmail || ticket.accessType === 'online') return <>{ticket.attendeeEmail}</>;
+  return (
+    <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
+      Sin correo · boleto pendiente
+    </span>
+  );
+}
+
 function StatusCell({ ticket }: { ticket: AdminTicket }) {
   if (ticket.accessType === 'online' && ticket.status === 'valid') {
     return <span className="inline-flex rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-800">Inscrito online</span>;
@@ -394,7 +405,7 @@ export default function EventAttendees() {
                         {t.attendeeName}
                         {t.seatTotal > 1 && <span className="ml-2 text-xs text-ink-400">({t.seatIndex}/{t.seatTotal})</span>}
                       </td>
-                      <td className="px-4 py-3 text-ink-600">{t.attendeeEmail}</td>
+                      <td className="px-4 py-3 text-ink-600"><EmailCell ticket={t} /></td>
                       <td className="px-4 py-3 font-mono text-xs tracking-wider">{t.folio}</td>
                       <td className="px-4 py-3 text-ink-600">{t.purchasedAt ? formatDateShort(t.purchasedAt) : '—'}</td>
                       <td className="px-4 py-3 text-ink-600">{originLabel(t)}</td>
@@ -417,7 +428,7 @@ export default function EventAttendees() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate font-semibold">{t.attendeeName}</p>
-                      <p className="truncate text-xs text-ink-500">{t.attendeeEmail}</p>
+                      <p className="truncate text-xs text-ink-500"><EmailCell ticket={t} /></p>
                     </div>
                     <StatusCell ticket={t} />
                   </div>

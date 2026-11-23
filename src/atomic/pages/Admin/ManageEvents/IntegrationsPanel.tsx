@@ -52,6 +52,7 @@ export default function IntegrationsPanel() {
           plural(r.issued, "boleto emitido", "boletos emitidos"),
           `${r.skipped} omitidos`,
           `${r.pendingEvent} esperando evento`,
+          ...(r.awaitingEmail ? [plural(r.awaitingEmail, "boleto sin correo", "boletos sin correo")] : []),
         ];
         toast.success(`HubSpot sincronizado: ${parts.join(" · ")}`);
       },
@@ -123,6 +124,12 @@ export default function IntegrationsPanel() {
                       "pendientes esperando evento",
                     )}`}
           </p>
+          {status && hubspotEnabled && status.hubspot.awaitingEmail > 0 && (
+            <p className="mt-2 inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+              {plural(status.hubspot.awaitingEmail, "boleto sin correo", "boletos sin correo")} · se envía{status.hubspot.awaitingEmail === 1 ? "" : "n"} solo
+              cuando el contacto tenga correo en HubSpot
+            </p>
+          )}
         </div>
         <button
           type="button"

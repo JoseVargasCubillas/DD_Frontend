@@ -17,6 +17,8 @@ export interface IntegrationsStatus {
     cursor: string | null;
     pendingEvent: number;
     issued: number;
+    /** Boletos registrados que esperan a que el contacto tenga correo en HubSpot. */
+    awaitingEmail: number;
   };
 }
 
@@ -35,6 +37,7 @@ export interface HubspotSyncResult {
   pendingEvent: number;
   emailsSent: number;
   retries: number;
+  awaitingEmail?: number;
   /** true si ya había otra sincronización en curso y esta se omitió. */
   lockedByOther?: boolean;
 }
