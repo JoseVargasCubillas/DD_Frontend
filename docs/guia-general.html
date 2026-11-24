@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cómo funciona todo (versión para humanos) — Diego Díaz · Díaz Lara</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap');
+:root{
+  --cream:#f0ebe2; --cream-50:#faf8f5; --cream-100:#f5f0e8; --cream-300:#e8e0d4; --cream-400:#d4ccc0; --cream-500:#b8ae9f;
+  --ink:#0a0a0a; --ink-600:#242424; --ink-500:#3d3d3d; --ink-400:#666; --ink-300:#888;
+  --accent:#8a6d3b; --accent-soft:#efe6d3;
+  --ok:#2f6f4e; --ok-soft:#e3f0e8; --warn:#9a6b12; --warn-soft:#faf0d6; --bad:#a23b3b; --bad-soft:#f7e1e1; --info:#2f5f8a; --info-soft:#e2ecf5;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--cream-50);color:var(--ink);font-family:Inter,"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:"Libre Baskerville",Baskerville,Georgia,serif;font-weight:700;line-height:1.2;color:var(--ink);letter-spacing:-.01em}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--cream-400)}
+a:hover{border-color:var(--accent)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em;background:var(--cream-100);border:1px solid var(--cream-300);border-radius:4px;padding:.08em .4em;color:var(--ink-600)}
+pre.code{background:var(--ink);color:#f5f0e8;padding:18px 22px;border-radius:10px;overflow:auto;font-size:.84rem;line-height:1.55}
+pre.code code{background:none;border:0;color:inherit;padding:0}
+strong{font-weight:600;color:var(--ink)}
+em{color:var(--ink-500)}
+
+/* layout */
+.page{max-width:1120px;margin:0 auto;padding:0 32px 96px}
+.cover{background:var(--ink);color:var(--cream);margin:0 -32px 56px;padding:88px 32px 72px;position:relative;overflow:hidden}
+.cover::after{content:"";position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(240,235,226,.14),transparent 70%)}
+.cover-inner{max-width:1120px;margin:0 auto;position:relative}
+.eyebrow{font-size:.78rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cream-500);font-weight:600;margin-bottom:22px;display:flex;align-items:center;gap:12px}
+.eyebrow::before{content:"";display:inline-block;width:36px;height:1px;background:var(--cream-500)}
+.cover h1{color:var(--cream);font-size:clamp(2.2rem,5vw,3.6rem);margin:0 0 18px;max-width:18ch}
+.cover .sub{color:var(--cream-400);font-size:1.15rem;max-width:62ch;line-height:1.6;font-family:"Libre Baskerville",Georgia,serif;font-style:italic}
+.cover .meta{margin-top:40px;display:flex;flex-wrap:wrap;gap:12px}
+.pill{border:1px solid rgba(240,235,226,.25);border-radius:999px;padding:6px 14px;font-size:.8rem;color:var(--cream-300)}
+.cover .callout{background:rgba(240,235,226,.06);border:1px solid rgba(240,235,226,.14);border-left:3px solid var(--cream-500);color:var(--cream-300);margin-top:36px}
+.cover .callout strong{color:var(--cream)}
+.cover .callout a{color:var(--cream);border-color:rgba(240,235,226,.4)}
+.cover .callout p{margin:.45em 0}
+
+/* chapters */
+.chapter{background:#fff;border:1px solid var(--cream-300);border-radius:16px;padding:40px 44px 28px;margin:0 0 28px;box-shadow:0 1px 2px rgba(10,10,10,.03),0 12px 32px -24px rgba(10,10,10,.18)}
+.chapter h2{display:flex;align-items:baseline;gap:18px;font-size:1.75rem;margin:0 0 22px;padding-bottom:18px;border-bottom:1px solid var(--cream-300)}
+.chapter h2 .num{font-family:Inter,sans-serif;font-weight:700;font-size:.8rem;letter-spacing:.08em;color:var(--cream-50);background:var(--ink);border-radius:8px;min-width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;flex:none;transform:translateY(-4px)}
+h3{font-size:1.22rem;margin:34px 0 12px;color:var(--ink);display:flex;align-items:center;gap:10px}
+h3::before{content:"";width:6px;height:22px;border-radius:3px;background:var(--accent);flex:none}
+h4{font-size:1rem;margin:22px 0 8px;font-family:Inter,sans-serif;font-weight:600;color:var(--ink-500);text-transform:uppercase;letter-spacing:.06em;font-size:.8rem}
+p{margin:.7em 0}
+ul,ol{padding-left:1.35em;margin:.6em 0}
+li{margin:.3em 0}
+li::marker{color:var(--accent);font-weight:600}
+ol>li{padding-left:.2em}
+
+/* TOC (chapter without number: "Índice") */
+.chapter:first-of-type ol{columns:2;column-gap:40px;list-style:none;padding:0;counter-reset:toc}
+.chapter:first-of-type ol>li{counter-increment:toc;break-inside:avoid;padding:9px 0 9px 44px;position:relative;border-bottom:1px dashed var(--cream-300);margin:0}
+.chapter:first-of-type ol>li::before{content:counter(toc,decimal-leading-zero);position:absolute;left:0;top:9px;font-family:"Libre Baskerville",serif;font-weight:700;color:var(--accent);font-size:.95rem}
+.chapter:first-of-type ol>li a{color:var(--ink);border:0;font-weight:500}
+.chapter:first-of-type ol>li a:hover{color:var(--accent)}
+.chapter:first-of-type ol ul{list-style:none;padding:6px 0 0;margin:0;font-size:.85rem;color:var(--ink-400)}
+.chapter:first-of-type ol ul li{padding:1px 0;margin:0;border:0}
+
+/* callouts */
+.callout{background:var(--accent-soft);border-left:4px solid var(--accent);border-radius:0 10px 10px 0;padding:14px 20px;margin:20px 0;color:var(--ink-600)}
+.callout p{margin:.4em 0}
+
+/* tables */
+.table-wrap{overflow:auto;margin:18px 0;border:1px solid var(--cream-300);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+thead th{background:var(--ink);color:var(--cream);text-align:left;padding:12px 16px;font-weight:600;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;font-family:Inter,sans-serif}
+tbody td{padding:12px 16px;border-top:1px solid var(--cream-300);vertical-align:top}
+tbody tr:nth-child(even) td{background:var(--cream-50)}
+tbody td:first-child{font-weight:600}
+td code{white-space:nowrap}
+
+/* diagrams */
+.diagram{margin:26px 0;padding:22px;background:var(--cream-50);border:1px solid var(--cream-300);border-radius:12px;overflow:auto;position:relative}
+.diagram::after{content:"desliza para ver completo →";position:absolute;right:14px;top:8px;font-size:.7rem;color:var(--ink-300);letter-spacing:.04em}
+.diagram pre.mermaid{margin:0;display:flex;justify-content:center;font-family:Inter,sans-serif;min-width:max-content}
+.diagram svg{height:auto}
+.diagram:has(svg[style*="max-width"])::after{display:none}
+
+/* status emoji lines in section 10 → badges */
+li:has(> strong:first-child) strong:first-child{color:var(--ink)}
+
+footer{margin-top:40px;text-align:center;color:var(--ink-300);font-size:.82rem;padding-top:28px;border-top:1px solid var(--cream-300)}
+
+@media (max-width:760px){
+  .page{padding:0 18px 64px}.cover{margin:0 -18px 32px;padding:64px 18px 48px}
+  .chapter{padding:26px 22px 18px;border-radius:12px}
+  .chapter:first-of-type ol{columns:1}
+}
+@media print{
+  @page{size:A4;margin:14mm 12mm}
+  @page wide{size:A4 landscape;margin:8mm}
+  .diagram.big{page:wide;break-before:page;break-after:page;border:0;background:#fff;padding:0;margin:0}
+  .diagram.big svg{max-height:190mm;width:100%}
+  body{background:#fff;font-size:11.5px}
+  .page{max-width:none;padding:0}
+  .cover{margin:0 0 20px;padding:70px 48px;border-radius:14px;page-break-after:always;min-height:255mm;display:flex;align-items:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .cover::after{display:none}
+  .chapter{box-shadow:none;break-inside:auto;page-break-inside:auto;padding:22px 24px 14px;margin-bottom:16px}
+  .chapter:first-of-type{page-break-after:always}
+  h2,h3{break-after:avoid}
+  .diagram,.table-wrap,.callout{break-inside:avoid}
+  .diagram svg{max-height:240mm;max-width:100%}
+  .diagram pre.mermaid{min-width:0}
+  .diagram::after{display:none}
+  thead th,.chapter h2 .num,pre.code{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  a{color:inherit;border:0}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="cover">
+    <div class="cover-inner">
+      <div class="eyebrow">Ecosistema Diego Díaz · Díaz Lara · Consultoría</div>
+      <h1>Cómo funciona todo (versión para humanos)</h1>
+      <p class="sub">El mapa del tesoro: qué páginas tenemos, dónde viven, qué pasa por detrás cuando alguien deja su correo, compra, paga o agenda — y qué hacer cuando algo se ve raro.</p>
+      <div class="meta">
+        <span class="pill">Versión 24 de noviembre de 2026</span>
+        <span class="pill">Para todo el equipo · sin tecnicismos</span>
+        <span class="pill">4 plataformas · 1 servidor · HubSpot al centro</span>
+      </div>
+      <aside class="callout"><p><strong>Para quién es:</strong> cualquier persona del equipo — ventas, marketing, soporte, administración, un dev que acaba de llegar. No necesitas saber programar.
+<strong>Qué vas a entender al terminar:</strong> qué páginas web tenemos, dónde viven, qué pasa &quot;por detrás&quot; cuando alguien deja su correo, compra un boleto, paga la Academia, agenda una sesión o cuando un asesor cierra una venta en HubSpot. Y qué hacer (o a quién avisar) cuando algo se ve raro.
+<strong>Si quieres la versión técnica</strong> (puertos, tablas, endpoints), está en <a href="./ARQUITECTURA-VPS-Y-PLATAFORMAS.md"><code>ARQUITECTURA-VPS-Y-PLATAFORMAS.md</code></a>. Este documento es el &quot;mapa del tesoro&quot;; aquel es el &quot;plano del ingeniero&quot;.</p>
+</aside>
+    </div>
+  </header>
+  <section class="chapter"><h2 id="índice">Índice</h2><ol>
+<li><a href="#1-la-idea-en-60-segundos">La idea en 60 segundos</a></li>
+<li><a href="#2-el-mapa-general-un-solo-dibujo">El mapa general (un solo dibujo)</a></li>
+<li><a href="#3-las-piezas-explicadas-como-si-fueran-un-edificio">Las piezas, explicadas como si fueran un edificio</a></li>
+<li><a href="#4-las-cuatro-plataformas-y-para-qu%C3%A9-sirve-cada-una">Las cuatro plataformas y para qué sirve cada una</a></li>
+<li><a href="#5-historias-completas-qu%C3%A9-pasa-cuando">Historias completas: &quot;qué pasa cuando…&quot;</a><ul>
+<li>5.1 Alguien descarga la Guía SAT</li>
+<li>5.2 Alguien compra un boleto para un evento</li>
+<li>5.3 Un asesor cierra una venta en HubSpot</li>
+<li>5.4 Alguien paga la Academia</li>
+<li>5.5 Alguien compra un libro</li>
+<li>5.6 Marketing manda una campaña de correo</li>
+<li>5.7 Marketing manda un WhatsApp masivo</li>
+<li>5.8 Llega el día del evento (check‑in)</li>
+<li>5.9 Un prospecto pide una sesión con Díaz Lara</li>
+<li>5.10 El despacho atiende a un cliente (Consultoría)</li>
+<li>5.11 Alguien se registra o pierde su contraseña</li>
+<li>5.12 Se publica un artículo en el blog</li>
+</ul>
+</li>
+<li><a href="#6-las-cosas-que-pasan-solas-robots">Las cosas que pasan solas (robots)</a></li>
+<li><a href="#7-d%C3%B3nde-se-guarda-cada-dato">Dónde se guarda cada dato</a></li>
+<li><a href="#8-c%C3%B3mo-se-publican-cambios-deploy">Cómo se publican cambios (deploy)</a></li>
+<li><a href="#9-gu%C3%ADa-r%C3%A1pida-esto-se-ve-raro-qu%C3%A9-hago">Guía rápida: &quot;esto se ve raro, ¿qué hago?&quot;</a></li>
+<li><a href="#10-las-cosas-que-hay-que-arreglar-o-vigilar">Las cosas que hay que arreglar o vigilar</a></li>
+<li><a href="#11-diccionario-de-palabras-raras">Diccionario de palabras raras</a></li>
+</ol>
+</section><section class="chapter"><h2 id="1-la-idea-en-60-segundos"><span class="num">1</span><span>La idea en 60 segundos</span></h2><p>Tenemos <strong>un servidor</strong> (una computadora rentada, encendida 24/7, le decimos <em>el VPS</em>) y <strong>cuatro páginas web</strong> que trabajan en equipo:</p>
+<div class="table-wrap"><table><thead><tr><th>Página</th><th>En una frase</th></tr></thead><tbody><tr><td><strong>diegodiaz.mx</strong></td><td>La marca personal de Diego: eventos, Academia, libros, blog, descargables gratis. Es donde <strong>entra la gente</strong>.</td></tr><tr><td><strong>diazlara.mx</strong></td><td>El despacho Díaz Lara: aquí un prospecto <strong>agenda una sesión</strong> con un consultor.</td></tr><tr><td><strong>fiscalista-mx.com</strong></td><td>El sistema <strong>interno</strong> del despacho: clientes, tareas, documentos, etapas, portal del cliente. Solo lo usa el equipo.</td></tr><tr><td><strong>ranking.diazlara.mx</strong></td><td>Una pantalla con el <strong>ranking de ventas</strong> de los asesores. Solo muestra, no guarda nada.</td></tr></tbody></table></div><p>En medio de todas está <strong>HubSpot</strong>, nuestro CRM. Piensa en HubSpot como <strong>la libreta central de contactos y ventas</strong>: todo lo que una página aprende de una persona lo anota ahí, y las otras páginas lo leen de ahí.</p>
+<p>Alrededor hay ayudantes externos: <strong>Stripe</strong> cobra con tarjeta, <strong>Mailchimp</strong> manda correos masivos, <strong>Gmail</strong> manda correos uno a uno, <strong>WhatsApp</strong> (dos proveedores) manda mensajes, <strong>Google Sheets/Calendar/Drive</strong> guardan reportes, agendas y videos, <strong>Envía</strong> genera guías de paquetería, <strong>Cloudinary</strong> guarda imágenes.</p>
+</section><section class="chapter"><h2 id="2-el-mapa-general-un-solo-dibujo"><span class="num">2</span><span>El mapa general (un solo dibujo)</span></h2><p>Léelo de izquierda a derecha: la gente llega por las páginas, las páginas hablan con sus &quot;cerebros&quot; (APIs) en el servidor, los cerebros guardan en bases de datos y hablan con los servicios externos. HubSpot está en el centro porque todas lo tocan.</p>
+<figure class="diagram big"><pre class="mermaid">flowchart LR
+    subgraph GENTE["👥 La gente"]
+        P1(["Prospecto / cliente<br/>desde Google, redes, WhatsApp"])
+        P2(["Equipo interno<br/>asesores, marketing, admin"])
+        P3(["Alumno de la Academia"])
+    end
+
+    subgraph PAGINAS["🌐 Lo que la gente ve (frontends)"]
+        FA["diegodiaz.mx<br/>(vive en Hostinger)"]
+        FB["diazlara.mx<br/>(vive en Hostinger)"]
+        FC["fiscalista-mx.com<br/>(vive en el VPS, pasa por Cloudflare)"]
+        FD["ranking.diazlara.mx<br/>(vive en el VPS)"]
+    end
+
+    subgraph VPS["🖥️ El VPS (82.25.95.236) — nuestro servidor"]
+        NG["nginx<br/>el portero: recibe todo y lo reparte"]
+        BA["Cerebro de Diego Díaz<br/>api.diegodiaz.mx"]
+        BB["Cerebro de Díaz Lara<br/>api.diazlara.mx"]
+        BC["Cerebro de Consultoría<br/>fiscalista-mx.com/api"]
+        DBA[("Base de datos<br/>dd_academia")]
+        DBC[("Base de datos<br/>consultoria_db")]
+        ROB["🤖 Robots (cron + workers)<br/>respaldos, reportes, recordatorios"]
+    end
+
+    DBB[("Base de datos de Díaz Lara<br/>(en Hostinger, no en el VPS)")]
+
+    subgraph EXT["☁️ Ayudantes externos"]
+        HUB[("HubSpot<br/>LA LIBRETA CENTRAL<br/>contactos · ventas · etapas")]
+        STR["Stripe<br/>cobra tarjetas"]
+        MC["Mailchimp<br/>correos masivos"]
+        GM["Gmail SMTP<br/>correos uno a uno"]
+        WA["WhatsApp<br/>Whapi + Meta Cloud API"]
+        GG["Google<br/>Sheets · Calendar · Meet · Drive"]
+        ENV["Envía<br/>paquetería de libros"]
+        CL["Cloudinary<br/>imágenes"]
+        N8N["n8n<br/>automatizador para el ranking"]
+    end
+
+    P1 --> FA & FB
+    P3 --> FA
+    P2 --> FC & FD
+    P2 -->|"/admin"| FA
+
+    FA --> NG --> BA
+    FB --> NG --> BB
+    FC --> NG --> BC
+    FD --> N8N --> HUB
+
+    BA --> DBA
+    BC --> DBC
+    BB --> DBB
+    ROB --> DBA & DBC
+
+    BA <--> HUB
+    BB --> HUB
+    HUB --> BC
+    BB -->|"le pasa leads y citas"| BC
+
+    BA --> STR & MC & GM & WA & GG & ENV & CL
+    BB --> GM & WA & GG
+    BC --> GM & WA & GG
+    FB -.->|"formulario embebido"| HUB</pre></figure><p><strong>Cómo leer el dibujo con una analogía:</strong> las páginas son <strong>las vitrinas de la tienda</strong>. El VPS es <strong>la trastienda</strong>. nginx es <strong>el portero</strong> que ve a qué dominio quieres entrar y te manda con el cerebro correcto. Cada cerebro tiene <strong>su propio archivero</strong> (base de datos). HubSpot es <strong>la libreta compartida</strong> que todos los cerebros consultan y anotan. Los robots son <strong>empleados nocturnos</strong> que hacen tareas repetitivas sin que nadie les pida.</p>
+</section><section class="chapter"><h2 id="3-las-piezas-explicadas-como-si-fueran-un-edificio"><span class="num">3</span><span>Las piezas, explicadas como si fueran un edificio</span></h2><h3 id="el-terreno-el-vps">El terreno: el VPS</h3><p>Es una computadora rentada (Ubuntu, 4 procesadores, 15 GB de RAM, 193 GB de disco, usamos ~19 %). Está encendida siempre. Dentro viven:</p>
+<ul>
+<li><strong>nginx — el portero.</strong> Todo lo que llega por internet (https) primero pasa por él. Mira el dominio (<code>api.diegodiaz.mx</code>, <code>fiscalista-mx.com</code>, etc.) y lo entrega al departamento correcto. También tiene los <strong>candados SSL</strong> (el candadito verde del navegador) que se renuevan solos.</li>
+<li><strong>PM2 — el supervisor de turno.</strong> Mantiene vivos a los &quot;cerebros&quot;. Si uno se cae, lo levanta. Hay cuatro bajo su cuidado:<ol>
+<li><code>dd-academia-backend</code> → cerebro de <strong>Diego Díaz</strong>.</li>
+<li><code>diazlara-backend</code> → cerebro de <strong>Díaz Lara</strong>.</li>
+<li><code>api_ddl</code> → cerebro de <strong>Consultoría</strong>.</li>
+<li><code>frontend_ddl</code> → un proceso de desarrollo de Consultoría que estaba de más; <strong>ya se detuvo</strong> (ver sección 10).</li>
+</ol>
+</li>
+<li><strong>MySQL — los archiveros.</strong> Dos cajones: <code>dd_academia</code> (todo Diego Díaz) y <code>consultoria_db</code> (todo Consultoría). El de Díaz Lara está en otro edificio (Hostinger).</li>
+<li><strong>cron — el reloj de tareas.</strong> A las <strong>03:00</strong> respalda las dos bases de datos (Diego Díaz y Consultoría); a las <strong>08:30</strong> manda el reporte de leads a Google Sheets.</li>
+<li><strong>Runner de GitHub — el albañil automático.</strong> Cuando un dev sube cambios de Consultoría, este robot los instala en el servidor solo.</li>
+<li><strong>Seguridad:</strong> fail2ban (bloquea a quien intenta adivinar contraseñas por SSH), Monarx (antimalware).</li>
+</ul>
+<h3 id="las-vitrinas-que-no-están-en-el-vps">Las vitrinas que NO están en el VPS</h3><ul>
+<li><strong>diegodiaz.mx</strong> y <strong>diazlara.mx</strong> viven en <strong>Hostinger</strong> (un hosting web). Cuando un dev sube cambios a GitHub, Hostinger los publica solo en 3‑4 minutos. Por eso <strong>la página puede estar bien y el cerebro caído, o al revés</strong>: son edificios distintos.</li>
+<li><strong>fiscalista-mx.com</strong> pasa primero por <strong>Cloudflare</strong> (un escudo/CDN) y luego llega al VPS.</li>
+</ul>
+</section><section class="chapter"><h2 id="4-las-cuatro-plataformas-y-para-qué-sirve-cada-una"><span class="num">4</span><span>Las cuatro plataformas y para qué sirve cada una</span></h2><h3 id="a-diegodiazmx-la-puerta-de-entrada">A · diegodiaz.mx — &quot;la puerta de entrada&quot;</h3><p>Lo que ve el público:</p>
+<ul>
+<li><strong>Inicio</strong> con video, cuenta regresiva del próximo evento y la Guía SAT gratis.</li>
+<li><strong>Eventos</strong>: calendario y una landing por cada evento (Seminario Estrategia Fiscal <em>por sede</em>, Holding, Tablero del CEO, Rockefeller, Revisión Estratégica, Reforma Fiscal 2027, Prospección Digital, Cómo Cobrar). Desde ahí se compran boletos.</li>
+<li><strong>Academia</strong>: tres planes (Entrepreneur, Business, Master) con cursos en video.</li>
+<li><strong>Libros</strong> con envío a domicilio.</li>
+<li><strong>Blog</strong>, <strong>Recursos</strong> (descargables), <strong>Acerca</strong>, <strong>Prensa</strong> (media kit), <strong>Despacho/Díaz Lara</strong>, <strong>Contacto</strong>, <strong>Términos/Privacidad/FAQ</strong>.</li>
+<li><strong>Mi cuenta</strong> para alumnos; <strong>/admin</strong> para el equipo; <strong>/check-in</strong> para el staff del evento.</li>
+</ul>
+<h3 id="b-diazlaramx-la-recepción-del-despacho">B · diazlara.mx — &quot;la recepción del despacho&quot;</h3><p>Landing del despacho con un <strong>formulario de HubSpot</strong> incrustado y, por detrás, un sistema para que los consultores vean su agenda, creen citas (con enlace de Google Meet), califiquen al prospecto y le manden confirmaciones por correo y WhatsApp. Cuando se agenda algo, se lo cuenta a Consultoría.</p>
+<h3 id="c-fiscalista-mxcom-la-oficina">C · fiscalista-mx.com — &quot;la oficina&quot;</h3><p>Solo para el equipo. Importa las ventas de HubSpot y las convierte en <strong>clientes</strong>; muestra un <strong>tablero de etapas</strong> igual al pipeline de HubSpot; en cada etapa dispara <strong>mensajes automáticos</strong> (bienvenida, pedir documentos, recordar sesión, mandar propuesta, etc.); administra <strong>tareas, documentos, checklists, diagnósticos fiscales, cálculos de ISR, facturación</strong>; tiene un <strong>portal</strong> donde el cliente entra a ver su expediente; y el <strong>Podio</strong> (ranking interno de asesores desde una hoja de Google).</p>
+<h3 id="d-rankingdiazlaramx-la-pantalla-de-la-tv">D · ranking.diazlara.mx — &quot;la pantalla de la TV&quot;</h3><p>Una página que cada tanto le pregunta a <strong>n8n</strong> (un automatizador en la nube) &quot;¿cómo van las ventas?&quot;, n8n le pregunta a HubSpot, y la página dibuja el ranking. No guarda nada.</p>
+</section><section class="chapter"><h2 id="5-historias-completas-qué-pasa-cuando"><span class="num">5</span><span>Historias completas: &quot;qué pasa cuando…&quot;</span></h2><p>Cada historia va paso a paso. Las cajas 🟢 son cosas que <strong>la persona ve</strong>; las 🔵 son cosas que <strong>pasan por detrás</strong>; las 🟠 son <strong>robots</strong> que actúan después.</p>
+<h3 id="51-alguien-descarga-la-guía-sat-o-cualquier-descargable-newsletter-dossier">5.1 Alguien descarga la Guía SAT (o cualquier descargable, newsletter, dossier)</h3><aside class="callout"><p><em>&quot;María llega a diegodiaz.mx desde un anuncio, ve &#39;Descarga la Guía de Blindaje SAT&#39;, pone su nombre, correo y teléfono, y da clic.&quot;</em></p>
+</aside><figure class="diagram"><pre class="mermaid">flowchart TD
+    A["🟢 María llena el formulito (nombre, correo, teléfono)"] --> B["🔵 La página se lo manda al cerebro de Diego Díaz"]
+    B --> C{"🔵 ¿Ya teníamos ese correo?"}
+    C -->|"no"| D["🔵 Se crea un LEAD nuevo en dd_academia<br/>con la etiqueta de qué descargó (Guía SAT, Media Kit, dossier, recurso, newsletter…)"]
+    C -->|"sí"| E["🔵 Se actualiza el lead (nueva fuente, fecha)"]
+    D & E --> F["🔵 Se anota a María en HubSpot como contacto"]
+    D & E --> G{"🔵 ¿Gmail tiene cupo hoy?<br/>(hay un tope de correos por día)"}
+    G -->|"sí"| H["🔵 Se le manda el correo con el PDF adjunto o el enlace"]
+    G -->|"no"| I["🔵 Se forma en la fila de correos pendientes;<br/>el robot lo manda cuando haya cupo"]
+    I --> H
+    D & E --> J["🟢 La página le muestra el botón 'Descargar ahora'<br/>(por si el correo tarda)"]
+    H --> K["🟢 María recibe el correo"]
+    D & E --> L["🟠 Mañana a las 8:30 aparece en el reporte de Google Sheets"]
+    D & E --> M["🟠 Desde hoy puede recibir campañas de correo y WhatsApp<br/>(hasta que se dé de baja)"]</pre></figure><p><strong>Lo que debes saber:</strong></p>
+<ul>
+<li>Todos los descargables usan <strong>el mismo camino</strong>. Cambia solo <em>qué</em> se manda (Guía SAT, Media Kit, los dos dossiers de Estrategia Fiscal, recursos, bienvenida al newsletter).</li>
+<li>Si María <strong>no recibe el correo</strong>, 90 % de las veces es porque se acabó el cupo diario de Gmail (ver sección 9). El PDF igual se lo pudo bajar desde la página.</li>
+<li>En el admin (<strong>/admin/contactos</strong>) la ves como lead, con su fuente. En HubSpot la ves como contacto.</li>
+<li>Cada clic en un botón de WhatsApp de la página también se cuenta (para saber de dónde viene la gente).</li>
+</ul>
+<h3 id="52-alguien-compra-un-boleto-para-un-evento">5.2 Alguien compra un boleto para un evento</h3><aside class="callout"><p><em>&quot;Luis entra a la landing del Seminario de Estrategia Fiscal en Monterrey, elige 2 boletos VIP, pone un código de descuento y paga con tarjeta.&quot;</em></p>
+</aside><figure class="diagram"><pre class="mermaid">flowchart TD
+    A["🟢 Luis elige evento, cantidad y tipo (General / VIP)"] --> B["🟢 Escribe código de descuento (opcional)"]
+    B --> C["🔵 El cerebro arma la cuenta: precio × cantidad − descuento<br/>(revisa que el código exista y esté vigente)"]
+    C --> D["🟢 Ve el total y pone su tarjeta (formulario de Stripe)"]
+    D --> E["🔵 Se crea una ORDEN 'pendiente' y se le pide a Stripe que cobre"]
+    E --> F{"💳 Stripe"}
+    F -->|"aprobada"| G["🔵 Stripe nos avisa: 'pagado'"]
+    F -->|"rechazada"| H["🟢 Luis ve el error y puede reintentar"]
+    F -->|"se fue sin pagar"| I["🟠 Al día siguiente, el robot anota en HubSpot<br/>'carrito abandonado' para que ventas le dé seguimiento"]
+    G --> J["🔵 La orden pasa a 'pagada' (si Stripe avisa dos veces, no se duplica nada)"]
+    J --> K["🔵 Se generan 2 BOLETOS, cada uno con folio y código QR"]
+    K --> L["🔵 Se le manda un correo con los boletos"]
+    K --> M["🔵 Se agregan 2 renglones en la hoja de Google de asistencia del evento"]
+    K --> N["🟢 Luis ve su recibo y sus boletos en la página (/boleto/FOLIO)"]
+    J --> O["🟢 El admin lo ve en /admin/ventas y /admin/eventos/…/asistentes"]</pre></figure><p><strong>Si el evento es online</strong> (Holding, Estrategia Fiscal Online): en lugar de boletos con QR se le manda un <strong>enlace de un solo uso</strong> para entrar al grupo de WhatsApp del evento.</p>
+<h3 id="53-un-asesor-cierra-una-venta-en-hubspot">5.3 Un asesor cierra una venta en HubSpot</h3><aside class="callout"><p><em>&quot;Ana, asesora, vende por teléfono 1 boleto del Tablero del CEO. Lo registra en HubSpot como negocio ganado con el producto correcto. No toca nuestra página.&quot;</em></p>
+</aside><figure class="diagram"><pre class="mermaid">flowchart TD
+    A["🟢 Ana marca el negocio como GANADO en HubSpot<br/>con el producto correcto (ej. 'Tablero del CEO – General')"] --> B["🟠 Cada 5 minutos, el robot de Diego Díaz revisa HubSpot:<br/>'¿hay negocios ganados nuevos?'"]
+    B --> C{"🔵 ¿Reconoce el producto y la fecha/edición del evento?"}
+    C -->|"no"| D["🔵 Lo deja 'pendiente' y lo reintenta en 5 min<br/>(típico cuando el producto no coincide con el catálogo)"]
+    C -->|"evento presencial"| E["🔵 Genera el boleto con QR a nombre del contacto<br/>y lo marca 'vendido por Ana'"]
+    C -->|"evento online"| F["🔵 Genera el enlace de un solo uso al grupo de WhatsApp"]
+    E --> G["🔵 Correo al cliente con su boleto (copia a Ana si está activo)"]
+    E --> H["🔵 Renglón en la hoja de Google de asistencia"]
+    F --> I["🔵 Correo al cliente con el enlace del grupo"]
+    E & F --> J["🔵 Se anota en 'hubspot_sync' para no repetirlo nunca"]</pre></figure><p><strong>Lo que debes saber:</strong></p>
+<ul>
+<li><strong>La venta no se duplica</strong>: cada negocio + producto de HubSpot se procesa una sola vez.</li>
+<li>Si el boleto <strong>no llega</strong>, casi siempre es porque el <strong>producto en HubSpot no coincide</strong> con el catálogo de eventos (nombre, sede o fecha). El admin puede forzar la revisión desde el panel (&quot;Sincronizar HubSpot&quot;).</li>
+<li>Esto también funciona <strong>al revés</strong>: cuando alguien compra en la página, ya está en HubSpot como contacto (paso 5.1 / 5.2).</li>
+</ul>
+<h3 id="54-alguien-paga-la-academia">5.4 Alguien paga la Academia</h3><aside class="callout"><p><em>&quot;Pedro compra el plan Business desde /academia.&quot;</em></p>
+</aside><figure class="diagram"><pre class="mermaid">flowchart TD
+    A["🟢 Pedro elige el plan (Entrepreneur / Business / Master)"] --> B["🟢 Crea su cuenta o inicia sesión"]
+    B --> C["🟢 Pone código de descuento (opcional) y paga con Stripe"]
+    C --> D["🔵 Orden pagada → se le crea una SUSCRIPCIÓN con fecha de vencimiento"]
+    D --> E["🔵 Se le abren los cursos del plan en 'Mi cuenta'"]
+    D --> F["🔵 Business y Master: correo con enlace de un solo uso<br/>al grupo de WhatsApp de la Academia"]
+    D --> G["🟢 Recibo por correo y en /recibo/…"]
+    E --> H["🟢 Pedro ve cursos → módulos → lecciones, marca progreso, comenta"]
+    D --> I["🟠 7 días antes de vencer: correo recordatorio"]
+    I --> J["🟠 1 día antes: otro recordatorio"]
+    J --> K["🟠 Al vencer: se cierran los cursos del plan<br/>(solo si fue compra; los accesos manuales del admin no vencen solos)"]</pre></figure><p>El admin también puede <strong>regalar o asignar acceso a mano</strong> desde /admin/suscripciones. Los videos de los cursos se pueden <strong>importar desde Google Drive</strong> y las portadas se guardan en Cloudinary.</p>
+<h3 id="55-alguien-compra-un-libro">5.5 Alguien compra un libro</h3><aside class="callout"><p><em>&quot;Sofía compra &#39;El Tablero del CEO&#39; en físico.&quot;</em></p>
+</aside><figure class="diagram"><pre class="mermaid">flowchart TD
+    A["🟢 Sofía elige el libro y pone su dirección"] --> B["🔵 El cerebro valida el código postal y pide a Envía cotización de envío"]
+    B --> C["🟢 Ve libro + envío y paga con Stripe"]
+    C --> D["🔵 Orden pagada → se le pide a Envía la GUÍA de paquetería"]
+    D --> E["🔵 Se crea el ENVÍO con número de rastreo"]
+    E --> F["🔵 WhatsApp oficial (Meta) al admin y al asesor de envíos: 'hay un paquete por preparar'"]
+    E --> G["🟢 Sofía recibe recibo + guía por correo"]
+    F --> H["🟢 El asesor de envíos entra a /envios-asesores/su-enlace,<br/>imprime guía, marca 'enviado'"]
+    E --> I["🟠 El robot consulta a Envía cada tanto y actualiza el estatus"]
+    I --> J["🔵 Cambios importantes (entregado, incidente) → WhatsApp a Sofía y al equipo"]</pre></figure><h3 id="56-marketing-manda-una-campaña-de-correo">5.6 Marketing manda una campaña de correo</h3><aside class="callout"><p><em>&quot;Carla quiere avisar del próximo seminario a todos los que bajaron la Guía SAT y a los suscriptores del newsletter.&quot;</em></p>
+</aside><p>Hay <strong>dos tuberías de correo</strong> y conviene saber cuál usar:</p>
+<div class="table-wrap"><table><thead><tr><th>Tubería</th><th>Cuándo usarla</th><th>Límite</th></tr></thead><tbody><tr><td><strong>Gmail (desde el admin)</strong></td><td>Segmentos <strong>nuestros</strong>: leads por descargable, newsletter, compradores, asistentes, alumnos</td><td>~1 800 correos al día para masivos (Gmail nos corta si pasamos ~2 000). Los correos importantes (boletos, recibos) <strong>siempre tienen prioridad</strong>.</td></tr><tr><td><strong>Mailchimp</strong></td><td>Audiencias grandes que ya viven en Mailchimp</td><td>El del plan de Mailchimp</td></tr></tbody></table></div><figure class="diagram"><pre class="mermaid">flowchart TD
+    A["🟢 Carla entra a /admin/email"] --> B["🟢 Elige el segmento<br/>(Guía SAT · Media Kit · dossiers · recursos · newsletter · compradores · asistentes · alumnos ·<br/>descargables específicos · o una audiencia/segmento de Mailchimp)"]
+    B --> C["🟢 Escribe asunto y contenido; se manda un correo de prueba"]
+    C --> D["🟢 Clic en 'Enviar campaña'"]
+    D --> E{"🔵 ¿Segmento nuestro o de Mailchimp?"}
+    E -->|"nuestro"| F["🔵 Se forma en la fila: el robot manda poco a poco<br/>respetando el tope diario; si no alcanza hoy, sigue mañana"]
+    E -->|"Mailchimp"| G["🔵 Se crea y dispara la campaña en Mailchimp"]
+    F & G --> H["🟢 Progreso e historial en /admin/email/historial"]
+    G --> I["🔵 Si alguien se da de baja en Mailchimp, nos avisa (webhook)<br/>y lo marcamos para NO volverle a escribir desde ningún segmento"]
+    J["⚠️ Solo puede haber UNA campaña activa a la vez"] -.-> D</pre></figure><h3 id="57-marketing-manda-un-whatsapp-masivo">5.7 Marketing manda un WhatsApp masivo</h3><aside class="callout"><p><em>&quot;Carla quiere mandar un recordatorio por WhatsApp a los asistentes del evento de la semana pasada.&quot;</em></p>
+</aside><figure class="diagram"><pre class="mermaid">flowchart LR
+    A["🟢 /admin/whatsapp"] --> B["🟢 Elige segmento (los mismos que en correo)<br/>y escribe el mensaje"]
+    B --> C["🔵 El cerebro manda uno por uno a través de Whapi<br/>(el número de WhatsApp de la marca)"]
+    C --> D["🟢 Los contactos reciben el mensaje como chat normal"]</pre></figure><p><strong>Ojo:</strong> hay <strong>tres usos distintos</strong> de WhatsApp y no se mezclan:</p>
+<ol>
+<li><strong>Difusión masiva</strong> (Whapi) — lo de arriba.</li>
+<li><strong>Mensajes oficiales con plantilla</strong> (Meta Cloud API) — avisos de envíos de libros, y en Consultoría los mensajes de cada etapa.</li>
+<li><strong>Enlaces de un solo uso a grupos</strong> — Academia Business/Master y eventos online. El enlace sirve <strong>una vez</strong>; si lo reenvían, no funciona.</li>
+</ol>
+<h3 id="58-llega-el-día-del-evento-checkin">5.8 Llega el día del evento (check‑in)</h3><figure class="diagram"><pre class="mermaid">flowchart TD
+    A["🟢 El staff abre /check-in en el celular (o /admin/eventos/check-in)"] --> B["🟢 El asistente muestra su QR (correo o /boleto/FOLIO)"]
+    B --> C["🟢 Se escanea"]
+    C --> D{"🔵 ¿Boleto válido y sin usar?"}
+    D -->|"sí"| E["🟢 ✅ Bienvenido — se marca hora de llegada"]
+    D -->|"ya usado"| F["🟢 ⚠️ 'Este boleto ya entró a las HH:MM'"]
+    D -->|"no existe"| G["🟢 ❌ No válido"]
+    E --> H["🔵 La hoja de Google de asistencia se pinta en verde con la hora"]
+    E -.->|"error humano"| I["🟢 El admin puede 'deshacer check-in'"]</pre></figure><p>Los boletos pueden venir de <strong>tres lugares</strong>: compra web, venta por HubSpot o alta manual del admin. Al escáner le da igual.</p>
+<h3 id="59-un-prospecto-pide-una-sesión-con-díaz-lara">5.9 Un prospecto pide una sesión con Díaz Lara</h3><aside class="callout"><p><em>&quot;Roberto entra a diazlara.mx, llena el formulario de &#39;Asesoría Inicial 2026&#39;.&quot;</em></p>
+</aside><figure class="diagram"><pre class="mermaid">flowchart TD
+    A["🟢 Roberto llena el formulario (es un formulario de HubSpot incrustado)"] --> B["🔵 Queda en HubSpot como contacto / envío de formulario"]
+    B --> C["🟢 Un consultor lo ve, le llama y decide agendar"]
+    C --> D["🟢 El consultor entra al sistema de Díaz Lara, ve su agenda<br/>(combina su disponibilidad con su Google Calendar)"]
+    D --> E["🔵 Se crea la CITA: evento en Google Calendar + enlace de Google Meet"]
+    E --> F["🔵 Correo + WhatsApp de confirmación a Roberto"]
+    E --> G["🔵 Se le avisa a Consultoría (fiscalista-mx.com):<br/>'nuevo prospecto con cita y enlace Meet'"]
+    E --> H["🟠 Cada 10 minutos un robot revisa: '¿hay citas próximas sin recordar?'<br/>→ manda recordatorio por correo y WhatsApp"]
+    D --> I["🟢 Después de la llamada, el consultor CALIFICA al prospecto<br/>(puntaje, interés, estatus)"]
+    I --> J["🔵 La calificación se sube a HubSpot al contacto"]
+    G -->|"si falló"| K["🟠 A las 02:15 el robot reintenta lo que no se pudo avisar"]</pre></figure><p><strong>Dato importante:</strong> la base de datos de Díaz Lara <strong>no está en nuestro VPS</strong>, está en Hostinger. Si Hostinger tiene un problema, este sistema se afecta aunque el VPS esté perfecto.</p>
+<h3 id="510-el-despacho-atiende-a-un-cliente-consultoría">5.10 El despacho atiende a un cliente (Consultoría)</h3><aside class="callout"><p><em>&quot;Roberto compró el servicio. Ana lo marca como ganado en HubSpot con el producto &#39;Consultoría fiscal&#39;.&quot;</em></p>
+</aside><figure class="diagram"><pre class="mermaid">flowchart TD
+    A["🟢 Ana marca el negocio GANADO en HubSpot (producto de consultoría)"] --> B["🟠 Cada pocos minutos, Consultoría revisa HubSpot y trae los negocios que cumplen el filtro"]
+    B --> C["🔵 Crea la EMPRESA, el CLIENTE y el SERVICIO contratado<br/>(si ya existía por correo/teléfono, no lo duplica)"]
+    C --> D["🟢 Aparece en el tablero de etapas (/etapas/dashboard),<br/>que es una copia del pipeline de HubSpot"]
+    D --> E["🟠 Cada 5 minutos el robot de automatizaciones mira en qué etapa está cada cliente<br/>y cuánto tiempo lleva ahí"]
+    E --> F["🔵 Dispara el mensaje que toca (WhatsApp oficial / correo):<br/>bienvenida → 'mándanos tus documentos' → recordatorio 1 y 2 →<br/>'recibimos tus documentos' → confirmación de sesión (24 h y 1 h antes) →<br/>evaluaciones → 'tu entregable está listo' → propuesta y seguimientos →<br/>reactivación si se estanca → contrato → 'cliente cerrado'"]
+    F --> G["🔵 Crea tareas al asesor responsable y notificaciones en la campanita"]
+    D --> H["🟢 El equipo trabaja: documentos, checklists, diagnóstico fiscal, ISR,<br/>plan de acción, facturación, grabaciones"]
+    H --> I["🟢 Roberto entra al PORTAL (/portal) y ve su expediente, tareas,<br/>metodologías, documentos y evalúa las sesiones"]
+    J["🟢 Agendar sesión con consultor desde Consultoría"] --> K["🔵 Usa la misma lógica de agenda de Díaz Lara + Google Calendar/Meet"]
+    K --> L["🟠 Recordatorio por WhatsApp X horas antes"]
+    M["📊 Hoja de Google 'Matriz 2026'"] --> N["🟠 Robot del Podio la lee y arma el ranking interno"]</pre></figure><p><strong>Botón de pánico:</strong> si las automatizaciones mandan algo que no deben, existe un interruptor (<code>STAGE_AUTOMATIONS_DISABLED</code>) que las apaga todas. Lo activa un dev.</p>
+<h3 id="511-alguien-se-registra-o-pierde-su-contraseña">5.11 Alguien se registra o pierde su contraseña</h3><figure class="diagram"><pre class="mermaid">flowchart LR
+    A["🟢 /registro"] --> B["🔵 Se crea la cuenta y se anota en HubSpot"]
+    C["🟢 /iniciar-sesion"] --> D["🔵 Se le da un 'pase' (token) que dura un rato<br/>y se renueva solo mientras navega"]
+    E["🟢 /recuperar-contrasena"] --> F["🔵 Correo con enlace para poner una nueva"]
+    G["🟢 Admin crea usuario en /admin/usuarios"] --> H["🔵 Correo al usuario con sus credenciales"]
+    D --> I{"¿Qué puede ver?"}
+    I -->|"user"| J["Mi cuenta y sus cursos"]
+    I -->|"admin"| K["Todo /admin"]</pre></figure><h3 id="512-se-publica-un-artículo-en-el-blog">5.12 Se publica un artículo en el blog</h3><figure class="diagram"><pre class="mermaid">flowchart LR
+    A["🟢 /admin/blog"] --> B{"¿Cómo lo escribe?"}
+    B -->|"a mano"| C["🔵 Se guarda como borrador"]
+    B -->|"'Generar borrador'"| D["🔵 Si hay OpenAI configurado lo redacta la IA;<br/>si no, usa una plantilla"]
+    D --> C
+    C --> E["🟢 Revisar → Publicar"]
+    E --> F["🟢 Aparece en /blog junto con los boletines fiscales fijos"]</pre></figure></section><section class="chapter"><h2 id="6-las-cosas-que-pasan-solas-robots"><span class="num">6</span><span>Las cosas que pasan solas (robots)</span></h2><p>Nadie las dispara; están programadas. Si algo &quot;mágicamente&quot; pasó o dejó de pasar, probablemente es uno de estos.</p>
+<div class="table-wrap"><table><thead><tr><th>Robot</th><th>Dónde vive</th><th>Cada cuánto</th><th>Qué hace</th></tr></thead><tbody><tr><td>Fila de correos</td><td>Diego Díaz</td><td>Todo el tiempo</td><td>Manda los correos pendientes respetando el tope diario de Gmail; los importantes primero</td></tr><tr><td>Vigilante de HubSpot</td><td>Diego Díaz</td><td>Cada 5 min</td><td>Busca negocios ganados y genera boletos / enlaces de grupo</td></tr><tr><td>Carritos abandonados</td><td>Diego Díaz</td><td>Diario ~10:00</td><td>Sube a HubSpot a quien empezó a pagar y no terminó (más de 24 h)</td></tr><tr><td>Vencimientos de Academia</td><td>Diego Díaz</td><td>Diario</td><td>Recordatorios 7 d y 1 d antes; cierra el acceso al vencer</td></tr><tr><td>Rastreo de paquetes</td><td>Diego Díaz</td><td>Cada tanto</td><td>Pregunta a Envía por el estatus y avisa por WhatsApp</td></tr><tr><td>Reporte de leads</td><td>VPS (cron)</td><td>Diario 08:30</td><td>Llena la hoja de Google &quot;Reporte descargables&quot;</td></tr><tr><td>Respaldo de BD</td><td>VPS (cron)</td><td>Diario 03:00</td><td>Respalda <code>dd_academia</code> y <code>consultoria_db</code> comprimidas; guarda 14 días</td></tr><tr><td>Recordatorios de cita</td><td>Díaz Lara</td><td>Cada 10 min</td><td>Correo + WhatsApp antes de la sesión</td></tr><tr><td>Reintentos</td><td>Díaz Lara</td><td>Diario 02:15</td><td>Reintenta avisos y sincronizaciones que fallaron</td></tr><tr><td>Importador de HubSpot</td><td>Consultoría</td><td>Cada pocos min</td><td>Crea clientes desde negocios ganados; copia etapas</td></tr><tr><td>Automatizaciones por etapa</td><td>Consultoría</td><td>Cada 5 min</td><td>Manda el mensaje que corresponde a la etapa y tiempo</td></tr><tr><td>Recordatorios WhatsApp</td><td>Consultoría</td><td>Configurable</td><td>Recuerda sesiones X horas antes</td></tr><tr><td>Podio</td><td>Consultoría</td><td>Programado</td><td>Lee la hoja &quot;Matriz 2026&quot; y arma el ranking</td></tr><tr><td>Ranking TV</td><td>n8n (nube)</td><td>Al refrescar la página</td><td>Pide a HubSpot los datos de ventas</td></tr></tbody></table></div></section><section class="chapter"><h2 id="7-dónde-se-guarda-cada-dato"><span class="num">7</span><span>Dónde se guarda cada dato</span></h2><p>&quot;¿Dónde busco a esta persona?&quot; — guía rápida:</p>
+<div class="table-wrap"><table><thead><tr><th>Quiero ver…</th><th>Lo encuentro en…</th></tr></thead><tbody><tr><td>Quién descargó qué, suscriptores, leads</td><td><strong>/admin/contactos</strong> en diegodiaz.mx · también en <strong>HubSpot</strong> como contacto · resumen en la <strong>hoja de Google de leads</strong></td></tr><tr><td>Quién compró qué (boletos, Academia, libros)</td><td><strong>/admin/ventas</strong> · recibos en /recibo · también en <strong>Stripe</strong> (dinero real)</td></tr><tr><td>Boletos y asistencia a un evento</td><td><strong>/admin/eventos → asistentes</strong> · <strong>hoja de Google de asistencia</strong> (una pestaña por evento)</td></tr><tr><td>Alumnos y vencimientos de Academia</td><td><strong>/admin/suscripciones</strong></td></tr><tr><td>Envíos de libros</td><td><strong>/admin/envios</strong> · guía en <strong>Envía</strong></td></tr><tr><td>Campañas de correo enviadas</td><td><strong>/admin/email/historial</strong> · en <strong>Mailchimp</strong> si fue por ahí</td></tr><tr><td>Ventas del equipo, pipeline, etapas</td><td><strong>HubSpot</strong> (la verdad oficial)</td></tr><tr><td>Citas y calificaciones de prospectos del despacho</td><td>Sistema de <strong>Díaz Lara</strong> · reflejo en HubSpot · <strong>Google Calendar</strong> del consultor</td></tr><tr><td>Expediente de un cliente del despacho</td><td><strong>fiscalista-mx.com</strong> (clientes, documentos, tareas) · el cliente lo ve en <strong>/portal</strong></td></tr><tr><td>Ranking de asesores</td><td><strong>ranking.diazlara.mx</strong> (ventas HubSpot) · <strong>/podio</strong> en Consultoría (hoja Matriz 2026)</td></tr></tbody></table></div><p><strong>Y físicamente:</strong> todo lo de Diego Díaz está en la base <code>dd_academia</code> (VPS); todo lo de Consultoría en <code>consultoria_db</code> (VPS); lo de Díaz Lara en una base en Hostinger. Imágenes en Cloudinary, videos pesados en Google Drive / GitHub Releases.</p>
+</section><section class="chapter"><h2 id="8-cómo-se-publican-cambios-deploy"><span class="num">8</span><span>Cómo se publican cambios (deploy)</span></h2><p>Para que entiendas por qué a veces &quot;ya está&quot; y a veces &quot;todavía no&quot;:</p>
+<figure class="diagram"><pre class="mermaid">flowchart LR
+    DEV(["Dev sube cambios a GitHub (rama main)"])
+    DEV -->|"DD_Frontend"| H["Hostinger lo compila y publica solo<br/>⏱️ 3–4 min · a veces hay que recargar sin caché"]
+    DEV -->|"DD_Backend"| M["Un dev entra al VPS y corre:<br/>git pull · npm install · npm run build · pm2 restart<br/>⏱️ 1–2 min · si no se hace, el cambio NO está"]
+    DEV -->|"diazlara-backend"| M2["Igual que el anterior, a mano"]
+    DEV -->|"DiazLaraweb"| H2["Hostinger"]
+    DEV -->|"Consultoria / Consultoria_backend"| R["El runner de GitHub en el VPS lo instala solo<br/>⏱️ pocos minutos"]
+    DEV -->|"ranking-asesores"| M3["Se compila y se copia a mano a /var/www/ranking-asesores"]</pre></figure><p><strong>Regla práctica:</strong> si un cambio es <strong>visual</strong> (textos, colores, páginas) suele ser frontend y sale solo; si es <strong>de lógica</strong> (correos, boletos, pagos, HubSpot) suele ser backend y alguien tiene que publicarlo en el VPS.</p>
+</section><section class="chapter"><h2 id="9-guía-rápida-esto-se-ve-raro-qué-hago"><span class="num">9</span><span>Guía rápida: &quot;esto se ve raro, ¿qué hago?&quot;</span></h2><div class="table-wrap"><table><thead><tr><th>Síntoma</th><th>Causa más probable</th><th>Qué revisar / a quién avisar</th></tr></thead><tbody><tr><td>La persona no recibió el correo del descargable / boleto</td><td>Se agotó el cupo diario de Gmail; el correo está en la fila</td><td>Ver <code>/admin/email</code> → estado de la fila. Pedirle que lo descargue desde la página o reenviar mañana. Si urge, un dev puede mandarlo a mano.</td></tr><tr><td>Un asesor vendió en HubSpot y el boleto no salió</td><td>El producto/edición en HubSpot no coincide con el catálogo de eventos</td><td>Revisar nombre, sede y fecha del producto en HubSpot vs <code>/admin/eventos</code>. Luego &quot;Sincronizar HubSpot&quot; en el admin.</td></tr><tr><td>El pago se cobró pero no hay orden/boleto</td><td>Stripe avisó pero el cerebro estaba caído</td><td>Un dev revisa Stripe (evento <code>payment_intent.succeeded</code>) y confirma la orden; el sistema no duplica.</td></tr><tr><td>La página carga pero &quot;no trae datos&quot; (eventos, cursos vacíos)</td><td>El cerebro (<code>api.diegodiaz.mx</code>) está caído o reiniciándose</td><td>Dev: <code>pm2 status</code> en el VPS. La página (Hostinger) y el cerebro (VPS) son edificios distintos.</td></tr><tr><td>La página ni siquiera abre</td><td>Hostinger (diegodiaz / diazlara) o Cloudflare (fiscalista)</td><td>Revisar estado del hosting; no es el VPS.</td></tr><tr><td>Se mandó un WhatsApp de etapa que no debía</td><td>Automatización de Consultoría</td><td>Revisar <code>/admin/automatizaciones-etapas</code>; en emergencia un dev activa <code>STAGE_AUTOMATIONS_DISABLED</code>.</td></tr><tr><td>Alguien dice &quot;me siguen llegando correos y ya me di de baja&quot;</td><td>Se dio de baja en un canal (Mailchimp) y le escribieron por el otro (Gmail), o al revés</td><td>Marcarlo como baja en ambos; el webhook de Mailchimp ya lo hace si la baja fue ahí.</td></tr><tr><td>El enlace del grupo de WhatsApp &quot;no sirve&quot;</td><td>Es de un solo uso y ya se usó, o lo reenviaron</td><td>Generar uno nuevo desde el admin del evento / Academia.</td></tr><tr><td>La cuenta regresiva o el calendario muestran un evento viejo</td><td>Falta actualizar el catálogo de eventos</td><td><code>/admin/eventos</code> → fechas/ediciones.</td></tr><tr><td>El ranking de la TV se quedó congelado</td><td>n8n o HubSpot no respondieron</td><td>Recargar; si persiste, revisar el workflow en n8n.</td></tr><tr><td>El reporte de Google Sheets no se actualizó hoy</td><td>El cron de las 08:30 falló</td><td>Dev: ver <code>/var/log/dd-sheet-report.log</code> en el VPS.</td></tr></tbody></table></div></section><section class="chapter"><h2 id="10-las-cosas-que-hay-que-arreglar-o-vigilar"><span class="num">10</span><span>Las cosas que hay que arreglar o vigilar</span></h2><p>Encontradas al revisar el servidor y el código. Las tres primeras <strong>ya se corrigieron el 24‑nov‑2026</strong>:</p>
+<ol>
+<li>✅ <strong>La base de datos de Diego Díaz (<code>dd_academia</code>) ya se respalda</strong> junto con la de Consultoría, todas las noches a las 03:00 (antes solo se respaldaba Consultoría). Queda pendiente guardar una copia <strong>fuera del servidor</strong> (por ejemplo en Google Drive), por si el VPS entero falla.</li>
+<li>✅ <strong><code>api.consultoresddl.com.mx</code></strong> apuntaba al cerebro equivocado y nadie lo usaba → se apagó (la configuración se conservó por si algún día se necesita).</li>
+<li>✅ <strong>El proceso de desarrollo <code>frontend_ddl</code></strong> que sobraba en el servidor se detuvo (se puede volver a encender si hiciera falta).</li>
+<li>🟡 <strong>La base de Díaz Lara vive en Hostinger</strong>, fuera de nuestro control directo. Documentar accesos y respaldos o migrarla al VPS.</li>
+<li>⚪ Docker instalado sin usarse. Limpiar.</li>
+<li>⚪ Algunos detalles de Díaz Lara y Consultoría (esquema exacto de tablas, intervalos del Podio) no se verificaron a fondo; completar cuando se toque ese código.</li>
+</ol>
+</section><section class="chapter"><h2 id="11-diccionario-de-palabras-raras"><span class="num">11</span><span>Diccionario de palabras raras</span></h2><ul>
+<li><strong>VPS</strong> — la computadora rentada donde viven los &quot;cerebros&quot;. Está en la dirección <code>82.25.95.236</code>.</li>
+<li><strong>Frontend / página</strong> — lo que la gente ve en el navegador.</li>
+<li><strong>Backend / cerebro / API</strong> — el programa que hace el trabajo real (guardar, cobrar, mandar correos). La gente no lo ve.</li>
+<li><strong>Base de datos</strong> — el archivero donde se guarda todo de forma ordenada.</li>
+<li><strong>nginx</strong> — el portero del servidor; decide a qué cerebro va cada dominio.</li>
+<li><strong>PM2</strong> — el supervisor que mantiene vivos los cerebros.</li>
+<li><strong>cron</strong> — el reloj que dispara tareas a horas fijas.</li>
+<li><strong>Deploy / publicar</strong> — poner los cambios nuevos en el servidor real.</li>
+<li><strong>Hostinger</strong> — la empresa donde viven las páginas diegodiaz.mx y diazlara.mx (y la base de datos de Díaz Lara).</li>
+<li><strong>Cloudflare</strong> — el escudo por el que pasa fiscalista-mx.com.</li>
+<li><strong>HubSpot</strong> — nuestro CRM: la libreta central de contactos, negocios y etapas.</li>
+<li><strong>Lead</strong> — una persona que dejó sus datos pero aún no compra.</li>
+<li><strong>Contacto</strong> — una persona en HubSpot (puede ser lead, cliente o alumno).</li>
+<li><strong>Negocio / deal</strong> — una oportunidad de venta en HubSpot. &quot;Ganado&quot; = vendido.</li>
+<li><strong>Pipeline / etapa</strong> — las columnas por las que avanza un negocio o un cliente.</li>
+<li><strong>Orden</strong> — una compra en nuestra página (pagada o pendiente).</li>
+<li><strong>Boleto / ticket</strong> — acceso a un evento, con folio y QR.</li>
+<li><strong>Check‑in</strong> — escanear el QR el día del evento.</li>
+<li><strong>Suscripción (Academia)</strong> — el acceso a cursos con fecha de vencimiento.</li>
+<li><strong>Segmento</strong> — un grupo de personas al que le mandas una campaña (ej. &quot;los que bajaron la Guía SAT&quot;).</li>
+<li><strong>Webhook</strong> — cuando un servicio externo (Stripe, Mailchimp) <strong>nos avisa</strong> de algo por sí solo.</li>
+<li><strong>Enlace de un solo uso</strong> — link que funciona una vez y se quema.</li>
+<li><strong>Whapi</strong> — proveedor para mandar WhatsApp desde el número de la marca como si fuera un chat.</li>
+<li><strong>Meta Cloud API</strong> — WhatsApp oficial con plantillas aprobadas.</li>
+<li><strong>Stripe</strong> — quien cobra las tarjetas.</li>
+<li><strong>Mailchimp</strong> — plataforma de correos masivos.</li>
+<li><strong>SMTP / Gmail</strong> — el correo &quot;normal&quot; con el que mandamos uno por uno.</li>
+<li><strong>n8n</strong> — automatizador en la nube que alimenta el ranking.</li>
+<li><strong>Runner de GitHub</strong> — robot que instala cambios de Consultoría en el servidor.</li>
+<li><strong>Token / pase</strong> — lo que te identifica cuando ya iniciaste sesión.</li>
+</ul>
+</section>
+  <footer>Documento generado desde <code>docs/GUIA-GENERAL-COMO-FUNCIONA-TODO.md</code> · 24 de noviembre de 2026. La versión técnica vive en <code>docs/ARQUITECTURA-VPS-Y-PLATAFORMAS.md</code>.</footer>
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: false, theme: 'base', securityLevel: 'loose',
+    flowchart: { curve: 'basis', htmlLabels: true, padding: 12, nodeSpacing: 36, rankSpacing: 48, useMaxWidth: false },
+    themeVariables: {
+      fontFamily: 'Inter, Helvetica, Arial, sans-serif', fontSize: '14px',
+      primaryColor: '#f5f0e8', primaryTextColor: '#0a0a0a', primaryBorderColor: '#b8ae9f',
+      secondaryColor: '#efe6d3', tertiaryColor: '#ffffff', lineColor: '#3d3d3d',
+      clusterBkg: '#faf8f5', clusterBorder: '#d4ccc0', edgeLabelBackground: '#ffffff',
+      titleColor: '#0a0a0a', nodeBorder: '#b8ae9f', mainBkg: '#f5f0e8'
+    }
+  });
+  await mermaid.run({ querySelector: '.mermaid' });
+  document.documentElement.dataset.ready = '1';
+</script>
+</body>
+</html>
