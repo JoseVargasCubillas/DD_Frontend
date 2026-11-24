@@ -37,7 +37,7 @@ flowchart TB
             DDAPI["dd-academia-backend<br/>:5010<br/>/var/www/dd-academia-backend"]
             DLAPI["diazlara-backend<br/>:3000<br/>/var/www/diazlara-backend"]
             CONSAPI["api_ddl (Consultoria_backend)<br/>:4000<br/>/home/ubuntu/ddl_backend"]
-            CONSFE["frontend_ddl (vite dev)<br/>:5173 — ver riesgos"]
+            CONSFE["frontend_ddl (vite dev)<br/>:5173 — detenido, ver riesgos"]
         end
         STATIC1["/var/www/ranking-asesores<br/>(HTML estático)"]
         STATIC2["/home/ubuntu/ddl_front/Consultoria/dist<br/>(React compilado)"]
@@ -47,7 +47,7 @@ flowchart TB
         SEC["fail2ban (sshd) · Monarx · Docker (sin contenedores)"]
     end
 
-    NGINX -->|"api.diegodiaz.mx<br/>api.consultoresddl.com.mx"| DDAPI
+    NGINX -->|"api.diegodiaz.mx"| DDAPI
     NGINX -->|"api.diazlara.mx"| DLAPI
     NGINX -->|"fiscalista-mx.com/api/"| CONSAPI
     NGINX -->|"fiscalista-mx.com/"| STATIC2
@@ -66,10 +66,10 @@ flowchart TB
 
 | Puerto | Proceso PM2 | Repo | Dominio público |
 |---|---|---|---|
-| 5010 | `dd-academia-backend` | `JoseVargasCubillas/DD_Backend` | `api.diegodiaz.mx` (y `api.consultoresddl.com.mx`, ver riesgos) |
+| 5010 | `dd-academia-backend` | `JoseVargasCubillas/DD_Backend` | `api.diegodiaz.mx` (`api.consultoresddl.com.mx` deshabilitado, ver riesgos) |
 | 3000 | `diazlara-backend` | `JoseVargasCubillas/diazlara-backend` | `api.diazlara.mx` |
 | 4000 | `api_ddl` | `JoseVargasCubillas/Consultoria_backend` | `fiscalista-mx.com/api/` |
-| 5173 | `frontend_ddl` (`npm run dev`) | `JoseVargasCubillas/Consultoria` | — (nginx sirve el `dist/` estático, no este puerto) |
+| 5173 | `frontend_ddl` (`npm run dev`, **detenido**) | `JoseVargasCubillas/Consultoria` | — (nginx sirve el `dist/` estático, no este puerto) |
 | 80/443 estático | nginx | `ranking-asesores` | `ranking.diazlara.mx` |
 
 ---
@@ -87,7 +87,7 @@ flowchart LR
         D4["api.diazlara.mx"]
         D5["fiscalista-mx.com / www"]
         D6["ranking.diazlara.mx"]
-        D7["api.consultoresddl.com.mx"]
+        D7["api.consultoresddl.com.mx<br/>(deshabilitado)"]
     end
 
     subgraph HOSTINGER["Hostinger (hosting web)"]
@@ -125,7 +125,7 @@ flowchart LR
     D4 --> V2
     D5 --> C1 --> V3
     D6 --> V4 --> S9 --> S1
-    D7 --> V1
+    D7 -.->|"antes"| V1
     V2 --> H3
 
     V1 --> S1 & S2 & S3 & S4 & S5 & S6 & S7 & S8 & S10
@@ -626,7 +626,7 @@ flowchart TD
         D_ALL["ranking-asesores: build local en /var/www/ranking-src → copiar a /var/www/ranking-asesores"]
     end
     subgraph CRONS["Tareas programadas del VPS"]
-        K1["03:00 — mysql_backup.sh: dump de consultoria_db<br/>→ /root/backups/mysql (retiene 14 días)"]
+        K1["03:00 — mysql_backup.sh: dump comprimido de consultoria_db y dd_academia<br/>→ /root/backups/mysql (retiene 14 días)"]
         K2["08:30 — report:sheet-sync (A11)"]
         K3["certbot renew (SSL) · docker prune · monarx-update"]
     end
@@ -643,9 +643,9 @@ flowchart TD
 
 | # | Hallazgo | Impacto | Sugerencia |
 |---|---|---|---|
-| 1 | El backup nocturno **solo respalda `consultoria_db`**; `dd_academia` (toda la plataforma Diego Díaz: leads, boletos, órdenes, suscripciones) **no tiene respaldo**. | Alto | Añadir `dd_academia` a `/root/backups/mysql_backup.sh` y copiar los dumps fuera del VPS. |
-| 2 | `api.consultoresddl.com.mx` en nginx apunta a `:5010` (backend de Diego Díaz), no a Consultoría (`:4000`). | Medio | Confirmar si el dominio sigue en uso; corregir `proxy_pass` o retirar el site. |
-| 3 | PM2 mantiene `frontend_ddl` corriendo `npm run dev` (Vite dev server en :5173) aunque nginx sirve el `dist/` estático. | Bajo (CPU/RAM) | Detener/eliminar el proceso de PM2 si no se usa. |
+| 1 | ✅ **Resuelto 2026‑11‑24.** El backup nocturno solo respaldaba `consultoria_db`. Ahora `/root/backups/mysql_backup.sh` respalda **ambas** bases comprimidas (`*.sql.gz`, 14 días de retención); `dd_academia` usa las credenciales del `.env` del backend con `--no-defaults`. Verificado: 24 tablas en el dump. | — | Pendiente aún: copiar los dumps **fuera del VPS** (Drive/S3/Hostinger). |
+| 2 | ✅ **Resuelto 2026‑11‑24.** `api.consultoresddl.com.mx` apuntaba a `:5010`. Sin referencias en código y sin tráfico real (1 bot en logs) → site deshabilitado (sigue en `sites-available` por si se necesita). | — | Si el dominio se retoma, reactivar el site apuntando al backend correcto. |
+| 3 | ✅ **Resuelto 2026‑11‑24.** `frontend_ddl` (Vite dev en :5173) detenido en PM2 y guardado (`pm2 save`); nginx no lo usaba. Reversible con `pm2 start frontend_ddl`. | — | — |
 | 4 | La BD de Díaz Lara vive en MySQL remoto de Hostinger (`31.97.208.13`): latencia y dependencia de un segundo proveedor. | Medio | Documentar credenciales/respaldo en Hostinger o migrar a MySQL del VPS. |
 | 5 | Docker está instalado sin contenedores (solo crons de prune). | Bajo | Eliminar si no hay plan de uso. |
 | 6 | Puntos marcados “no verificado” en B y C (esquema exacto de tablas de B, endpoint exacto de `external` en C, intervalos de Podio). | Doc | Completar cuando se toque ese código. |

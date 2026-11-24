@@ -134,9 +134,9 @@ Es una computadora rentada (Ubuntu, 4 procesadores, 15 GB de RAM, 193 GB de disc
   1. `dd-academia-backend` → cerebro de **Diego Díaz**.
   2. `diazlara-backend` → cerebro de **Díaz Lara**.
   3. `api_ddl` → cerebro de **Consultoría**.
-  4. `frontend_ddl` → un proceso de desarrollo de Consultoría que **no debería estar ahí** (ver sección 10).
+  4. `frontend_ddl` → un proceso de desarrollo de Consultoría que estaba de más; **ya se detuvo** (ver sección 10).
 - **MySQL — los archiveros.** Dos cajones: `dd_academia` (todo Diego Díaz) y `consultoria_db` (todo Consultoría). El de Díaz Lara está en otro edificio (Hostinger).
-- **cron — el reloj de tareas.** A las **03:00** respalda la base de datos de Consultoría; a las **08:30** manda el reporte de leads a Google Sheets.
+- **cron — el reloj de tareas.** A las **03:00** respalda las dos bases de datos (Diego Díaz y Consultoría); a las **08:30** manda el reporte de leads a Google Sheets.
 - **Runner de GitHub — el albañil automático.** Cuando un dev sube cambios de Consultoría, este robot los instala en el servidor solo.
 - **Seguridad:** fail2ban (bloquea a quien intenta adivinar contraseñas por SSH), Monarx (antimalware).
 
@@ -418,7 +418,7 @@ Nadie las dispara; están programadas. Si algo "mágicamente" pasó o dejó de p
 | Vencimientos de Academia | Diego Díaz | Diario | Recordatorios 7 d y 1 d antes; cierra el acceso al vencer |
 | Rastreo de paquetes | Diego Díaz | Cada tanto | Pregunta a Envía por el estatus y avisa por WhatsApp |
 | Reporte de leads | VPS (cron) | Diario 08:30 | Llena la hoja de Google "Reporte descargables" |
-| Respaldo de BD | VPS (cron) | Diario 03:00 | Respalda **solo** `consultoria_db` (ver sección 10) |
+| Respaldo de BD | VPS (cron) | Diario 03:00 | Respalda `dd_academia` y `consultoria_db` comprimidas; guarda 14 días |
 | Recordatorios de cita | Díaz Lara | Cada 10 min | Correo + WhatsApp antes de la sesión |
 | Reintentos | Díaz Lara | Diario 02:15 | Reintenta avisos y sincronizaciones que fallaron |
 | Importador de HubSpot | Consultoría | Cada pocos min | Crea clientes desde negocios ganados; copia etapas |
@@ -489,11 +489,11 @@ flowchart LR
 
 ## 10. Las cosas que hay que arreglar o vigilar
 
-Encontradas al revisar el servidor y el código. En orden de importancia:
+Encontradas al revisar el servidor y el código. Las tres primeras **ya se corrigieron el 24‑nov‑2026**:
 
-1. 🔴 **La base de datos de Diego Díaz (`dd_academia`) NO se respalda.** El respaldo nocturno solo guarda la de Consultoría. Ahí están todos los leads, boletos, órdenes y suscripciones. Es lo primero que hay que corregir (agregarla al script de respaldo y guardar copias fuera del servidor).
-2. 🟠 **`api.consultoresddl.com.mx` apunta al cerebro equivocado** (al de Diego Díaz en vez de Consultoría). Si nadie lo usa, retirarlo; si se usa, corregirlo.
-3. 🟡 **Hay un proceso de desarrollo (`frontend_ddl`) corriendo en el servidor sin necesidad.** Gasta memoria. Apagarlo.
+1. ✅ **La base de datos de Diego Díaz (`dd_academia`) ya se respalda** junto con la de Consultoría, todas las noches a las 03:00 (antes solo se respaldaba Consultoría). Queda pendiente guardar una copia **fuera del servidor** (por ejemplo en Google Drive), por si el VPS entero falla.
+2. ✅ **`api.consultoresddl.com.mx`** apuntaba al cerebro equivocado y nadie lo usaba → se apagó (la configuración se conservó por si algún día se necesita).
+3. ✅ **El proceso de desarrollo `frontend_ddl`** que sobraba en el servidor se detuvo (se puede volver a encender si hiciera falta).
 4. 🟡 **La base de Díaz Lara vive en Hostinger**, fuera de nuestro control directo. Documentar accesos y respaldos o migrarla al VPS.
 5. ⚪ Docker instalado sin usarse. Limpiar.
 6. ⚪ Algunos detalles de Díaz Lara y Consultoría (esquema exacto de tablas, intervalos del Podio) no se verificaron a fondo; completar cuando se toque ese código.
