@@ -1,3 +1,10 @@
+// Genera la guía en HTML (web) o en una variante "print" lista para PDF.
+//   node docs/build-guia.mjs docs/GUIA-GENERAL-COMO-FUNCIONA-TODO.md docs/guia-general.html web
+//   node docs/build-guia.mjs docs/GUIA-GENERAL-COMO-FUNCIONA-TODO.md docs/guia-general.print.html print
+// PDF: Chrome headless no termina de medir los diagramas Mermaid, así que la versión print
+// se "hornea" desde un navegador real: `node docs/build-guia-receive.mjs docs/guia-general.static.html`,
+// abrir `guia-general.print.html?bake` servido por http (npx serve docs) y luego imprimir el static:
+//   msedge --headless=new --no-pdf-header-footer --print-to-pdf=Guia.pdf http://localhost:PORT/guia-general.static
 import { marked } from 'marked';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -145,9 +152,7 @@ footer{margin-top:40px;text-align:center;color:var(--ink-300);font-size:.82rem;p
 }
 @media print{
   @page{size:A4;margin:14mm 12mm}
-  @page wide{size:A4 landscape;margin:8mm}
-  .diagram.big{page:wide;break-before:page;break-after:page;border:0;background:#fff;padding:0;margin:0}
-  .diagram.big svg{max-height:190mm;width:100%}
+  @page wide{size:A4 landscape;margin:10mm}
   body{background:#fff;font-size:11.5px}
   .page{max-width:none;padding:0}
   .cover{margin:0 0 20px;padding:70px 48px;border-radius:14px;page-break-after:always;min-height:255mm;display:flex;align-items:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -155,10 +160,14 @@ footer{margin-top:40px;text-align:center;color:var(--ink-300);font-size:.82rem;p
   .chapter{box-shadow:none;break-inside:auto;page-break-inside:auto;padding:22px 24px 14px;margin-bottom:16px}
   .chapter:first-of-type{page-break-after:always}
   h2,h3{break-after:avoid}
-  .diagram,.table-wrap,.callout{break-inside:avoid}
-  .diagram svg{max-height:240mm;max-width:100%}
-  .diagram pre.mermaid{min-width:0}
+  .table-wrap,.callout{break-inside:avoid}
+  .table-wrap,.diagram{overflow:visible}
+  .diagram{break-inside:avoid;padding:10px;margin:14px 0}
   .diagram::after{display:none}
+  .diagram pre.mermaid{display:block;min-width:0;text-align:center}
+  .diagram svg.rendered{display:block;width:auto;height:auto;max-width:100%;max-height:232mm;margin:0 auto}
+  .diagram.wide{page:wide;break-before:page;break-after:page;border:0;background:#fff;padding:0;margin:0;display:flex;align-items:center;justify-content:center;min-height:180mm}
+  .diagram.wide svg.rendered{max-height:185mm;max-width:275mm}
   thead th,.chapter h2 .num,pre.code{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   a{color:inherit;border:0}
 }
@@ -178,7 +187,7 @@ const html = `<!doctype html>
     <div class="cover-inner">
       <div class="eyebrow">Ecosistema Diego Díaz · Díaz Lara · Consultoría</div>
       <h1>${title}</h1>
-      <p class="sub">El mapa del tesoro: qué páginas tenemos, dónde viven, qué pasa por detrás cuando alguien deja su correo, compra, paga o agenda — y qué hacer cuando algo se ve raro.</p>
+      <p class="sub">Qué páginas tenemos, dónde viven, qué pasa por detrás cuando alguien deja su correo, compra, paga o agenda — y qué hacer cuando algo se ve raro.</p>
       <div class="meta">
         <span class="pill">Versión ${today}</span>
         <span class="pill">Para todo el equipo · sin tecnicismos</span>
@@ -194,9 +203,9 @@ const html = `<!doctype html>
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
   mermaid.initialize({
     startOnLoad: false, theme: 'base', securityLevel: 'loose',
-    flowchart: { curve: 'basis', htmlLabels: true, padding: 12, nodeSpacing: 36, rankSpacing: 48, useMaxWidth: ${isPrint} },
+    flowchart: { curve: 'basis', htmlLabels: ${!isPrint}, padding: 12, nodeSpacing: ${isPrint ? 30 : 36}, rankSpacing: ${isPrint ? 40 : 48}, useMaxWidth: ${isPrint} },
     themeVariables: {
-      fontFamily: 'Inter, Helvetica, Arial, sans-serif', fontSize: '14px',
+      fontFamily: '${isPrint ? 'Arial, Helvetica, sans-serif' : 'Inter, Helvetica, Arial, sans-serif'}', fontSize: '${isPrint ? '17px' : '14px'}',
       primaryColor: '#f5f0e8', primaryTextColor: '#0a0a0a', primaryBorderColor: '#b8ae9f',
       secondaryColor: '#efe6d3', tertiaryColor: '#ffffff', lineColor: '#3d3d3d',
       clusterBkg: '#faf8f5', clusterBorder: '#d4ccc0', edgeLabelBackground: '#ffffff',
@@ -204,10 +213,70 @@ const html = `<!doctype html>
     }
   });
   await mermaid.run({ querySelector: '.mermaid' });
+  if (${isPrint}) {
+    // Rasterize each diagram so PDF viewers render it exactly as seen on screen.
+    for (const svg of [...document.querySelectorAll('.mermaid svg')]) {
+      const vb = svg.viewBox.baseVal;
+      const w = Math.ceil(vb.width), h = Math.ceil(vb.height);
+      svg.setAttribute('width', w); svg.setAttribute('height', h); svg.style.maxWidth = 'none';
+      const fig = svg.closest('.diagram');
+      fig.classList.toggle('wide', w / h > 1.4 && h > 600);
+      fig.classList.toggle('tall', h / w > 1.6);
+      fig.dataset.w = w; fig.dataset.h = h;
+      // Chrome prints SVG <foreignObject> labels on the wrong pages; swap them for plain <text>.
+      for (const fo of [...svg.querySelectorAll('foreignObject')]) {
+        const fw = +fo.getAttribute('width') || 0, fh = +fo.getAttribute('height') || 0;
+        const src = fo.querySelector('span, div') || fo;
+        const cs = getComputedStyle(src);
+        const rawLines = (src.innerText || src.textContent || '').split(/\\n+/).map(s => s.trim()).filter(Boolean);
+        const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        t.setAttribute('x', (+fo.getAttribute('x') || 0) + fw / 2);
+        t.setAttribute('text-anchor', 'middle');
+        t.setAttribute('font-family', 'Arial, Helvetica, sans-serif');
+        t.setAttribute('font-size', cs.fontSize);
+        t.setAttribute('font-weight', cs.fontWeight);
+        t.setAttribute('fill', cs.color);
+        const fs = parseFloat(cs.fontSize) || 16, lh = fs * 1.25;
+        // Re-wrap words to the label box width, as the HTML label did via CSS.
+        const ctx = document.createElement('canvas').getContext('2d');
+        ctx.font = cs.fontWeight + ' ' + fs + 'px Arial, Helvetica, sans-serif';
+        const maxW = Math.max(fw - 4, fs * 2);
+        const lines = [];
+        for (const para of rawLines) {
+          let cur = '';
+          for (const word of para.split(/\\s+/)) {
+            const test = cur ? cur + ' ' + word : word;
+            if (ctx.measureText(test).width <= maxW || !cur) cur = test; else { lines.push(cur); cur = word; }
+          }
+          if (cur) lines.push(cur);
+        }
+        const y0 = (+fo.getAttribute('y') || 0) + fh / 2 - ((lines.length - 1) * lh) / 2 + fs * 0.35;
+        lines.forEach((ln, i) => {
+          const ts = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+          ts.setAttribute('x', t.getAttribute('x')); ts.setAttribute('y', y0 + i * lh); ts.textContent = ln;
+          t.appendChild(ts);
+        });
+        fo.replaceWith(t);
+      }
+      // Fully synchronous: headless printers don't wait for async image decode.
+      svg.classList.add('rendered');
+      svg.removeAttribute('style');
+      svg.setAttribute('width', w); svg.setAttribute('height', h);
+      svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    }
+    await new Promise(r => setTimeout(r, 500));
+  }
   document.documentElement.dataset.ready = '1';
+  if (${isPrint} && location.search.includes('bake')) {
+    document.querySelectorAll('script').forEach(s => s.remove());
+    const html = '<!DOCTYPE html>\\n' + document.documentElement.outerHTML;
+    await fetch('http://localhost:4399/', { method: 'POST', body: html });
+    document.title = 'BAKED ✓ ' + document.title;
+  }
 </script>
 </body>
 </html>`;
 
 fs.writeFileSync(outPath, html);
 console.log('wrote', outPath, (html.length/1024).toFixed(0)+'KB', 'print=' + isPrint);
+

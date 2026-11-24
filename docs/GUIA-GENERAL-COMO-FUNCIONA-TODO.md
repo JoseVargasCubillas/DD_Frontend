@@ -1,4 +1,4 @@
-# Cómo funciona todo (versión para humanos)
+# Manual de Usuario General — Cómo funciona todo
 
 > **Para quién es:** cualquier persona del equipo — ventas, marketing, soporte, administración, un dev que acaba de llegar. No necesitas saber programar.
 > **Qué vas a entender al terminar:** qué páginas web tenemos, dónde viven, qué pasa "por detrás" cuando alguien deja su correo, compra un boleto, paga la Academia, agenda una sesión o cuando un asesor cierra una venta en HubSpot. Y qué hacer (o a quién avisar) cuando algo se ve raro.

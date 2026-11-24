@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Cómo funciona todo (versión para humanos) — Diego Díaz · Díaz Lara</title>
+<title>Manual de Usuario General — Cómo funciona todo — Diego Díaz · Díaz Lara</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap');
 :root{
@@ -94,9 +94,7 @@ footer{margin-top:40px;text-align:center;color:var(--ink-300);font-size:.82rem;p
 }
 @media print{
   @page{size:A4;margin:14mm 12mm}
-  @page wide{size:A4 landscape;margin:8mm}
-  .diagram.big{page:wide;break-before:page;break-after:page;border:0;background:#fff;padding:0;margin:0}
-  .diagram.big svg{max-height:190mm;width:100%}
+  @page wide{size:A4 landscape;margin:10mm}
   body{background:#fff;font-size:11.5px}
   .page{max-width:none;padding:0}
   .cover{margin:0 0 20px;padding:70px 48px;border-radius:14px;page-break-after:always;min-height:255mm;display:flex;align-items:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -104,10 +102,14 @@ footer{margin-top:40px;text-align:center;color:var(--ink-300);font-size:.82rem;p
   .chapter{box-shadow:none;break-inside:auto;page-break-inside:auto;padding:22px 24px 14px;margin-bottom:16px}
   .chapter:first-of-type{page-break-after:always}
   h2,h3{break-after:avoid}
-  .diagram,.table-wrap,.callout{break-inside:avoid}
-  .diagram svg{max-height:240mm;max-width:100%}
-  .diagram pre.mermaid{min-width:0}
+  .table-wrap,.callout{break-inside:avoid}
+  .table-wrap,.diagram{overflow:visible}
+  .diagram{break-inside:avoid;padding:10px;margin:14px 0}
   .diagram::after{display:none}
+  .diagram pre.mermaid{display:block;min-width:0;text-align:center}
+  .diagram svg.rendered{display:block;width:auto;height:auto;max-width:100%;max-height:232mm;margin:0 auto}
+  .diagram.wide{page:wide;break-before:page;break-after:page;border:0;background:#fff;padding:0;margin:0;display:flex;align-items:center;justify-content:center;min-height:180mm}
+  .diagram.wide svg.rendered{max-height:185mm;max-width:275mm}
   thead th,.chapter h2 .num,pre.code{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   a{color:inherit;border:0}
 }
@@ -118,8 +120,8 @@ footer{margin-top:40px;text-align:center;color:var(--ink-300);font-size:.82rem;p
   <header class="cover">
     <div class="cover-inner">
       <div class="eyebrow">Ecosistema Diego Díaz · Díaz Lara · Consultoría</div>
-      <h1>Cómo funciona todo (versión para humanos)</h1>
-      <p class="sub">El mapa del tesoro: qué páginas tenemos, dónde viven, qué pasa por detrás cuando alguien deja su correo, compra, paga o agenda — y qué hacer cuando algo se ve raro.</p>
+      <h1>Manual de Usuario General — Cómo funciona todo</h1>
+      <p class="sub">Qué páginas tenemos, dónde viven, qué pasa por detrás cuando alguien deja su correo, compra, paga o agenda — y qué hacer cuando algo se ve raro.</p>
       <div class="meta">
         <span class="pill">Versión 24 de noviembre de 2026</span>
         <span class="pill">Para todo el equipo · sin tecnicismos</span>
@@ -469,7 +471,66 @@ footer{margin-top:40px;text-align:center;color:var(--ink-300);font-size:.82rem;p
     }
   });
   await mermaid.run({ querySelector: '.mermaid' });
+  if (false) {
+    // Rasterize each diagram so PDF viewers render it exactly as seen on screen.
+    for (const svg of [...document.querySelectorAll('.mermaid svg')]) {
+      const vb = svg.viewBox.baseVal;
+      const w = Math.ceil(vb.width), h = Math.ceil(vb.height);
+      svg.setAttribute('width', w); svg.setAttribute('height', h); svg.style.maxWidth = 'none';
+      const fig = svg.closest('.diagram');
+      fig.classList.toggle('wide', w / h > 1.4 && h > 600);
+      fig.classList.toggle('tall', h / w > 1.6);
+      fig.dataset.w = w; fig.dataset.h = h;
+      // Chrome prints SVG <foreignObject> labels on the wrong pages; swap them for plain <text>.
+      for (const fo of [...svg.querySelectorAll('foreignObject')]) {
+        const fw = +fo.getAttribute('width') || 0, fh = +fo.getAttribute('height') || 0;
+        const src = fo.querySelector('span, div') || fo;
+        const cs = getComputedStyle(src);
+        const rawLines = (src.innerText || src.textContent || '').split(/\n+/).map(s => s.trim()).filter(Boolean);
+        const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        t.setAttribute('x', (+fo.getAttribute('x') || 0) + fw / 2);
+        t.setAttribute('text-anchor', 'middle');
+        t.setAttribute('font-family', 'Arial, Helvetica, sans-serif');
+        t.setAttribute('font-size', cs.fontSize);
+        t.setAttribute('font-weight', cs.fontWeight);
+        t.setAttribute('fill', cs.color);
+        const fs = parseFloat(cs.fontSize) || 16, lh = fs * 1.25;
+        // Re-wrap words to the label box width, as the HTML label did via CSS.
+        const ctx = document.createElement('canvas').getContext('2d');
+        ctx.font = cs.fontWeight + ' ' + fs + 'px Arial, Helvetica, sans-serif';
+        const maxW = Math.max(fw - 4, fs * 2);
+        const lines = [];
+        for (const para of rawLines) {
+          let cur = '';
+          for (const word of para.split(/\s+/)) {
+            const test = cur ? cur + ' ' + word : word;
+            if (ctx.measureText(test).width <= maxW || !cur) cur = test; else { lines.push(cur); cur = word; }
+          }
+          if (cur) lines.push(cur);
+        }
+        const y0 = (+fo.getAttribute('y') || 0) + fh / 2 - ((lines.length - 1) * lh) / 2 + fs * 0.35;
+        lines.forEach((ln, i) => {
+          const ts = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+          ts.setAttribute('x', t.getAttribute('x')); ts.setAttribute('y', y0 + i * lh); ts.textContent = ln;
+          t.appendChild(ts);
+        });
+        fo.replaceWith(t);
+      }
+      // Fully synchronous: headless printers don't wait for async image decode.
+      svg.classList.add('rendered');
+      svg.removeAttribute('style');
+      svg.setAttribute('width', w); svg.setAttribute('height', h);
+      svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    }
+    await new Promise(r => setTimeout(r, 500));
+  }
   document.documentElement.dataset.ready = '1';
+  if (false && location.search.includes('bake')) {
+    document.querySelectorAll('script').forEach(s => s.remove());
+    const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    await fetch('http://localhost:4399/', { method: 'POST', body: html });
+    document.title = 'BAKED ✓ ' + document.title;
+  }
 </script>
 </body>
 </html>
