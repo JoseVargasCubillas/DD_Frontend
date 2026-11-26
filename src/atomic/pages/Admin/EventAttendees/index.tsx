@@ -6,6 +6,7 @@ import {
   useDeleteAttendee,
   useEventAttendees,
   useReactivateAttendee,
+  useResyncAttendeesSheet,
   useUndoCheckIn,
   useVoidAttendee,
 } from '@hooks/useTickets';
@@ -212,6 +213,7 @@ export default function EventAttendees() {
   const voidMutation = useVoidAttendee();
   const reactivate = useReactivateAttendee();
   const remove = useDeleteAttendee();
+  const resync = useResyncAttendeesSheet(id);
   const [adding, setAdding] = useState(false);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
@@ -261,6 +263,19 @@ export default function EventAttendees() {
   const handleDelete = async (ticket: AdminTicket) => {
     if (!window.confirm(`¿Eliminar definitivamente a ${ticket.attendeeName} (${ticket.folio})? No se puede deshacer.`)) return;
     await runAction(() => remove.mutateAsync(ticket.folio), 'Eliminado', 'No se pudo eliminar');
+  };
+
+  const handleResync = async () => {
+    try {
+      const r = await resync.mutateAsync();
+      toast.success(
+        r.added > 0
+          ? `Sheet actualizado: ${r.total} boletos (${r.added} faltaban y se agregaron)`
+          : `Sheet actualizado: ${r.total} boletos`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo actualizar el Sheet');
+    }
   };
 
   const busy = undo.isPending || voidMutation.isPending || reactivate.isPending || remove.isPending;
@@ -324,6 +339,17 @@ export default function EventAttendees() {
             >
               Abrir Google Sheet ↗
             </a>
+          )}
+          {data.sheetUrl && data.tickets.length > 0 && (
+            <button
+              type="button"
+              onClick={() => void handleResync()}
+              disabled={resync.isPending}
+              title="Vuelve a escribir todos los boletos de este evento en su pestaña del Google Sheet"
+              className="inline-flex min-h-11 items-center rounded-full border border-ink-900/15 bg-white px-5 text-sm font-semibold hover:bg-cream-200 disabled:opacity-50"
+            >
+              {resync.isPending ? 'Actualizando Sheet…' : '↻ Reenviar al Sheet'}
+            </button>
           )}
         </div>
       </header>

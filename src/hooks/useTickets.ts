@@ -58,6 +58,8 @@ export const useAddAttendee = (eventId: string | undefined) =>
 export const useVoidAttendee = () => useAttendeeMutation(ticketsApi.voidAttendee);
 export const useReactivateAttendee = () => useAttendeeMutation(ticketsApi.reactivateAttendee);
 export const useDeleteAttendee = () => useAttendeeMutation(ticketsApi.deleteAttendee);
+export const useResyncAttendeesSheet = (eventId: string | undefined) =>
+  useMutation({ mutationFn: () => ticketsApi.resyncAttendeesSheet(eventId as string) });
 
 export const useEventAttendees = (eventId: string | undefined) =>
   useQuery({

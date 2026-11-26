@@ -21,6 +21,12 @@ export const getEventAttendees = (eventId: string): Promise<EventAttendees> =>
 export const addAttendee = (eventId: string, payload: AddAttendeePayload): Promise<AddAttendeeResult> =>
   client.post<ApiResponse<AddAttendeeResult>>(`/events/${eventId}/attendees`, payload).then((r) => r.data);
 
+// Reescribe todos los boletos del evento en su pestaña del Google Sheet.
+export const resyncAttendeesSheet = (eventId: string): Promise<{ total: number; updated: number; added: number }> =>
+  client
+    .post<ApiResponse<{ total: number; updated: number; added: number }>>(`/events/${eventId}/attendees/resync-sheet`)
+    .then((r) => r.data);
+
 // Baja reversible (anula el boleto o revoca el enlace); no se reemite desde HubSpot.
 export const voidAttendee = (folio: string): Promise<AdminTicket> =>
   client.post<ApiResponse<AdminTicket>>(`/tickets/${encodeURIComponent(folio)}/void`).then((r) => r.data);
