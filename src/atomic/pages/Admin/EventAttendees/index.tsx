@@ -268,11 +268,11 @@ export default function EventAttendees() {
   const handleResync = async () => {
     try {
       const r = await resync.mutateAsync();
-      toast.success(
-        r.added > 0
-          ? `Sheet actualizado: ${r.total} boletos (${r.added} faltaban y se agregaron)`
-          : `Sheet actualizado: ${r.total} boletos`,
-      );
+      const notes = [
+        r.added > 0 ? `${r.added} faltaban y se agregaron` : '',
+        r.removed > 0 ? `${r.removed} bajas fuera de la hoja` : '',
+      ].filter(Boolean);
+      toast.success(`Sheet actualizado: ${r.total} boletos${notes.length ? ` (${notes.join(', ')})` : ''}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo actualizar el Sheet');
     }

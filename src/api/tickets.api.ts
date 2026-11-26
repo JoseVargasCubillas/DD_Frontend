@@ -22,9 +22,16 @@ export const addAttendee = (eventId: string, payload: AddAttendeePayload): Promi
   client.post<ApiResponse<AddAttendeeResult>>(`/events/${eventId}/attendees`, payload).then((r) => r.data);
 
 // Reescribe todos los boletos del evento en su pestaña del Google Sheet.
-export const resyncAttendeesSheet = (eventId: string): Promise<{ total: number; updated: number; added: number }> =>
+export interface SheetResyncSummary {
+  total: number;
+  updated: number;
+  added: number;
+  removed: number;
+}
+
+export const resyncAttendeesSheet = (eventId: string): Promise<SheetResyncSummary> =>
   client
-    .post<ApiResponse<{ total: number; updated: number; added: number }>>(`/events/${eventId}/attendees/resync-sheet`)
+    .post<ApiResponse<SheetResyncSummary>>(`/events/${eventId}/attendees/resync-sheet`)
     .then((r) => r.data);
 
 // Baja reversible (anula el boleto o revoca el enlace); no se reemite desde HubSpot.
