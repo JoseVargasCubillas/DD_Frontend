@@ -3977,6 +3977,7 @@ function SettingsSection({
     title: course.title,
     description: course.description ?? "",
     thumbnail: course.thumbnail ?? "",
+    published: course.status === "published",
     ...saved,
   });
   const mutation = useMutation({
@@ -3986,6 +3987,7 @@ function SettingsSection({
         description: form.description,
         shortDescription: form.description.slice(0, 180),
         thumbnail: form.thumbnail,
+        status: form.published ? "published" : "draft",
       }),
     onSuccess: () => {
       localStorage.setItem(
@@ -4085,6 +4087,16 @@ function SettingsSection({
             </div>
           </div>
         </div>
+      </SettingsRow>
+      <SettingsRow
+        title="Visibilidad"
+        description="Un curso en borrador no se asigna a los paquetes activos de Academia, así que tus clientes no ven sus lecciones aunque el curso ya tenga contenido."
+      >
+        <Toggle
+          checked={form.published}
+          onChange={(published) => setForm({ ...form, published })}
+          label={form.published ? "Publicado" : "Borrador"}
+        />
       </SettingsRow>
       <SettingsRow
         title="Muro de pago"
