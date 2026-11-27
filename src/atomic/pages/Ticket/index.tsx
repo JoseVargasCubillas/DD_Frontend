@@ -144,6 +144,16 @@ function TicketCard({ ticket }: { ticket: PublicTicket }) {
               Presenta este código en la entrada del evento. Boleto personal e intransferible.
             </p>
           </section>
+
+          <section className="border-t border-cream-400 bg-cream-100/60 px-6 py-5 sm:px-8">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-ink-900">
+              Términos y condiciones de acceso
+            </p>
+            <p className="mt-2 text-[12px] leading-[1.6] text-ink-400">
+              Este boleto es válido exclusivamente para la fecha y el evento indicados. No admite cambios de fecha,
+              transferencias a futuras ediciones ni reembolsos. Al adquirirlo, el participante acepta estas condiciones.
+            </p>
+          </section>
         </article>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row print-hidden">

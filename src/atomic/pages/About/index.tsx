@@ -5,7 +5,7 @@ import { useHeroReveal, useReveal } from '@hooks/useReveal';
 import LeadCaptureModal from '@molecules/LeadCaptureModal';
 import { requestMediaKit } from '@api/leads.api';
 import diegoHero from '../../../../assets/ddweb/figma-diego-hero.webp';
-import equipoDiazLara from '../../../../assets/ddweb/equipo-diaz-lara-escaleras.webp';
+import equipoDiazLara from '../../../../assets/ddweb/equipo-diaz-lara-escaleras-vertical.webp';
 import logoLider from '../../../../assets/home/008_home_logo1_DD.png';
 import logoExcelsior from '../../../../assets/home/009_home_logo2_DD.png';
 import logoTeleformula from '../../../../assets/home/010_home_logo3_DD.png';
@@ -324,7 +324,7 @@ export default function About() {
 
       <section className="bg-ink-900 py-24 text-white">
         <div ref={firmRef} className="stagger-grid container-app grid gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-          <img loading="lazy" decoding="async" data-s="0" src={equipoDiazLara} alt="Equipo Díaz Lara" className="aspect-[4/3] w-full object-cover opacity-90" />
+          <img loading="lazy" decoding="async" data-s="0" src={equipoDiazLara} alt="Equipo Díaz Lara" className="aspect-[4/5] w-full object-cover object-[center_60%] opacity-90" />
           <div data-s="1">
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/45">04 / Firma</p>
             <h2 className="mt-6 font-serif text-[72px] leading-none tracking-[-0.06em]">Fundador de Díaz Lara.</h2>

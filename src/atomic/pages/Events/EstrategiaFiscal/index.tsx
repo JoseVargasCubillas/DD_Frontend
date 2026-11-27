@@ -31,7 +31,6 @@ const heroVideo =
   'https://github.com/JoseVargasCubillas/DD_Frontend/releases/download/media-v1/VIDEO.SEF.vertical.web.mp4';
 import diegoPortrait from '../../../../../assets/eventos/LEF_img_001.webp';
 import irmaPortrait from '../../../../../assets/eventos/LEF_img 002.webp';
-import azucenaPortrait from '../../../../../assets/eventos/LEF_img 003.webp';
 import jessicaPortrait from '../../../../../assets/eventos/LEF_img_004.webp';
 import type { Event as SiteEvent } from '@t/index';
 
@@ -196,12 +195,6 @@ const speakers = [
     role: 'Invitada',
     image: irmaPortrait,
     bio: 'Licenciada en Finanzas y Contaduría Pública. Colabora en la formación de empresarios con estructura empresarial y análisis financiero.',
-  },
-  {
-    name: 'Jazmín Robles',
-    role: 'Invitada',
-    image: azucenaPortrait,
-    bio: 'Abogada Fiscalista, Maestra en Derecho Fiscal y Doctorante en Ciencias de lo Fiscal. Distinción internacional "The Lawyer of the Year 2025"',
   },
   {
     name: 'Jessica Tapia',
@@ -820,45 +813,35 @@ export default function EstrategiaFiscalLanding() {
               frente
             </h2>
             <p className="mb-[76px] hidden whitespace-nowrap text-right text-[9px] lowercase tracking-[0.28em] text-ink-300 md:block">
-              1 anfitrión / 3 invitadas
+              1 anfitrión / 2 invitadas
             </p>
           </div>
 
-          <div className="mt-[52px] overflow-hidden">
-            <div className="flex w-max motion-safe:animate-[speaker-carousel_60s_linear_infinite]">
-              {[0, 1].map((group) => (
-                <div
-                  key={group}
-                  aria-hidden={group === 1}
-                  className="flex shrink-0 gap-5 pr-5"
-                >
-                  {featuredSpeakers.map((speaker) => (
-                    <article
-                      key={`${group}-${speaker.name}`}
-                      className="w-[78vw] shrink-0 border border-cream-400 bg-cream-50 sm:w-[42vw] md:w-[29vw] md:max-w-[386px]"
-                    >
-                      <div className="aspect-[4/5] overflow-hidden bg-cream-200">
-                        <img
-                          src={speaker.image}
-                          alt={speaker.name}
-                          className="h-full w-full object-cover object-top"
-                          loading={group === 0 ? 'eager' : 'lazy'}
-                        />
-                      </div>
-                      <div className="min-h-[128px] border-t border-cream-400 px-5 py-5">
-                        <p className="text-[8px] uppercase tracking-[0.3em] text-ink-300">— {speaker.role}</p>
-                        <h3 className="mt-5 font-serif text-[26px] italic leading-none tracking-[-0.04em] text-ink-900">
-                          {speaker.name}
-                        </h3>
-                        <p className="mt-4 max-w-[310px] text-[13px] font-normal leading-[1.18] tracking-[-0.01em] text-ink-500">
-                          {speaker.bio}
-                        </p>
-                      </div>
-                    </article>
-                  ))}
+          <div className="mt-[52px] grid gap-5 sm:grid-cols-2 md:grid-cols-3">
+            {featuredSpeakers.map((speaker) => (
+              <article
+                key={speaker.name}
+                className="border border-cream-400 bg-cream-50"
+              >
+                <div className="aspect-[4/5] overflow-hidden bg-cream-200">
+                  <img
+                    src={speaker.image}
+                    alt={speaker.name}
+                    className="h-full w-full object-cover object-top"
+                    loading="eager"
+                  />
                 </div>
-              ))}
-            </div>
+                <div className="min-h-[128px] border-t border-cream-400 px-5 py-5">
+                  <p className="text-[8px] uppercase tracking-[0.3em] text-ink-300">— {speaker.role}</p>
+                  <h3 className="mt-5 font-serif text-[26px] italic leading-none tracking-[-0.04em] text-ink-900">
+                    {speaker.name}
+                  </h3>
+                  <p className="mt-4 max-w-[310px] text-[13px] font-normal leading-[1.18] tracking-[-0.01em] text-ink-500">
+                    {speaker.bio}
+                  </p>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>
